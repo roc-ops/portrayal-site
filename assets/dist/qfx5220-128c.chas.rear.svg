@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.9mm" height="174.8mm" viewBox="0 0 439.9 174.8" data-device="qfx5220-128c" data-view="rear" data-weight-note="98 lb (44.45 kg) with power supplies and fans installed, 76 lb (34.47 kg) chassis only (guide Table 32)" data-throughput="12.8 Tbps (guide, QFX5220-128C Switch Description)" data-qsfp28-speeds="100 GbE and 40 GbE; 4 x 25 GbE on ports 0, 4, 8 to 124 (guide, Port Configurations)" data-power-typical-w="942" data-power-max-w="1506" data-power-envelope="as-tested" data-power-measurement-note="Maximum at 40 C ambient with SR optics at 100 percent load with IMIX traffic. Typical at 25 C with DACs at 50 percent load with IMIX traffic (guide Table 19)" data-power-dc-typical-w="955" data-power-dc-max-w="1530" data-power-input-ac="100 to 240 VAC, 50 to 60 Hz; 19.36 A at 100 to 127 VAC, 10.95 A at 200 to 240 VAC (guide Table 19)" data-power-input-dc="rated -48 to -60 VDC, operating -40 to -72 VDC, 40 A maximum (guide Table 26)" data-redundancy-note="four supplies, 2+2. The switch can run on two supplies if one is in slot 0 or 1 and the other in slot 2 or 3" data-fans="six fan modules of two fans each, (5x2+1)+1; the switch runs 30 seconds without thermal shutdown while one is replaced" data-airflow-note="AFO only, front-to-back (port-to-FRU); the 128C is not sold with back-to-front airflow" data-operating-temp="0 to 40 C (32 to 104 F) (guide Table 31)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing, operating" data-altitude="no performance degradation to 1828.8 m (6000 ft) at 0 to 40 C (guide Table 31)" data-cpu="Intel Xeon D-1518 (guide)" data-storage="two internal 50 GB SSDs" data-software="Junos OS Evolved, first release 19.2R1 (the guide names it the QFX5200-128C at that point)" data-optics-qsfp28="100 GbE QSFP28 and DAC, QSFP28 to SFP28 breakout DAC, 100 GbE AOC, 40 GbE QSFP+ and DAC (guide, Network Ports)" data-optics-sfp-plus="ports 128 and 129 take SFP+ modules at 10 GbE (the guide also says 1 GbE; see gaps)" data-ptp="clock input and output connectors for 10 MHz and 1 PPS, and an RJ-45 time-of-day port" data-oob="one RJ-45 management port (1000BASE-T)" data-console="one RJ-45 console port" data-usb="one USB 2.0 port" data-timing-outputs="PPS and 10 MHz clock connectors, in and out, and an RJ-45 time-of-day port" data-safety="CAN/CSA-C22.2 No. 60950-1; UL 62368-1; IEC 62368-1:2014; IEC 60950-1:2005/A2:2013 (CB scheme); EN 60825-1 (guide, Agency Approvals for the QFX Series)" data-emc="FCC 47 CFR Part 15 Class A. EN 55022 Class A. VCCI Class A. BSMI CNS 13438 Class A. AS/NZS CISPR 22 Class A. EN 55024. CISPR 24. EN 300 386. EN 61000-3-2. EN 61000-3-3. (guide, Agency Approvals for the QFX Series)" data-nebs="designed to comply with Zone 4 earthquake requirements of NEBS GR-63-CORE, Issue 3 (guide Table 31)" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5220-128C","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0"},"source-sha256":"ea05a21de785eefc0f730b9cf8818203229e53c10440234ac793a29fd754c28b","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5220-128C" data-sku="QFX5220-128C-CHAS" data-part-number="" x="0" y="0" width="439.9" height="174.8" rx="1.2" fill="#8a8a8b" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="pad-earth" data-kind="earthing-terminal" x="14.6" y="147.5" width="27.5" height="9.7" rx="0.6" fill="#9da1a6" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="175.4" cy="75.6" rx="1" ry="1" fill="#101214" id="cutout--led-fan-0" data-path="cutout:led-fan-0" data-class="cutout" />
+    <ellipse cx="265.4" cy="75.6" rx="1" ry="1" fill="#101214" id="cutout--led-fan-1" data-path="cutout:led-fan-1" data-class="cutout" />
+    <ellipse cx="355.4" cy="75.6" rx="1" ry="1" fill="#101214" id="cutout--led-fan-2" data-path="cutout:led-fan-2" data-class="cutout" />
+    <ellipse cx="175.4" cy="160.9" rx="1" ry="1" fill="#101214" id="cutout--led-fan-3" data-path="cutout:led-fan-3" data-class="cutout" />
+    <ellipse cx="265.4" cy="160.9" rx="1" ry="1" fill="#101214" id="cutout--led-fan-4" data-path="cutout:led-fan-4" data-class="cutout" />
+    <ellipse cx="355.4" cy="160.9" rx="1" ry="1" fill="#101214" id="cutout--led-fan-5" data-path="cutout:led-fan-5" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(39.2 57.8)" id="silk-psu-0-mark" data-path="silk:silk-psu-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <text x="39.2" y="61.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-psu-0" data-path="silk:silk-psu-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(398 57.8)" id="silk-psu-1-mark" data-path="silk:silk-psu-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="398" y="61.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-psu-1" data-path="silk:silk-psu-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(39.2 86.6)" id="silk-psu-2-mark" data-path="silk:silk-psu-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+    <text x="39.2" y="90.4" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-psu-2" data-path="silk:silk-psu-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">2</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(398 86.6)" id="silk-psu-3-mark" data-path="silk:silk-psu-3-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-3" />
+    <text x="398" y="90.4" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-psu-3" data-path="silk:silk-psu-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-3">3</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(175.4 66)" id="silk-fan-0-mark" data-path="silk:silk-fan-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <text x="175.4" y="69.8" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-fan-0" data-path="silk:silk-fan-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(265.4 66)" id="silk-fan-1-mark" data-path="silk:silk-fan-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <text x="265.4" y="69.8" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-fan-1" data-path="silk:silk-fan-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(355.4 66)" id="silk-fan-2-mark" data-path="silk:silk-fan-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <text x="355.4" y="69.8" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-fan-2" data-path="silk:silk-fan-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">2</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(175.4 147.2)" id="silk-fan-3-mark" data-path="silk:silk-fan-3-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3" />
+    <text x="175.4" y="151.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-fan-3" data-path="silk:silk-fan-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3">3</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(265.4 147.2)" id="silk-fan-4-mark" data-path="silk:silk-fan-4-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-4" />
+    <text x="265.4" y="151.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-fan-4" data-path="silk:silk-fan-4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-4">4</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f1f2f4" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(355.4 147.2)" id="silk-fan-5-mark" data-path="silk:silk-fan-5-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-5" />
+    <text x="355.4" y="151.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#f1f2f4" id="silk-fan-5" data-path="silk:silk-fan-5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-5">5</text>
+    <path d="M 0 -2.75 L 0 -0.5 M -2.5 -0.5 L 2.5 -0.5 M -1.55 0.6 L 1.55 0.6 M -0.7 1.7 L 0.7 1.7" fill="none" stroke="#f1f2f4" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(49.5 152.4)" id="silk-earth" data-path="silk:silk-earth" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="led-fan-0" data-path="led-fan-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(174.4,74.6)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan module - green when the module is healthy, amber blinking on an error (guide Table 17)." data-for="fan-0">
+    <title>led-fan-0</title>
+    <circle id="led-fan-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-0/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-1" data-path="led-fan-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(264.4,74.6)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan module - green when the module is healthy, amber blinking on an error (guide Table 17)." data-for="fan-1">
+    <title>led-fan-1</title>
+    <circle id="led-fan-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-2" data-path="led-fan-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(354.4,74.6)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan module - green when the module is healthy, amber blinking on an error (guide Table 17)." data-for="fan-2">
+    <title>led-fan-2</title>
+    <circle id="led-fan-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-3" data-path="led-fan-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(174.4,159.9)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan module - green when the module is healthy, amber blinking on an error (guide Table 17)." data-for="fan-3">
+    <title>led-fan-3</title>
+    <circle id="led-fan-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-4" data-path="led-fan-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(264.4,159.9)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan module - green when the module is healthy, amber blinking on an error (guide Table 17)." data-for="fan-4">
+    <title>led-fan-4</title>
+    <circle id="led-fan-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-5" data-path="led-fan-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(354.4,159.9)" data-group="fan-leds" data-group-role="indicator" data-description="The round status lamp beside each fan module - green when the module is healthy, amber blinking on an error (guide Table 17)." data-for="fan-5">
+    <title>led-fan-5</title>
+    <circle id="led-fan-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-5/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="4.4" y="11.4" width="74.1" height="40.6" fill="#101214" data-depth="185" data-wall="#2a2e31" />
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="363.4" y="11.4" width="74.1" height="40.6" fill="#101214" data-depth="185" data-wall="#2a2e31" />
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="4.4" y="94.4" width="74.1" height="40.6" fill="#101214" data-depth="185" data-wall="#2a2e31" />
+  </g>
+  <g id="psu-3" data-path="psu-3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psu-3</title>
+    <rect id="psu-3--opening" x="363.4" y="94.4" width="74.1" height="40.6" fill="#101214" data-depth="185" data-wall="#2a2e31" />
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="90.2" y="6.5" width="80" height="81.5" fill="#101214" />
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="180.2" y="6.5" width="80" height="81.5" fill="#101214" />
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="270.2" y="6.5" width="80" height="81.5" fill="#101214" />
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="90.2" y="91.9" width="80" height="81.5" fill="#101214" />
+  </g>
+  <g id="fan-4" data-path="fan-4" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="4">
+    <title>fan-4</title>
+    <rect id="fan-4--opening" x="180.2" y="91.9" width="80" height="81.5" fill="#101214" />
+  </g>
+  <g id="fan-5" data-path="fan-5" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="5">
+    <title>fan-5</title>
+    <rect id="fan-5--opening" x="270.2" y="91.9" width="80" height="81.5" fill="#101214" />
+  </g>
+</svg>

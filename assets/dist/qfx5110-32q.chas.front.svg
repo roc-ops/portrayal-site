@@ -1,0 +1,1232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.9mm" height="43.7mm" viewBox="0 0 440.9 43.7" data-device="qfx5110-32q" data-view="front" data-weight-note="24.6 lb (11.16 kg) with two power supplies (Table 24)" data-depth-note="20.48 in (52.02 cm) excluding fan and power supply handles (Table 24)" data-switching-capacity="2.56 Tbps aggregate throughput (guide, QFX5110-32Q Hardware)" data-latency="550 ns (guide, Benefits of QFX5110, for the line)" data-qsfp-plus-speeds="40 GbE; or four 10 GbE with a breakout cable" data-qsfp28-speeds="100 GbE or 40 GbE" data-system-modes="default, and non-oversubscribed (ports 0 to 23 only, 960 Gbps). In default mode a 100 GbE optic in a QSFP28 port disables ports 20 to 27" data-power-typical-w="132" data-power-max-w="200" data-power-envelope="unstated" data-power-dc-typical-w="132" data-power-dc-max-w="200" data-power-input-ac="90 to 264 VAC, 50 to 60 Hz, 3.6 A at 90 VAC (guide Table 14)" data-power-input-dc="rated -39 to -60 VDC, operating range -40 to -72 VDC, -8.2 A at 39 VDC (guide Table 19)" data-redundancy-note="two supplies, load-sharing and fully redundant; one may be removed and replaced while the switch runs" data-fans="five fan modules, hot-swappable; the switch runs 30 seconds without thermal shutdown while one is replaced" data-operating-temp="0 to 40 C (32 to 104 F) normal operation" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing; 5 to 93 percent short term" data-altitude="no performance degradation to 2000 m (6562 ft)" data-cpu="1.8 GHz quad-core Intel" data-memory="16 GB" data-storage="64 GB SSD" data-software="Junos OS" data-timing="RJ-45 grandmaster clock port (GM), 10 MHz output, 1 PPS output" data-virtual-chassis="up to 10 switches in a ring with QFX5110 or QFX5100 members; also a Virtual Chassis Fabric spine or leaf" data-optics-qsfp="40 GbE QSFP+, direct attach and active optical cables, breakout cables to SFP+" data-optics-qsfp28="100 GbE QSFP28, direct attach and active optical cables" data-oob="management port C0 (RJ-45, em0, with a second C0 SFP cage) and C1 (SFP, em1)" data-console="RJ-45 console port (CON)" data-usb="one USB port for image updates" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-port-0.state-activity, #led-port-0 .state-activity, #led-port-1.state-activity, #led-port-1 .state-activity, #led-port-2.state-activity, #led-port-2 .state-activity, #led-port-3.state-activity, #led-port-3 .state-activity, #led-port-4.state-activity, #led-port-4 .state-activity, #led-port-5.state-activity, #led-port-5 .state-activity, #led-port-6.state-activity, #led-port-6 .state-activity, #led-port-7.state-activity, #led-port-7 .state-activity, #led-port-8.state-activity, #led-port-8 .state-activity, #led-port-9.state-activity, #led-port-9 .state-activity, #led-port-10.state-activity, #led-port-10 .state-activity, #led-port-11.state-activity, #led-port-11 .state-activity, #led-port-12.state-activity, #led-port-12 .state-activity, #led-port-13.state-activity, #led-port-13 .state-activity, #led-port-14.state-activity, #led-port-14 .state-activity, #led-port-15.state-activity, #led-port-15 .state-activity, #led-port-16.state-activity, #led-port-16 .state-activity, #led-port-17.state-activity, #led-port-17 .state-activity, #led-port-18.state-activity, #led-port-18 .state-activity, #led-port-19.state-activity, #led-port-19 .state-activity, #led-port-20.state-activity, #led-port-20 .state-activity, #led-port-21.state-activity, #led-port-21 .state-activity, #led-port-22.state-activity, #led-port-22 .state-activity, #led-port-23.state-activity, #led-port-23 .state-activity, #led-port-24.state-activity, #led-port-24 .state-activity, #led-port-25.state-activity, #led-port-25 .state-activity, #led-port-26.state-activity, #led-port-26 .state-activity, #led-port-27.state-activity, #led-port-27 .state-activity, #led-port-28.state-activity, #led-port-28 .state-activity, #led-port-29.state-activity, #led-port-29 .state-activity, #led-port-30.state-activity, #led-port-30 .state-activity, #led-port-31.state-activity, #led-port-31 .state-activity { --led-color: #22c55e; }
+    #led-port-0.state-activity [data-class='led'], #led-port-0 .state-activity, #led-port-1.state-activity [data-class='led'], #led-port-1 .state-activity, #led-port-2.state-activity [data-class='led'], #led-port-2 .state-activity, #led-port-3.state-activity [data-class='led'], #led-port-3 .state-activity, #led-port-4.state-activity [data-class='led'], #led-port-4 .state-activity, #led-port-5.state-activity [data-class='led'], #led-port-5 .state-activity, #led-port-6.state-activity [data-class='led'], #led-port-6 .state-activity, #led-port-7.state-activity [data-class='led'], #led-port-7 .state-activity, #led-port-8.state-activity [data-class='led'], #led-port-8 .state-activity, #led-port-9.state-activity [data-class='led'], #led-port-9 .state-activity, #led-port-10.state-activity [data-class='led'], #led-port-10 .state-activity, #led-port-11.state-activity [data-class='led'], #led-port-11 .state-activity, #led-port-12.state-activity [data-class='led'], #led-port-12 .state-activity, #led-port-13.state-activity [data-class='led'], #led-port-13 .state-activity, #led-port-14.state-activity [data-class='led'], #led-port-14 .state-activity, #led-port-15.state-activity [data-class='led'], #led-port-15 .state-activity, #led-port-16.state-activity [data-class='led'], #led-port-16 .state-activity, #led-port-17.state-activity [data-class='led'], #led-port-17 .state-activity, #led-port-18.state-activity [data-class='led'], #led-port-18 .state-activity, #led-port-19.state-activity [data-class='led'], #led-port-19 .state-activity, #led-port-20.state-activity [data-class='led'], #led-port-20 .state-activity, #led-port-21.state-activity [data-class='led'], #led-port-21 .state-activity, #led-port-22.state-activity [data-class='led'], #led-port-22 .state-activity, #led-port-23.state-activity [data-class='led'], #led-port-23 .state-activity, #led-port-24.state-activity [data-class='led'], #led-port-24 .state-activity, #led-port-25.state-activity [data-class='led'], #led-port-25 .state-activity, #led-port-26.state-activity [data-class='led'], #led-port-26 .state-activity, #led-port-27.state-activity [data-class='led'], #led-port-27 .state-activity, #led-port-28.state-activity [data-class='led'], #led-port-28 .state-activity, #led-port-29.state-activity [data-class='led'], #led-port-29 .state-activity, #led-port-30.state-activity [data-class='led'], #led-port-30 .state-activity, #led-port-31.state-activity [data-class='led'], #led-port-31 .state-activity { animation: portrayal-blink 1s linear infinite; }
+    #led-port-0.state-beacon, #led-port-0 .state-beacon, #led-port-1.state-beacon, #led-port-1 .state-beacon, #led-port-2.state-beacon, #led-port-2 .state-beacon, #led-port-3.state-beacon, #led-port-3 .state-beacon, #led-port-4.state-beacon, #led-port-4 .state-beacon, #led-port-5.state-beacon, #led-port-5 .state-beacon, #led-port-6.state-beacon, #led-port-6 .state-beacon, #led-port-7.state-beacon, #led-port-7 .state-beacon, #led-port-8.state-beacon, #led-port-8 .state-beacon, #led-port-9.state-beacon, #led-port-9 .state-beacon, #led-port-10.state-beacon, #led-port-10 .state-beacon, #led-port-11.state-beacon, #led-port-11 .state-beacon, #led-port-12.state-beacon, #led-port-12 .state-beacon, #led-port-13.state-beacon, #led-port-13 .state-beacon, #led-port-14.state-beacon, #led-port-14 .state-beacon, #led-port-15.state-beacon, #led-port-15 .state-beacon, #led-port-16.state-beacon, #led-port-16 .state-beacon, #led-port-17.state-beacon, #led-port-17 .state-beacon, #led-port-18.state-beacon, #led-port-18 .state-beacon, #led-port-19.state-beacon, #led-port-19 .state-beacon, #led-port-20.state-beacon, #led-port-20 .state-beacon, #led-port-21.state-beacon, #led-port-21 .state-beacon, #led-port-22.state-beacon, #led-port-22 .state-beacon, #led-port-23.state-beacon, #led-port-23 .state-beacon, #led-port-24.state-beacon, #led-port-24 .state-beacon, #led-port-25.state-beacon, #led-port-25 .state-beacon, #led-port-26.state-beacon, #led-port-26 .state-beacon, #led-port-27.state-beacon, #led-port-27 .state-beacon, #led-port-28.state-beacon, #led-port-28 .state-beacon, #led-port-29.state-beacon, #led-port-29 .state-beacon, #led-port-30.state-beacon, #led-port-30 .state-beacon, #led-port-31.state-beacon, #led-port-31 .state-beacon { --led-color: #f59e0b; }
+    #led-port-0.state-beacon [data-class='led'], #led-port-0 .state-beacon, #led-port-1.state-beacon [data-class='led'], #led-port-1 .state-beacon, #led-port-2.state-beacon [data-class='led'], #led-port-2 .state-beacon, #led-port-3.state-beacon [data-class='led'], #led-port-3 .state-beacon, #led-port-4.state-beacon [data-class='led'], #led-port-4 .state-beacon, #led-port-5.state-beacon [data-class='led'], #led-port-5 .state-beacon, #led-port-6.state-beacon [data-class='led'], #led-port-6 .state-beacon, #led-port-7.state-beacon [data-class='led'], #led-port-7 .state-beacon, #led-port-8.state-beacon [data-class='led'], #led-port-8 .state-beacon, #led-port-9.state-beacon [data-class='led'], #led-port-9 .state-beacon, #led-port-10.state-beacon [data-class='led'], #led-port-10 .state-beacon, #led-port-11.state-beacon [data-class='led'], #led-port-11 .state-beacon, #led-port-12.state-beacon [data-class='led'], #led-port-12 .state-beacon, #led-port-13.state-beacon [data-class='led'], #led-port-13 .state-beacon, #led-port-14.state-beacon [data-class='led'], #led-port-14 .state-beacon, #led-port-15.state-beacon [data-class='led'], #led-port-15 .state-beacon, #led-port-16.state-beacon [data-class='led'], #led-port-16 .state-beacon, #led-port-17.state-beacon [data-class='led'], #led-port-17 .state-beacon, #led-port-18.state-beacon [data-class='led'], #led-port-18 .state-beacon, #led-port-19.state-beacon [data-class='led'], #led-port-19 .state-beacon, #led-port-20.state-beacon [data-class='led'], #led-port-20 .state-beacon, #led-port-21.state-beacon [data-class='led'], #led-port-21 .state-beacon, #led-port-22.state-beacon [data-class='led'], #led-port-22 .state-beacon, #led-port-23.state-beacon [data-class='led'], #led-port-23 .state-beacon, #led-port-24.state-beacon [data-class='led'], #led-port-24 .state-beacon, #led-port-25.state-beacon [data-class='led'], #led-port-25 .state-beacon, #led-port-26.state-beacon [data-class='led'], #led-port-26 .state-beacon, #led-port-27.state-beacon [data-class='led'], #led-port-27 .state-beacon, #led-port-28.state-beacon [data-class='led'], #led-port-28 .state-beacon, #led-port-29.state-beacon [data-class='led'], #led-port-29 .state-beacon, #led-port-30.state-beacon [data-class='led'], #led-port-30 .state-beacon, #led-port-31.state-beacon [data-class='led'], #led-port-31 .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    #led-port-0.state-link, #led-port-0 .state-link, #led-port-1.state-link, #led-port-1 .state-link, #led-port-2.state-link, #led-port-2 .state-link, #led-port-3.state-link, #led-port-3 .state-link, #led-port-4.state-link, #led-port-4 .state-link, #led-port-5.state-link, #led-port-5 .state-link, #led-port-6.state-link, #led-port-6 .state-link, #led-port-7.state-link, #led-port-7 .state-link, #led-port-8.state-link, #led-port-8 .state-link, #led-port-9.state-link, #led-port-9 .state-link, #led-port-10.state-link, #led-port-10 .state-link, #led-port-11.state-link, #led-port-11 .state-link, #led-port-12.state-link, #led-port-12 .state-link, #led-port-13.state-link, #led-port-13 .state-link, #led-port-14.state-link, #led-port-14 .state-link, #led-port-15.state-link, #led-port-15 .state-link, #led-port-16.state-link, #led-port-16 .state-link, #led-port-17.state-link, #led-port-17 .state-link, #led-port-18.state-link, #led-port-18 .state-link, #led-port-19.state-link, #led-port-19 .state-link, #led-port-20.state-link, #led-port-20 .state-link, #led-port-21.state-link, #led-port-21 .state-link, #led-port-22.state-link, #led-port-22 .state-link, #led-port-23.state-link, #led-port-23 .state-link, #led-port-24.state-link, #led-port-24 .state-link, #led-port-25.state-link, #led-port-25 .state-link, #led-port-26.state-link, #led-port-26 .state-link, #led-port-27.state-link, #led-port-27 .state-link, #led-port-28.state-link, #led-port-28 .state-link, #led-port-29.state-link, #led-port-29 .state-link, #led-port-30.state-link, #led-port-30 .state-link, #led-port-31.state-link, #led-port-31 .state-link { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper QFX5110-32Q","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/led-dot@1":"1.1.0","std/qsfp-ganged@1":"1.4.1","std/rj45@2":"2.1.0","std/sma@1":"1.1.0"},"source-sha256":"1966bdb10bb181c9228178ee04ca6f6728801e23cbf046c80bd33adb5537d491","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5110-32Q" data-sku="QFX5110-32Q-CHAS" data-part-number="" x="0" y="0" width="440.9" height="43.7" rx="1.2" fill="#767b82" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-vent-o0-0-s0_496614-0_410959" width="8.86" height="5.11" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.496614 0.410959)">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-vent-o0-0-s0_507901-0_919765" width="8.86" height="5.11" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.507901 0.919765)">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-top" data-kind="vent-field" data-aperture="air" x="9.2" y="1" width="419.8" height="4.4" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_496614-0_410959)" data-vent="1" />
+    <rect id="vent-bottom" data-kind="vent-field" data-aperture="air" x="10" y="40.4" width="421.5" height="3.1" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_496614-0_410959)" data-vent="1" />
+    <rect id="vent-gutter-1" data-kind="vent-field" data-aperture="air" x="148" y="7.9" width="9.4" height="27.6" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_507901-0_919765)" data-vent="1" />
+    <rect id="vent-gutter-2" data-kind="vent-field" data-aperture="air" x="239.7" y="7.9" width="9.4" height="27.6" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_507901-0_919765)" data-vent="1" />
+    <rect id="vent-gutter-3" data-kind="vent-field" data-aperture="air" x="331.5" y="7.9" width="9.4" height="27.6" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_507901-0_919765)" data-vent="1" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="68.7" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-0" data-path="cutout:port-0" data-class="cutout" />
+    <ellipse cx="71.8" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-0" data-path="cutout:led-port-0" data-class="cutout" />
+    <ellipse cx="75.9" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-0-lane-2" data-path="cutout:led-port-0-lane-2" data-class="cutout" />
+    <ellipse cx="80" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-0-lane-3" data-path="cutout:led-port-0-lane-3" data-class="cutout" />
+    <ellipse cx="84.1" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-0-lane-4" data-path="cutout:led-port-0-lane-4" data-class="cutout" />
+    <rect x="68.7" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" />
+    <ellipse cx="71.8" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-1" data-path="cutout:led-port-1" data-class="cutout" />
+    <ellipse cx="75.9" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-1-lane-2" data-path="cutout:led-port-1-lane-2" data-class="cutout" />
+    <ellipse cx="80" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-1-lane-3" data-path="cutout:led-port-1-lane-3" data-class="cutout" />
+    <ellipse cx="84.1" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-1-lane-4" data-path="cutout:led-port-1-lane-4" data-class="cutout" />
+    <rect x="87.7" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" />
+    <ellipse cx="90.8" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-2" data-path="cutout:led-port-2" data-class="cutout" />
+    <ellipse cx="94.9" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-2-lane-2" data-path="cutout:led-port-2-lane-2" data-class="cutout" />
+    <ellipse cx="99" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-2-lane-3" data-path="cutout:led-port-2-lane-3" data-class="cutout" />
+    <ellipse cx="103.1" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-2-lane-4" data-path="cutout:led-port-2-lane-4" data-class="cutout" />
+    <rect x="87.7" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" />
+    <ellipse cx="90.8" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-3" data-path="cutout:led-port-3" data-class="cutout" />
+    <ellipse cx="94.9" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-3-lane-2" data-path="cutout:led-port-3-lane-2" data-class="cutout" />
+    <ellipse cx="99" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-3-lane-3" data-path="cutout:led-port-3-lane-3" data-class="cutout" />
+    <ellipse cx="103.1" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-3-lane-4" data-path="cutout:led-port-3-lane-4" data-class="cutout" />
+    <rect x="106.7" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" />
+    <ellipse cx="109.8" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-4" data-path="cutout:led-port-4" data-class="cutout" />
+    <ellipse cx="113.9" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-4-lane-2" data-path="cutout:led-port-4-lane-2" data-class="cutout" />
+    <ellipse cx="118" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-4-lane-3" data-path="cutout:led-port-4-lane-3" data-class="cutout" />
+    <ellipse cx="122.1" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-4-lane-4" data-path="cutout:led-port-4-lane-4" data-class="cutout" />
+    <rect x="106.7" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" />
+    <ellipse cx="109.8" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-5" data-path="cutout:led-port-5" data-class="cutout" />
+    <ellipse cx="113.9" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-5-lane-2" data-path="cutout:led-port-5-lane-2" data-class="cutout" />
+    <ellipse cx="118" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-5-lane-3" data-path="cutout:led-port-5-lane-3" data-class="cutout" />
+    <ellipse cx="122.1" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-5-lane-4" data-path="cutout:led-port-5-lane-4" data-class="cutout" />
+    <rect x="125.7" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" />
+    <ellipse cx="128.8" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-6" data-path="cutout:led-port-6" data-class="cutout" />
+    <ellipse cx="132.9" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-6-lane-2" data-path="cutout:led-port-6-lane-2" data-class="cutout" />
+    <ellipse cx="137" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-6-lane-3" data-path="cutout:led-port-6-lane-3" data-class="cutout" />
+    <ellipse cx="141.1" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-6-lane-4" data-path="cutout:led-port-6-lane-4" data-class="cutout" />
+    <rect x="125.7" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" />
+    <ellipse cx="128.8" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-7" data-path="cutout:led-port-7" data-class="cutout" />
+    <ellipse cx="132.9" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-7-lane-2" data-path="cutout:led-port-7-lane-2" data-class="cutout" />
+    <ellipse cx="137" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-7-lane-3" data-path="cutout:led-port-7-lane-3" data-class="cutout" />
+    <ellipse cx="141.1" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-7-lane-4" data-path="cutout:led-port-7-lane-4" data-class="cutout" />
+    <rect x="160.46" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" />
+    <ellipse cx="163.56" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-8" data-path="cutout:led-port-8" data-class="cutout" />
+    <ellipse cx="167.66" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-8-lane-2" data-path="cutout:led-port-8-lane-2" data-class="cutout" />
+    <ellipse cx="171.76" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-8-lane-3" data-path="cutout:led-port-8-lane-3" data-class="cutout" />
+    <ellipse cx="175.86" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-8-lane-4" data-path="cutout:led-port-8-lane-4" data-class="cutout" />
+    <rect x="160.46" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" />
+    <ellipse cx="163.56" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-9" data-path="cutout:led-port-9" data-class="cutout" />
+    <ellipse cx="167.66" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-9-lane-2" data-path="cutout:led-port-9-lane-2" data-class="cutout" />
+    <ellipse cx="171.76" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-9-lane-3" data-path="cutout:led-port-9-lane-3" data-class="cutout" />
+    <ellipse cx="175.86" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-9-lane-4" data-path="cutout:led-port-9-lane-4" data-class="cutout" />
+    <rect x="179.46" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" />
+    <ellipse cx="182.56" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-10" data-path="cutout:led-port-10" data-class="cutout" />
+    <ellipse cx="186.66" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-10-lane-2" data-path="cutout:led-port-10-lane-2" data-class="cutout" />
+    <ellipse cx="190.76" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-10-lane-3" data-path="cutout:led-port-10-lane-3" data-class="cutout" />
+    <ellipse cx="194.86" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-10-lane-4" data-path="cutout:led-port-10-lane-4" data-class="cutout" />
+    <rect x="179.46" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" />
+    <ellipse cx="182.56" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-11" data-path="cutout:led-port-11" data-class="cutout" />
+    <ellipse cx="186.66" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-11-lane-2" data-path="cutout:led-port-11-lane-2" data-class="cutout" />
+    <ellipse cx="190.76" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-11-lane-3" data-path="cutout:led-port-11-lane-3" data-class="cutout" />
+    <ellipse cx="194.86" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-11-lane-4" data-path="cutout:led-port-11-lane-4" data-class="cutout" />
+    <rect x="198.46" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" />
+    <ellipse cx="201.56" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-12" data-path="cutout:led-port-12" data-class="cutout" />
+    <ellipse cx="205.66" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-12-lane-2" data-path="cutout:led-port-12-lane-2" data-class="cutout" />
+    <ellipse cx="209.76" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-12-lane-3" data-path="cutout:led-port-12-lane-3" data-class="cutout" />
+    <ellipse cx="213.86" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-12-lane-4" data-path="cutout:led-port-12-lane-4" data-class="cutout" />
+    <rect x="198.46" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" />
+    <ellipse cx="201.56" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-13" data-path="cutout:led-port-13" data-class="cutout" />
+    <ellipse cx="205.66" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-13-lane-2" data-path="cutout:led-port-13-lane-2" data-class="cutout" />
+    <ellipse cx="209.76" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-13-lane-3" data-path="cutout:led-port-13-lane-3" data-class="cutout" />
+    <ellipse cx="213.86" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-13-lane-4" data-path="cutout:led-port-13-lane-4" data-class="cutout" />
+    <rect x="217.46" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" />
+    <ellipse cx="220.56" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-14" data-path="cutout:led-port-14" data-class="cutout" />
+    <ellipse cx="224.66" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-14-lane-2" data-path="cutout:led-port-14-lane-2" data-class="cutout" />
+    <ellipse cx="228.76" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-14-lane-3" data-path="cutout:led-port-14-lane-3" data-class="cutout" />
+    <ellipse cx="232.86" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-14-lane-4" data-path="cutout:led-port-14-lane-4" data-class="cutout" />
+    <rect x="217.46" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" />
+    <ellipse cx="220.56" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-15" data-path="cutout:led-port-15" data-class="cutout" />
+    <ellipse cx="224.66" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-15-lane-2" data-path="cutout:led-port-15-lane-2" data-class="cutout" />
+    <ellipse cx="228.76" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-15-lane-3" data-path="cutout:led-port-15-lane-3" data-class="cutout" />
+    <ellipse cx="232.86" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-15-lane-4" data-path="cutout:led-port-15-lane-4" data-class="cutout" />
+    <rect x="252.22" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" />
+    <ellipse cx="255.32" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-16" data-path="cutout:led-port-16" data-class="cutout" />
+    <ellipse cx="259.42" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-16-lane-2" data-path="cutout:led-port-16-lane-2" data-class="cutout" />
+    <ellipse cx="263.52" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-16-lane-3" data-path="cutout:led-port-16-lane-3" data-class="cutout" />
+    <ellipse cx="267.62" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-16-lane-4" data-path="cutout:led-port-16-lane-4" data-class="cutout" />
+    <rect x="252.22" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" />
+    <ellipse cx="255.32" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-17" data-path="cutout:led-port-17" data-class="cutout" />
+    <ellipse cx="259.42" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-17-lane-2" data-path="cutout:led-port-17-lane-2" data-class="cutout" />
+    <ellipse cx="263.52" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-17-lane-3" data-path="cutout:led-port-17-lane-3" data-class="cutout" />
+    <ellipse cx="267.62" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-17-lane-4" data-path="cutout:led-port-17-lane-4" data-class="cutout" />
+    <rect x="271.22" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" />
+    <ellipse cx="274.32" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-18" data-path="cutout:led-port-18" data-class="cutout" />
+    <ellipse cx="278.42" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-18-lane-2" data-path="cutout:led-port-18-lane-2" data-class="cutout" />
+    <ellipse cx="282.52" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-18-lane-3" data-path="cutout:led-port-18-lane-3" data-class="cutout" />
+    <ellipse cx="286.62" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-18-lane-4" data-path="cutout:led-port-18-lane-4" data-class="cutout" />
+    <rect x="271.22" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" />
+    <ellipse cx="274.32" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-19" data-path="cutout:led-port-19" data-class="cutout" />
+    <ellipse cx="278.42" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-19-lane-2" data-path="cutout:led-port-19-lane-2" data-class="cutout" />
+    <ellipse cx="282.52" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-19-lane-3" data-path="cutout:led-port-19-lane-3" data-class="cutout" />
+    <ellipse cx="286.62" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-19-lane-4" data-path="cutout:led-port-19-lane-4" data-class="cutout" />
+    <rect x="290.22" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" />
+    <ellipse cx="293.32" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-20" data-path="cutout:led-port-20" data-class="cutout" />
+    <ellipse cx="297.42" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-20-lane-2" data-path="cutout:led-port-20-lane-2" data-class="cutout" />
+    <ellipse cx="301.52" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-20-lane-3" data-path="cutout:led-port-20-lane-3" data-class="cutout" />
+    <ellipse cx="305.62" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-20-lane-4" data-path="cutout:led-port-20-lane-4" data-class="cutout" />
+    <rect x="290.22" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-21" data-path="cutout:port-21" data-class="cutout" />
+    <ellipse cx="293.32" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-21" data-path="cutout:led-port-21" data-class="cutout" />
+    <ellipse cx="297.42" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-21-lane-2" data-path="cutout:led-port-21-lane-2" data-class="cutout" />
+    <ellipse cx="301.52" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-21-lane-3" data-path="cutout:led-port-21-lane-3" data-class="cutout" />
+    <ellipse cx="305.62" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-21-lane-4" data-path="cutout:led-port-21-lane-4" data-class="cutout" />
+    <rect x="309.22" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-22" data-path="cutout:port-22" data-class="cutout" />
+    <ellipse cx="312.32" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-22" data-path="cutout:led-port-22" data-class="cutout" />
+    <ellipse cx="316.42" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-22-lane-2" data-path="cutout:led-port-22-lane-2" data-class="cutout" />
+    <ellipse cx="320.52" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-22-lane-3" data-path="cutout:led-port-22-lane-3" data-class="cutout" />
+    <ellipse cx="324.62" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-22-lane-4" data-path="cutout:led-port-22-lane-4" data-class="cutout" />
+    <rect x="309.22" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-23" data-path="cutout:port-23" data-class="cutout" />
+    <ellipse cx="312.32" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-23" data-path="cutout:led-port-23" data-class="cutout" />
+    <ellipse cx="316.42" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-23-lane-2" data-path="cutout:led-port-23-lane-2" data-class="cutout" />
+    <ellipse cx="320.52" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-23-lane-3" data-path="cutout:led-port-23-lane-3" data-class="cutout" />
+    <ellipse cx="324.62" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-23-lane-4" data-path="cutout:led-port-23-lane-4" data-class="cutout" />
+    <rect x="343.98" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-24" data-path="cutout:port-24" data-class="cutout" />
+    <ellipse cx="347.08" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-24" data-path="cutout:led-port-24" data-class="cutout" />
+    <ellipse cx="351.18" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-24-lane-2" data-path="cutout:led-port-24-lane-2" data-class="cutout" />
+    <ellipse cx="355.28" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-24-lane-3" data-path="cutout:led-port-24-lane-3" data-class="cutout" />
+    <ellipse cx="359.38" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-24-lane-4" data-path="cutout:led-port-24-lane-4" data-class="cutout" />
+    <rect x="343.98" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-25" data-path="cutout:port-25" data-class="cutout" />
+    <ellipse cx="347.08" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-25" data-path="cutout:led-port-25" data-class="cutout" />
+    <ellipse cx="351.18" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-25-lane-2" data-path="cutout:led-port-25-lane-2" data-class="cutout" />
+    <ellipse cx="355.28" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-25-lane-3" data-path="cutout:led-port-25-lane-3" data-class="cutout" />
+    <ellipse cx="359.38" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-25-lane-4" data-path="cutout:led-port-25-lane-4" data-class="cutout" />
+    <rect x="362.98" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-26" data-path="cutout:port-26" data-class="cutout" />
+    <ellipse cx="366.08" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-26" data-path="cutout:led-port-26" data-class="cutout" />
+    <ellipse cx="370.18" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-26-lane-2" data-path="cutout:led-port-26-lane-2" data-class="cutout" />
+    <ellipse cx="374.28" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-26-lane-3" data-path="cutout:led-port-26-lane-3" data-class="cutout" />
+    <ellipse cx="378.38" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-26-lane-4" data-path="cutout:led-port-26-lane-4" data-class="cutout" />
+    <rect x="362.98" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-27" data-path="cutout:port-27" data-class="cutout" />
+    <ellipse cx="366.08" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-27" data-path="cutout:led-port-27" data-class="cutout" />
+    <ellipse cx="370.18" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-27-lane-2" data-path="cutout:led-port-27-lane-2" data-class="cutout" />
+    <ellipse cx="374.28" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-27-lane-3" data-path="cutout:led-port-27-lane-3" data-class="cutout" />
+    <ellipse cx="378.38" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-27-lane-4" data-path="cutout:led-port-27-lane-4" data-class="cutout" />
+    <rect x="381.98" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-28" data-path="cutout:port-28" data-class="cutout" />
+    <ellipse cx="385.08" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-28" data-path="cutout:led-port-28" data-class="cutout" />
+    <ellipse cx="389.18" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-28-lane-2" data-path="cutout:led-port-28-lane-2" data-class="cutout" />
+    <ellipse cx="393.28" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-28-lane-3" data-path="cutout:led-port-28-lane-3" data-class="cutout" />
+    <ellipse cx="397.38" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-28-lane-4" data-path="cutout:led-port-28-lane-4" data-class="cutout" />
+    <rect x="381.98" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-29" data-path="cutout:port-29" data-class="cutout" />
+    <ellipse cx="385.08" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-29" data-path="cutout:led-port-29" data-class="cutout" />
+    <ellipse cx="389.18" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-29-lane-2" data-path="cutout:led-port-29-lane-2" data-class="cutout" />
+    <ellipse cx="393.28" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-29-lane-3" data-path="cutout:led-port-29-lane-3" data-class="cutout" />
+    <ellipse cx="397.38" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-29-lane-4" data-path="cutout:led-port-29-lane-4" data-class="cutout" />
+    <rect x="400.98" y="10.5" width="18.5" height="9.58" fill="#101214" id="cutout--port-30" data-path="cutout:port-30" data-class="cutout" />
+    <ellipse cx="404.08" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-30" data-path="cutout:led-port-30" data-class="cutout" />
+    <ellipse cx="408.18" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-30-lane-2" data-path="cutout:led-port-30-lane-2" data-class="cutout" />
+    <ellipse cx="412.28" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-30-lane-3" data-path="cutout:led-port-30-lane-3" data-class="cutout" />
+    <ellipse cx="416.38" cy="7.5" rx="1" ry="1" fill="#101214" id="cutout--led-port-30-lane-4" data-path="cutout:led-port-30-lane-4" data-class="cutout" />
+    <rect x="400.98" y="23.7" width="18.5" height="9.58" fill="#101214" id="cutout--port-31" data-path="cutout:port-31" data-class="cutout" />
+    <ellipse cx="404.08" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-31" data-path="cutout:led-port-31" data-class="cutout" />
+    <ellipse cx="408.18" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-31-lane-2" data-path="cutout:led-port-31-lane-2" data-class="cutout" />
+    <ellipse cx="412.28" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-31-lane-3" data-path="cutout:led-port-31-lane-3" data-class="cutout" />
+    <ellipse cx="416.38" cy="37.3" rx="1" ry="1" fill="#101214" id="cutout--led-port-31-lane-4" data-path="cutout:led-port-31-lane-4" data-class="cutout" />
+    <rect x="9.5" y="7.8" width="15.8" height="13.2" fill="#101214" id="cutout--gm" data-path="cutout:gm" data-class="cutout" />
+    <ellipse cx="34.675" cy="16.675" rx="3.175" ry="3.175" fill="#101214" id="cutout--out-10m" data-path="cutout:out-10m" data-class="cutout" />
+    <ellipse cx="49.475" cy="16.675" rx="3.175" ry="3.175" fill="#101214" id="cutout--out-pps" data-path="cutout:out-pps" data-class="cutout" />
+    <ellipse cx="7.2" cy="38.8" rx="3" ry="3" fill="#101214" id="cutout--esd-front-jack" data-path="cutout:esd-front-jack" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="77.95" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-0">0</text>
+    <text x="77.95" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1</text>
+    <text x="96.95" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2</text>
+    <text x="96.95" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3</text>
+    <text x="115.95" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4</text>
+    <text x="115.95" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5</text>
+    <text x="134.95" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6</text>
+    <text x="134.95" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7</text>
+    <text x="169.71" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="169.71" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="188.71" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="188.71" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="207.71" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12</text>
+    <text x="207.71" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13</text>
+    <text x="226.71" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14</text>
+    <text x="226.71" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15</text>
+    <text x="261.47" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16</text>
+    <text x="261.47" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17</text>
+    <text x="280.47" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18</text>
+    <text x="280.47" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19</text>
+    <text x="299.47" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20</text>
+    <text x="299.47" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21">21</text>
+    <text x="318.47" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-22">22</text>
+    <text x="318.47" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23">23</text>
+    <text x="353.23" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-24">24</text>
+    <text x="353.23" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25">25</text>
+    <text x="372.23" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-26">26</text>
+    <text x="372.23" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27">27</text>
+    <text x="391.23" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28">28</text>
+    <text x="391.23" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29">29</text>
+    <text x="410.23" y="9.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-30">30</text>
+    <text x="410.23" y="35.7" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e4e6e9" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-31">31</text>
+    <text x="17.4" y="23.9" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" id="silk-gm" data-path="silk:silk-gm" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="gm">GM</text>
+    <text x="34.7" y="12.2" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" id="silk-10m" data-path="silk:silk-10m" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="out-10m">10M OUT</text>
+    <text x="49.5" y="12.2" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#e4e6e9" id="silk-pps" data-path="silk:silk-pps" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="out-pps">PPS OUT</text>
+    <path d="M -1.6 1.4 L 0 -1.4 L 1.6 1.4 Z M -2.4 2.6 H -1.0 M 1.0 2.6 H 2.4" fill="none" stroke="#eef0f2" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(7.2 31.6)" id="silk-esd-mark" data-path="silk:silk-esd-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="esd-front-jack" />
+    <path d="M 0 1.2 L 0 0 L 6.7 0" fill="none" stroke="#e4e6e9" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(382.3 9.1)" id="silk-100g-top-left" data-path="silk:silk-100g-top-left" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28" />
+    <path d="M 0 0 L 14.5 0" fill="none" stroke="#e4e6e9" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(393.5 9.1)" id="silk-100g-top-mid" data-path="silk:silk-100g-top-mid" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28 port-30" />
+    <path d="M 0 0 L 9.6 0" fill="none" stroke="#e4e6e9" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(412.5 9.1)" id="silk-100g-top-right" data-path="silk:silk-100g-top-right" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-30" />
+    <path d="M 0 0 L 0 25.9" fill="none" stroke="#e4e6e9" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(422.1 9.1)" id="silk-100g-side" data-path="silk:silk-100g-side" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-30 port-31" />
+    <path d="M 0 0 L 9.6 0" fill="none" stroke="#e4e6e9" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(412.5 35)" id="silk-100g-bottom-right" data-path="silk:silk-100g-bottom-right" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-31" />
+    <path d="M 0 0 L 14.5 0" fill="none" stroke="#e4e6e9" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(393.5 35)" id="silk-100g-bottom-mid" data-path="silk:silk-100g-bottom-mid" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29 port-31" />
+    <path d="M 0 0 L 0 1.2 L 6.7 1.2" fill="none" stroke="#e4e6e9" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(382.3 33.8)" id="silk-100g-bottom-left" data-path="silk:silk-100g-bottom-left" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29" />
+    <text x="423.2" y="22.45" font-family="sans-serif" font-size="1.7" text-anchor="start" fill="#e4e6e9" id="silk-100g" data-path="silk:silk-100g" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28 port-29 port-30 port-31">100G</text>
+  </g>
+  <g id="port-0" data-path="port-0" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="0" transform="translate(68.7,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-0</title>
+    <rect id="port-0--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-0/opening" data-class="cutout" />
+    <rect id="port-0--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-0--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-0--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="1" transform="translate(68.7,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <rect id="port-1--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-1--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-1--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="2" transform="translate(87.7,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-2--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="3" transform="translate(87.7,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-3--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="4" transform="translate(106.7,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-4--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="5" transform="translate(106.7,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-5--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="6" transform="translate(125.7,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-6--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="7" transform="translate(125.7,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-7--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="8" transform="translate(160.46,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-8--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="9" transform="translate(160.46,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-9--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="10" transform="translate(179.46,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-10--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="11" transform="translate(179.46,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-11--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="12" transform="translate(198.46,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-12--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="13" transform="translate(198.46,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-13--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="14" transform="translate(217.46,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-14--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="15" transform="translate(217.46,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-15--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="16" transform="translate(252.22,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-16--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="17" transform="translate(252.22,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-17--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="18" transform="translate(271.22,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-18--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="19" transform="translate(271.22,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-19--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="20" transform="translate(290.22,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-20--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="21" transform="translate(290.22,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-21</title>
+    <rect id="port-21--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-21/opening" data-class="cutout" />
+    <rect id="port-21--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-21--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-21--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="22" transform="translate(309.22,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-22</title>
+    <rect id="port-22--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-22/opening" data-class="cutout" />
+    <rect id="port-22--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-22--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-22--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="23" transform="translate(309.22,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-23</title>
+    <rect id="port-23--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-23/opening" data-class="cutout" />
+    <rect id="port-23--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-23--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-23--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="24" transform="translate(343.98,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-24</title>
+    <rect id="port-24--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-24/opening" data-class="cutout" />
+    <rect id="port-24--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-24--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-24--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="25" transform="translate(343.98,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-25</title>
+    <rect id="port-25--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-25/opening" data-class="cutout" />
+    <rect id="port-25--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-25--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-25--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="26" transform="translate(362.98,10.5)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-26</title>
+    <rect id="port-26--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-26/opening" data-class="cutout" />
+    <rect id="port-26--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-26--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-26--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="40g" data-rel-pos="27" transform="translate(362.98,23.7) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic" data-description="Ports 0 to 27, the even ports on the upper row. Each runs at 40 GbE, or as four 10 GbE ports with a breakout cable.">
+    <title>port-27</title>
+    <rect id="port-27--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-27/opening" data-class="cutout" />
+    <rect id="port-27--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-27--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-27--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="led-port-0" data-path="led-port-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(70.8,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-0">
+    <title>led-port-0</title>
+    <circle id="led-port-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-0/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-0-lane-2" data-path="led-port-0-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(74.9,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-0">
+    <title>led-port-0-lane-2</title>
+    <circle id="led-port-0-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-0-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-0-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-0-lane-3" data-path="led-port-0-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(79.0,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-0">
+    <title>led-port-0-lane-3</title>
+    <circle id="led-port-0-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-0-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-0-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-0-lane-4" data-path="led-port-0-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(83.1,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-0">
+    <title>led-port-0-lane-4</title>
+    <circle id="led-port-0-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-0-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-0-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-1" data-path="led-port-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(70.8,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-1">
+    <title>led-port-1</title>
+    <circle id="led-port-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-1/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-1-lane-2" data-path="led-port-1-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(74.9,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-1">
+    <title>led-port-1-lane-2</title>
+    <circle id="led-port-1-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-1-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-1-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-1-lane-3" data-path="led-port-1-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(79.0,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-1">
+    <title>led-port-1-lane-3</title>
+    <circle id="led-port-1-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-1-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-1-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-1-lane-4" data-path="led-port-1-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(83.1,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-1">
+    <title>led-port-1-lane-4</title>
+    <circle id="led-port-1-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-1-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-1-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-2" data-path="led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(89.8,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-2">
+    <title>led-port-2</title>
+    <circle id="led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-2/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-2-lane-2" data-path="led-port-2-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(93.9,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-2">
+    <title>led-port-2-lane-2</title>
+    <circle id="led-port-2-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-2-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-2-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-2-lane-3" data-path="led-port-2-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(98.0,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-2">
+    <title>led-port-2-lane-3</title>
+    <circle id="led-port-2-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-2-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-2-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-2-lane-4" data-path="led-port-2-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="8" transform="translate(102.1,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-2">
+    <title>led-port-2-lane-4</title>
+    <circle id="led-port-2-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-2-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-2-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-3" data-path="led-port-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(89.8,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-3">
+    <title>led-port-3</title>
+    <circle id="led-port-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-3/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-3-lane-2" data-path="led-port-3-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="9" transform="translate(93.9,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-3">
+    <title>led-port-3-lane-2</title>
+    <circle id="led-port-3-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-3-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-3-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-3-lane-3" data-path="led-port-3-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="10" transform="translate(98.0,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-3">
+    <title>led-port-3-lane-3</title>
+    <circle id="led-port-3-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-3-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-3-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-3-lane-4" data-path="led-port-3-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="11" transform="translate(102.1,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-3">
+    <title>led-port-3-lane-4</title>
+    <circle id="led-port-3-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-3-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-3-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-4" data-path="led-port-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(108.8,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-4">
+    <title>led-port-4</title>
+    <circle id="led-port-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-4/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-4-lane-2" data-path="led-port-4-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="12" transform="translate(112.9,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-4">
+    <title>led-port-4-lane-2</title>
+    <circle id="led-port-4-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-4-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-4-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-4-lane-3" data-path="led-port-4-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="13" transform="translate(117.0,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-4">
+    <title>led-port-4-lane-3</title>
+    <circle id="led-port-4-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-4-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-4-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-4-lane-4" data-path="led-port-4-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="14" transform="translate(121.1,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-4">
+    <title>led-port-4-lane-4</title>
+    <circle id="led-port-4-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-4-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-4-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-5" data-path="led-port-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(108.8,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-5">
+    <title>led-port-5</title>
+    <circle id="led-port-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-5/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-5-lane-2" data-path="led-port-5-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="15" transform="translate(112.9,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-5">
+    <title>led-port-5-lane-2</title>
+    <circle id="led-port-5-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-5-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-5-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-5-lane-3" data-path="led-port-5-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="16" transform="translate(117.0,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-5">
+    <title>led-port-5-lane-3</title>
+    <circle id="led-port-5-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-5-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-5-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-5-lane-4" data-path="led-port-5-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="17" transform="translate(121.1,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-5">
+    <title>led-port-5-lane-4</title>
+    <circle id="led-port-5-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-5-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-5-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-6" data-path="led-port-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(127.8,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-6">
+    <title>led-port-6</title>
+    <circle id="led-port-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-6/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-6-lane-2" data-path="led-port-6-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="18" transform="translate(131.9,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-6">
+    <title>led-port-6-lane-2</title>
+    <circle id="led-port-6-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-6-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-6-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-6-lane-3" data-path="led-port-6-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="19" transform="translate(136.0,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-6">
+    <title>led-port-6-lane-3</title>
+    <circle id="led-port-6-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-6-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-6-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-6-lane-4" data-path="led-port-6-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="20" transform="translate(140.1,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-6">
+    <title>led-port-6-lane-4</title>
+    <circle id="led-port-6-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-6-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-6-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-7" data-path="led-port-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(127.8,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-7">
+    <title>led-port-7</title>
+    <circle id="led-port-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-7/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-7-lane-2" data-path="led-port-7-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="21" transform="translate(131.9,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-7">
+    <title>led-port-7-lane-2</title>
+    <circle id="led-port-7-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-7-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-7-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-7-lane-3" data-path="led-port-7-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="22" transform="translate(136.0,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-7">
+    <title>led-port-7-lane-3</title>
+    <circle id="led-port-7-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-7-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-7-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-7-lane-4" data-path="led-port-7-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="23" transform="translate(140.1,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-7">
+    <title>led-port-7-lane-4</title>
+    <circle id="led-port-7-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-7-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-7-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-8" data-path="led-port-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="8" transform="translate(162.56,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-8">
+    <title>led-port-8</title>
+    <circle id="led-port-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-8/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-8-lane-2" data-path="led-port-8-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="24" transform="translate(166.66,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-8">
+    <title>led-port-8-lane-2</title>
+    <circle id="led-port-8-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-8-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-8-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-8-lane-3" data-path="led-port-8-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="25" transform="translate(170.76,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-8">
+    <title>led-port-8-lane-3</title>
+    <circle id="led-port-8-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-8-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-8-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-8-lane-4" data-path="led-port-8-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="26" transform="translate(174.86,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-8">
+    <title>led-port-8-lane-4</title>
+    <circle id="led-port-8-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-8-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-8-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-9" data-path="led-port-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="9" transform="translate(162.56,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-9">
+    <title>led-port-9</title>
+    <circle id="led-port-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-9/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-9-lane-2" data-path="led-port-9-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="27" transform="translate(166.66,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-9">
+    <title>led-port-9-lane-2</title>
+    <circle id="led-port-9-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-9-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-9-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-9-lane-3" data-path="led-port-9-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="28" transform="translate(170.76,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-9">
+    <title>led-port-9-lane-3</title>
+    <circle id="led-port-9-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-9-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-9-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-9-lane-4" data-path="led-port-9-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="29" transform="translate(174.86,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-9">
+    <title>led-port-9-lane-4</title>
+    <circle id="led-port-9-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-9-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-9-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-10" data-path="led-port-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="10" transform="translate(181.56,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-10">
+    <title>led-port-10</title>
+    <circle id="led-port-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-10/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-10-lane-2" data-path="led-port-10-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="30" transform="translate(185.66,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-10">
+    <title>led-port-10-lane-2</title>
+    <circle id="led-port-10-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-10-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-10-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-10-lane-3" data-path="led-port-10-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="31" transform="translate(189.76,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-10">
+    <title>led-port-10-lane-3</title>
+    <circle id="led-port-10-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-10-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-10-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-10-lane-4" data-path="led-port-10-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="32" transform="translate(193.86,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-10">
+    <title>led-port-10-lane-4</title>
+    <circle id="led-port-10-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-10-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-10-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-11" data-path="led-port-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="11" transform="translate(181.56,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-11">
+    <title>led-port-11</title>
+    <circle id="led-port-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-11/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-11-lane-2" data-path="led-port-11-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="33" transform="translate(185.66,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-11">
+    <title>led-port-11-lane-2</title>
+    <circle id="led-port-11-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-11-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-11-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-11-lane-3" data-path="led-port-11-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="34" transform="translate(189.76,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-11">
+    <title>led-port-11-lane-3</title>
+    <circle id="led-port-11-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-11-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-11-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-11-lane-4" data-path="led-port-11-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="35" transform="translate(193.86,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-11">
+    <title>led-port-11-lane-4</title>
+    <circle id="led-port-11-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-11-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-11-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-12" data-path="led-port-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="12" transform="translate(200.56,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-12">
+    <title>led-port-12</title>
+    <circle id="led-port-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-12/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-12-lane-2" data-path="led-port-12-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="36" transform="translate(204.66,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-12">
+    <title>led-port-12-lane-2</title>
+    <circle id="led-port-12-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-12-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-12-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-12-lane-3" data-path="led-port-12-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="37" transform="translate(208.76,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-12">
+    <title>led-port-12-lane-3</title>
+    <circle id="led-port-12-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-12-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-12-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-12-lane-4" data-path="led-port-12-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="38" transform="translate(212.86,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-12">
+    <title>led-port-12-lane-4</title>
+    <circle id="led-port-12-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-12-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-12-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-13" data-path="led-port-13" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="13" transform="translate(200.56,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-13">
+    <title>led-port-13</title>
+    <circle id="led-port-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-13/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-13-lane-2" data-path="led-port-13-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="39" transform="translate(204.66,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-13">
+    <title>led-port-13-lane-2</title>
+    <circle id="led-port-13-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-13-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-13-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-13-lane-3" data-path="led-port-13-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="40" transform="translate(208.76,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-13">
+    <title>led-port-13-lane-3</title>
+    <circle id="led-port-13-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-13-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-13-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-13-lane-4" data-path="led-port-13-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="41" transform="translate(212.86,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-13">
+    <title>led-port-13-lane-4</title>
+    <circle id="led-port-13-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-13-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-13-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-14" data-path="led-port-14" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="14" transform="translate(219.56,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-14">
+    <title>led-port-14</title>
+    <circle id="led-port-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-14/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-14-lane-2" data-path="led-port-14-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="42" transform="translate(223.66,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-14">
+    <title>led-port-14-lane-2</title>
+    <circle id="led-port-14-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-14-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-14-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-14-lane-3" data-path="led-port-14-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="43" transform="translate(227.76,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-14">
+    <title>led-port-14-lane-3</title>
+    <circle id="led-port-14-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-14-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-14-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-14-lane-4" data-path="led-port-14-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="44" transform="translate(231.86,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-14">
+    <title>led-port-14-lane-4</title>
+    <circle id="led-port-14-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-14-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-14-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-15" data-path="led-port-15" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="15" transform="translate(219.56,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-15">
+    <title>led-port-15</title>
+    <circle id="led-port-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-15/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-15-lane-2" data-path="led-port-15-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="45" transform="translate(223.66,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-15">
+    <title>led-port-15-lane-2</title>
+    <circle id="led-port-15-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-15-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-15-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-15-lane-3" data-path="led-port-15-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="46" transform="translate(227.76,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-15">
+    <title>led-port-15-lane-3</title>
+    <circle id="led-port-15-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-15-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-15-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-15-lane-4" data-path="led-port-15-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="47" transform="translate(231.86,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-15">
+    <title>led-port-15-lane-4</title>
+    <circle id="led-port-15-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-15-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-15-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-16" data-path="led-port-16" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="16" transform="translate(254.32,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-16">
+    <title>led-port-16</title>
+    <circle id="led-port-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-16/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-16-lane-2" data-path="led-port-16-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="48" transform="translate(258.42,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-16">
+    <title>led-port-16-lane-2</title>
+    <circle id="led-port-16-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-16-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-16-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-16-lane-3" data-path="led-port-16-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="49" transform="translate(262.52,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-16">
+    <title>led-port-16-lane-3</title>
+    <circle id="led-port-16-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-16-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-16-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-16-lane-4" data-path="led-port-16-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="50" transform="translate(266.62,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-16">
+    <title>led-port-16-lane-4</title>
+    <circle id="led-port-16-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-16-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-16-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-17" data-path="led-port-17" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="17" transform="translate(254.32,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-17">
+    <title>led-port-17</title>
+    <circle id="led-port-17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-17/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-17-lane-2" data-path="led-port-17-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="51" transform="translate(258.42,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-17">
+    <title>led-port-17-lane-2</title>
+    <circle id="led-port-17-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-17-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-17-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-17-lane-3" data-path="led-port-17-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="52" transform="translate(262.52,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-17">
+    <title>led-port-17-lane-3</title>
+    <circle id="led-port-17-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-17-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-17-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-17-lane-4" data-path="led-port-17-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="53" transform="translate(266.62,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-17">
+    <title>led-port-17-lane-4</title>
+    <circle id="led-port-17-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-17-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-17-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-18" data-path="led-port-18" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="18" transform="translate(273.32,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-18">
+    <title>led-port-18</title>
+    <circle id="led-port-18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-18/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-18-lane-2" data-path="led-port-18-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="54" transform="translate(277.42,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-18">
+    <title>led-port-18-lane-2</title>
+    <circle id="led-port-18-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-18-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-18-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-18-lane-3" data-path="led-port-18-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="55" transform="translate(281.52,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-18">
+    <title>led-port-18-lane-3</title>
+    <circle id="led-port-18-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-18-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-18-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-18-lane-4" data-path="led-port-18-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="56" transform="translate(285.62,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-18">
+    <title>led-port-18-lane-4</title>
+    <circle id="led-port-18-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-18-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-18-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-19" data-path="led-port-19" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="19" transform="translate(273.32,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-19">
+    <title>led-port-19</title>
+    <circle id="led-port-19--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-19--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-19/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-19-lane-2" data-path="led-port-19-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="57" transform="translate(277.42,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-19">
+    <title>led-port-19-lane-2</title>
+    <circle id="led-port-19-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-19-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-19-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-19-lane-3" data-path="led-port-19-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="58" transform="translate(281.52,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-19">
+    <title>led-port-19-lane-3</title>
+    <circle id="led-port-19-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-19-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-19-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-19-lane-4" data-path="led-port-19-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="59" transform="translate(285.62,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-19">
+    <title>led-port-19-lane-4</title>
+    <circle id="led-port-19-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-19-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-19-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-20" data-path="led-port-20" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="20" transform="translate(292.32,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-20">
+    <title>led-port-20</title>
+    <circle id="led-port-20--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-20--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-20/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-20-lane-2" data-path="led-port-20-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="60" transform="translate(296.42,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-20">
+    <title>led-port-20-lane-2</title>
+    <circle id="led-port-20-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-20-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-20-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-20-lane-3" data-path="led-port-20-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="61" transform="translate(300.52,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-20">
+    <title>led-port-20-lane-3</title>
+    <circle id="led-port-20-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-20-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-20-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-20-lane-4" data-path="led-port-20-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="62" transform="translate(304.62,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-20">
+    <title>led-port-20-lane-4</title>
+    <circle id="led-port-20-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-20-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-20-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-21" data-path="led-port-21" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="21" transform="translate(292.32,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-21">
+    <title>led-port-21</title>
+    <circle id="led-port-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-21/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-21-lane-2" data-path="led-port-21-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="63" transform="translate(296.42,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-21">
+    <title>led-port-21-lane-2</title>
+    <circle id="led-port-21-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-21-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-21-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-21-lane-3" data-path="led-port-21-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="64" transform="translate(300.52,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-21">
+    <title>led-port-21-lane-3</title>
+    <circle id="led-port-21-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-21-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-21-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-21-lane-4" data-path="led-port-21-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="65" transform="translate(304.62,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-21">
+    <title>led-port-21-lane-4</title>
+    <circle id="led-port-21-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-21-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-21-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-22" data-path="led-port-22" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="22" transform="translate(311.32,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-22">
+    <title>led-port-22</title>
+    <circle id="led-port-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-22/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-22-lane-2" data-path="led-port-22-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="66" transform="translate(315.42,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-22">
+    <title>led-port-22-lane-2</title>
+    <circle id="led-port-22-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-22-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-22-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-22-lane-3" data-path="led-port-22-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="67" transform="translate(319.52,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-22">
+    <title>led-port-22-lane-3</title>
+    <circle id="led-port-22-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-22-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-22-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-22-lane-4" data-path="led-port-22-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="68" transform="translate(323.62,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-22">
+    <title>led-port-22-lane-4</title>
+    <circle id="led-port-22-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-22-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-22-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-23" data-path="led-port-23" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="23" transform="translate(311.32,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-23">
+    <title>led-port-23</title>
+    <circle id="led-port-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-23/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-23-lane-2" data-path="led-port-23-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="69" transform="translate(315.42,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-23">
+    <title>led-port-23-lane-2</title>
+    <circle id="led-port-23-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-23-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-23-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-23-lane-3" data-path="led-port-23-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="70" transform="translate(319.52,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-23">
+    <title>led-port-23-lane-3</title>
+    <circle id="led-port-23-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-23-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-23-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-23-lane-4" data-path="led-port-23-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="71" transform="translate(323.62,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-23">
+    <title>led-port-23-lane-4</title>
+    <circle id="led-port-23-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-23-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-23-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-24" data-path="led-port-24" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="24" transform="translate(346.08,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-24">
+    <title>led-port-24</title>
+    <circle id="led-port-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-24/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-24-lane-2" data-path="led-port-24-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="72" transform="translate(350.18,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-24">
+    <title>led-port-24-lane-2</title>
+    <circle id="led-port-24-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-24-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-24-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-24-lane-3" data-path="led-port-24-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="73" transform="translate(354.28,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-24">
+    <title>led-port-24-lane-3</title>
+    <circle id="led-port-24-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-24-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-24-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-24-lane-4" data-path="led-port-24-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="74" transform="translate(358.38,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-24">
+    <title>led-port-24-lane-4</title>
+    <circle id="led-port-24-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-24-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-24-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-25" data-path="led-port-25" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="25" transform="translate(346.08,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-25">
+    <title>led-port-25</title>
+    <circle id="led-port-25--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-25--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-25/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-25-lane-2" data-path="led-port-25-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="75" transform="translate(350.18,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-25">
+    <title>led-port-25-lane-2</title>
+    <circle id="led-port-25-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-25-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-25-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-25-lane-3" data-path="led-port-25-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="76" transform="translate(354.28,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-25">
+    <title>led-port-25-lane-3</title>
+    <circle id="led-port-25-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-25-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-25-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-25-lane-4" data-path="led-port-25-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="77" transform="translate(358.38,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-25">
+    <title>led-port-25-lane-4</title>
+    <circle id="led-port-25-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-25-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-25-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-26" data-path="led-port-26" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="26" transform="translate(365.08,6.5)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-26">
+    <title>led-port-26</title>
+    <circle id="led-port-26--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-26--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-26/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-26-lane-2" data-path="led-port-26-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="78" transform="translate(369.18,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-26">
+    <title>led-port-26-lane-2</title>
+    <circle id="led-port-26-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-26-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-26-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-26-lane-3" data-path="led-port-26-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="79" transform="translate(373.28,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-26">
+    <title>led-port-26-lane-3</title>
+    <circle id="led-port-26-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-26-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-26-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-26-lane-4" data-path="led-port-26-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="80" transform="translate(377.38,6.5)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-26">
+    <title>led-port-26-lane-4</title>
+    <circle id="led-port-26-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-26-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-26-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-27" data-path="led-port-27" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="27" transform="translate(365.08,36.3)" data-group="qsfp-plus-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP+ port - used for a 40 GbE link (guide Tables 6 and 8)." data-states="off link activity beacon" data-for="port-27">
+    <title>led-port-27</title>
+    <circle id="led-port-27--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-27--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-27/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-27-lane-2" data-path="led-port-27-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="81" transform="translate(369.18,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-27">
+    <title>led-port-27-lane-2</title>
+    <circle id="led-port-27-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-27-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-27-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-27-lane-3" data-path="led-port-27-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="82" transform="translate(373.28,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-27">
+    <title>led-port-27-lane-3</title>
+    <circle id="led-port-27-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-27-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-27-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-27-lane-4" data-path="led-port-27-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="83" transform="translate(377.38,36.3)" data-group="qsfp-plus-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP+ port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-27">
+    <title>led-port-27-lane-4</title>
+    <circle id="led-port-27-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-27-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-27-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="28" transform="translate(381.98,10.5)" data-group="qsfp28" data-group-role="traffic" data-description="Ports 28 to 31 as printed, rel-pos carrying the printed number, since the origin token cannot express a block that starts at 28. Each runs at 100 GbE or 40 GbE.">
+    <title>port-28</title>
+    <rect id="port-28--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-28/opening" data-class="cutout" />
+    <rect id="port-28--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-28--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-28--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-29" data-path="port-29" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="29" transform="translate(381.98,23.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="Ports 28 to 31 as printed, rel-pos carrying the printed number, since the origin token cannot express a block that starts at 28. Each runs at 100 GbE or 40 GbE.">
+    <title>port-29</title>
+    <rect id="port-29--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-29/opening" data-class="cutout" />
+    <rect id="port-29--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-29--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-29--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-30" data-path="port-30" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="30" transform="translate(400.98,10.5)" data-group="qsfp28" data-group-role="traffic" data-description="Ports 28 to 31 as printed, rel-pos carrying the printed number, since the origin token cannot express a block that starts at 28. Each runs at 100 GbE or 40 GbE.">
+    <title>port-30</title>
+    <rect id="port-30--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-30/opening" data-class="cutout" />
+    <rect id="port-30--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-30--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-30--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-31" data-path="port-31" data-class="port" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-speed="100g" data-rel-pos="31" transform="translate(400.98,23.7) rotate(180 9.25 4.79)" data-group="qsfp28" data-group-role="traffic" data-description="Ports 28 to 31 as printed, rel-pos carrying the printed number, since the origin token cannot express a block that starts at 28. Each runs at 100 GbE or 40 GbE.">
+    <title>port-31</title>
+    <rect id="port-31--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-31/opening" data-class="cutout" />
+    <rect id="port-31--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-31--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-31--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="led-port-28" data-path="led-port-28" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="28" transform="translate(384.08,6.5)" data-group="qsfp28-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP28 port - used for a 100 GbE or unchannelized 40 GbE link (guide Table 6)." data-states="off link activity beacon" data-for="port-28">
+    <title>led-port-28</title>
+    <circle id="led-port-28--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-28--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-28/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-28-lane-2" data-path="led-port-28-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="84" transform="translate(388.18,6.5)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-28">
+    <title>led-port-28-lane-2</title>
+    <circle id="led-port-28-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-28-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-28-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-28-lane-3" data-path="led-port-28-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="85" transform="translate(392.28,6.5)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-28">
+    <title>led-port-28-lane-3</title>
+    <circle id="led-port-28-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-28-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-28-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-28-lane-4" data-path="led-port-28-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="86" transform="translate(396.38,6.5)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-28">
+    <title>led-port-28-lane-4</title>
+    <circle id="led-port-28-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-28-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-28-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-29" data-path="led-port-29" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="29" transform="translate(384.08,36.3)" data-group="qsfp28-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP28 port - used for a 100 GbE or unchannelized 40 GbE link (guide Table 6)." data-states="off link activity beacon" data-for="port-29">
+    <title>led-port-29</title>
+    <circle id="led-port-29--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-29--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-29/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-29-lane-2" data-path="led-port-29-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="87" transform="translate(388.18,36.3)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-29">
+    <title>led-port-29-lane-2</title>
+    <circle id="led-port-29-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-29-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-29-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-29-lane-3" data-path="led-port-29-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="88" transform="translate(392.28,36.3)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-29">
+    <title>led-port-29-lane-3</title>
+    <circle id="led-port-29-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-29-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-29-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-29-lane-4" data-path="led-port-29-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="89" transform="translate(396.38,36.3)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-29">
+    <title>led-port-29-lane-4</title>
+    <circle id="led-port-29-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-29-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-29-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-30" data-path="led-port-30" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="30" transform="translate(403.08,6.5)" data-group="qsfp28-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP28 port - used for a 100 GbE or unchannelized 40 GbE link (guide Table 6)." data-states="off link activity beacon" data-for="port-30">
+    <title>led-port-30</title>
+    <circle id="led-port-30--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-30--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-30/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-30-lane-2" data-path="led-port-30-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="90" transform="translate(407.18,6.5)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-30">
+    <title>led-port-30-lane-2</title>
+    <circle id="led-port-30-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-30-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-30-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-30-lane-3" data-path="led-port-30-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="91" transform="translate(411.28,6.5)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-30">
+    <title>led-port-30-lane-3</title>
+    <circle id="led-port-30-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-30-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-30-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-30-lane-4" data-path="led-port-30-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="92" transform="translate(415.38,6.5)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-30">
+    <title>led-port-30-lane-4</title>
+    <circle id="led-port-30-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-30-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-30-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-31" data-path="led-port-31" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="31" transform="translate(403.08,36.3)" data-group="qsfp28-leds" data-group-role="indicator" data-description="The first of the four lamps of each QSFP28 port - used for a 100 GbE or unchannelized 40 GbE link (guide Table 6)." data-states="off link activity beacon" data-for="port-31">
+    <title>led-port-31</title>
+    <circle id="led-port-31--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-31--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-31/lamp" data-class="led" data-states="off link activity beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-31-lane-2" data-path="led-port-31-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="93" transform="translate(407.18,36.3)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-31">
+    <title>led-port-31-lane-2</title>
+    <circle id="led-port-31-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-31-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-31-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-31-lane-3" data-path="led-port-31-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="94" transform="translate(411.28,36.3)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-31">
+    <title>led-port-31-lane-3</title>
+    <circle id="led-port-31-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-31-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-31-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-31-lane-4" data-path="led-port-31-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="95" transform="translate(415.38,36.3)" data-group="qsfp28-channel-leds" data-group-role="indicator" data-description="The second to fourth lamps of each QSFP28 port, in port then lane order - used when the port runs as four 10 GbE ports (guide Table 6)." data-for="port-31">
+    <title>led-port-31-lane-4</title>
+    <circle id="led-port-31-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-31-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-31-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="gm" data-path="gm" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-tod" data-role="timing" data-signal="PTP grandmaster clock (GM)" data-rel-pos="0" transform="translate(9.5,7.8)" data-group="timing" data-group-role="management">
+    <title>gm</title>
+    <path id="gm--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="gm--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="gm--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="gm/opening" data-class="cutout" />
+    <g id="gm--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="out-10m" data-path="out-10m" data-class="port" data-ref="std/sma@1:1.1.0" data-media="coax-sma" data-role="timing" data-signal="10 MHz" data-rel-pos="1" transform="translate(31.5,13.5)" data-group="timing" data-group-role="management">
+    <title>out-10m</title>
+    <circle id="out-10m--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="out-10m/opening" data-class="cutout" />
+    <g id="out-10m--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+      <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+      <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+      <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+    </g>
+    <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+  </g>
+  <g id="out-pps" data-path="out-pps" data-class="port" data-ref="std/sma@1:1.1.0" data-media="coax-sma" data-role="timing" data-signal="1PPS" data-rel-pos="2" transform="translate(46.3,13.5)" data-group="timing" data-group-role="management">
+    <title>out-pps</title>
+    <circle id="out-pps--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="out-pps/opening" data-class="cutout" />
+    <g id="out-pps--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+      <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+      <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+      <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+    </g>
+    <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+  </g>
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(4.2,35.8)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD terminal on the port side (guide figure 15, callout 1)" data-for="chassis">
+    <title>esd-front-jack</title>
+    <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-front-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>
