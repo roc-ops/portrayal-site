@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="44.5mm" viewBox="0 0 444.5 44.5" data-device="ex3300-48t" data-view="rear" data-weight="4.9 kg (10.8 lb) (Table 5)" data-width-with-brackets="482 mm (19 in.) with the mounting brackets attached (Table 5)" data-power-max-w="76" data-power-envelope="unstated" data-power-input-ac="100 through 240 VAC, 50 or 60 Hz (Table 15)" data-power-current-max="1.8 A at 100 VAC and 0.5 A at 230 VAC for a switch with no PoE ports (Table 15)" data-cooling="two fans, one along the rear and one along the left side of the chassis (Cooling System)" data-operating-temp="0 to 45 C (32 to 113 F) (Table 19)" data-altitude="no performance degradation up to 3048 m (10,000 ft) (Table 19)" data-humidity="10 to 85 percent, noncondensing (Table 19)" data-first-junos-release="11.3R1 (Table 3)" data-virtual-chassis="up to 10 switches. Uplink ports 2 and 3 are Virtual Chassis ports by default and ports 0 and 1 are network ports" data-uplink-ports="four SFP or SFP+ ports on the front" data-optics-sfp-plus="the uplink ports take SFP and SFP+ transceivers, singly or mixed (Pluggable Transceivers Supported on EX3300 Switches, page 61)" data-oob="management Ethernet RJ-45 on the rear panel, with a Link/Activity lamp and a Status lamp" data-console="RJ-45 console on the rear panel" data-usb="one USB port on the rear panel" data-lcd="LCD panel with two lines of 16 characters and Menu and Enter buttons" data-seismic="Complies with Zone 4 earthquake requirements as per GR-63, Issue 4 (Table 19)" data-eol="announced" data-end-of-sale="2019-06-30" data-end-of-support="2024-06-30" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #mgmt--led-b.state-1000m { --led-color: #22c55e; }
+    #mgmt--led-b.state-100m { --led-color: #22c55e; }
+    #mgmt--led-b.state-100m { animation: portrayal-blink 1s linear infinite; }
+    #mgmt--led-a.state-activity { --led-color: #22c55e; }
+    #mgmt--led-a.state-activity { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Juniper EX3300-48T","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/ground-screw-10-32@1":"1.0.0","common/rj45-eth@1":"1.2.0","common/screw-head@1":"1.1.0","juniper/ex3300-rear-grille@1":"1.0.0","juniper/ex3300-rps-port@1":"1.0.0","juniper/ex3400-ground-pair@1":"1.0.0","std/c14-inlet@1":"1.4.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"85291a4c4320447d8940ae1400b2c189c654b076812bed1d60e806ccc000f8ff","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX3300-48T" data-sku="EX3300-48T-BF" data-part-number="" x="0" y="0" width="444.5" height="44.5" rx="1.2" fill="#8c9094" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="serial-label" data-kind="label-plate" x="281.9" y="5.3" width="69.8" height="23" rx="0.5" fill="#e4e6e8" />
+    <rect id="label-small" data-kind="label-plate" x="354.3" y="11.1" width="27.1" height="12.1" rx="0.5" fill="#e4e6e8" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="10.9" y="16.5" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" />
+    <rect x="12.8" y="30.6" width="12" height="4.5" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <rect x="31.7" y="24.2" width="15.8" height="13.2" fill="#101214" id="cutout--con" data-path="cutout:con" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="18.8" y="14.2" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#eef0f2" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">MGMT</text>
+    <text x="39.6" y="22.4" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#eef0f2" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="con">CON</text>
+    <path d="M -3.0 0 H 2.2 M 0.8 0 L 2.2 0 M -0.9 -1.2 L 0.4 -1.2 L 1.2 -0.3 M -0.9 1.2 L 0.4 1.2 L 1.2 0.3" fill="none" stroke="#eef0f2" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(19 38.8)" id="usb-symbol" data-path="silk:usb-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb" />
+    <path d="M 0 -3.6 A 3.6 3.6 0 1 0 0.01 -3.6 Z M -2.2 -0.8 H 2.2 M -1.4 0.8 H 1.4 M -0.5 2.2 H 0.5 M 0 -2.5 V -0.8" fill="none" stroke="#eef0f2" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(88.5 11.1)" id="earth-symbol" data-path="silk:earth-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-pair" />
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="0" transform="translate(10.9,16.5) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management" data-description="Tables 8 and 9 - the Link/Activity lamp blinks green with traffic; the Status lamp shows speed by blink rate: one blink per second 10 Mbps, two 100 Mbps, three 1000 Mbps">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off 100m 1000m" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="1" transform="translate(12.8,30.6)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="con" data-path="con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="2" transform="translate(31.7,24.2)" data-group="mgmt" data-group-role="management">
+    <title>con</title>
+    <path id="con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="con/opening" data-class="cutout" />
+    <g id="con--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="ac-inlet" data-path="ac-inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="0" transform="translate(401.85,11.05)" data-group="power-in" data-group-role="service" data-description="the built-in power supply's input, an AC power cord inlet or a DC terminal block">
+    <title>ac-inlet</title>
+    <rect id="ac-inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet/opening" data-class="cutout" />
+    <path id="ac-inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="rps" data-path="rps" data-class="inlet" data-behaviour="mounts" data-ref="juniper/ex3300-rps-port@1:1.0.0" data-body-depth="20.0" data-media="rps" data-rel-pos="3" transform="translate(50.2,24.6)" data-group="mgmt" data-group-role="management">
+    <title>rps</title>
+    <rect id="rps--plate" x="0" y="0" width="67.8" height="14.1" rx="0.8" fill="#a3a8ad" stroke="#5b6167" stroke-width="0.28" />
+    <rect id="rps--opening" x="10.9" y="2.7" width="44.4" height="8.8" rx="4.4" fill="#2a2d31" stroke="#5b6167" stroke-width="0.3" data-path="rps/opening" data-class="slot" />
+    <g fill="#c9ccd0" stroke="#4b5057" stroke-width="0.22">
+      <circle cx="4.9" cy="6.6" r="1.7" />
+      <circle cx="62.9" cy="6.6" r="1.7" />
+      <circle cx="9.0" cy="12.5" r="1.4" />
+      <circle cx="58.8" cy="12.5" r="1.4" />
+    </g>
+    <g stroke="#4b5057" stroke-width="0.22" fill="none">
+      <path d="M 3.7 6.6 H 6.1 M 4.9 5.4 V 7.8 M 61.7 6.6 H 64.1 M 62.9 5.4 V 7.8" />
+      <path d="M 8.0 12.5 H 10.0 M 9.0 11.5 V 13.5 M 57.8 12.5 H 59.8 M 58.8 11.5 V 13.5" />
+    </g>
+  </g>
+  <g id="ground-pair" data-path="ground-pair" data-class="ground" data-behaviour="mounts" data-ref="juniper/ex3400-ground-pair@1:1.0.0" data-connector="stud-pair-5-8" data-rel-pos="0" transform="translate(40.05,4.65)" data-group="grounding" data-group-role="furniture" data-description="the rear earthing terminal, two 10-32 screws for a two-hole lug (Table 33)">
+    <title>ground-pair</title>
+    <rect id="ground-pair--plate" x="0" y="0" width="33.1" height="12.1" rx="0.5" fill="#a9adb1" />
+    <g id="ground-pair--1" data-path="ground-pair/1" data-class="ground" data-ref="common/ground-screw-10-32@1:1.0.0" data-connector="terminal-stud" transform="translate(4.57,1.315)">
+      <title>ground-pair--1</title>
+      <g id="ground-pair--1--head" data-z-cyl="2.79" data-z-color="#b9bec4">
+        <circle cx="4.735" cy="4.735" r="4.635" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 2.6516 4.735 H 6.8184 M 4.735 2.6516 V 6.8184" fill="none" stroke="#4e5359" stroke-width="0.5682" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.735 4.735" data-cp-dir="front" data-cp-on="ground-pair--1--head" />
+    </g>
+    <g id="ground-pair--2" data-path="ground-pair/2" data-class="ground" data-ref="common/ground-screw-10-32@1:1.0.0" data-connector="terminal-stud" transform="translate(20.445,1.315)">
+      <title>ground-pair--2</title>
+      <g id="ground-pair--2--head" data-z-cyl="2.79" data-z-color="#b9bec4">
+        <circle cx="4.735" cy="4.735" r="4.635" fill="#b9bec4" stroke="#62686e" stroke-width="0.2" />
+        <path d="M 2.6516 4.735 H 6.8184 M 4.735 2.6516 V 6.8184" fill="none" stroke="#4e5359" stroke-width="0.5682" stroke-linecap="round" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.735 4.735" data-cp-dir="front" data-cp-on="ground-pair--2--head" />
+    </g>
+    <g data-cp="mate" data-cp-at="17.2425 6.05" data-cp-dir="front" />
+  </g>
+  <g id="esd-rear" data-path="esd-rear" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(106.7,8.3)" data-group="esd" data-group-role="furniture" data-description="the rear wrist-strap ESD point (Figure 3)" data-for="chassis">
+    <title>esd-rear</title>
+    <circle id="esd-rear--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+  <g id="fan-grille" data-path="fan-grille" data-class="mechanical" data-behaviour="mounts" data-ref="juniper/ex3300-rear-grille@1:1.0.0" data-body-depth="6.0" data-redundancy-note="The fan along the rear is built in and not replaceable. If a fan fails the others run faster and the switch raises an alarm (Cooling System)" data-rel-pos="0" transform="translate(127.55,5.5)" data-group="fans" data-group-role="service" data-for="chassis">
+    <title>fan-grille</title>
+    <ellipse id="fan-grille--grille" cx="13.85" cy="15.3" rx="13.85" ry="15.3" fill="#8a8f95" stroke="#4b5057" stroke-width="0.3" data-path="fan-grille/grille" data-class="vent" />
+    <path id="fan-grille--cells" fill="#15171a" stroke="#4b5057" stroke-width="0.2" d="M 13.33 3.80 L 11.43 4.90 L 9.52 3.80 L 9.52 1.60 L 11.43 0.50 L 13.33 1.60 Z M 18.18 3.80 L 16.27 4.90 L 14.37 3.80 L 14.37 1.60 L 16.27 0.50 L 18.18 1.60 Z M 10.91 8.00 L 9.00 9.10 L 7.10 8.00 L 7.10 5.80 L 9.00 4.70 L 10.91 5.80 Z M 15.76 8.00 L 13.85 9.10 L 11.94 8.00 L 11.94 5.80 L 13.85 4.70 L 15.76 5.80 Z M 20.60 8.00 L 18.70 9.10 L 16.79 8.00 L 16.79 5.80 L 18.70 4.70 L 20.60 5.80 Z M 8.48 12.20 L 6.58 13.30 L 4.67 12.20 L 4.67 10.00 L 6.58 8.90 L 8.48 10.00 Z M 13.33 12.20 L 11.43 13.30 L 9.52 12.20 L 9.52 10.00 L 11.43 8.90 L 13.33 10.00 Z M 18.18 12.20 L 16.27 13.30 L 14.37 12.20 L 14.37 10.00 L 16.27 8.90 L 18.18 10.00 Z M 23.03 12.20 L 21.12 13.30 L 19.22 12.20 L 19.22 10.00 L 21.12 8.90 L 23.03 10.00 Z M 6.06 16.40 L 4.15 17.50 L 2.25 16.40 L 2.25 14.20 L 4.15 13.10 L 6.06 14.20 Z M 10.91 16.40 L 9.00 17.50 L 7.10 16.40 L 7.10 14.20 L 9.00 13.10 L 10.91 14.20 Z M 15.76 16.40 L 13.85 17.50 L 11.94 16.40 L 11.94 14.20 L 13.85 13.10 L 15.76 14.20 Z M 20.60 16.40 L 18.70 17.50 L 16.79 16.40 L 16.79 14.20 L 18.70 13.10 L 20.60 14.20 Z M 25.45 16.40 L 23.55 17.50 L 21.64 16.40 L 21.64 14.20 L 23.55 13.10 L 25.45 14.20 Z M 8.48 20.60 L 6.58 21.70 L 4.67 20.60 L 4.67 18.40 L 6.58 17.30 L 8.48 18.40 Z M 13.33 20.60 L 11.43 21.70 L 9.52 20.60 L 9.52 18.40 L 11.43 17.30 L 13.33 18.40 Z M 18.18 20.60 L 16.27 21.70 L 14.37 20.60 L 14.37 18.40 L 16.27 17.30 L 18.18 18.40 Z M 23.03 20.60 L 21.12 21.70 L 19.22 20.60 L 19.22 18.40 L 21.12 17.30 L 23.03 18.40 Z M 10.91 24.80 L 9.00 25.90 L 7.10 24.80 L 7.10 22.60 L 9.00 21.50 L 10.91 22.60 Z M 15.76 24.80 L 13.85 25.90 L 11.94 24.80 L 11.94 22.60 L 13.85 21.50 L 15.76 22.60 Z M 20.60 24.80 L 18.70 25.90 L 16.79 24.80 L 16.79 22.60 L 18.70 21.50 L 20.60 22.60 Z M 13.33 29.00 L 11.43 30.10 L 9.52 29.00 L 9.52 26.80 L 11.43 25.70 L 13.33 26.80 Z M 18.18 29.00 L 16.27 30.10 L 14.37 29.00 L 14.37 26.80 L 16.27 25.70 L 18.18 26.80 Z" />
+  </g>
+  <g id="foot-screw-0" data-path="foot-screw-0" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="0" transform="translate(165.2,37.7)" data-group="furniture" data-group-role="furniture" data-description="screw heads on the rear panel">
+    <title>foot-screw-0</title>
+    <circle id="foot-screw-0--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="foot-screw-0--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="foot-screw-0--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="foot-screw-1" data-path="foot-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(223.0,37.7)" data-group="furniture" data-group-role="furniture" data-description="screw heads on the rear panel">
+    <title>foot-screw-1</title>
+    <circle id="foot-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="foot-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="foot-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="foot-screw-2" data-path="foot-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(286.4,37.7)" data-group="furniture" data-group-role="furniture" data-description="screw heads on the rear panel">
+    <title>foot-screw-2</title>
+    <circle id="foot-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="foot-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="foot-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="foot-screw-3" data-path="foot-screw-3" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(359.1,37.7)" data-group="furniture" data-group-role="furniture" data-description="screw heads on the rear panel">
+    <title>foot-screw-3</title>
+    <circle id="foot-screw-3--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="foot-screw-3--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="foot-screw-3--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="foot-screw-4" data-path="foot-screw-4" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="4" transform="translate(431.8,37.7)" data-group="furniture" data-group-role="furniture" data-description="screw heads on the rear panel">
+    <title>foot-screw-4</title>
+    <circle id="foot-screw-4--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="foot-screw-4--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="foot-screw-4--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>
