@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="101.6mm" height="89.7mm" viewBox="0 0 101.6 89.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex9200-pwr-mx480-2520-ac@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex9200-pwr-mx480-2520-ac@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='juniper/ex9200-pwr-mx480-2520-ac@'] .state-yellow { --led-color: #f5a623; }</style>
+  <g id="ex9200-pwr-mx480-2520-ac" data-path="ex9200-pwr-mx480-2520-ac" data-class="psu" data-behaviour="fills" data-ref="juniper/ex9200-pwr-mx480-2520-ac@1:1.0.0" data-airflow="front-to-back (the supply draws air from the front of the chassis and exhausts at its own rear)" data-input-current-a="16 (low line), 15.1 (high line)" data-input-voltage="100-120 VAC (low line) or 200-240 VAC (high line), 50-60 Hz" data-power-output-low-line-w="1167" data-power-output-w="2400" data-redundancy="high-line 1+1; low-line 2+2" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex9200-pwr-mx480-2520-ac</title>
+    <rect id="ex9200-pwr-mx480-2520-ac--flange" x="0" y="70.0" width="101.6" height="19.7" rx="0.8" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.4" />
+    <rect id="ex9200-pwr-mx480-2520-ac--face" x="0" y="0" width="101.6" height="74.0" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+    <g id="ex9200-pwr-mx480-2520-ac--vents" fill="none" stroke="#2e3338" stroke-width="4.0" stroke-dasharray="4.0 2.3">
+      <path d="M 11.8 6.2 H 82" />
+      <path d="M 11.8 12.5 H 82" />
+      <path d="M 11.8 18.8 H 82" />
+      <path d="M 11.8 25.1 H 82" />
+      <path d="M 50.5 31.4 H 82" />
+      <path d="M 50.5 37.7 H 82" />
+      <path d="M 50.5 44.0 H 82" />
+      <path d="M 50.5 50.3 H 82" />
+      <path d="M 50.5 56.6 H 82" />
+    </g>
+    <rect x="3.0" y="5.0" width="6.0" height="25.0" fill="#e8eaec" stroke="#8a8f94" stroke-width="0.2" />
+    <rect x="84.0" y="16.0" width="13.4" height="22.0" rx="0.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+    <g id="ex9200-pwr-mx480-2520-ac--lamps">
+      <circle id="ex9200-pwr-mx480-2520-ac--led-ac-ok" cx="91.8" cy="21.4" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="ex9200-pwr-mx480-2520-ac/led-ac-ok" data-class="led" data-states="green yellow off" />
+      <circle id="ex9200-pwr-mx480-2520-ac--led-dc-ok" cx="91.8" cy="27.1" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="ex9200-pwr-mx480-2520-ac/led-dc-ok" data-class="led" data-states="green off" />
+      <circle id="ex9200-pwr-mx480-2520-ac--led-ps-fail" cx="91.8" cy="32.8" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="ex9200-pwr-mx480-2520-ac/led-ps-fail" data-class="led" data-states="red off" />
+    </g>
+    <g id="ex9200-pwr-mx480-2520-ac--flange-hardware">
+      <circle cx="25.6" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+      <circle cx="76.5" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+      <rect x="31.7" y="76.5" width="39.1" height="10.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+    </g>
+    <g id="ex9200-pwr-mx480-2520-ac--silkscreen">
+      <text x="89.6" y="21.8" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">AC OK</text>
+      <text x="89.6" y="27.5" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">DC OK</text>
+      <text x="89.6" y="33.2" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">PS FAIL</text>
+      <text x="35.0" y="79.6" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">Caution:</text>
+      <text x="35.0" y="82.2" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">To completely de-energize the</text>
+      <text x="35.0" y="84.4" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">system, disconnect all power cords</text>
+    </g>
+    <g id="ex9200-pwr-mx480-2520-ac--handle" data-path="ex9200-pwr-mx480-2520-ac/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+      <rect x="52.3" y="63.0" width="42.0" height="6.4" rx="3.2" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+    </g>
+    <g id="ex9200-pwr-mx480-2520-ac--switch" data-path="ex9200-pwr-mx480-2520-ac/switch" data-class="switch" data-z-out="2.4" data-z-color="#26292d">
+      <rect x="4.3" y="40.2" width="15.3" height="30.0" rx="1.4" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+      <rect x="7.0" y="45.0" width="9.9" height="20.4" rx="1.2" fill="#4a4f55" />
+      <path d="M 12.0 48.0 V 53.0" stroke="#e8eaec" stroke-width="0.8" />
+      <circle cx="12.0" cy="60.0" r="1.4" fill="none" stroke="#e8eaec" stroke-width="0.6" />
+    </g>
+    <g id="ex9200-pwr-mx480-2520-ac--inlet" data-path="ex9200-pwr-mx480-2520-ac/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="AC inlet" data-input="ac" data-media="ac" transform="translate(19.6,39.8) rotate(90 16.2 12.2)">
+      <title>ex9200-pwr-mx480-2520-ac--inlet</title>
+      <rect id="ex9200-pwr-mx480-2520-ac--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="ex9200-pwr-mx480-2520-ac/inlet/opening" data-class="cutout" />
+      <rect id="ex9200-pwr-mx480-2520-ac--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+      <rect id="ex9200-pwr-mx480-2520-ac--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <rect id="ex9200-pwr-mx480-2520-ac--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <rect id="ex9200-pwr-mx480-2520-ac--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

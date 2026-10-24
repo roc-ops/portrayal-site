@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.15mm" height="615.95mm" viewBox="0 0 438.15 615.95" data-device="ex8208" data-view="front" data-weight-chassis-kg="41" data-weight-base-kg="68" data-weight-redundant-kg="85" data-weight-max-kg="129" data-weight-note="Guide Table 7: chassis with backplane 89 lb (41 kg), base configuration 149 lb (68 kg), redundant 187 lb (85 kg), fully loaded 284 lb (129 kg), the last with the heaviest line cards in all eight slots. The datasheet gives 115 lb (52.5 kg), 176 lb (80 kg), 216 lb (98 kg) and 328 lb (149 kg); the guide's table is carried (gap weights)." data-switching-capacity="up to 6.2 Tbps (datasheet and guide, &quot;Benefits of the EX8208 Switch&quot;)" data-operating-temp="0 C to 40 C" data-humidity="10-85 percent noncondensing" data-altitude-max="10,000 ft (3048 m)" data-eol="announced" data-eol-announcement="https://www.juniper.net/support/pdf/eol/lod-q22017.pdf" data-airflow="side" data-power="ac dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-sys.state-failure, #led-sys .state-failure { --led-color: #eab308; }
+    #led-alm.state-major, #led-alm .state-major { --led-color: #ef4444; }
+    #led-alm.state-minor, #led-alm .state-minor { --led-color: #eab308; }
+    #led-sys.state-operating, #led-sys .state-operating { --led-color: #22c55e; }
+    #led-mst.state-primary, #led-mst .state-primary { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper EX8208","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/esd-warning@1":"1.0.0","common/led-dot@1":"1.1.0","juniper/ex8200-lcd-button@1":"1.0.0"},"source-sha256":"db44ca0ba510b7c133c28ccb2c8911149c3f68cfcb4e14db4ff1a2d789c7438f","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX8208" data-sku="EX8208-CHAS-S" data-part-number="" x="0" y="0" width="438.15" height="615.95" rx="1.2" fill="#b3b7bb" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="lcd" data-kind="display" x="273.6" y="11.4" width="38.9" height="12.4" rx="0.6" fill="#404c40" />
+    <rect id="esd-label" data-kind="label-plate" x="356.4" y="12.4" width="19.2" height="13.2" rx="0.4" fill="#e4e6e8" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="9.5" y="608.5" width="425.1" height="6" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="59.5" y="10" width="62.4" height="15.9" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="321.2" cy="14.9" rx="3.2" ry="3.2" fill="#101214" id="cutout--btn-menu" data-path="cutout:btn-menu" data-class="cutout" />
+    <ellipse cx="321.2" cy="22.1" rx="3.2" ry="3.2" fill="#101214" id="cutout--btn-enter" data-path="cutout:btn-enter" data-class="cutout" />
+    <ellipse cx="340.5" cy="10.3" rx="1" ry="1" fill="#101214" id="cutout--led-alm" data-path="cutout:led-alm" data-class="cutout" />
+    <ellipse cx="340.5" cy="18.1" rx="1" ry="1" fill="#101214" id="cutout--led-sys" data-path="cutout:led-sys" data-class="cutout" />
+    <ellipse cx="340.5" cy="25.6" rx="1" ry="1" fill="#101214" id="cutout--led-mst" data-path="cutout:led-mst" data-class="cutout" />
+    <ellipse cx="380" cy="19" rx="2" ry="2" fill="#101214" id="cutout--esd-front" data-path="cutout:esd-front" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="342.8" y="10.9" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#2b2f33" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alm">ALM</text>
+    <text x="342.8" y="18.7" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#2b2f33" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys">SYS</text>
+    <text x="342.8" y="26.2" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#2b2f33" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-mst">MST</text>
+    <text x="405.9" y="23.6" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#2b2f33" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">EX8208</text>
+    <text x="65" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu0">PSU 0</text>
+    <text x="136" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu1">PSU 1</text>
+    <text x="207" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu2">PSU 2</text>
+    <text x="278" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu3">PSU 3</text>
+    <text x="349" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu4">PSU 4</text>
+    <text x="420" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu5">PSU 5</text>
+  </g>
+  <g id="btn-menu" data-path="btn-menu" data-class="button" data-ref="juniper/ex8200-lcd-button@1:1.0.0" data-function="LCD menu" data-role="lcd-navigation" data-rel-pos="0" transform="translate(318.0,11.7)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-menu</title>
+    <circle cx="3.2" cy="3.2" r="3.1" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-menu--cap" cx="3.2" cy="3.2" r="2.6" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-menu/cap" data-class="button" />
+    <g stroke="#2b2e35" stroke-width="0.3" fill="#2b2e35">
+      <circle cx="2.0" cy="2.3" r="0.25" />
+      <circle cx="2.0" cy="3.2" r="0.25" />
+      <circle cx="2.0" cy="4.1" r="0.25" />
+      <path d="M 2.7 2.3 H 4.5 M 2.7 3.2 H 4.5 M 2.7 4.1 H 4.5" fill="none" />
+    </g>
+  </g>
+  <g id="btn-enter" data-path="btn-enter" data-class="button" data-ref="juniper/ex8200-lcd-button@1:1.0.0" data-function="LCD enter" data-role="lcd-navigation" data-rel-pos="1" transform="translate(318.0,18.9)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-enter</title>
+    <circle cx="3.2" cy="3.2" r="3.1" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-enter--cap" cx="3.2" cy="3.2" r="2.6" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-enter/cap" data-class="button" />
+    <path d="M 4.7 2.0 V 3.6 H 2.0 M 2.9 2.8 L 2.0 3.6 L 2.9 4.4" fill="none" stroke="#2b2e35" stroke-width="0.35" />
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(339.5,9.3)" data-group="status-leds" data-group-role="indicator" data-description="Table 14 - ALM: red major alarm, yellow minor alarm, unlit no alarm" data-states="off major minor" data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off major minor" data-z-dome="0.3" />
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(339.5,17.1)" data-group="status-leds" data-group-role="indicator" data-description="Table 14 - SYS: green, the switch is operating normally; yellow, one or more component failures are generating alarms; unlit, powered off" data-states="off operating failure" data-for="chassis">
+    <title>led-sys</title>
+    <circle id="led-sys--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys/lamp" data-class="led" data-states="off operating failure" data-z-dome="0.3" />
+  </g>
+  <g id="led-mst" data-path="led-mst" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(339.5,24.6)" data-group="status-leds" data-group-role="indicator" data-description="Table 14 - MST: green, the primary Routing Engine is operational; unlit, powered off" data-states="off primary" data-for="chassis">
+    <title>led-mst</title>
+    <circle id="led-mst--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-mst--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-mst/lamp" data-class="led" data-states="off primary" data-z-dome="0.3" />
+  </g>
+  <g id="fan" data-path="fan" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="0">
+    <title>fan</title>
+    <rect id="fan--opening" x="0" y="0" width="42.8" height="497" fill="#101214" />
+  </g>
+  <g id="lc0" data-path="lc0" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="0">
+    <title>lc0</title>
+    <rect id="lc0--opening" x="42.8" y="43.2" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="lc1" data-path="lc1" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="1">
+    <title>lc1</title>
+    <rect id="lc1--opening" x="42.8" y="81.4" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="lc2" data-path="lc2" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="2">
+    <title>lc2</title>
+    <rect id="lc2--opening" x="42.8" y="119.6" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="lc3" data-path="lc3" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="3">
+    <title>lc3</title>
+    <rect id="lc3--opening" x="42.8" y="157.8" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="sre0" data-path="sre0" data-class="bay" data-group="sres" data-group-role="service" data-rel-pos="0">
+    <title>sre0</title>
+    <rect id="sre0--opening" x="53.35" y="199.45" width="374.2" height="29.1" fill="#101214" />
+  </g>
+  <g id="sf" data-path="sf" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="0">
+    <title>sf</title>
+    <rect id="sf--opening" x="53.35" y="237.65" width="374.2" height="29.1" fill="#101214" />
+  </g>
+  <g id="sre1" data-path="sre1" data-class="bay" data-group="sres" data-group-role="service" data-rel-pos="1">
+    <title>sre1</title>
+    <rect id="sre1--opening" x="53.35" y="275.85" width="374.2" height="29.1" fill="#101214" />
+  </g>
+  <g id="lc4" data-path="lc4" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="4">
+    <title>lc4</title>
+    <rect id="lc4--opening" x="42.8" y="310.6" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="lc5" data-path="lc5" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="5">
+    <title>lc5</title>
+    <rect id="lc5--opening" x="42.8" y="348.8" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="lc6" data-path="lc6" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="6">
+    <title>lc6</title>
+    <rect id="lc6--opening" x="42.8" y="387" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="lc7" data-path="lc7" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="7">
+    <title>lc7</title>
+    <rect id="lc7--opening" x="42.8" y="425.2" width="395.3" height="36" fill="#101214" />
+  </g>
+  <g id="psu0" data-path="psu0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu0</title>
+    <rect id="psu0--opening" x="9.5" y="503" width="70.1" height="104" fill="#101214" />
+  </g>
+  <g id="psu1" data-path="psu1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu1</title>
+    <rect id="psu1--opening" x="80.5" y="503" width="70.1" height="104" fill="#101214" />
+  </g>
+  <g id="psu2" data-path="psu2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu2</title>
+    <rect id="psu2--opening" x="151.5" y="503" width="70.1" height="104" fill="#101214" />
+  </g>
+  <g id="psu3" data-path="psu3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psu3</title>
+    <rect id="psu3--opening" x="222.5" y="503" width="70.1" height="104" fill="#101214" />
+  </g>
+  <g id="psu4" data-path="psu4" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="4">
+    <title>psu4</title>
+    <rect id="psu4--opening" x="293.5" y="503" width="70.1" height="104" fill="#101214" />
+  </g>
+  <g id="psu5" data-path="psu5" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="5">
+    <title>psu5</title>
+    <rect id="psu5--opening" x="364.5" y="503" width="70.1" height="104" fill="#101214" />
+  </g>
+  <g id="esd-label-mark" data-path="esd-label-mark" data-class="marking" data-behaviour="mounts" data-ref="common/esd-warning@1:1.0.0" data-rel-pos="0" transform="translate(362.15,14.75)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD point in the header plate" data-for="chassis">
+    <title>esd-label-mark</title>
+    <path id="esd-label-mark--field" d="M 3.85 0.25 L 7.45 6.35 H 0.25 Z" fill="#161616" stroke="#f2c619" stroke-width="0.45" stroke-linejoin="round" />
+    <g id="esd-label-mark--hand" fill="none" stroke="#f2c619" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 2.6 5.6 L 3.3 3.9 L 3.1 2.4 M 3.3 3.9 L 3.9 2.2 M 3.3 3.9 L 4.5 2.6 M 3.3 3.9 L 4.9 3.4" />
+      <path d="M 1.4 5.2 L 5.9 2.6" stroke-width="0.25" />
+    </g>
+    <g id="esd-label-mark--silkscreen">
+      <text x="3.85" y="8.35" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="1.9" text-anchor="middle" fill="#3a3d41">ESD</text>
+    </g>
+  </g>
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="1" transform="translate(377.0,16.0)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD point in the header plate" data-for="chassis">
+    <title>esd-front-jack</title>
+    <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-front-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>

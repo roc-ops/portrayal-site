@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420.9mm" height="42.0mm" viewBox="0 0 420.9 42.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex9208-craft@'] .state-blinking { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex9208-craft@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex9208-craft@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex9208-craft@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='juniper/ex9208-craft@'] .state-yellow { --led-color: #f5a623; }</style>
+  <g id="ex9208-craft" data-path="ex9208-craft" data-class="display" data-behaviour="fills" data-ref="juniper/ex9208-craft@1:1.0.0" data-model="EX9208 Craft Interface" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>ex9208-craft</title>
+    <rect id="ex9208-craft--face" x="0" y="0" width="420.9" height="42" rx="0.6" fill="#4d545b" stroke="#2c3135" stroke-width="0.4" />
+    <rect x="0" y="40.2" width="420.9" height="1.8" fill="#79bde8" />
+    <rect id="ex9208-craft--logo-zone" x="6.0" y="8.2" width="28.0" height="13.0" fill="none" data-path="ex9208-craft/logo-zone" data-class="label" />
+    <rect id="ex9208-craft--logo-zone-2" x="382.5" y="29.0" width="28.0" height="9.0" fill="none" data-path="ex9208-craft/logo-zone-2" data-class="label" />
+    <g id="ex9208-craft--silkscreen">
+      <text x="42.5" y="17.7" font-family="sans-serif" font-size="4.6" fill="#d9dde1" text-anchor="start">EX9208</text>
+      <text x="99.2" y="22.5" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">RE0</text>
+      <text x="130.9" y="22.5" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">RE1</text>
+      <text x="115.0" y="8.6" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">MASTER</text>
+      <text x="115.0" y="13.8" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">ONLINE</text>
+      <text x="115.0" y="19.0" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">OFFLINE</text>
+      <text x="175.5" y="8.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">OK</text>
+      <text x="175.5" y="13.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">FAIL</text>
+      <text x="178.0" y="18.6" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">FAN TRAY</text>
+      <text x="229.4" y="8.2" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">OK</text>
+      <text x="229.4" y="13.3" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">FAIL</text>
+      <text x="229.4" y="17.2" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="end">PEM</text>
+      <text x="232.2" y="17.2" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">0</text>
+      <text x="238.6" y="17.2" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">1</text>
+      <text x="244.9" y="17.2" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">2</text>
+      <text x="251.2" y="17.2" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">3</text>
+      <text x="359.8" y="6.0" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="middle">NC       C       NO</text>
+      <text x="359.8" y="20.2" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">MINOR ALARM</text>
+      <text x="386.4" y="6.0" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="middle">NC       C       NO</text>
+      <text x="386.4" y="20.2" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">MAJOR ALARM</text>
+      <text x="90.3" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="108.0" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      <text x="122.0" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="139.7" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      <text x="153.9" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="171.6" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      <text x="185.5" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="203.2" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      <text x="217.2" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="234.9" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      <text x="248.8" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="266.5" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      <text x="280.4" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="298.1" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      <text x="312.0" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+      <text x="329.7" y="28.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+    </g>
+    <circle id="ex9208-craft--led-re0-master" cx="99.2" cy="8.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-re0-master" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-re0-online" cx="99.2" cy="13.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-re0-online" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-re0-offline" cx="99.2" cy="18.4" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-re0-offline" data-class="led" data-states="red off" />
+    <circle id="ex9208-craft--led-re1-master" cx="130.9" cy="8.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-re1-master" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-re1-online" cx="130.9" cy="13.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-re1-online" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-re1-offline" cx="130.9" cy="18.4" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-re1-offline" data-class="led" data-states="red off" />
+    <circle id="ex9208-craft--led-fan-ok" cx="178.2" cy="8.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-fan-ok" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-fan-fail" cx="178.2" cy="13.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-fan-fail" data-class="led" data-states="red off" />
+    <g id="ex9208-craft--fan-symbols" fill="#c9ced3">
+      <ellipse cx="183.5" cy="7.6" rx="1.2" ry="0.5" transform="rotate(45 183.5 7.6)" />
+      <ellipse cx="183.5" cy="7.6" rx="1.2" ry="0.5" transform="rotate(-45 183.5 7.6)" />
+      <ellipse cx="183.5" cy="12.8" rx="1.2" ry="0.5" transform="rotate(45 183.5 12.8)" />
+      <ellipse cx="183.5" cy="12.8" rx="1.2" ry="0.5" transform="rotate(-45 183.5 12.8)" />
+    </g>
+    <circle id="ex9208-craft--led-pem0-ok" cx="232.2" cy="7.6" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem0-ok" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-pem0-fail" cx="232.2" cy="12.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem0-fail" data-class="led" data-states="red off" />
+    <circle id="ex9208-craft--led-pem1-ok" cx="238.6" cy="7.6" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem1-ok" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-pem1-fail" cx="238.6" cy="12.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem1-fail" data-class="led" data-states="red off" />
+    <circle id="ex9208-craft--led-pem2-ok" cx="244.9" cy="7.6" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem2-ok" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-pem2-fail" cx="244.9" cy="12.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem2-fail" data-class="led" data-states="red off" />
+    <circle id="ex9208-craft--led-pem3-ok" cx="251.2" cy="7.6" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem3-ok" data-class="led" data-states="green off" />
+    <circle id="ex9208-craft--led-pem3-fail" cx="251.2" cy="12.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-pem3-fail" data-class="led" data-states="red off" />
+    <path id="ex9208-craft--led-alarm-minor" d="M 295.5 9.25 L 299.75 16.75 L 291.25 16.75 Z" fill="var(--led-color, #e8e6c0)" stroke="#b8b23e" stroke-width="0.4" data-path="ex9208-craft/led-alarm-minor" data-class="led" data-states="yellow off" />
+    <circle id="ex9208-craft--led-alarm-major" cx="313.5" cy="13.0" r="4.5" fill="var(--led-color, #d9aab3)" stroke="#c05a68" stroke-width="0.4" data-path="ex9208-craft/led-alarm-major" data-class="led" data-states="red off" />
+    <ellipse id="ex9208-craft--btn-aco" cx="332.4" cy="13.0" rx="6.2" ry="4.2" fill="#c9ced3" stroke="#8a9096" stroke-width="0.4" />
+    <rect id="ex9208-craft--relay-minor" x="346.4" y="8.1" width="26.6" height="9.9" rx="0.8" fill="#3f8f4f" stroke="#2c6338" stroke-width="0.4" />
+    <circle cx="349.2" cy="13.0" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+    <circle cx="370.2" cy="13.0" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+    <rect x="352.4" y="10.0" width="15.6" height="6.0" fill="#173820" />
+    <rect id="ex9208-craft--relay-major" x="373.6" y="8.1" width="25.7" height="9.9" rx="0.8" fill="#3f8f4f" stroke="#2c6338" stroke-width="0.4" />
+    <circle cx="376.4" cy="13.0" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+    <circle cx="396.5" cy="13.0" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+    <rect x="379.6" y="10.0" width="14.8" height="6.0" fill="#173820" />
+    <circle id="ex9208-craft--led-sf0-ok" cx="95.35" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-sf0-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-sf0-fail" cx="103.05" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-sf0-fail" data-class="led" data-states="red off" />
+    <ellipse cx="99.2" cy="35.0" rx="6.1" ry="4.2" fill="#79bde8" stroke="#4b8fb8" stroke-width="0.4" />
+    <circle id="ex9208-craft--led-sf1-ok" cx="127.05" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-sf1-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-sf1-fail" cx="134.75" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-sf1-fail" data-class="led" data-states="red off" />
+    <ellipse cx="130.9" cy="35.0" rx="6.1" ry="4.2" fill="#79bde8" stroke="#4b8fb8" stroke-width="0.4" />
+    <circle id="ex9208-craft--led-lc0-ok" cx="158.95" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc0-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-lc0-fail" cx="166.65" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc0-fail" data-class="led" data-states="red off" />
+    <ellipse cx="162.8" cy="35.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+    <circle id="ex9208-craft--led-lc1-ok" cx="190.55" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc1-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-lc1-fail" cx="198.25" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc1-fail" data-class="led" data-states="red off" />
+    <ellipse cx="194.4" cy="35.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+    <circle id="ex9208-craft--led-lc2-ok" cx="222.25" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc2-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-lc2-fail" cx="229.95" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc2-fail" data-class="led" data-states="red off" />
+    <ellipse cx="226.1" cy="35.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+    <circle id="ex9208-craft--led-lc3-ok" cx="253.85" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc3-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-lc3-fail" cx="261.55" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc3-fail" data-class="led" data-states="red off" />
+    <ellipse cx="257.7" cy="35.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+    <circle id="ex9208-craft--led-lc4-ok" cx="285.45" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc4-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-lc4-fail" cx="293.15" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc4-fail" data-class="led" data-states="red off" />
+    <ellipse cx="289.3" cy="35.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+    <circle id="ex9208-craft--led-lc5-ok" cx="317.05" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc5-ok" data-class="led" data-states="green blinking off" />
+    <circle id="ex9208-craft--led-lc5-fail" cx="324.75" cy="28.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="ex9208-craft/led-lc5-fail" data-class="led" data-states="red off" />
+    <ellipse cx="320.9" cy="35.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+    <g id="ex9208-craft--tabs-silkscreen">
+      <text x="332.4" y="13.8" font-family="sans-serif" font-size="1.3" fill="#26313a" text-anchor="middle">ACO/LT</text>
+      <text x="99.2" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">0</text>
+      <text x="130.9" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">1</text>
+      <text x="162.8" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">0</text>
+      <text x="194.4" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">1</text>
+      <text x="226.1" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">2</text>
+      <text x="257.7" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">3</text>
+      <text x="289.3" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">4</text>
+      <text x="320.9" y="36.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">5</text>
+    </g>
+    <g id="ex9208-craft--panel-screws">
+      <circle cx="11.5" cy="29.2" r="3.4" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      <circle cx="414.2" cy="27.9" r="3.4" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+    </g>
+  </g>
+</svg>

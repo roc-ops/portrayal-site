@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="221.0mm" viewBox="0 0 444.5 221.0" data-device="ex9204" data-view="front" data-weight-kg="23.6" data-weight-max-kg="58.1" data-depth-total-mm="704.9" data-fabric-capacity="up to 3 Tbps backplane capacity (datasheet Table 1)" data-power-base-system-w="410" data-power-redundant-system-w="690" data-power-max-ac-w="2421" data-power-max-dc-w="2199" data-max-thermal-output="AC 8,252 BTU/h (2,420 W); DC 7,495 BTU/h (2,198 W) (datasheet, estimated, subject to change)" data-operating-temp="0 C to 40 C" data-storage-temp="-40 C to 70 C" data-humidity="5-90 percent noncondensing (operating), 5-95 percent noncondensing (nonoperating)" data-altitude="up to 3048 m" data-seismic="Designed to meet GR-63, Zone 4 earthquake requirements" data-nebs="SR-3580 NEBS Criteria Levels (Level 3 Compliance), GR-63-Core" data-eol="none-announced" data-airflow="side" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex9204-craft@'] .state-blinking { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex9204-craft@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex9204-craft@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex9204-craft@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='juniper/ex9204-craft@'] .state-yellow { --led-color: #f5a623; }
+</style>
+  <metadata>{"device":"Juniper EX9204","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/esd-warning@1":"1.0.0","common/rj45-eth@1":"1.2.0","juniper/ex9200-lc-sf-blank@1":"1.0.0","juniper/ex9200-re2@1":"1.0.0","juniper/ex9200-sf2@1":"1.0.0","juniper/ex9204-craft@1":"1.0.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.1","std/usb-a@1":"1.3.0"},"source-sha256":"6b47ba5158c7917abe9beb6ed90849addf824ae460be7b1c2ba301a5d49e569f","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX9204" data-sku="EX9204-BASE3B-AC-T" data-part-number="" x="0" y="0" width="444.5" height="221" rx="1.2" fill="#43474c" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="27.1" y="6.6" width="389.4" height="21.2" rx="0.6" fill="url(#portrayal-vent)" data-vent="40" />
+    <rect id="plate-0" data-kind="plate" x="11.25" y="83.8" width="24.9" height="124" rx="0.6" fill="#7b7c80" />
+    <rect id="plate-1" data-kind="plate" x="17.55" y="95.7" width="10.6" height="7.2" rx="3" fill="#e8e9eb" />
+    <rect id="plate-2" data-kind="plate" x="17.55" y="126.7" width="10.6" height="7.2" rx="3" fill="#e8e9eb" />
+    <rect id="plate-3" data-kind="plate" x="17.55" y="157.7" width="5.3" height="7.2" rx="3" fill="#8fcbeb" />
+    <rect id="plate-4" data-kind="plate" x="22.85" y="157.7" width="5.3" height="7.2" rx="3" fill="#e8e9eb" />
+    <rect id="plate-5" data-kind="plate" x="17.55" y="188.7" width="10.6" height="7.2" rx="3" fill="#8fcbeb" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="16.5" cy="23.4" rx="2" ry="2" fill="#101214" id="cutout--esd-front" data-path="cutout:esd-front" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="22.85" y="100.2" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#3a3e43" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lc2">2</text>
+    <text x="22.85" y="131.2" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#3a3e43" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lc1">1</text>
+    <text x="22.85" y="162.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#3a3e43" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf1-lc0">1|0</text>
+    <text x="22.85" y="193.2" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#3a3e43" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf0">0</text>
+  </g>
+  <g id="craft" data-path="craft" data-class="bay" data-group="craft" data-group-role="management" data-rel-pos="0">
+    <title>craft</title>
+    <rect id="craft--opening" x="11" y="32.8" width="420.9" height="42.5" fill="#101214" />
+    <g id="craft--module" data-path="craft/module" data-class="display" data-behaviour="fills" data-ref="juniper/ex9204-craft@1:1.0.0" data-model="EX9204 Craft Interface" data-power-absent="not-published" data-states="absent" transform="translate(221.45,54.05) translate(-210.45,-21.25)">
+      <title>craft--module</title>
+      <rect id="craft--module--face" x="0" y="0" width="420.9" height="42.5" rx="0.6" fill="#4d545b" stroke="#2c3135" stroke-width="0.4" />
+      <rect x="0" y="40.7" width="420.9" height="1.8" fill="#79bde8" />
+      <rect id="craft--module--logo-zone" x="6.5" y="9.7" width="26.5" height="11.0" fill="none" data-path="craft/module/logo-zone" data-class="label" />
+      <rect id="craft--module--logo-zone-2" x="383.0" y="26.9" width="27.7" height="8.5" fill="none" data-path="craft/module/logo-zone-2" data-class="label" />
+      <g id="craft--module--silkscreen">
+        <text x="42.5" y="16.8" font-family="sans-serif" font-size="5.0" fill="#d9dde1" text-anchor="start">EX9204</text>
+        <text x="99.0" y="21.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">RE0</text>
+        <text x="130.5" y="21.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">RE1</text>
+        <text x="114.75" y="8.1" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">MASTER</text>
+        <text x="114.75" y="13.1" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">ONLINE</text>
+        <text x="114.75" y="18.2" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">OFFLINE</text>
+        <text x="175.4" y="8.3" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">OK</text>
+        <text x="175.4" y="13.4" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">FAIL</text>
+        <text x="175.5" y="18.4" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="middle">FAN TRAY</text>
+        <text x="229.4" y="8.3" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">OK</text>
+        <text x="229.4" y="13.4" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="end">FAIL</text>
+        <text x="229.4" y="18.7" font-family="sans-serif" font-size="1.7" fill="#c9ced3" text-anchor="end">PEM</text>
+        <text x="232.2" y="18.7" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">0</text>
+        <text x="238.5" y="18.7" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">1</text>
+        <text x="244.8" y="18.7" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">2</text>
+        <text x="251.1" y="18.7" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">3</text>
+        <text x="359.8" y="5.6" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="middle">NC       C       NO</text>
+        <text x="359.8" y="19.2" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">MINOR ALARM</text>
+        <text x="386.6" y="5.6" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="middle">NC       C       NO</text>
+        <text x="386.6" y="19.2" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">MAJOR ALARM</text>
+        <text x="90.2" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+        <text x="108.8" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+        <text x="121.8" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+        <text x="140.4" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+        <text x="153.4" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+        <text x="172.0" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+        <text x="184.9" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">OK</text>
+        <text x="203.5" y="27.8" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">FAIL</text>
+      </g>
+      <circle id="craft--module--led-re0-master" cx="99.0" cy="7.4" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-re0-master" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re0-online" cx="99.0" cy="12.4" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-re0-online" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re0-offline" cx="99.0" cy="17.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-re0-offline" data-class="led" data-states="red off" />
+      <circle id="craft--module--led-re1-master" cx="130.5" cy="7.4" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-re1-master" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re1-online" cx="130.5" cy="12.4" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-re1-online" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re1-offline" cx="130.5" cy="17.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-re1-offline" data-class="led" data-states="red off" />
+      <circle id="craft--module--led-fan-ok" cx="178.6" cy="7.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-fan-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-fan-fail" cx="178.6" cy="12.8" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-fan-fail" data-class="led" data-states="red off" />
+      <g id="craft--module--fan-symbols" fill="#c9ced3">
+        <ellipse cx="183.4" cy="7.4" rx="1.2" ry="0.5" transform="rotate(45 183.4 7.4)" />
+        <ellipse cx="183.4" cy="7.4" rx="1.2" ry="0.5" transform="rotate(-45 183.4 7.4)" />
+        <ellipse cx="183.4" cy="12.5" rx="1.2" ry="0.5" transform="rotate(45 183.4 12.5)" />
+        <ellipse cx="183.4" cy="12.5" rx="1.2" ry="0.5" transform="rotate(-45 183.4 12.5)" />
+      </g>
+      <circle id="craft--module--led-pem0-ok" cx="232.2" cy="7.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem0-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem0-fail" cx="232.2" cy="12.8" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem0-fail" data-class="led" data-states="red off" />
+      <circle id="craft--module--led-pem1-ok" cx="238.5" cy="7.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem1-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem1-fail" cx="238.5" cy="12.8" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem1-fail" data-class="led" data-states="red off" />
+      <circle id="craft--module--led-pem2-ok" cx="244.8" cy="7.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem2-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem2-fail" cx="244.8" cy="12.8" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem2-fail" data-class="led" data-states="red off" />
+      <circle id="craft--module--led-pem3-ok" cx="251.1" cy="7.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem3-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem3-fail" cx="251.1" cy="12.8" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-pem3-fail" data-class="led" data-states="red off" />
+      <path id="craft--module--led-alarm-minor" d="M 295.4 8.45 L 299.65 15.95 L 291.15 15.95 Z" fill="var(--led-color, #e8e6c0)" stroke="#b8b23e" stroke-width="0.4" data-path="craft/module/led-alarm-minor" data-class="led" data-states="yellow off" />
+      <circle id="craft--module--led-alarm-major" cx="313.3" cy="12.2" r="4.3" fill="var(--led-color, #d9aab3)" stroke="#c05a68" stroke-width="0.4" data-path="craft/module/led-alarm-major" data-class="led" data-states="red off" />
+      <ellipse id="craft--module--btn-aco" cx="332.4" cy="12.2" rx="5.7" ry="3.9" fill="#c9ced3" stroke="#8a9096" stroke-width="0.4" />
+      <rect id="craft--module--relay-minor" x="346.4" y="7.7" width="26.8" height="9.1" rx="0.8" fill="#3f8f4f" stroke="#2c6338" stroke-width="0.4" />
+      <circle cx="349.2" cy="12.2" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+      <circle cx="370.4" cy="12.2" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+      <rect x="352.4" y="9.2" width="15.6" height="6.0" fill="#173820" />
+      <rect id="craft--module--relay-major" x="373.6" y="7.7" width="26.0" height="9.1" rx="0.8" fill="#3f8f4f" stroke="#2c6338" stroke-width="0.4" />
+      <circle cx="376.4" cy="12.2" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+      <circle cx="397.0" cy="12.2" r="1.3" fill="#d79a2b" stroke="#2c6338" stroke-width="0.3" />
+      <rect x="379.6" y="9.2" width="15.0" height="6.0" fill="#173820" />
+      <circle id="craft--module--led-slot-0-ok" cx="95.95" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-0-ok" data-class="led" data-states="green blinking off" />
+      <circle id="craft--module--led-slot-0-fail" cx="103.45" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-0-fail" data-class="led" data-states="red off" />
+      <ellipse cx="99.7" cy="34.0" rx="6.1" ry="4.2" fill="#79bde8" stroke="#4b8fb8" stroke-width="0.4" />
+      <circle id="craft--module--led-slot-1-0-ok" cx="127.55" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-1-0-ok" data-class="led" data-states="green blinking off" />
+      <circle id="craft--module--led-slot-1-0-fail" cx="135.05" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-1-0-fail" data-class="led" data-states="red off" />
+      <ellipse cx="131.3" cy="34.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+      <path d="M 125.2 34.0 A 6.1 4.2 0 0 1 131.3 29.8 V 38.2 A 6.1 4.2 0 0 1 125.2 34.0 Z" fill="#79bde8" />
+      <circle id="craft--module--led-slot-1-ok" cx="159.15" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-1-ok" data-class="led" data-states="green blinking off" />
+      <circle id="craft--module--led-slot-1-fail" cx="166.65" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-1-fail" data-class="led" data-states="red off" />
+      <ellipse cx="162.9" cy="34.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+      <circle id="craft--module--led-slot-2-ok" cx="190.65" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-2-ok" data-class="led" data-states="green blinking off" />
+      <circle id="craft--module--led-slot-2-fail" cx="198.15" cy="27.2" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" data-path="craft/module/led-slot-2-fail" data-class="led" data-states="red off" />
+      <ellipse cx="194.4" cy="34.0" rx="6.1" ry="4.2" fill="#b9bec3" stroke="#8a9096" stroke-width="0.4" />
+      <g id="craft--module--tabs-silkscreen">
+        <text x="332.4" y="13.0" font-family="sans-serif" font-size="1.3" fill="#26313a" text-anchor="middle">ACO/LT</text>
+        <text x="99.7" y="35.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">0</text>
+        <text x="131.3" y="35.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">1|0</text>
+        <text x="162.9" y="35.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">1</text>
+        <text x="194.4" y="35.2" font-family="sans-serif" font-size="2.2" fill="#26313a" text-anchor="middle">2</text>
+      </g>
+      <g id="craft--module--panel-screws">
+        <circle cx="8.0" cy="28.4" r="3.3" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="414.9" cy="26.8" r="3.3" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="lc2" data-path="lc2" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="3">
+    <title>lc2</title>
+    <rect id="lc2--opening" x="38" y="84.55" width="396" height="29.5" fill="#101214" />
+    <g id="lc2--module" data-path="lc2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex9200-lc-sf-blank@1:1.0.0" data-states="absent" transform="translate(236,99.3) translate(-206.75,-14.75)">
+      <title>lc2--module</title>
+      <rect id="lc2--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#3e444a" stroke="#23272b" stroke-width="0.4" />
+      <rect x="10.0" y="0.8" width="393.5" height="0.5" fill="#6b7279" />
+      <g id="lc2--module--knob-left">
+        <rect x="4.7" y="9.9" width="19.6" height="9.0" rx="4.5" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="14.5" cy="14.4" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+        <path d="M 13.2 14.4 H 15.8 M 14.5 13.1 V 15.7" stroke="#3a3e43" stroke-width="0.35" />
+      </g>
+      <g id="lc2--module--knob-right">
+        <rect x="389.2" y="9.9" width="19.6" height="9.0" rx="4.5" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="399.0" cy="14.4" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+        <path d="M 397.7 14.4 H 400.3 M 399.0 13.1 V 15.7" stroke="#3a3e43" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="lc1" data-path="lc1" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="2">
+    <title>lc1</title>
+    <rect id="lc1--opening" x="38" y="115.55" width="396" height="29.5" fill="#101214" />
+    <g id="lc1--module" data-path="lc1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex9200-lc-sf-blank@1:1.0.0" data-states="absent" transform="translate(236,130.3) translate(-206.75,-14.75)">
+      <title>lc1--module</title>
+      <rect id="lc1--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#3e444a" stroke="#23272b" stroke-width="0.4" />
+      <rect x="10.0" y="0.8" width="393.5" height="0.5" fill="#6b7279" />
+      <g id="lc1--module--knob-left">
+        <rect x="4.7" y="9.9" width="19.6" height="9.0" rx="4.5" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="14.5" cy="14.4" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+        <path d="M 13.2 14.4 H 15.8 M 14.5 13.1 V 15.7" stroke="#3a3e43" stroke-width="0.35" />
+      </g>
+      <g id="lc1--module--knob-right">
+        <rect x="389.2" y="9.9" width="19.6" height="9.0" rx="4.5" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="399.0" cy="14.4" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+        <path d="M 397.7 14.4 H 400.3 M 399.0 13.1 V 15.7" stroke="#3a3e43" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="sf1-lc0" data-path="sf1-lc0" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="1">
+    <title>sf1-lc0</title>
+    <rect id="sf1-lc0--opening" x="38" y="146.55" width="396" height="29.5" fill="#101214" />
+    <g id="sf1-lc0--module" data-path="sf1-lc0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex9200-lc-sf-blank@1:1.0.0" data-states="absent" transform="translate(236,161.3) translate(-206.75,-14.75)">
+      <title>sf1-lc0--module</title>
+      <rect id="sf1-lc0--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#3e444a" stroke="#23272b" stroke-width="0.4" />
+      <rect x="10.0" y="0.8" width="393.5" height="0.5" fill="#6b7279" />
+      <g id="sf1-lc0--module--knob-left">
+        <rect x="4.7" y="9.9" width="19.6" height="9.0" rx="4.5" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="14.5" cy="14.4" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+        <path d="M 13.2 14.4 H 15.8 M 14.5 13.1 V 15.7" stroke="#3a3e43" stroke-width="0.35" />
+      </g>
+      <g id="sf1-lc0--module--knob-right">
+        <rect x="389.2" y="9.9" width="19.6" height="9.0" rx="4.5" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="399.0" cy="14.4" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+        <path d="M 397.7 14.4 H 400.3 M 399.0 13.1 V 15.7" stroke="#3a3e43" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="sf0" data-path="sf0" data-class="bay" data-group="sf-slots" data-group-role="service" data-rel-pos="0">
+    <title>sf0</title>
+    <rect id="sf0--opening" x="38" y="177.55" width="396" height="29.5" fill="#101214" />
+    <g id="sf0--module" data-path="sf0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/ex9200-sf2@1:1.0.0" data-model="EX9200-SF2" data-power-draw-max-w="155" data-power-draw-typical-w="155" data-states="ok fail absent" transform="translate(236,192.3) translate(-206.75,-14.75)">
+      <title>sf0--module</title>
+      <rect id="sf0--module--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#3e444a" stroke="#23272b" stroke-width="0.4" />
+      <rect x="10.0" y="0.8" width="393.5" height="0.5" fill="#6b7279" />
+      <g id="sf0--module--re" data-path="sf0/module/re" data-class="bay">
+        <rect id="sf0--module--re--opening" x="51.4" y="1.0" width="271.9" height="27.5" fill="#2f3439" />
+        <g id="sf0--module--re--module" data-path="sf0/module/re/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/ex9200-re2@1:1.0.0" data-cpu="6 cores, 2 GHz (RE-S-EX9200-2X00x6)" data-memory="64 GB" data-model="EX9200-RE2" data-power-draw-max-w="90" data-power-draw-typical-w="90" data-storage="50-GB SSD x 2" data-states="ok fail absent" transform="translate(51.4,1.0)">
+          <title>sf0--module--re--module</title>
+          <rect id="sf0--module--re--module--face" x="0" y="0" width="271.9" height="27.5" rx="0.6" fill="#3e444a" stroke="#23272b" stroke-width="0.4" />
+          <rect x="1.0" y="0.6" width="269.9" height="0.5" fill="#6b7279" />
+          <g id="sf0--module--re--module--latch-left" data-path="sf0/module/re/module/latch-left" data-class="latch">
+            <rect x="1.0" y="8.0" width="5.0" height="12.0" rx="1.4" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+          </g>
+          <g id="sf0--module--re--module--latch-right" data-path="sf0/module/re/module/latch-right" data-class="latch">
+            <rect x="265.9" y="8.0" width="5.0" height="12.0" rx="1.4" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+          </g>
+          <g id="sf0--module--re--module--captive-screws">
+            <circle cx="10.0" cy="11.2" r="3.2" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+            <path d="M 8.5 11.2 H 11.5 M 10.0 9.7 V 12.7" stroke="#3a3e43" stroke-width="0.45" />
+            <circle cx="263.0" cy="11.2" r="3.2" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+            <path d="M 261.5 11.2 H 264.5 M 263.0 9.7 V 12.7" stroke="#3a3e43" stroke-width="0.45" />
+          </g>
+          <g id="sf0--module--re--module--lamps">
+            <circle id="sf0--module--re--module--led-online" cx="108.8" cy="10.9" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" />
+            <circle id="sf0--module--re--module--led-ok-fail" cx="108.8" cy="15.5" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+            <circle id="sf0--module--re--module--led-master" cx="108.8" cy="20.1" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+            <circle id="sf0--module--re--module--led-disk1" cx="123.0" cy="14.7" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+            <circle id="sf0--module--re--module--led-disk2" cx="123.0" cy="21.7" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+            <circle id="sf0--module--re--module--btn-online" cx="116.4" cy="14.7" r="1.7" fill="#23272b" stroke="#8a9096" stroke-width="0.35" />
+            <circle id="sf0--module--re--module--btn-reset" cx="150.3" cy="19.0" r="1.0" fill="#0f1113" stroke="#8a9096" stroke-width="0.3" />
+          </g>
+          <rect id="sf0--module--re--module--ssd-cage" x="154.6" y="4.6" width="102.5" height="19.6" rx="1.2" fill="#2f3439" stroke="#aab0b6" stroke-width="0.4" />
+          <rect x="165.4" y="7.4" width="61.8" height="13.8" rx="0.8" fill="#23272b" stroke="#6b7279" stroke-width="0.3" />
+          <g id="sf0--module--re--module--silkscreen">
+            <text x="47.0" y="6.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">AUX</text>
+            <text x="67.2" y="6.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">CONSOLE</text>
+            <text x="87.4" y="6.6" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle">MGMT</text>
+            <text x="106.6" y="11.4" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="end">ONLINE</text>
+            <text x="106.6" y="16.0" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="end">OK/FAIL</text>
+            <text x="106.6" y="20.6" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="end">MASTER</text>
+            <text x="119.6" y="14.7" font-family="sans-serif" font-size="1.1" fill="#c9ced3" text-anchor="middle" transform="rotate(-90 119.6 14.7)">ONLINE/OFFLINE</text>
+            <text x="123.0" y="12.4" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">DISK1</text>
+            <text x="123.0" y="24.4" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">DISK2</text>
+            <text x="135.7" y="10.2" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="middle">USB</text>
+            <text x="131.3" y="24.4" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">1</text>
+            <text x="140.1" y="24.4" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">2</text>
+            <text x="150.3" y="16.6" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">RESET</text>
+            <text x="169.0" y="14.3" font-family="sans-serif" font-size="1.5" fill="#c9ced3" text-anchor="middle" transform="rotate(-90 169.0 14.3)">SSD 1</text>
+            <text x="173.6" y="14.3" font-family="sans-serif" font-size="1.5" fill="#c9ced3" text-anchor="middle" transform="rotate(-90 173.6 14.3)">SSD 2</text>
+            <text x="234.0" y="3.4" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="start">EX9200-RE2</text>
+          </g>
+          <g id="sf0--module--re--module--aux" data-path="sf0/module/re/module/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="auxiliary console" data-media="rj45-serial" transform="translate(39.1,8.4)" data-group="mgmt" data-group-role="management">
+            <title>sf0--module--re--module--aux</title>
+            <path id="sf0--module--re--module--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sf0--module--re--module--aux--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sf0--module--re--module--aux--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sf0/module/re/module/aux/opening" data-class="cutout" />
+            <g id="sf0--module--re--module--aux--pins" fill="#a8873c">
+              <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+              <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+              <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+              <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+              <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+              <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+              <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+              <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+            </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <g id="sf0--module--re--module--console" data-path="sf0/module/re/module/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(59.3,8.4)" data-group="mgmt" data-group-role="management">
+            <title>sf0--module--re--module--console</title>
+            <path id="sf0--module--re--module--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sf0--module--re--module--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sf0--module--re--module--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sf0/module/re/module/console/opening" data-class="cutout" />
+            <g id="sf0--module--re--module--console--pins" fill="#a8873c">
+              <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+              <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+              <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+              <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+              <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+              <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+              <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+              <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+            </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <g id="sf0--module--re--module--mgmt" data-path="sf0/module/re/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" transform="translate(79.5,8.4)" data-group="mgmt" data-group-role="management">
+            <title>sf0--module--re--module--mgmt</title>
+            <g id="sf0--module--re--module--mgmt--jack" data-path="sf0/module/re/module/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+              <title>sf0--module--re--module--mgmt--jack</title>
+              <path id="sf0--module--re--module--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+              <path id="sf0--module--re--module--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+              <path id="sf0--module--re--module--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sf0/module/re/module/mgmt/jack/opening" data-class="cutout" />
+              <g id="sf0--module--re--module--mgmt--jack--pins" fill="#a8873c">
+                <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+                <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+                <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+                <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+                <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+                <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+                <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+                <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+              </g>
+              <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+            </g>
+            <path id="sf0--module--re--module--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <rect id="sf0--module--re--module--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sf0/module/re/module/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+            <rect id="sf0--module--re--module--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sf0/module/re/module/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+            <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <g id="sf0--module--re--module--usb1" data-path="sf0/module/re/module/usb1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port 1" data-media="usb-a" transform="translate(125.3,14.35) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+            <title>sf0--module--re--module--usb1</title>
+            <rect id="sf0--module--re--module--usb1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="sf0/module/re/module/usb1/opening" data-class="cutout" />
+            <rect id="sf0--module--re--module--usb1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+            <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+          </g>
+          <g id="sf0--module--re--module--usb2" data-path="sf0/module/re/module/usb2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port 2" data-media="usb-a" transform="translate(134.1,14.35) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+            <title>sf0--module--re--module--usb2</title>
+            <rect id="sf0--module--re--module--usb2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="sf0/module/re/module/usb2/opening" data-class="cutout" />
+            <rect id="sf0--module--re--module--usb2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+            <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+          </g>
+        </g>
+      </g>
+      <g id="sf0--module--lever-left" data-path="sf0/module/lever-left" data-class="latch">
+        <rect x="0" y="11.05" width="29" height="7.4" rx="2.6" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="14.5" cy="14.75" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+      </g>
+      <g id="sf0--module--lever-right" data-path="sf0/module/lever-right" data-class="latch">
+        <rect x="384.5" y="11.05" width="29" height="7.4" rx="2.6" fill="#7cc0ea" stroke="#4b8fb8" stroke-width="0.3" />
+        <circle cx="399.0" cy="14.75" r="2.2" fill="#aeb3b8" stroke="#7d8288" stroke-width="0.3" />
+      </g>
+      <g id="sf0--module--lamps">
+        <circle id="sf0--module--led-ok-fail" cx="33.5" cy="7.0" r="0.9" fill="var(--led-color, #0f1113)" stroke="#8a9096" stroke-width="0.25" />
+        <circle id="sf0--module--led-fabric-active" cx="37.0" cy="7.0" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+        <circle id="sf0--module--led-fabric-only" cx="40.5" cy="7.0" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+        <circle cx="344.0" cy="5.0" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+        <circle cx="359.0" cy="8.0" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+        <circle cx="359.0" cy="12.0" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+        <circle cx="359.0" cy="16.0" r="0.9" fill="#0f1113" stroke="#8a9096" stroke-width="0.25" />
+      </g>
+      <g id="sf0--module--panel-screws">
+        <circle cx="45.5" cy="8.0" r="3.0" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <path d="M 44.0 8.0 H 47.0 M 45.5 6.5 V 9.5" stroke="#3a3e43" stroke-width="0.45" />
+        <circle cx="329.3" cy="7.0" r="3.0" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <path d="M 327.8 7.0 H 330.8 M 329.3 5.5 V 8.5" stroke="#3a3e43" stroke-width="0.45" />
+      </g>
+      <g id="sf0--module--silkscreen">
+        <text x="32.6" y="25.6" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="start" transform="rotate(-90 32.6 25.6)">OK/FAIL</text>
+        <text x="36.1" y="25.6" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="start" transform="rotate(-90 36.1 25.6)">ACTIVE</text>
+        <text x="39.6" y="25.6" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="start" transform="rotate(-90 39.6 25.6)">ONLY</text>
+        <path d="M 35.6 27.4 H 41.4" fill="none" stroke="#c9ced3" stroke-width="0.25" />
+        <text x="38.5" y="28.9" font-family="sans-serif" font-size="1.1" fill="#c9ced3" text-anchor="middle">FABRIC</text>
+        <text x="29.8" y="13.0" font-family="sans-serif" font-size="1.6" fill="#c9ced3" text-anchor="middle" transform="rotate(-90 29.8 13.0)">EX9200-SF2</text>
+        <text x="344.0" y="3.5" font-family="sans-serif" font-size="1.2" fill="#c9ced3" text-anchor="middle">LINK</text>
+        <text x="346.2" y="26.6" font-family="sans-serif" font-size="1.5" fill="#c9ced3" text-anchor="middle">XGE</text>
+        <text x="360.6" y="8.6" font-family="sans-serif" font-size="1.1" fill="#c9ced3" text-anchor="start">BITS</text>
+        <text x="360.6" y="12.6" font-family="sans-serif" font-size="1.1" fill="#c9ced3" text-anchor="start">GPS</text>
+        <text x="360.6" y="16.6" font-family="sans-serif" font-size="1.1" fill="#c9ced3" text-anchor="start">UTI</text>
+        <text x="373.7" y="6.0" font-family="sans-serif" font-size="1.3" fill="#c9ced3" text-anchor="middle">EXT CLK</text>
+      </g>
+      <g id="sf0--module--xge-0" data-path="sf0/module/xge-0" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="XGE port" data-media="sfp-plus" data-speed="10g" transform="translate(338.5,9.2)" data-group="xge" data-group-role="management" data-description="the SFP+ XGE port, which connects to the chassis Ethernet control switch and not to the switching fabric">
+        <title>sf0--module--xge-0</title>
+        <rect id="sf0--module--xge-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="sf0/module/xge-0/opening" data-class="cutout" />
+        <rect id="sf0--module--xge-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="sf0--module--xge-0--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="sf0--module--xge-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="sf0--module--xge-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="sf0--module--ext-clk" data-path="sf0/module/ext-clk" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="external clock" data-media="rj45" transform="translate(365.6,8.15)" data-group="clock" data-group-role="management" data-description="the RJ-45 external clock (BITS and GPS) interface">
+        <title>sf0--module--ext-clk</title>
+        <path id="sf0--module--ext-clk--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sf0--module--ext-clk--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sf0--module--ext-clk--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sf0/module/ext-clk/opening" data-class="cutout" />
+        <g id="sf0--module--ext-clk--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(13.5,20.4)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one at the front top left and one on the rear plate (guide Figures 5 and 6)" data-for="chassis">
+    <title>esd-front-jack</title>
+    <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-front-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+  <g id="esd-front-label" data-path="esd-front-label" data-class="marking" data-behaviour="mounts" data-ref="common/esd-warning@1:1.0.0" data-rel-pos="1" transform="translate(16.05,7.35)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one at the front top left and one on the rear plate (guide Figures 5 and 6)" data-for="chassis">
+    <title>esd-front-label</title>
+    <path id="esd-front-label--field" d="M 3.85 0.25 L 7.45 6.35 H 0.25 Z" fill="#161616" stroke="#f2c619" stroke-width="0.45" stroke-linejoin="round" />
+    <g id="esd-front-label--hand" fill="none" stroke="#f2c619" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 2.6 5.6 L 3.3 3.9 L 3.1 2.4 M 3.3 3.9 L 3.9 2.2 M 3.3 3.9 L 4.5 2.6 M 3.3 3.9 L 4.9 3.4" />
+      <path d="M 1.4 5.2 L 5.9 2.6" stroke-width="0.25" />
+    </g>
+    <g id="esd-front-label--silkscreen">
+      <text x="3.85" y="8.35" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="1.9" text-anchor="middle" fill="#3a3d41">ESD</text>
+    </g>
+  </g>
+</svg>

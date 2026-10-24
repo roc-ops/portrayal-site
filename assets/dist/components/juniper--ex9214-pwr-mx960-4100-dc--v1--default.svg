@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="101.6mm" height="368.3mm" viewBox="0 0 101.6 368.3">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex9214-pwr-mx960-4100-dc@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex9214-pwr-mx960-4100-dc@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="ex9214-pwr-mx960-4100-dc" data-path="ex9214-pwr-mx960-4100-dc" data-class="psu" data-behaviour="fills" data-ref="juniper/ex9214-pwr-mx960-4100-dc@1:1.0.0" data-inlet="dc-terminal" data-input-voltage="-40 to -72 VDC" data-power-output-w="4100" data-redundancy="1+1 per zone" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex9214-pwr-mx960-4100-dc</title>
+    <rect id="ex9214-pwr-mx960-4100-dc--face" x="0" y="0" width="101.6" height="368.3" rx="1.0" fill="#b4bbbc" stroke="#8a8f94" stroke-width="0.4" />
+    <rect x="0" y="0" width="101.6" height="3.0" fill="#9aa1a3" />
+    <g id="ex9214-pwr-mx960-4100-dc--switch" data-path="ex9214-pwr-mx960-4100-dc/switch" data-class="switch" data-z-out="2.4" data-z-color="#26292d">
+      <rect x="45.0" y="7.5" width="16.0" height="31.0" rx="1.4" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+      <rect x="47.6" y="12.0" width="10.8" height="22.0" rx="1.2" fill="#4a4f55" />
+      <path d="M 53.0 15.0 V 21.0" stroke="#e8eaec" stroke-width="0.8" />
+      <circle cx="53.0" cy="28.0" r="1.5" fill="none" stroke="#e8eaec" stroke-width="0.6" />
+    </g>
+    <rect x="4.5" y="62.5" width="30.0" height="26.0" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+    <g id="ex9214-pwr-mx960-4100-dc--lamps">
+      <circle id="ex9214-pwr-mx960-4100-dc--led-inp0-ok" cx="11.6" cy="67.1" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="ex9214-pwr-mx960-4100-dc/led-inp0-ok" data-class="led" data-states="green off" />
+      <circle id="ex9214-pwr-mx960-4100-dc--led-inp1-ok" cx="11.6" cy="73.3" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="ex9214-pwr-mx960-4100-dc/led-inp1-ok" data-class="led" data-states="green off" />
+      <circle id="ex9214-pwr-mx960-4100-dc--led-dc-ok" cx="11.6" cy="79.5" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="ex9214-pwr-mx960-4100-dc/led-dc-ok" data-class="led" data-states="green off" />
+      <circle id="ex9214-pwr-mx960-4100-dc--led-ps-fail" cx="11.6" cy="85.7" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="ex9214-pwr-mx960-4100-dc/led-ps-fail" data-class="led" data-states="red off" />
+    </g>
+    <g id="ex9214-pwr-mx960-4100-dc--handle" data-path="ex9214-pwr-mx960-4100-dc/handle" data-class="latch" data-z-out="2.4" data-z-color="#9aa0a6">
+      <rect x="46.6" y="135.0" width="10.2" height="111.0" rx="5.1" fill="#9aa0a6" stroke="#6d7378" stroke-width="0.5" />
+    </g>
+    <rect x="10.0" y="262.0" width="82.0" height="14.0" fill="#7c8387" stroke="#5a5f64" stroke-width="0.4" />
+    <rect x="6.0" y="280.0" width="90.0" height="84.0" rx="1.0" fill="#a3aaac" stroke="#6d7378" stroke-width="0.4" />
+    <g id="ex9214-pwr-mx960-4100-dc--silkscreen">
+      <text x="15.0" y="68.0" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">INP0 OK</text>
+      <text x="15.0" y="74.2" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">INP1 OK</text>
+      <text x="15.0" y="80.4" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">DC OK</text>
+      <text x="15.0" y="86.6" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">PS FAIL</text>
+    </g>
+  </g>
+</svg>

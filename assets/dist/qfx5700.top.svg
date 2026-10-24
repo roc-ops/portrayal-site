@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.8mm" height="815.0mm" viewBox="0 0 440.8 815.0" data-device="qfx5700" data-view="top" data-weight-full-kg="69.8" data-weight-note="with all FRUs installed (guide Table 5; datasheet Table 2)" data-cable-manager="6RU with the cable management system fitted (guide, QFX5700 Physical Specifications)" data-enclosure="IP20 (IEC 60529)" data-throughput="up to 12.8 Tbps unidirectional, 25.6 Tbps bidirectional (datasheet Table 1)" data-forwarding-capacity="5.3 Bpps" data-packet-buffer="132 MB shared" data-latency="900 ns" data-line-cards="FPC 0 to 7 take QFX5K-FPC-4CD (4 x 400G), QFX5K-FPC-16C (16 x 100G) or QFX5K-FPC-20Y (20 x 10/25/50G); at most 144 logical ports" data-power-typical-w="1259" data-power-max-w="2271" data-power-envelope="fully-configured" data-power-typical-scope="eight QFX5K-FPC-16C cards, 25 C, 50 percent IMIX load, no MACsec, no transceivers (guide Table 9); the 20Y and 4CD builds are 751 W and 1095 W" data-power-max-scope="eight QFX5K-FPC-16C cards, 40 C, SR optics, 100 percent IMIX load, MACsec on (guide Table 9); the 20Y and 4CD builds are 1622 W and 1762 W" data-psu-input-ac="200 to 277 VAC rated, 180 to 305 VAC, 47 to 63 Hz; the supplies detect HVDC (190 to 400 VDC) as well (guide Table 8)" data-psu-input-dc="40 to 72 VDC, rated 48 to 60 VDC; the input current selector sets 60 A (2700 W, 2200 W under the warning voltage) or 80 A (3000 W) (guide Tables 12)" data-operating-temp="0 C to 40 C (datasheet; the guide's Table 21 prints the same range as the non-operating temperature)" data-storage-temp="-40 C to 85 C shipping and storage (guide Table 21; the datasheet prints 70 C)" data-humidity="55 to 70 percent non-condensing (guide Table 21; the datasheet prints 5 to 90 percent)" data-altitude="6000 ft (1828 m)" data-cpu="Intel Hewitt Lake 6-core x86 at 2.9 GHz in each Routing and Control Board" data-memory="32 GB DDR4 (two 16 GB DIMMs), expandable to 64 GB" data-storage="two 100 GB M.2 SATA or NVMe SSDs per Routing and Control Board" data-switching-silicon="Broadcom Trident 4" data-operating-system="Junos OS Evolved" data-timing="BITS RJ-45 jack, 10 MHz and PPS SMB connectors in and out, on each Routing and Control Board" data-oob="MGMT RJ-45 on the Routing and Control Board, autosensing 10/100/1000 with link and activity lamps" data-console="CON RJ-45 serial on the Routing and Control Board" data-usb="one USB 2.0/3.0 port on the Routing and Control Board" data-safety="UL 60950-1, CAN/CSA-C22.2 No. 60950-1, EN 60950-1, IEC 60950-1, UL 62368-1, EN 60825-1 (datasheet)" data-emc="FCC 47 CFR Part 15, ICES-003, BS EN 55032, BS EN 55035, EN 300 386, CISPR 32, CISPR 35, IEC/EN 61000 series (datasheet)" data-materials="RoHS 6/6, China RoHS, REACH, WEEE; power supply efficiency 80 Plus Silver (datasheet)" data-acoustic="less than 7.2 Bels (EN 300 753)" data-seismic="tested and meets GR-63 (guide Table 21); designed for GR-63 Zone 4 (datasheet)" data-telco="GR-1089-Core Issue 8; Deutsche Telekom 1TR9; BT GS7; CLEI code (datasheet)" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5700","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"51ccb2f9738c9a4cead8d0425ddcca08602c3c5ebaf8a9b840515172b0af3bc9","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5700" x="0" y="0" width="440.8" height="815" rx="1.2" fill="#8f949a" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

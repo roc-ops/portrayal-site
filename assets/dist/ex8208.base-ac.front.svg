@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.15mm" height="615.95mm" viewBox="0 0 438.15 615.95" data-device="ex8208" data-view="front" data-weight-chassis-kg="41" data-weight-base-kg="68" data-weight-redundant-kg="85" data-weight-max-kg="129" data-weight-note="Guide Table 7: chassis with backplane 89 lb (41 kg), base configuration 149 lb (68 kg), redundant 187 lb (85 kg), fully loaded 284 lb (129 kg), the last with the heaviest line cards in all eight slots. The datasheet gives 115 lb (52.5 kg), 176 lb (80 kg), 216 lb (98 kg) and 328 lb (149 kg); the guide's table is carried (gap weights)." data-switching-capacity="up to 6.2 Tbps (datasheet and guide, &quot;Benefits of the EX8208 Switch&quot;)" data-operating-temp="0 C to 40 C" data-humidity="10-85 percent noncondensing" data-altitude-max="10,000 ft (3048 m)" data-eol="announced" data-eol-announcement="https://www.juniper.net/support/pdf/eol/lod-q22017.pdf" data-airflow="side" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex8200-pwr-ac2k@'] .state-disabled { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-ac2k@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-ac2k@'] .state-high-line { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8200-pwr-ac2k@'] .state-low-line { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-ac2k@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8200-pwr-ac2k@'] .state-overloaded { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-ac2k@'] .state-overloaded { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8208-sf320@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8208-sf320@'] .state-offline { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sf320@'] .state-offline { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8208-sf320@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sf320@'] .state-waiting { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sf320@'] .state-waiting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-booting { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-booting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-powered { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-primary { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    #led-sys.state-failure, #led-sys .state-failure { --led-color: #eab308; }
+    #led-alm.state-major, #led-alm .state-major { --led-color: #ef4444; }
+    #led-alm.state-minor, #led-alm .state-minor { --led-color: #eab308; }
+    #led-sys.state-operating, #led-sys .state-operating { --led-color: #22c55e; }
+    #led-mst.state-primary, #led-mst .state-primary { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper EX8208","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/esd-warning@1":"1.0.0","common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","juniper/ex8200-lcd-button@1":"1.0.0","juniper/ex8200-psu-cover@1":"1.0.0","juniper/ex8200-pwr-ac2k@1":"1.0.0","juniper/ex8208-fan@1":"1.0.0","juniper/ex8208-lc-cover@1":"1.0.0","juniper/ex8208-sf320@1":"1.0.0","juniper/ex8208-sre320@1":"1.0.0","std/c20-inlet@1":"1.4.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"db44ca0ba510b7c133c28ccb2c8911149c3f68cfcb4e14db4ff1a2d789c7438f","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX8208" data-sku="EX8208-BASE-AC" data-part-number="" x="0" y="0" width="438.15" height="615.95" rx="1.2" fill="#b3b7bb" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="lcd" data-kind="display" x="273.6" y="11.4" width="38.9" height="12.4" rx="0.6" fill="#404c40" />
+    <rect id="esd-label" data-kind="label-plate" x="356.4" y="12.4" width="19.2" height="13.2" rx="0.4" fill="#e4e6e8" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="9.5" y="608.5" width="425.1" height="6" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="59.5" y="10" width="62.4" height="15.9" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="321.2" cy="14.9" rx="3.2" ry="3.2" fill="#101214" id="cutout--btn-menu" data-path="cutout:btn-menu" data-class="cutout" />
+    <ellipse cx="321.2" cy="22.1" rx="3.2" ry="3.2" fill="#101214" id="cutout--btn-enter" data-path="cutout:btn-enter" data-class="cutout" />
+    <ellipse cx="340.5" cy="10.3" rx="1" ry="1" fill="#101214" id="cutout--led-alm" data-path="cutout:led-alm" data-class="cutout" />
+    <ellipse cx="340.5" cy="18.1" rx="1" ry="1" fill="#101214" id="cutout--led-sys" data-path="cutout:led-sys" data-class="cutout" />
+    <ellipse cx="340.5" cy="25.6" rx="1" ry="1" fill="#101214" id="cutout--led-mst" data-path="cutout:led-mst" data-class="cutout" />
+    <ellipse cx="380" cy="19" rx="2" ry="2" fill="#101214" id="cutout--esd-front" data-path="cutout:esd-front" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="342.8" y="10.9" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#2b2f33" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alm">ALM</text>
+    <text x="342.8" y="18.7" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#2b2f33" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys">SYS</text>
+    <text x="342.8" y="26.2" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#2b2f33" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-mst">MST</text>
+    <text x="405.9" y="23.6" font-family="sans-serif" font-size="6" text-anchor="middle" fill="#2b2f33" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">EX8208</text>
+    <text x="65" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu0">PSU 0</text>
+    <text x="136" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu1">PSU 1</text>
+    <text x="207" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu2">PSU 2</text>
+    <text x="278" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu3">PSU 3</text>
+    <text x="349" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu4">PSU 4</text>
+    <text x="420" y="501" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu5">PSU 5</text>
+  </g>
+  <g id="btn-menu" data-path="btn-menu" data-class="button" data-ref="juniper/ex8200-lcd-button@1:1.0.0" data-function="LCD menu" data-role="lcd-navigation" data-rel-pos="0" transform="translate(318.0,11.7)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-menu</title>
+    <circle cx="3.2" cy="3.2" r="3.1" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-menu--cap" cx="3.2" cy="3.2" r="2.6" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-menu/cap" data-class="button" />
+    <g stroke="#2b2e35" stroke-width="0.3" fill="#2b2e35">
+      <circle cx="2.0" cy="2.3" r="0.25" />
+      <circle cx="2.0" cy="3.2" r="0.25" />
+      <circle cx="2.0" cy="4.1" r="0.25" />
+      <path d="M 2.7 2.3 H 4.5 M 2.7 3.2 H 4.5 M 2.7 4.1 H 4.5" fill="none" />
+    </g>
+  </g>
+  <g id="btn-enter" data-path="btn-enter" data-class="button" data-ref="juniper/ex8200-lcd-button@1:1.0.0" data-function="LCD enter" data-role="lcd-navigation" data-rel-pos="1" transform="translate(318.0,18.9)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-enter</title>
+    <circle cx="3.2" cy="3.2" r="3.1" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-enter--cap" cx="3.2" cy="3.2" r="2.6" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-enter/cap" data-class="button" />
+    <path d="M 4.7 2.0 V 3.6 H 2.0 M 2.9 2.8 L 2.0 3.6 L 2.9 4.4" fill="none" stroke="#2b2e35" stroke-width="0.35" />
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(339.5,9.3)" data-group="status-leds" data-group-role="indicator" data-description="Table 14 - ALM: red major alarm, yellow minor alarm, unlit no alarm" data-states="off major minor" data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off major minor" data-z-dome="0.3" />
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(339.5,17.1)" data-group="status-leds" data-group-role="indicator" data-description="Table 14 - SYS: green, the switch is operating normally; yellow, one or more component failures are generating alarms; unlit, powered off" data-states="off operating failure" data-for="chassis">
+    <title>led-sys</title>
+    <circle id="led-sys--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys/lamp" data-class="led" data-states="off operating failure" data-z-dome="0.3" />
+  </g>
+  <g id="led-mst" data-path="led-mst" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(339.5,24.6)" data-group="status-leds" data-group-role="indicator" data-description="Table 14 - MST: green, the primary Routing Engine is operational; unlit, powered off" data-states="off primary" data-for="chassis">
+    <title>led-mst</title>
+    <circle id="led-mst--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-mst--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-mst/lamp" data-class="led" data-states="off primary" data-z-dome="0.3" />
+  </g>
+  <g id="fan" data-path="fan" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="0">
+    <title>fan</title>
+    <rect id="fan--opening" x="0" y="0" width="42.8" height="497" fill="#101214" />
+    <g id="fan--module" data-path="fan/module" data-class="fan" data-behaviour="fills" data-ref="juniper/ex8208-fan@1:1.0.0" data-airflow="side-to-side" data-fans="12" data-power-draw-max-w="1100" data-power-draw-typical-w="300" data-role="fan-tray" data-states="absent" transform="translate(21.4,248.5) translate(-21.4,-248.5)">
+      <title>fan--module</title>
+      <rect id="fan--module--face" x="0" y="0" width="42.8" height="497.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fan--module--tabs" fill="#d9dcdf" stroke="#6d7278" stroke-width="0.3">
+        <rect x="21.3" y="41.7" width="21.1" height="35.7" />
+        <rect x="21.3" y="79.9" width="21.1" height="35.7" />
+        <rect x="21.3" y="118.1" width="21.1" height="35.7" />
+        <rect x="21.3" y="156.3" width="21.1" height="35.7" />
+        <rect x="21.3" y="194.5" width="21.1" height="35.7" />
+        <rect x="21.3" y="232.7" width="21.1" height="35.7" />
+        <rect x="21.3" y="270.9" width="21.1" height="35.7" />
+        <rect x="21.3" y="309.1" width="21.1" height="35.7" />
+        <rect x="21.3" y="347.3" width="21.1" height="35.7" />
+        <rect x="21.3" y="385.5" width="21.1" height="35.7" />
+        <rect x="21.3" y="423.7" width="21.1" height="35.7" />
+      </g>
+      <rect id="fan--module--handle" x="12.1" y="178.3" width="8.6" height="136.5" rx="4.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="fan/module/handle" data-class="latch" />
+      <path d="M 20.1 12.9 L 33.6 35.3 L 6.6 35.3 Z" fill="none" stroke="#2b2e33" stroke-width="0.4" />
+      <g id="fan--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="13.5" cy="483.0" r="2.0" />
+        <circle cx="29.9" cy="483.0" r="2.0" />
+      </g>
+      <rect id="fan--module--latch" x="7.8" y="490.0" width="28.0" height="6.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.3" />
+      <g id="fan--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="22.4" y="8.7" font-size="3.3">EX8208 FAN</text>
+        <text x="20.1" y="32.5" font-size="11">!</text>
+        <g font-size="11">
+          <text x="32.0" y="62.8">0</text>
+          <text x="32.0" y="101.0">1</text>
+          <text x="32.0" y="139.2">2</text>
+          <text x="32.0" y="177.4">3</text>
+          <text x="32.0" y="323.6">4</text>
+          <text x="32.0" y="361.8">5</text>
+          <text x="32.0" y="400.0">6</text>
+          <text x="32.0" y="438.2">7</text>
+        </g>
+        <g font-size="7.5">
+          <text x="31.8" y="216.6">SRE0</text>
+          <text x="31.8" y="254.8">SF</text>
+          <text x="31.8" y="293.0">SRE1</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="lc0" data-path="lc0" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="0">
+    <title>lc0</title>
+    <rect id="lc0--opening" x="42.8" y="43.2" width="395.3" height="36" fill="#101214" />
+    <g id="lc0--module" data-path="lc0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,61.2) translate(-197.65,-18)">
+      <title>lc0--module</title>
+      <rect id="lc0--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc0--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc0--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="lc1" data-path="lc1" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="1">
+    <title>lc1</title>
+    <rect id="lc1--opening" x="42.8" y="81.4" width="395.3" height="36" fill="#101214" />
+    <g id="lc1--module" data-path="lc1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,99.4) translate(-197.65,-18)">
+      <title>lc1--module</title>
+      <rect id="lc1--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc1--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc1--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="lc2" data-path="lc2" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="2">
+    <title>lc2</title>
+    <rect id="lc2--opening" x="42.8" y="119.6" width="395.3" height="36" fill="#101214" />
+    <g id="lc2--module" data-path="lc2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,137.6) translate(-197.65,-18)">
+      <title>lc2--module</title>
+      <rect id="lc2--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc2--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc2--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="lc3" data-path="lc3" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="3">
+    <title>lc3</title>
+    <rect id="lc3--opening" x="42.8" y="157.8" width="395.3" height="36" fill="#101214" />
+    <g id="lc3--module" data-path="lc3/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,175.8) translate(-197.65,-18)">
+      <title>lc3--module</title>
+      <rect id="lc3--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc3--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc3--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="sre0" data-path="sre0" data-class="bay" data-group="sres" data-group-role="service" data-rel-pos="0">
+    <title>sre0</title>
+    <rect id="sre0--opening" x="53.35" y="199.45" width="374.2" height="29.1" fill="#101214" />
+    <g id="sre0--module" data-path="sre0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/ex8208-sre320@1:1.0.0" data-power-draw-max-w="200" data-role="routing-engine-and-fabric" data-states="ok fail absent" transform="translate(240.45,214) translate(-197.65,-18)">
+      <title>sre0--module</title>
+      <rect id="sre0--module--face" x="10.4" y="3.5" width="374.2" height="29.1" rx="0.6" fill="#d3d6d9" stroke="#8a8f94" stroke-width="0.4" />
+      <rect id="sre0--module--lever-left" x="7.2" y="28.8" width="117.8" height="3.5" rx="0.8" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sre0/module/lever-left" data-class="latch" />
+      <rect id="sre0--module--lever-right" x="270.3" y="28.8" width="117.8" height="3.5" rx="0.8" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sre0/module/lever-right" data-class="latch" />
+      <g id="sre0--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="16.1" cy="7.9" r="2.1" />
+        <circle cx="16.1" cy="19.5" r="2.1" />
+        <circle cx="378.0" cy="7.9" r="2.1" />
+        <circle cx="378.0" cy="19.5" r="2.1" />
+        <circle cx="5.7" cy="18.0" r="2.4" />
+        <circle cx="389.0" cy="18.0" r="2.4" />
+      </g>
+      <circle id="sre0--module--led-st" cx="25.6" cy="18.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sre0/module/led-st" data-class="led" data-states="off ok booting failed" />
+      <circle id="sre0--module--led-ms" cx="30.2" cy="18.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sre0/module/led-ms" data-class="led" data-states="off primary standby" />
+      <circle id="sre0--module--led-on" cx="25.6" cy="23.3" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sre0/module/led-on" data-class="led" data-states="off powered" />
+      <circle id="sre0--module--led-sf" cx="30.2" cy="23.3" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sre0/module/led-sf" data-class="led" data-states="off ok standby failed" />
+      <g id="sre0--module--silkscreen" font-family="sans-serif" fill="#2b2e33">
+        <g font-size="1.5" text-anchor="middle">
+          <text x="25.6" y="13.0">ST</text>
+          <text x="30.2" y="13.0">MS</text>
+          <text x="25.6" y="16.0">ON</text>
+          <text x="30.2" y="16.0">SF</text>
+          <text x="156.4" y="9.6">AUX</text>
+          <text x="178.8" y="9.6">CONSOLE</text>
+          <text x="202.4" y="9.6">MGMT</text>
+          <text x="134.9" y="16.8">USB</text>
+        </g>
+        <text x="114.0" y="22.4" font-size="1.5" text-anchor="end">RESET</text>
+        <text x="48.0" y="29.0" font-size="2.6">EX8208  SRE320</text>
+      </g>
+      <g id="sre0--module--reset" data-path="sre0/module/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="power-cycles the module" transform="translate(115.8,19.5)" data-group="mgmt" data-group-role="management">
+        <title>sre0--module--reset</title>
+        <circle id="sre0--module--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="sre0--module--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="sre0/module/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+      </g>
+      <g id="sre0--module--usb" data-path="sre0/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB port for installing Junos OS" data-media="usb-a" transform="translate(128.9,19.8)" data-group="mgmt" data-group-role="management">
+        <title>sre0--module--usb</title>
+        <rect id="sre0--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="sre0/module/usb/opening" data-class="cutout" />
+        <rect id="sre0--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="sre0--module--aux" data-path="sre0/module/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="auxiliary port" data-media="rj45-serial" data-note="not enabled; reserved for future use" transform="translate(148.5,12.6)" data-group="mgmt" data-group-role="management">
+        <title>sre0--module--aux</title>
+        <path id="sre0--module--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sre0--module--aux--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sre0--module--aux--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sre0/module/aux/opening" data-class="cutout" />
+        <g id="sre0--module--aux--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="sre0--module--con" data-path="sre0/module/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(170.9,12.6)" data-group="mgmt" data-group-role="management">
+        <title>sre0--module--con</title>
+        <path id="sre0--module--con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sre0--module--con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sre0--module--con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sre0/module/con/opening" data-class="cutout" />
+        <g id="sre0--module--con--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="sre0--module--mgmt" data-path="sre0/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" transform="translate(194.5,12.6)" data-group="mgmt" data-group-role="management">
+        <title>sre0--module--mgmt</title>
+        <g id="sre0--module--mgmt--jack" data-path="sre0/module/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>sre0--module--mgmt--jack</title>
+          <path id="sre0--module--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sre0--module--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sre0--module--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sre0/module/mgmt/jack/opening" data-class="cutout" />
+          <g id="sre0--module--mgmt--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="sre0--module--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="sre0--module--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sre0/module/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="sre0--module--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sre0/module/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="sf" data-path="sf" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="0">
+    <title>sf</title>
+    <rect id="sf--opening" x="53.35" y="237.65" width="374.2" height="29.1" fill="#101214" />
+    <g id="sf--module" data-path="sf/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8208-sf320@1:1.0.0" data-power-draw-max-w="100" data-role="switch-fabric" data-states="ok fail absent" transform="translate(240.45,252.2) translate(-197.65,-18)">
+      <title>sf--module</title>
+      <rect id="sf--module--face" x="10.4" y="3.5" width="374.2" height="29.1" rx="0.6" fill="#d3d6d9" stroke="#8a8f94" stroke-width="0.4" />
+      <rect id="sf--module--lever-left" x="7.2" y="28.8" width="117.8" height="3.5" rx="0.8" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf/module/lever-left" data-class="latch" />
+      <rect id="sf--module--lever-right" x="270.3" y="28.8" width="117.8" height="3.5" rx="0.8" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf/module/lever-right" data-class="latch" />
+      <g id="sf--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="16.1" cy="4.7" r="2.1" />
+        <circle cx="16.1" cy="16.6" r="2.1" />
+        <circle cx="378.0" cy="3.9" r="2.1" />
+        <circle cx="378.0" cy="15.5" r="2.1" />
+        <circle cx="5.7" cy="16.0" r="2.4" />
+        <circle cx="389.0" cy="16.0" r="2.4" />
+      </g>
+      <circle id="sf--module--led-st" cx="26.0" cy="12.2" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf/module/led-st" data-class="led" data-states="off ok waiting failed" />
+      <circle id="sf--module--led-sf" cx="26.0" cy="16.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf--module--silkscreen" font-family="sans-serif" fill="#2b2e33">
+        <g font-size="1.5" text-anchor="start">
+          <text x="28.0" y="12.7">ST</text>
+          <text x="28.0" y="17.1">SF</text>
+        </g>
+        <text x="48.0" y="21.8" font-size="2.6">EX8208  SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sre1" data-path="sre1" data-class="bay" data-group="sres" data-group-role="service" data-rel-pos="1">
+    <title>sre1</title>
+    <rect id="sre1--opening" x="53.35" y="275.85" width="374.2" height="29.1" fill="#101214" />
+  </g>
+  <g id="lc4" data-path="lc4" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="4">
+    <title>lc4</title>
+    <rect id="lc4--opening" x="42.8" y="310.6" width="395.3" height="36" fill="#101214" />
+    <g id="lc4--module" data-path="lc4/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,328.6) translate(-197.65,-18)">
+      <title>lc4--module</title>
+      <rect id="lc4--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc4--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc4--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="lc5" data-path="lc5" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="5">
+    <title>lc5</title>
+    <rect id="lc5--opening" x="42.8" y="348.8" width="395.3" height="36" fill="#101214" />
+    <g id="lc5--module" data-path="lc5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,366.8) translate(-197.65,-18)">
+      <title>lc5--module</title>
+      <rect id="lc5--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc5--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc5--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="lc6" data-path="lc6" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="6">
+    <title>lc6</title>
+    <rect id="lc6--opening" x="42.8" y="387" width="395.3" height="36" fill="#101214" />
+    <g id="lc6--module" data-path="lc6/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,405) translate(-197.65,-18)">
+      <title>lc6--module</title>
+      <rect id="lc6--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc6--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc6--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="lc7" data-path="lc7" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="7">
+    <title>lc7</title>
+    <rect id="lc7--opening" x="42.8" y="425.2" width="395.3" height="36" fill="#101214" />
+    <g id="lc7--module" data-path="lc7/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8208-lc-cover@1:1.0.0" data-states="absent" transform="translate(240.45,443.2) translate(-197.65,-18)">
+      <title>lc7--module</title>
+      <rect id="lc7--module--face" x="0" y="0" width="395.3" height="36.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lc7--module--pull-left">
+        <rect x="6.0" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="lc7--module--pull-right">
+        <rect x="369.3" y="13.0" width="20.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+    </g>
+  </g>
+  <g id="psu0" data-path="psu0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu0</title>
+    <rect id="psu0--opening" x="9.5" y="503" width="70.1" height="104" fill="#101214" />
+    <g id="psu0--module" data-path="psu0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/ex8200-pwr-ac2k@1:1.0.0" data-airflow="front-to-back" data-input="100 to 120 VAC (13.8 A, 1200 W) or 200 to 240 VAC (12 A, 2000 W), 50 to 60 Hz; output 52 VDC" data-power-output-low-line-w="1200" data-power-output-w="2000" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(44.55,555) translate(-35.05,-52)">
+      <title>psu0--module</title>
+      <rect id="psu0--module--face" x="0" y="0" width="70.1" height="104.0" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <rect id="psu0--module--switch" x="46.3" y="12.4" width="10.9" height="15.0" rx="0.8" fill="#4a4f55" stroke="#2b2e33" stroke-width="0.3" data-path="psu0/module/switch" data-class="switch" />
+      <rect x="48.0" y="16.0" width="7.5" height="7.8" rx="0.5" fill="#8a8f95" />
+      <circle id="psu0--module--led-input-ok" cx="44.3" cy="32.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu0/module/led-input-ok" data-class="led" data-states="off high-line low-line" />
+      <circle id="psu0--module--led-output-ok" cx="50.6" cy="32.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu0/module/led-output-ok" data-class="led" data-states="off ok disabled" />
+      <circle id="psu0--module--led-fail" cx="56.9" cy="32.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu0/module/led-fail" data-class="led" data-states="off failed overloaded" />
+      <g id="psu0--module--silkscreen" font-family="sans-serif" font-size="1.3" fill="#2b2e33" text-anchor="middle">
+        <text x="44.3" y="35.4">INPUT</text>
+        <text x="44.3" y="37.0">OK</text>
+        <text x="50.6" y="35.4">OUTPUT</text>
+        <text x="50.6" y="37.0">OK</text>
+        <text x="56.9" y="35.4">FAIL</text>
+        <text x="51.8" y="10.4">ENABLE</text>
+      </g>
+      <g id="psu0--module--vents" fill="#4a4f55">
+        <rect x="4.6" y="41.0" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="44.6" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="48.2" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="51.8" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="55.4" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="59.0" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="62.6" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="66.2" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="69.8" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="73.4" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="77.0" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="80.6" width="58.9" height="1.4" rx="0.5" />
+      </g>
+      <rect id="psu0--module--handle" x="8.0" y="94.5" width="22.0" height="6.0" rx="2.5" fill="#6d7278" stroke="#4a4f55" stroke-width="0.3" data-path="psu0/module/handle" data-class="latch" />
+      <g id="psu0--module--screw" data-path="psu0/module/screw" data-class="screw">
+        <circle cx="46.6" cy="92.3" r="2.6" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.4" />
+        <path d="M 44.9 92.3 H 48.3 M 46.6 90.6 V 94.0" stroke="#4a4f55" stroke-width="0.4" />
+      </g>
+      <g id="psu0--module--inlet" data-path="psu0/module/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="AC input" data-input="ac" data-media="ac" transform="translate(4.8,11.3)">
+        <title>psu0--module--inlet</title>
+        <rect id="psu0--module--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu0/module/inlet/opening" data-class="cutout" />
+        <rect id="psu0--module--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu0--module--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu0--module--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu0--module--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="psu1" data-path="psu1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu1</title>
+    <rect id="psu1--opening" x="80.5" y="503" width="70.1" height="104" fill="#101214" />
+    <g id="psu1--module" data-path="psu1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/ex8200-pwr-ac2k@1:1.0.0" data-airflow="front-to-back" data-input="100 to 120 VAC (13.8 A, 1200 W) or 200 to 240 VAC (12 A, 2000 W), 50 to 60 Hz; output 52 VDC" data-power-output-low-line-w="1200" data-power-output-w="2000" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(115.55,555) translate(-35.05,-52)">
+      <title>psu1--module</title>
+      <rect id="psu1--module--face" x="0" y="0" width="70.1" height="104.0" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <rect id="psu1--module--switch" x="46.3" y="12.4" width="10.9" height="15.0" rx="0.8" fill="#4a4f55" stroke="#2b2e33" stroke-width="0.3" data-path="psu1/module/switch" data-class="switch" />
+      <rect x="48.0" y="16.0" width="7.5" height="7.8" rx="0.5" fill="#8a8f95" />
+      <circle id="psu1--module--led-input-ok" cx="44.3" cy="32.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu1/module/led-input-ok" data-class="led" data-states="off high-line low-line" />
+      <circle id="psu1--module--led-output-ok" cx="50.6" cy="32.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu1/module/led-output-ok" data-class="led" data-states="off ok disabled" />
+      <circle id="psu1--module--led-fail" cx="56.9" cy="32.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="psu1/module/led-fail" data-class="led" data-states="off failed overloaded" />
+      <g id="psu1--module--silkscreen" font-family="sans-serif" font-size="1.3" fill="#2b2e33" text-anchor="middle">
+        <text x="44.3" y="35.4">INPUT</text>
+        <text x="44.3" y="37.0">OK</text>
+        <text x="50.6" y="35.4">OUTPUT</text>
+        <text x="50.6" y="37.0">OK</text>
+        <text x="56.9" y="35.4">FAIL</text>
+        <text x="51.8" y="10.4">ENABLE</text>
+      </g>
+      <g id="psu1--module--vents" fill="#4a4f55">
+        <rect x="4.6" y="41.0" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="44.6" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="48.2" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="51.8" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="55.4" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="59.0" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="62.6" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="66.2" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="69.8" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="73.4" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="77.0" width="58.9" height="1.4" rx="0.5" />
+        <rect x="4.6" y="80.6" width="58.9" height="1.4" rx="0.5" />
+      </g>
+      <rect id="psu1--module--handle" x="8.0" y="94.5" width="22.0" height="6.0" rx="2.5" fill="#6d7278" stroke="#4a4f55" stroke-width="0.3" data-path="psu1/module/handle" data-class="latch" />
+      <g id="psu1--module--screw" data-path="psu1/module/screw" data-class="screw">
+        <circle cx="46.6" cy="92.3" r="2.6" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.4" />
+        <path d="M 44.9 92.3 H 48.3 M 46.6 90.6 V 94.0" stroke="#4a4f55" stroke-width="0.4" />
+      </g>
+      <g id="psu1--module--inlet" data-path="psu1/module/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="AC input" data-input="ac" data-media="ac" transform="translate(4.8,11.3)">
+        <title>psu1--module--inlet</title>
+        <rect id="psu1--module--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu1/module/inlet/opening" data-class="cutout" />
+        <rect id="psu1--module--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu1--module--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu1--module--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu1--module--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="psu2" data-path="psu2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu2</title>
+    <rect id="psu2--opening" x="151.5" y="503" width="70.1" height="104" fill="#101214" />
+    <g id="psu2--module" data-path="psu2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8200-psu-cover@1:1.0.0" data-states="absent" transform="translate(186.55,555) translate(-35.05,-52)">
+      <title>psu2--module</title>
+      <rect id="psu2--module--face" x="0" y="0" width="70.1" height="104.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu2--module--pull">
+        <rect x="22.0" y="88.0" width="26.0" height="8.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <circle cx="35.0" cy="92.0" r="2.2" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" />
+    </g>
+  </g>
+  <g id="psu3" data-path="psu3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psu3</title>
+    <rect id="psu3--opening" x="222.5" y="503" width="70.1" height="104" fill="#101214" />
+    <g id="psu3--module" data-path="psu3/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8200-psu-cover@1:1.0.0" data-states="absent" transform="translate(257.55,555) translate(-35.05,-52)">
+      <title>psu3--module</title>
+      <rect id="psu3--module--face" x="0" y="0" width="70.1" height="104.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu3--module--pull">
+        <rect x="22.0" y="88.0" width="26.0" height="8.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <circle cx="35.0" cy="92.0" r="2.2" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" />
+    </g>
+  </g>
+  <g id="psu4" data-path="psu4" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="4">
+    <title>psu4</title>
+    <rect id="psu4--opening" x="293.5" y="503" width="70.1" height="104" fill="#101214" />
+    <g id="psu4--module" data-path="psu4/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8200-psu-cover@1:1.0.0" data-states="absent" transform="translate(328.55,555) translate(-35.05,-52)">
+      <title>psu4--module</title>
+      <rect id="psu4--module--face" x="0" y="0" width="70.1" height="104.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu4--module--pull">
+        <rect x="22.0" y="88.0" width="26.0" height="8.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <circle cx="35.0" cy="92.0" r="2.2" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" />
+    </g>
+  </g>
+  <g id="psu5" data-path="psu5" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="5">
+    <title>psu5</title>
+    <rect id="psu5--opening" x="364.5" y="503" width="70.1" height="104" fill="#101214" />
+    <g id="psu5--module" data-path="psu5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex8200-psu-cover@1:1.0.0" data-states="absent" transform="translate(399.55,555) translate(-35.05,-52)">
+      <title>psu5--module</title>
+      <rect id="psu5--module--face" x="0" y="0" width="70.1" height="104.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu5--module--pull">
+        <rect x="22.0" y="88.0" width="26.0" height="8.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <circle cx="35.0" cy="92.0" r="2.2" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" />
+    </g>
+  </g>
+  <g id="esd-label-mark" data-path="esd-label-mark" data-class="marking" data-behaviour="mounts" data-ref="common/esd-warning@1:1.0.0" data-rel-pos="0" transform="translate(362.15,14.75)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD point in the header plate" data-for="chassis">
+    <title>esd-label-mark</title>
+    <path id="esd-label-mark--field" d="M 3.85 0.25 L 7.45 6.35 H 0.25 Z" fill="#161616" stroke="#f2c619" stroke-width="0.45" stroke-linejoin="round" />
+    <g id="esd-label-mark--hand" fill="none" stroke="#f2c619" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 2.6 5.6 L 3.3 3.9 L 3.1 2.4 M 3.3 3.9 L 3.9 2.2 M 3.3 3.9 L 4.5 2.6 M 3.3 3.9 L 4.9 3.4" />
+      <path d="M 1.4 5.2 L 5.9 2.6" stroke-width="0.25" />
+    </g>
+    <g id="esd-label-mark--silkscreen">
+      <text x="3.85" y="8.35" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="1.9" text-anchor="middle" fill="#3a3d41">ESD</text>
+    </g>
+  </g>
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="1" transform="translate(377.0,16.0)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD point in the header plate" data-for="chassis">
+    <title>esd-front-jack</title>
+    <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-front-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>
