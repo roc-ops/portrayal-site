@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="431.8mm" height="44.45mm" viewBox="0 0 431.8 44.45" data-device="ex4200-48t" data-view="right" data-weight="17.1 lb (7.8 kg) with the 320 W AC supply (datasheet); 16-18 lb (7.2-8.2 kg) with one supply (guide Table 3)" data-weight-chassis-parts="320 W AC and 190 W DC supplies 2.5 lb (1.1 kg); 600 W and 930 W AC supplies 3.1 lb (1.4 kg) (guide Table 3)" data-depth-with-large-psu="489 mm (19.25 in, 48.9 cm) with a 600 W or 930 W AC supply (guide Table 3); 18.8 in (47.8 cm) in the datasheet" data-datasheet-dimensions="17.41 x 1.72 x 16.43 in (44.21 x 4.32 x 41.73 cm) W x H x D; the guide's Table 3 is used for the envelope" data-width-with-brackets="482 mm (19 in, 48.2 cm) with the mounting brackets attached" data-switching-capacity="136 Gbps packet switching, 264 Gbps aggregate, 64-byte packets (datasheet)" data-throughput="101 Mpps wire speed (datasheet)" data-mac-addresses-max="32000" data-vlans-max="4096" data-airflow-cfm="20.3 (datasheet)" data-poe-ports="8" data-poe-budget-w="130" data-psu-redundancy="one supply carries a fully loaded chassis; a second gives redundancy (datasheet)" data-airflow-direction="side to rear (guide, Figure 16)" data-acoustic-noise="51.6 dBA with the 320 W AC supply (datasheet, ISO 7779 at 23 C)" data-operating-temp="0 to 45 C (32 to 113 F)" data-storage-temp="-40 to 70 C" data-humidity="10 to 85 percent noncondensing operating; 0 to 95 percent non-operating" data-altitude="up to 3049 m operating (10,000 ft); 4877 m non-operating" data-cpu="1 GHz PowerPC" data-memory="1 GB DRAM with ECC" data-storage="1 GB flash" data-virtual-chassis="up to 10 members over the 128 Gbps backplane; two rear Virtual Chassis ports" data-uplink-module="one slot; EX-UM-4SFP, EX-UM-2X4SFP, EX-UM-2X4SFP-M or EX-UM-2XFP (not part of the shipping configuration)" data-poe="IEEE 802.3af on the first eight ports, 15.4 W each, up to 18.6 W with enhanced PoE" data-console="RJ-45 on the rear" data-oob="RJ-45 management port on the rear, 100 Mbps full duplex, with link/activity and status lamps" data-lcd="2 lines of 16 characters with Menu and Enter buttons" data-usb="one USB port on the rear" data-nebs="NEBS certified (datasheet Table 1 marks the -24T, -48T, -24F and DC models; its compliance section says all models except EX4200-24P and EX4200-48P)" data-safety="UL 60950-1, C-UL, TUV/GS EN 60950-1, CB IEC 60950-1" data-emc="FCC 47 CFR Part 15 Class A, EN 55022 Class A, ICES-003, VCCI Class A" data-eol="announced" data-eol-announcement="https://eol.network/juniper/ex" data-end-of-sale="2019-06-30" data-end-of-life="2024-06-30" data-airflow="side" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX4200-48T","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"aabb713191efa060bf9855a9e5c614b06b2c7ad858056eb25eb14ebe2b39ed1c","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4200-48T" data-sku="EX4200-48T" data-part-number="" x="0" y="0" width="431.8" height="44.45" rx="1.2" fill="#2b2f3d" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

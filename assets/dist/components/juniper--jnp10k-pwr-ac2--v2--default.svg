@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="91.4mm" height="88.9mm" viewBox="0 0 91.4 88.9">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="jnp10k-pwr-ac2" data-path="jnp10k-pwr-ac2" data-class="psu" data-behaviour="fills" data-ref="juniper/jnp10k-pwr-ac2@2:2.0.0" data-body-depth="383.5" data-model="JNP10K-PWR-AC2" data-power-output-w="5500" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(0,0)">
+    <title>jnp10k-pwr-ac2</title>
+    <defs>
+      <linearGradient id="jnp10k-pwr-ac2--rocker-g-off" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#2a2d31" />
+        <stop offset="1" stop-color="#0b0c0d" />
+      </linearGradient>
+      <linearGradient id="jnp10k-pwr-ac2--rocker-g-on" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#0b0c0d" />
+        <stop offset="1" stop-color="#2a2d31" />
+      </linearGradient>
+      <pattern id="jnp10k-pwr-ac2--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+        <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#3a3e43" />
+        <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#3a3e43" />
+        <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#3a3e43" />
+        <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#3a3e43" />
+        <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#3a3e43" />
+      </pattern>
+    </defs>
+    <rect id="jnp10k-pwr-ac2--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
+    <g id="jnp10k-pwr-ac2--vents">
+      <rect x="1.6" y="1.4" width="40.0" height="86.1" fill="url(#jnp10k-pwr-ac2--hex)" />
+    </g>
+    <g id="jnp10k-pwr-ac2--handle">
+      <rect x="46.0" y="38.0" width="28.0" height="8.0" rx="3.6" fill="#33373c" stroke="#26292d" stroke-width="0.5" />
+    </g>
+    <g id="jnp10k-pwr-ac2--dip">
+      <rect x="60.0" y="29.0" width="8.7" height="5.0" rx="0.6" fill="#c0392b" stroke="#7d2419" stroke-width="0.3" />
+    </g>
+    <g id="jnp10k-pwr-ac2--lamps">
+      <circle id="jnp10k-pwr-ac2--led-fault" cx="47.9" cy="31.5" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      <circle id="jnp10k-pwr-ac2--led-pwr-ok" cx="53.9" cy="31.5" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+      <circle id="jnp10k-pwr-ac2--led-inp2" cx="72.4" cy="31.5" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      <circle id="jnp10k-pwr-ac2--led-inp1" cx="78.3" cy="31.5" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="jnp10k-pwr-ac2--switch">
+      <g id="jnp10k-pwr-ac2--rocker-off" data-show-from="state" data-show="off" data-z-out="2.5" data-z-profile="0:2.5,13:1.1">
+        <rect x="56.0" y="76.0" width="13.0" height="8.0" rx="1.2" fill="url(#jnp10k-pwr-ac2--rocker-g-off)" stroke="#3a3e43" stroke-width="0.4" />
+        <g id="jnp10k-pwr-ac2--rocker-off-silkscreen">
+          <text x="59.8" y="81.2" font-family="Arial" font-size="2.0" fill="#c7ccd1" text-anchor="middle">I</text>
+          <text x="65.2" y="81.2" font-family="Arial" font-size="2.0" fill="#c7ccd1" text-anchor="middle">O</text>
+        </g>
+      </g>
+      <g id="jnp10k-pwr-ac2--rocker-on" data-show-from="state" data-show="on" display="none" data-z-out="2.5" data-z-profile="0:1.1,13:2.5">
+        <rect x="56.0" y="76.0" width="13.0" height="8.0" rx="1.2" fill="url(#jnp10k-pwr-ac2--rocker-g-on)" stroke="#3a3e43" stroke-width="0.4" />
+        <g id="jnp10k-pwr-ac2--rocker-on-silkscreen">
+          <text x="59.8" y="81.2" font-family="Arial" font-size="2.0" fill="#c7ccd1" text-anchor="middle">I</text>
+          <text x="65.2" y="81.2" font-family="Arial" font-size="2.0" fill="#c7ccd1" text-anchor="middle">O</text>
+        </g>
+      </g>
+    </g>
+    <g id="jnp10k-pwr-ac2--silkscreen">
+      <g id="jnp10k-pwr-ac2--t1-silkscreen">
+        <text x="46.0" y="3.0" font-family="Arial" font-size="1.1" fill="{WSILK}" text-anchor="start">INP2</text>
+      </g>
+      <g id="jnp10k-pwr-ac2--t2-silkscreen">
+        <text x="46.0" y="48.0" font-family="Arial" font-size="1.1" fill="{WSILK}" text-anchor="start">INP1</text>
+      </g>
+      <g id="jnp10k-pwr-ac2--t3-silkscreen">
+        <text x="47.9" y="29.4" font-family="Arial" font-size="0.9" fill="{WSILK}" text-anchor="middle">FAULT</text>
+      </g>
+      <g id="jnp10k-pwr-ac2--t4-silkscreen">
+        <text x="53.9" y="34.6" font-family="Arial" font-size="0.9" fill="{WSILK}" text-anchor="middle">PWR OK</text>
+      </g>
+      <g id="jnp10k-pwr-ac2--t5-silkscreen">
+        <text x="72.4" y="29.4" font-family="Arial" font-size="0.9" fill="{WSILK}" text-anchor="middle">INP2</text>
+      </g>
+      <g id="jnp10k-pwr-ac2--t6-silkscreen">
+        <text x="78.3" y="34.6" font-family="Arial" font-size="0.9" fill="{WSILK}" text-anchor="middle">INP1</text>
+      </g>
+    </g>
+    <g id="jnp10k-pwr-ac2--inp2" data-path="jnp10k-pwr-ac2/inp2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP2" data-input="ac" data-media="ac" transform="translate(46.0,4.0)">
+      <title>jnp10k-pwr-ac2--inp2</title>
+      <rect id="jnp10k-pwr-ac2--inp2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="jnp10k-pwr-ac2/inp2/opening" data-class="cutout" />
+      <rect id="jnp10k-pwr-ac2--inp2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+      <rect id="jnp10k-pwr-ac2--inp2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <rect id="jnp10k-pwr-ac2--inp2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <rect id="jnp10k-pwr-ac2--inp2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+    </g>
+    <g id="jnp10k-pwr-ac2--inp1" data-path="jnp10k-pwr-ac2/inp1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP1" data-input="ac" data-media="ac" transform="translate(46.0,50.0)">
+      <title>jnp10k-pwr-ac2--inp1</title>
+      <rect id="jnp10k-pwr-ac2--inp1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="jnp10k-pwr-ac2/inp1/opening" data-class="cutout" />
+      <rect id="jnp10k-pwr-ac2--inp1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+      <rect id="jnp10k-pwr-ac2--inp1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <rect id="jnp10k-pwr-ac2--inp1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <rect id="jnp10k-pwr-ac2--inp1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

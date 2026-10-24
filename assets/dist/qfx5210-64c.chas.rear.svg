@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.2mm" height="88.9mm" viewBox="0 0 438.2 88.9" data-device="qfx5210-64c" data-view="rear" data-weight-note="23.44 lb (10.63 kg) without power supplies and fans, 31.09 lb (14.1 kg) with them (Table 26)" data-port-speeds="QSFP28 ports 0 to 63 run at 100 GbE by default and at 40 GbE with a QSFP+ transceiver. They run at 50, 25 or 10 GbE by channelization or breakout cable (up to 128 logical ports). The SFP+ ports run at 1 or 10 GbE" data-power-typical-w="357" data-power-max-w="655" data-power-typical-dc-w="383" data-power-max-dc-w="696" data-power-envelope="as-tested" data-power-input-ac="90 to 264 VAC, 50 to 60 Hz, 12 A at 100 VAC or 6 A at 240 VAC" data-power-input-dc="rated -48 to -60 VDC, operating range -40 to -72 VDC, 25 A maximum" data-redundancy-note="two supplies, 2N, each carrying the whole load; one may be removed at a time while the switch runs" data-fans="four fan modules and the fans in the two supplies; the switch runs 30 seconds without thermal shutdown while one fan module is replaced" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing (up to 93 percent short term)" data-altitude="AFO builds no performance degradation to 1828.8 m (6000 ft); AFI builds none at sea level" data-cpu="2.2 GHz quad-core Intel Xeon" data-memory="16 GB" data-storage="100 GB SSD" data-software="Junos OS 18.1R1 and later" data-optics-qsfp28="100 GbE QSFP28 and 40 GbE QSFP+ transceivers. DAC and breakout cables (QSFP+ to SFP+ DACBO, QSFP28 to QSFP+ DACBO). High-wattage optics (above 3.5 W) only in ports 32 to 63 on the AFI builds (guide, QFX5210-64C Port Panel Overview and Table 25)" data-optics-sfp-plus="1 GbE or 10 GbE SFP+ transceivers (guide, QFX5210-64C Port Panel Overview)" data-channelization="ports 0 to 31 take 4 x 10, 4 x 25 and 2 x 50 GbE breakouts. Ports 32 to 63 take 2 x 50 GbE before Junos OS 19.1R1. From 19.1R1 on, any port" data-oob="RJ45 1000BASE-T management port (em0, MGMT)" data-console="RJ-45 console port (CON, RS-232)" data-usb="one USB 2.0 port" data-seismic="Designed to comply with Zone 4 earthquake requirements per GR-63, Issue 4" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5210-64C","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"juniper/qfx5210-ground-plate@1":"1.0.0"},"source-sha256":"8b12ebb73b3ce39f11bfa6d12b1a7f91f79594eea9a791e46ee513bdf135d473","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5210-64C" data-sku="QFX5210-64C-CHAS" data-part-number="" x="0" y="0" width="438.2" height="88.9" rx="1.2" fill="#949aa2" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="model-plate" data-kind="plate" x="18.4" y="21.5" width="31.3" height="16.5" rx="0.6" fill="#4b4f55" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="20" y="10.5" width="28" height="7" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--logo-zone-2" data-path="region:logo-zone-2" data-class="region" x="21" y="29.8" width="26" height="7" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="34" y="27.2" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#f4f5f7" id="silk-model" data-path="silk:silk-model" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">QFX5210-64C</text>
+    <path d="M 0.889 -1 L 0.889 1 L -0.889 0 Z" fill="#1a1d1f" stroke="none" stroke-linejoin="round" transform="translate(150 4.8)" id="silk-air-0" data-path="silk:silk-air-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0.889 -1 L 0.889 1 L -0.889 0 Z" fill="#1a1d1f" stroke="none" stroke-linejoin="round" transform="translate(219 4.8)" id="silk-air-1" data-path="silk:silk-air-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0.889 -1 L 0.889 1 L -0.889 0 Z" fill="#1a1d1f" stroke="none" stroke-linejoin="round" transform="translate(288 4.8)" id="silk-air-2" data-path="silk:silk-air-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0.889 -1 L 0.889 1 L -0.889 0 Z" fill="#1a1d1f" stroke="none" stroke-linejoin="round" transform="translate(357 4.8)" id="silk-air-3" data-path="silk:silk-air-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="21" y="39.3" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#f4f5f7" id="silk-psu-0-ac" data-path="silk:silk-psu-0-ac" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">AC INPUT : 100-240V ~ ; 50-60Hz ; 12-7A</text>
+    <text x="21" y="42.4" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#f4f5f7" id="silk-psu-0-dc" data-path="silk:silk-psu-0-dc" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">DC INPUT : -48V- -60V ; 34A Max</text>
+    <text x="370.4" y="39.3" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#f4f5f7" id="silk-psu-1-ac" data-path="silk:silk-psu-1-ac" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">AC INPUT : 100-240V ~ ; 50-60Hz ; 12-7A</text>
+    <text x="370.4" y="42.4" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#f4f5f7" id="silk-psu-1-dc" data-path="silk:silk-psu-1-dc" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">DC INPUT : -48V- -60V ; 34A Max</text>
+    <text x="74.5" y="50.2" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f5f7" id="silk-psu-0" data-path="silk:silk-psu-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <text x="424" y="50.2" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f5f7" id="silk-psu-1" data-path="silk:silk-psu-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(74.5 45.8)" id="silk-psu-0-mark" data-path="silk:silk-psu-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0" />
+    <path d="M -1.2 -0.4 A 1.4 1.4 0 1 0 1.2 -0.4 M 0 -1.8 V 0.2" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(424 45.8)" id="silk-psu-1-mark" data-path="silk:silk-psu-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="149.9" y="22.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f5f7" id="silk-fan-0" data-path="silk:silk-fan-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <text x="218.9" y="22.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f5f7" id="silk-fan-1" data-path="silk:silk-fan-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <text x="287.9" y="22.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f5f7" id="silk-fan-2" data-path="silk:silk-fan-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">2</text>
+    <text x="356.9" y="22.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f5f7" id="silk-fan-3" data-path="silk:silk-fan-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3">3</text>
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(149.9 17.8)" id="silk-fan-0-mark" data-path="silk:silk-fan-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(218.9 17.8)" id="silk-fan-1-mark" data-path="silk:silk-fan-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(287.9 17.8)" id="silk-fan-2-mark" data-path="silk:silk-fan-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <path d="M 0 -1.5 A 1.5 1.5 0 1 0 0.01 -1.5 Z M -1.5 0 H 1.5 M 0 -1.5 V 1.5" fill="none" stroke="#f4f5f7" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(356.9 17.8)" id="silk-fan-3-mark" data-path="silk:silk-fan-3-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-3" />
+    <path d="M 0 -2.53 L 0 -0.46 M -2.3 -0.46 L 2.3 -0.46 M -1.426 0.552 L 1.426 0.552 M -0.644 1.564 L 0.644 1.564" fill="none" stroke="#f4f5f7" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(419.7 28.5)" id="silk-ground" data-path="silk:silk-ground" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-plate" />
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="85" y="23.5" width="69" height="64.3" fill="#101214" />
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="154" y="23.5" width="69" height="64.3" fill="#101214" />
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="223" y="23.5" width="69" height="64.3" fill="#101214" />
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="292" y="23.5" width="69" height="64.3" fill="#101214" />
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="18" y="45.2" width="52" height="41.8" fill="#101214" />
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="368" y="45.2" width="52" height="41.8" fill="#101214" />
+  </g>
+  <g id="ground-plate" data-path="ground-plate" data-class="ground" data-behaviour="mounts" data-ref="juniper/qfx5210-ground-plate@1:1.0.0" data-model="QFX5210 protective earthing terminal" data-rel-pos="0" transform="translate(366.5,22.0)" data-group="grounding" data-group-role="furniture" data-description="the protective earthing terminal on the FRU side, two screws for a two-hole lug (guide figure 8 callout 2, Connecting the QFX5210 to Ground)">
+    <title>ground-plate</title>
+    <rect id="ground-plate--plate" x="0" y="0" width="34.0" height="12.0" rx="0.8" fill="#b8bcc0" stroke="#888d92" stroke-width="0.4" />
+    <g id="ground-plate--screws">
+      <circle cx="9.05" cy="6.0" r="3.6" fill="#8a8f95" stroke="#5d6269" stroke-width="0.4" />
+      <circle cx="9.05" cy="6.0" r="2.1" fill="#b4b8bd" stroke="#6d7379" stroke-width="0.3" />
+      <path d="M 7.7 6.0 H 10.4 M 9.05 4.65 V 7.35" stroke="#5d6269" stroke-width="0.4" />
+      <circle cx="24.95" cy="6.0" r="3.6" fill="#8a8f95" stroke="#5d6269" stroke-width="0.4" />
+      <circle cx="24.95" cy="6.0" r="2.1" fill="#b4b8bd" stroke="#6d7379" stroke-width="0.3" />
+      <path d="M 23.6 6.0 H 26.3 M 24.95 4.65 V 7.35" stroke="#5d6269" stroke-width="0.4" />
+    </g>
+  </g>
+</svg>

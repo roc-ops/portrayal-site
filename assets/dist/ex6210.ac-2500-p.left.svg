@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="393.7mm" height="617.2mm" viewBox="0 0 393.7 617.2" data-device="ex6210" data-view="left" data-weight-empty-kg="57" data-weight-base-kg="72" data-weight-max-kg="98" data-weight-note="125 lb (57 kg) with the backplane only, 159 lb (72 kg) as the standard system ships, 215 lb (98 kg) fully loaded (guide Table 7); 213 to 215 lb (97 to 98 kg) with other line cards or supplies" data-width-note="17.3 in (43.9 cm) body; 19 in (48.3 cm) with the front-mounting brackets (guide Table 7)" data-depth-note="15.5 in (39.3 cm) (guide Table 7 and the datasheet)" data-backplane-capacity="4.4 Tbps maximum (datasheet, Aug 2011)" data-system-throughput="690 Mpps maximum (datasheet, Aug 2011)" data-fabric-bandwidth="64 Gbps full duplex per line card slot with one SRE module, 128 Gbps with two (guide); 720 Gbps of switching capacity per SRE module (datasheet)" data-port-density="up to 384 10/100/1000BASE-T ports with two SRE modules and eight line cards, up to 432 with one SRE module and nine line cards (guide, datasheet)" data-line-cards="EX6200-48T, EX6200-48P and EX6200-48F; not modelled (see gaps)" data-base-power-budget-w="500" data-power-envelope="unstated" data-base-power-budget-note="the maximum draw of the fan tray (300 W) and two SRE modules (100 W each); the same with one (guide, Calculating the Chassis Base Power Budget)" data-psu-types="2500 W AC, 5000 W AC or 2100 W DC; do not mix types, wattages or low-line and high-line feeds in one chassis" data-redundancy-note="up to four supplies; N+1 is the default and N+N (2+2) can be configured; a shipping order includes one supply" data-airflow-note="front to back; intake at the front right, exhaust at the rear left; each supply has its own fan" data-thermal-output-note="3.41 BTU/hr per watt of maximum system power (guide, Table 35)" data-operating-temp="0 to 40 C (32 to 104 F) (guide Table 42); 0 to 45 C in the 2011 datasheet" data-storage-temp="-40 to 70 C (-40 to 158 F) (datasheet)" data-humidity="10 to 85 percent noncondensing (guide Table 42); 5 to 90 percent in the 2011 datasheet" data-altitude="no performance degradation up to 10,000 ft (3048 m) (guide Table 42)" data-cpu="1.2 GHz dual-core on each SRE module (datasheet)" data-memory="2 GB DRAM and 2 GB flash on each SRE module (datasheet)" data-software="Junos OS Release 11.3R2 or later (guide)" data-redundancy="one or two SRE modules with graceful Routing Engine switchover; the fan tray, supplies and SRE modules are field-replaceable" data-sre-slots="slots 4 and 5 take an SRE module or a line card; at least one SRE module is required; with one, the guide recommends slot 4" data-oob="one 10/100/1000BASE-T and one Gigabit Ethernet SFP management port on each SRE module (one works at a time)" data-console="RJ-45 serial console on each SRE module" data-usb="one USB port on each SRE module" data-lcd="two-line, 16-character LCD with Menu and Enter buttons on each SRE module" data-acoustic="52 dBA with AC supplies, 54 dBA with DC supplies, at 27 C, ISO 7779 (datasheet, bystander position at the front)" data-seismic="Complies with Zone 4 earthquake requirements as per GR-63, Issue 4 (guide Table 42)" data-nebs="GR-63-Core, GR-1089-Core and SR-3580 NEBS Criteria Levels (Level 3) are listed under the customer-specific requirements of the 2011 datasheet, which marks the NEBS environmental standard in its feature table &quot;Roadmap&quot;" data-safety="CAN/CSA-C22.2 No. 60950-1, UL 60950-1, EN 60950-1, IEC 60950-1, EN 60825-1 (datasheet)" data-emc="FCC Part 15 Class A, EN 55022 Class A, VCCI Class A, CISPR 22 Class A, AS/NZS CISPR 22 Class A (datasheet)" data-materials="RoHS 5/6 (datasheet)" data-eol="announced" data-eol-announcement="https://support.juniper.net/support/eol/product/ex_series/" data-end-of-sale="2016-05-01" data-end-of-support="2022-12-31" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX6210","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"fda7bd9efa40003cf886d884f8184d288b6cddcc399c6ccd337cc988e67fe16b","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX6210" data-sku="EX6210-S64-96P-A25" data-part-number="" x="0" y="0" width="393.7" height="617.2" rx="1.2" fill="#8b8e94" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

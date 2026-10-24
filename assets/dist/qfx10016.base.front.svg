@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="442.0mm" height="929.6mm" viewBox="0 0 442.0 929.6" data-device="qfx10016" data-view="front" data-weight-empty-kg="99.79" data-weight-base-kg="236.78" data-weight-redundant-kg="270.34" data-throughput="up to 96 Tbps (datasheet Table 1; the guide gives a net switching capacity of 96 Tbps with six SIBs); 7.2 Tbps per slot" data-ports-max="2,304 x 10GbE, 576 x 40GbE or 480 x 100GbE (datasheet Table 1, with sixteen 30C cards)" data-power-typical-w="3989" data-power-max-w="5815" data-power-envelope="bare" data-power-typical-scope="datasheet - base system, line cards not included; redundant system 4,618 W typical and 6,630 W reserved" data-heat-dissipation="91,729 BTU/hr (26,883 W) maximum thermal output, estimated and subject to change" data-airflow="front-to-back" data-operating-temp="0 C to 40 C (32 F to 104 F)" data-storage-temp="-40 C to 70 C (-40 F to 158 F)" data-humidity="5 to 90 percent noncondensing operating, 5 to 95 percent nonoperating" data-altitude="up to 3,048 m (10,000 ft)" data-cpu="Intel quad-core 2.5 GHz" data-memory="32 GB SDRAM" data-storage="50 GB onboard SSD, plus an optional SATA SSD of 50 GB or 100 GB in the RCB" data-fabric="six switch interface boards, five required and the sixth for n+1; midplane-less" data-oob="MGMT RJ-45 (em0), 10/100/1000BASE-T, and MGMT SFP (em1), on each RCB" data-console="RJ-45 console (CON) on each RCB" data-usb="one USB 2.0 port on each RCB" data-seismic="Designed to meet GR-63 Zone 4 earthquake requirements" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx10000-re@'] .state-active { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-beacon { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-booting { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-link { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-present { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx10000-re@'] .state-primary { --led-color: #22c55e; }
+    #led-psus.state-fault, #led-psus .state-fault, #led-fans.state-fault, #led-fans .state-fault, #led-sibs.state-fault, #led-sibs .state-fault, #led-lcs.state-fault, #led-lcs .state-fault, #led-cbs.state-fault, #led-cbs .state-fault { --led-color: #f59e0b; }
+    #led-psus.state-ok, #led-psus .state-ok, #led-fans.state-ok, #led-fans .state-ok, #led-sibs.state-ok, #led-sibs .state-ok, #led-lcs.state-ok, #led-lcs .state-ok, #led-cbs.state-ok, #led-cbs .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper QFX10016","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","juniper/qfx10000-lc-cover@1":"1.0.0","juniper/qfx10000-re-cover@1":"1.0.0","juniper/qfx10000-re@1":"1.0.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.1","std/smb@1":"1.0.0","std/usb-a@1":"1.3.0"},"source-sha256":"9662d4842e2602cc4627581f0b02c43fdc89e7c754617b6f76425f14b5381914","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX10016" data-sku="QFX10016-BASE" data-part-number="" x="0" y="0" width="442" height="929.6" rx="1.2" fill="#565b61" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="442" height="14" rx="0.6" fill="#44484d" />
+    <rect id="plate-1" data-kind="plate" x="392.5" y="14" width="47" height="76.2" rx="0.6" fill="#4a4f55" />
+    <rect id="plate-2" data-kind="plate" x="0" y="90.2" width="442" height="20" rx="0.6" fill="#50555b" />
+    <rect id="plate-3" data-kind="plate" x="0" y="303.8" width="442" height="7" rx="0.6" fill="#50555b" />
+    <rect id="plate-4" data-kind="plate" x="0" y="504.4" width="442" height="7" rx="0.6" fill="#50555b" />
+    <rect id="plate-5" data-kind="plate" x="0" y="705" width="442" height="7" rx="0.6" fill="#50555b" />
+    <rect id="plate-6" data-kind="plate" x="0" y="905.6" width="442" height="24" rx="0.6" fill="#50555b" />
+    <rect id="plate-7" data-kind="plate" x="9" y="98" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+    <rect id="plate-8" data-kind="plate" x="26" y="98" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+    <rect id="plate-9" data-kind="plate" x="410" y="98" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+    <rect id="plate-10" data-kind="plate" x="429" y="98" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+    <rect id="plate-11" data-kind="plate" x="60" y="914" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+    <rect id="plate-12" data-kind="plate" x="74" y="914" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+    <rect id="plate-13" data-kind="plate" x="352" y="914" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+    <rect id="plate-14" data-kind="plate" x="366" y="914" width="4.4" height="4.4" rx="0.6" fill="#15171a" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="10" y="2.5" width="32" height="8.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="410.3" cy="42.3" rx="1" ry="1" fill="#101214" id="cutout--led-psus" data-path="cutout:led-psus" data-class="cutout" />
+    <ellipse cx="410.3" cy="47.1" rx="1" ry="1" fill="#101214" id="cutout--led-fans" data-path="cutout:led-fans" data-class="cutout" />
+    <ellipse cx="410.3" cy="51.9" rx="1" ry="1" fill="#101214" id="cutout--led-sibs" data-path="cutout:led-sibs" data-class="cutout" />
+    <ellipse cx="410.3" cy="56.9" rx="1" ry="1" fill="#101214" id="cutout--led-lcs" data-path="cutout:led-lcs" data-class="cutout" />
+    <ellipse cx="410.3" cy="61.7" rx="1" ry="1" fill="#101214" id="cutout--led-cbs" data-path="cutout:led-cbs" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="46" y="10" font-family="sans-serif" font-size="4" text-anchor="start" fill="#c7ccd1" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">QFX10016</text>
+    <text x="413" y="42.64" font-family="sans-serif" font-size="1.1" text-anchor="start" fill="#e8eaec" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-psus">POWER SUPPLIES</text>
+    <text x="413" y="47.44" font-family="sans-serif" font-size="1.1" text-anchor="start" fill="#e8eaec" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-fans">FANS</text>
+    <text x="413" y="52.24" font-family="sans-serif" font-size="1.1" text-anchor="start" fill="#e8eaec" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sibs">SIBS</text>
+    <text x="413" y="57.24" font-family="sans-serif" font-size="1.1" text-anchor="start" fill="#e8eaec" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-lcs">LINE CARDS</text>
+    <text x="413" y="62.04" font-family="sans-serif" font-size="1.1" text-anchor="start" fill="#e8eaec" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-cbs">CONTROL BOARDS</text>
+    <path d="M 0 -2.0 L 2.0 1.6 L -2.0 1.6 Z M 0 -0.8 V 0.6 M 0 1.0 V 1.1" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(402.4 47.6)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -1.3 1.2 H 1.3 M -1.0 1.2 C -1.0 -1.8 1.0 -1.8 1.0 1.2 M 0 -1.9 V -1.5 M -0.5 1.7 H 0.5" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(402.4 52.8)" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0 -1.9 A 1.9 1.9 0 1 0 0.01 -1.9 Z M 0 -1.0 V 0.4 M 0 0.9 V 1.0" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(402.4 57.8)" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="led-psus" data-path="led-psus" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(409.3,41.3)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
+    <title>led-psus</title>
+    <circle id="led-psus--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-psus--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-psus/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fans" data-path="led-fans" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(409.3,46.1)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
+    <title>led-fans</title>
+    <circle id="led-fans--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fans--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fans/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-sibs" data-path="led-sibs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(409.3,50.9)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
+    <title>led-sibs</title>
+    <circle id="led-sibs--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sibs--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sibs/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-lcs" data-path="led-lcs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(409.3,55.9)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
+    <title>led-lcs</title>
+    <circle id="led-lcs--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-lcs--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-lcs/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-cbs" data-path="led-cbs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(409.3,60.7)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
+    <title>led-cbs</title>
+    <circle id="led-cbs--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-cbs--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-cbs/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="cb0" data-path="cb0" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="0">
+    <title>cb0</title>
+    <rect id="cb0--opening" x="2.5" y="14" width="389" height="38.1" fill="#101214" />
+    <g id="cb0--module" data-path="cb0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/qfx10000-re@1:1.0.0" data-model="QFX10000-RE" data-power-draw-max-w="100" data-power-draw-typical-w="50" data-sfp="5" data-states="ok fail absent" transform="translate(197,33.05) translate(-194.5,-19.05)">
+      <title>cb0--module</title>
+      <defs>
+        <pattern id="cb0--module--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+          <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#b0b4b8" />
+          <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#b0b4b8" />
+          <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#b0b4b8" />
+          <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#b0b4b8" />
+          <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#b0b4b8" />
+        </pattern>
+      </defs>
+      <rect id="cb0--module--face" x="0" y="0" width="389.0" height="38.1" rx="0.6" fill="#c3c7cb" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="cb0--module--vents">
+        <rect x="14.0" y="1.2" width="361.0" height="35.7" fill="url(#cb0--module--hex)" />
+      </g>
+      <g id="cb0--module--lever-left">
+        <rect x="0.8" y="3.5" width="12.4" height="31.0" rx="5.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+        <rect x="3.4" y="9.5" width="7.2" height="19.0" rx="3.0" fill="#c3c7cb" stroke="#6d7278" stroke-width="0.3" />
+      </g>
+      <g id="cb0--module--lever-right">
+        <rect x="375.8" y="3.5" width="12.4" height="31.0" rx="5.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+        <rect x="378.4" y="9.5" width="7.2" height="19.0" rx="3.0" fill="#c3c7cb" stroke="#6d7278" stroke-width="0.3" />
+      </g>
+      <rect x="16.5" y="7.5" width="17.0" height="28.5" rx="1.0" fill="#c3c7cb" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="cb0--module--ssd-cover">
+        <rect x="161.5" y="7.7" width="98.2" height="28.4" rx="1.0" fill="#aeb2b7" stroke="#6d7278" stroke-width="0.4" />
+        <circle cx="167.3" cy="21.6" r="2.4" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+        <circle cx="253.9" cy="21.6" r="2.4" fill="#8a8f95" stroke="#6d7278" stroke-width="0.3" />
+      </g>
+      <g id="cb0--module--lamps">
+        <circle id="cb0--module--led-pwr" cx="29.5" cy="14.4" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-pwr" data-class="led" data-states="off ok fault" />
+        <circle id="cb0--module--led-sts" cx="29.5" cy="20.1" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-sts" data-class="led" data-states="off ok beacon booting fault" />
+        <circle id="cb0--module--led-mst" cx="29.5" cy="26.3" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-mst" data-class="led" data-states="off primary" />
+        <circle id="cb0--module--led-link-mgmt-sfp" cx="123.2" cy="12.9" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-link-mgmt-sfp" data-class="led" data-states="off link fault" />
+        <circle id="cb0--module--led-ssd" cx="269.0" cy="25.8" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-ssd" data-class="led" data-states="off present active" />
+        <circle id="cb0--module--led-xge-0" cx="311.9" cy="12.9" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-xge-0" data-class="led" data-states="off link" />
+        <circle id="cb0--module--led-xge-1" cx="326.6" cy="12.9" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-xge-1" data-class="led" data-states="off link" />
+        <circle id="cb0--module--led-xge-2" cx="340.5" cy="12.9" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-xge-2" data-class="led" data-states="off link" />
+        <circle id="cb0--module--led-xge-3" cx="354.8" cy="12.9" r="1.3" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-xge-3" data-class="led" data-states="off link" />
+      </g>
+      <g id="cb0--module--silkscreen">
+        <text x="26.4" y="15.1" font-family="sans-serif" font-size="1.5" fill="#2b2e32" text-anchor="end">PWR</text>
+        <text x="26.4" y="20.8" font-family="sans-serif" font-size="1.5" fill="#2b2e32" text-anchor="end">STS</text>
+        <text x="26.4" y="27.0" font-family="sans-serif" font-size="1.5" fill="#2b2e32" text-anchor="end">MST</text>
+        <text x="26.4" y="33.7" font-family="sans-serif" font-size="1.5" fill="#2b2e32" text-anchor="end">OFF</text>
+        <text x="44.6" y="34.2" font-family="sans-serif" font-size="1.6" fill="#2b2e32" text-anchor="middle">CON</text>
+        <text x="63.2" y="17.4" font-family="sans-serif" font-size="1.5" fill="#2b2e32" text-anchor="middle">1PPS</text>
+        <text x="81.8" y="17.4" font-family="sans-serif" font-size="1.5" fill="#2b2e32" text-anchor="middle">10MHz</text>
+        <text x="61.1" y="29.4" font-family="sans-serif" font-size="1.3" fill="#2b2e32" text-anchor="middle">IN</text>
+        <text x="69.2" y="29.4" font-family="sans-serif" font-size="1.3" fill="#2b2e32" text-anchor="middle">OUT</text>
+        <text x="77.7" y="29.4" font-family="sans-serif" font-size="1.3" fill="#2b2e32" text-anchor="middle">IN</text>
+        <text x="85.7" y="29.4" font-family="sans-serif" font-size="1.3" fill="#2b2e32" text-anchor="middle">OUT</text>
+        <text x="112.0" y="34.2" font-family="sans-serif" font-size="1.6" fill="#2b2e32" text-anchor="middle">MGMT</text>
+        <text x="269.0" y="31.2" font-family="sans-serif" font-size="1.4" fill="#2b2e32" text-anchor="middle">SSD</text>
+        <text x="286.9" y="29.2" font-family="sans-serif" font-size="1.4" fill="#2b2e32" text-anchor="middle">RESET</text>
+        <text x="307.7" y="13.6" font-family="sans-serif" font-size="1.7" fill="#2b2e32" text-anchor="middle">0</text>
+        <text x="322.4" y="13.6" font-family="sans-serif" font-size="1.7" fill="#2b2e32" text-anchor="middle">1</text>
+        <text x="336.3" y="13.6" font-family="sans-serif" font-size="1.7" fill="#2b2e32" text-anchor="middle">2</text>
+        <text x="350.6" y="13.6" font-family="sans-serif" font-size="1.7" fill="#2b2e32" text-anchor="middle">3</text>
+      </g>
+      <g id="cb0--module--con" data-path="cb0/module/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(36.7,15.0)" data-group="mgmt" data-group-role="management">
+        <title>cb0--module--con</title>
+        <path id="cb0--module--con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb0/module/con/opening" data-class="cutout" />
+        <g id="cb0--module--con--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--pps-in" data-path="cb0/module/pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS in" data-media="coax-smb" transform="translate(58.7,20.3)" data-group="timing" data-group-role="management" data-description="the timing block - the 1PPS and 10 MHz SMB jacks, in and out">
+        <title>cb0--module--pps-in</title>
+        <circle id="cb0--module--pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/pps-in/opening" data-class="cutout" />
+        <g id="cb0--module--pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--pps-out" data-path="cb0/module/pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS out" data-media="coax-smb" transform="translate(66.8,20.3)" data-group="timing" data-group-role="management" data-description="the timing block - the 1PPS and 10 MHz SMB jacks, in and out">
+        <title>cb0--module--pps-out</title>
+        <circle id="cb0--module--pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/pps-out/opening" data-class="cutout" />
+        <g id="cb0--module--pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--mhz-in" data-path="cb0/module/mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz in" data-media="coax-smb" transform="translate(75.3,20.3)" data-group="timing" data-group-role="management" data-description="the timing block - the 1PPS and 10 MHz SMB jacks, in and out">
+        <title>cb0--module--mhz-in</title>
+        <circle id="cb0--module--mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/mhz-in/opening" data-class="cutout" />
+        <g id="cb0--module--mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--mhz-out" data-path="cb0/module/mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz out" data-media="coax-smb" transform="translate(83.3,20.3)" data-group="timing" data-group-role="management" data-description="the timing block - the 1PPS and 10 MHz SMB jacks, in and out">
+        <title>cb0--module--mhz-out</title>
+        <circle id="cb0--module--mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/mhz-out/opening" data-class="cutout" />
+        <g id="cb0--module--mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--mgmt" data-path="cb0/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" data-speed="1g" transform="translate(93.8,15.6)" data-group="mgmt" data-group-role="management">
+        <title>cb0--module--mgmt</title>
+        <g id="cb0--module--mgmt--jack" data-path="cb0/module/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>cb0--module--mgmt--jack</title>
+          <path id="cb0--module--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="cb0--module--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="cb0--module--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb0/module/mgmt/jack/opening" data-class="cutout" />
+          <g id="cb0--module--mgmt--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="cb0--module--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="cb0--module--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cb0/module/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="cb0--module--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cb0/module/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--mgmt-sfp" data-path="cb0/module/mgmt-sfp" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="management SFP" data-media="sfp" data-speed="1g" transform="translate(115.95,18.2)" data-group="mgmt" data-group-role="management">
+        <title>cb0--module--mgmt-sfp</title>
+        <rect id="cb0--module--mgmt-sfp--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/mgmt-sfp/opening" data-class="cutout" />
+        <rect id="cb0--module--mgmt-sfp--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--mgmt-sfp--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--mgmt-sfp--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--mgmt-sfp--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--usb" data-path="cb0/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB 2.0 port" data-media="usb-a" transform="translate(139.9,22.45)" data-group="mgmt" data-group-role="management">
+        <title>cb0--module--usb</title>
+        <rect id="cb0--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="cb0/module/usb/opening" data-class="cutout" />
+        <rect id="cb0--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--reset" data-path="cb0/module/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" transform="translate(284.9,30.5)">
+        <title>cb0--module--reset</title>
+        <circle id="cb0--module--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="cb0--module--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="cb0/module/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+      </g>
+      <g id="cb0--module--offline" data-path="cb0/module/offline" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="offline" transform="translate(27.5,31.0)">
+        <title>cb0--module--offline</title>
+        <circle id="cb0--module--offline--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="cb0--module--offline--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="cb0/module/offline/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+      </g>
+      <g id="cb0--module--xge-0" data-path="cb0/module/xge-0" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved for future use" data-media="sfp-plus" data-speed="10g" transform="translate(303.4,19.2)" data-group="xge" data-group-role="management" data-description="the four numbered SFP+ cages, which the guide reserves for future use. They sit on the routing and control board and carry no user traffic, so they are filed with its management ports rather than as traffic">
+        <title>cb0--module--xge-0</title>
+        <rect id="cb0--module--xge-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/xge-0/opening" data-class="cutout" />
+        <rect id="cb0--module--xge-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--xge-0--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--xge-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--xge-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--xge-1" data-path="cb0/module/xge-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved for future use" data-media="sfp-plus" data-speed="10g" transform="translate(318.4,19.2)" data-group="xge" data-group-role="management" data-description="the four numbered SFP+ cages, which the guide reserves for future use. They sit on the routing and control board and carry no user traffic, so they are filed with its management ports rather than as traffic">
+        <title>cb0--module--xge-1</title>
+        <rect id="cb0--module--xge-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/xge-1/opening" data-class="cutout" />
+        <rect id="cb0--module--xge-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--xge-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--xge-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--xge-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--xge-2" data-path="cb0/module/xge-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved for future use" data-media="sfp-plus" data-speed="10g" transform="translate(333.4,19.2)" data-group="xge" data-group-role="management" data-description="the four numbered SFP+ cages, which the guide reserves for future use. They sit on the routing and control board and carry no user traffic, so they are filed with its management ports rather than as traffic">
+        <title>cb0--module--xge-2</title>
+        <rect id="cb0--module--xge-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/xge-2/opening" data-class="cutout" />
+        <rect id="cb0--module--xge-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--xge-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--xge-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--xge-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--xge-3" data-path="cb0/module/xge-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved for future use" data-media="sfp-plus" data-speed="10g" transform="translate(348.4,19.2)" data-group="xge" data-group-role="management" data-description="the four numbered SFP+ cages, which the guide reserves for future use. They sit on the routing and control board and carry no user traffic, so they are filed with its management ports rather than as traffic">
+        <title>cb0--module--xge-3</title>
+        <rect id="cb0--module--xge-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/xge-3/opening" data-class="cutout" />
+        <rect id="cb0--module--xge-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--xge-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--xge-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--xge-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="cb1" data-path="cb1" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="1">
+    <title>cb1</title>
+    <rect id="cb1--opening" x="2.5" y="52.1" width="389" height="38.1" fill="#101214" />
+    <g id="cb1--module" data-path="cb1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-re-cover@1:1.0.0" data-model="QFX10000 RCB cover" data-states="absent" transform="translate(197,71.15) translate(-194.5,-19.05)">
+      <title>cb1--module</title>
+      <rect id="cb1--module--face" x="0" y="0" width="389.0" height="38.1" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="cb1--module--pull-left">
+        <rect x="2.0" y="13.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="cb1--module--pull-right">
+        <rect x="365.0" y="13.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="cb1--module--vents">
+        <rect x="60.0" y="9.0" width="269.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc0" data-path="fpc0" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="0">
+    <title>fpc0</title>
+    <rect id="fpc0--opening" x="2.5" y="110.2" width="437" height="48" fill="#101214" />
+    <g id="fpc0--module" data-path="fpc0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,134.2) translate(-218.5,-24)">
+      <title>fpc0--module</title>
+      <rect id="fpc0--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc0--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc0--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc0--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc1" data-path="fpc1" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="1">
+    <title>fpc1</title>
+    <rect id="fpc1--opening" x="2.5" y="158.6" width="437" height="48" fill="#101214" />
+    <g id="fpc1--module" data-path="fpc1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,182.6) translate(-218.5,-24)">
+      <title>fpc1--module</title>
+      <rect id="fpc1--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc1--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc1--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc1--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc2" data-path="fpc2" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="2">
+    <title>fpc2</title>
+    <rect id="fpc2--opening" x="2.5" y="207" width="437" height="48" fill="#101214" />
+    <g id="fpc2--module" data-path="fpc2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,231) translate(-218.5,-24)">
+      <title>fpc2--module</title>
+      <rect id="fpc2--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc2--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc2--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc2--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc3" data-path="fpc3" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="3">
+    <title>fpc3</title>
+    <rect id="fpc3--opening" x="2.5" y="255.4" width="437" height="48" fill="#101214" />
+    <g id="fpc3--module" data-path="fpc3/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,279.4) translate(-218.5,-24)">
+      <title>fpc3--module</title>
+      <rect id="fpc3--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc3--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc3--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc3--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc4" data-path="fpc4" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="4">
+    <title>fpc4</title>
+    <rect id="fpc4--opening" x="2.5" y="310.8" width="437" height="48" fill="#101214" />
+    <g id="fpc4--module" data-path="fpc4/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,334.8) translate(-218.5,-24)">
+      <title>fpc4--module</title>
+      <rect id="fpc4--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc4--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc4--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc4--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc5" data-path="fpc5" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="5">
+    <title>fpc5</title>
+    <rect id="fpc5--opening" x="2.5" y="359.2" width="437" height="48" fill="#101214" />
+    <g id="fpc5--module" data-path="fpc5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,383.2) translate(-218.5,-24)">
+      <title>fpc5--module</title>
+      <rect id="fpc5--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc5--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc5--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc5--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc6" data-path="fpc6" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="6">
+    <title>fpc6</title>
+    <rect id="fpc6--opening" x="2.5" y="407.6" width="437" height="48" fill="#101214" />
+    <g id="fpc6--module" data-path="fpc6/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,431.6) translate(-218.5,-24)">
+      <title>fpc6--module</title>
+      <rect id="fpc6--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc6--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc6--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc6--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc7" data-path="fpc7" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="7">
+    <title>fpc7</title>
+    <rect id="fpc7--opening" x="2.5" y="456" width="437" height="48" fill="#101214" />
+    <g id="fpc7--module" data-path="fpc7/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,480) translate(-218.5,-24)">
+      <title>fpc7--module</title>
+      <rect id="fpc7--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc7--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc7--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc7--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc8" data-path="fpc8" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="8">
+    <title>fpc8</title>
+    <rect id="fpc8--opening" x="2.5" y="511.4" width="437" height="48" fill="#101214" />
+    <g id="fpc8--module" data-path="fpc8/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,535.4) translate(-218.5,-24)">
+      <title>fpc8--module</title>
+      <rect id="fpc8--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc8--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc8--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc8--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc9" data-path="fpc9" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="9">
+    <title>fpc9</title>
+    <rect id="fpc9--opening" x="2.5" y="559.8" width="437" height="48" fill="#101214" />
+    <g id="fpc9--module" data-path="fpc9/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,583.8) translate(-218.5,-24)">
+      <title>fpc9--module</title>
+      <rect id="fpc9--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc9--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc9--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc9--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc10" data-path="fpc10" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="10">
+    <title>fpc10</title>
+    <rect id="fpc10--opening" x="2.5" y="608.2" width="437" height="48" fill="#101214" />
+    <g id="fpc10--module" data-path="fpc10/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,632.2) translate(-218.5,-24)">
+      <title>fpc10--module</title>
+      <rect id="fpc10--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc10--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc10--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc10--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc11" data-path="fpc11" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="11">
+    <title>fpc11</title>
+    <rect id="fpc11--opening" x="2.5" y="656.6" width="437" height="48" fill="#101214" />
+    <g id="fpc11--module" data-path="fpc11/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,680.6) translate(-218.5,-24)">
+      <title>fpc11--module</title>
+      <rect id="fpc11--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc11--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc11--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc11--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc12" data-path="fpc12" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="12">
+    <title>fpc12</title>
+    <rect id="fpc12--opening" x="2.5" y="712" width="437" height="48" fill="#101214" />
+    <g id="fpc12--module" data-path="fpc12/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,736) translate(-218.5,-24)">
+      <title>fpc12--module</title>
+      <rect id="fpc12--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc12--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc12--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc12--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc13" data-path="fpc13" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="13">
+    <title>fpc13</title>
+    <rect id="fpc13--opening" x="2.5" y="760.4" width="437" height="48" fill="#101214" />
+    <g id="fpc13--module" data-path="fpc13/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,784.4) translate(-218.5,-24)">
+      <title>fpc13--module</title>
+      <rect id="fpc13--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc13--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc13--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc13--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc14" data-path="fpc14" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="14">
+    <title>fpc14</title>
+    <rect id="fpc14--opening" x="2.5" y="808.8" width="437" height="48" fill="#101214" />
+    <g id="fpc14--module" data-path="fpc14/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,832.8) translate(-218.5,-24)">
+      <title>fpc14--module</title>
+      <rect id="fpc14--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc14--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc14--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc14--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc15" data-path="fpc15" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="15">
+    <title>fpc15</title>
+    <rect id="fpc15--opening" x="2.5" y="857.2" width="437" height="48" fill="#101214" />
+    <g id="fpc15--module" data-path="fpc15/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-lc-cover@1:1.0.0" data-model="QFX10000 line card cover" data-states="absent" transform="translate(221,881.2) translate(-218.5,-24)">
+      <title>fpc15--module</title>
+      <rect id="fpc15--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="fpc15--module--pull-left">
+        <rect x="2.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc15--module--pull-right">
+        <rect x="413.0" y="18.0" width="22.0" height="12.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="fpc15--module--vents">
+        <rect x="60.0" y="14.0" width="317.0" height="20.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(429.5,16.5)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one on the front status panel and one at the rear left" data-for="chassis">
+    <title>esd-front-jack</title>
+    <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-front-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>

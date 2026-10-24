@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="805.43mm" height="92.68mm" viewBox="0 0 805.43 92.68" data-device="qfx5250-64oe-l" data-view="right" data-rack-form="2OU, Open Rack v3 (ORv3) tray; no four-post rack variant (guide Tables 2 and 6)" data-weight-note="105.82 lb (48.00 kg) (guide Table 4)" data-throughput="102.4 Tbps (guide Table 2)" data-port-count="64 OSFP at up to 1600 Gbps and 2 SFP28 (guide Table 2)" data-breakout-ports="1x1600G, 1x800G, 2x800G, 2x400G, 4x400G, 4x200G, 8x200G and 8x100G; up to 512 ports (guide, Channelization)" data-osfp-speeds="1600G, 800G, 400G, 200G and 100G, by transceiver (guide, Interface Naming; Table 19)" data-power-typical-w="3375" data-power-max-w="3435" data-power-envelope="as-tested" data-power-measurement-note="loaded with DR optics (guide Table 21)" data-power-output-max-w="4300" data-power-input-dc="46 to 56 VDC from the ORv3 busbar, 110 A (guide Table 21)" data-redundancy-note="three built-in 1600 W DC-to-DC bricks with no redundancy; a brick failure disables the optics (guide, DC-to-DC Power Bricks)" data-cooling="100 percent liquid-cooled; OAT PG 25 coolant through two UQDB06 plugs; no fans" data-coolant-flow="10 litres per minute, 25 to 40 PSI, coolant 7 to 45 C (guide Table 23)" data-operating-temp="0 to 46 C (32 to 114.8 F) at sea level, 0 to 40 C up to 6000 ft (guide Table 5); recommended ambient 0 to 40 C with liquid cooling (Table 23)" data-storage-temp="-40 to 70 C (-40 to 158 F) (guide Table 5)" data-humidity="10 to 90 percent noncondensing operating, 5 to 95 percent non-operating (guide Table 5)" data-altitude="operating 6000 ft (1830 m); storage 15000 ft (4500 m) (guide Table 5)" data-cpu="Intel 6-core 2.8 GHz Ice Lake D, 32 GB DRAM (guide Table 2)" data-storage="two internal 200 GB NVMe SSDs (guide Table 2)" data-switch-chip="Broadcom Tomahawk 6, BCM78914 (guide Table 2)" data-software="Junos OS Evolved" data-optics-osfp="ORHS (OSFP with riding heat sink) transceivers, 1600G; see the Hardware Compatibility Tool (guide Table 19)" data-optics-sfp28="ports 64 and 65 take 25G and 10G SFP28 transceivers (guide Table 19)" data-leak-detection="leakage detection controller with the LEAKAGE lamp; the ON/OFF button restarts boot after a leak (guide, Leakage Detection)" data-oob="one RJ-45 management port, 10 M, 100 M and 1 G (guide Table 20)" data-console="one RJ-45 console port, shared between the CPU and the leakage detection controller board" data-usb="one Type-A USB 3.0 port" data-timing-outputs="one 1 PPS and one 10 MHz port on 2x1 DIN 1.0/2.3 latching connectors. The guide says they can be inputs or outputs. It also says the switch does not currently support timing features (guide, Connect 1-PPS and 10-MHz Timing Devices)" data-safety="IEC 62368-1:2014, 2018 and 2023; EN 62368-1:2014+A11:2017; UL 60950-1:2007 R10.14; CAN/CSA-C22.2 No. 60950-1-07; UL/CSA 62368-1:2025; IEC/EN 60825-1 (guide, Agency Approvals)" data-emc="FCC 47 CFR Part 15; ICES-003 / ICES-GEN; EN 55032; EN 55035; CISPR 32; CISPR 35; EN 300 386 V1.6.1 and V2.2.1; IEC/EN 61000-3-2 and 61000-3-3; AS/NZS CISPR 32; VCCI-CISPR 32; BSMI CNS 15936; KS C 9835, 9832 and 9610 (guide, Agency Approvals)" data-class="Class A (guide, Compliance Statements)" data-seismic="tested for Zone 4 earthquake requirements to NEBS GR-63-CORE (guide Table 5)" data-eol="none-announced" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5250-64OE-L","device-version":"0.1.2","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"cc2a554e2c901f488b06a19a4ce31fa00e8b0d8ab80f55bacd5ddfb633092042","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5250-64OE-L" data-sku="QFX5250-64OE-L" data-part-number="" x="0" y="0" width="805.43" height="92.68" rx="1.2" fill="#8a8a8b" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

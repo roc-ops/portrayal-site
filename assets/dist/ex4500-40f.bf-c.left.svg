@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="535.9mm" height="88.9mm" viewBox="0 0 535.9 88.9" data-device="ex4500-40f" data-view="left" data-weight-note="37 lb (17 kg) with one AC power supply (Table 5)" data-depth-note="21.1 in (53.6 cm) (Table 5)" data-sfp-plus-speeds="10 GbE or 1 GbE on each fixed SFP+ port" data-expansion-ports="up to 8 more SFP+ ports with two 4-port uplink modules" data-power-envelope="unstated" data-power-input-ac="100 to 120 VAC and 200 to 240 VAC, 50 to 60 Hz; 12 A and 6 A" data-power-input-dc="operating range -42 to -60 VDC, nominal -48 VDC, 30 A maximum" data-power-supply-output="1000 W at 100 to 120 VAC and 1200 W at 200 to 240 VAC; 1200 W on DC" data-redundancy-note="two supplies, load sharing; do not mix AC and DC, or front-to-back and back-to-front" data-fans="one fan tray with five fans; the switch runs 30 seconds while the tray is replaced" data-operating-temp="0 to 45 C (32 to 113 F)" data-humidity="10 to 85 percent noncondensing" data-altitude="no loss of performance to 10,000 ft (3,048 m)" data-software="Junos OS, first release 10.2R1 for the -FB and -BF models" data-virtual-chassis="up to 10 switches mixed with EX4200 and EX4550; the Virtual Chassis module or SFP+ ports as VCPs" data-optics-sfp-plus="10 GbE SFP+ and 1 GbE SFP in any port" data-expansion="two uplink module slots, each one 4-port SFP+ module; the rear slot takes the intraconnect or the Virtual Chassis module" data-oob="one RJ-45 management port with link and status lamps" data-console="one RJ-45 console port" data-usb="one USB port" data-seismic="GR-63, Issue 4, Zone 4 (guide Table 35)" data-eol="announced" data-eol-announcement="https://endoflife.ai/juniper-ex/EX4500" data-end-of-life="2022-12-31" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX4500-40F","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"2bbb65d80fbea52e2b6494a71473b376facab34bb62243b10ce797f5f11b3322","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4500-40F" data-sku="EX4500-40F-BF-C" data-part-number="" x="0" y="0" width="535.9" height="88.9" rx="1.2" fill="#a3a7ac" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

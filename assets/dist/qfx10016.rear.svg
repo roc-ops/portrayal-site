@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="442.0mm" height="929.6mm" viewBox="0 0 442.0 929.6" data-device="qfx10016" data-view="rear" data-weight-empty-kg="99.79" data-weight-base-kg="236.78" data-weight-redundant-kg="270.34" data-throughput="up to 96 Tbps (datasheet Table 1; the guide gives a net switching capacity of 96 Tbps with six SIBs); 7.2 Tbps per slot" data-ports-max="2,304 x 10GbE, 576 x 40GbE or 480 x 100GbE (datasheet Table 1, with sixteen 30C cards)" data-power-typical-w="3989" data-power-max-w="5815" data-power-envelope="bare" data-power-typical-scope="datasheet - base system, line cards not included; redundant system 4,618 W typical and 6,630 W reserved" data-heat-dissipation="91,729 BTU/hr (26,883 W) maximum thermal output, estimated and subject to change" data-airflow="front-to-back" data-operating-temp="0 C to 40 C (32 F to 104 F)" data-storage-temp="-40 C to 70 C (-40 F to 158 F)" data-humidity="5 to 90 percent noncondensing operating, 5 to 95 percent nonoperating" data-altitude="up to 3,048 m (10,000 ft)" data-cpu="Intel quad-core 2.5 GHz" data-memory="32 GB SDRAM" data-storage="50 GB onboard SSD, plus an optional SATA SSD of 50 GB or 100 GB in the RCB" data-fabric="six switch interface boards, five required and the sixth for n+1; midplane-less" data-oob="MGMT RJ-45 (em0), 10/100/1000BASE-T, and MGMT SFP (em1), on each RCB" data-console="RJ-45 console (CON) on each RCB" data-usb="one USB 2.0 port on each RCB" data-seismic="Designed to meet GR-63 Zone 4 earthquake requirements" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx10000-pwr-ac@'] .state-fault { --led-color: #ef4444; }
+    g[data-ref^='juniper/qfx10000-pwr-ac@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx10000-pwr-ac@'] .state-warning { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx10000-pwr-ac@'] .state-warning { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx10016-fan@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx10016-fan@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx10016-fan@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper QFX10016","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","juniper/qfx10000-pwr-ac@1":"1.0.0","juniper/qfx10000-pwr-cover@1":"1.0.0","juniper/qfx10016-fan@1":"1.0.0","std/c20-inlet@1":"1.4.0"},"source-sha256":"9662d4842e2602cc4627581f0b02c43fdc89e7c754617b6f76425f14b5381914","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX10016" data-sku="QFX10016-BASE" data-part-number="" x="0" y="0" width="442" height="929.6" rx="1.2" fill="#565b61" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="14.1" y="905" width="5" height="5" rx="0.6" fill="#15171a" />
+    <rect id="plate-1" data-kind="plate" x="30.1" y="905" width="5" height="5" rx="0.6" fill="#15171a" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0 -4.6 A 4.6 4.6 0 1 0 0.01 -4.6 Z M -2.6 -1.2 H 2.6 M -1.7 0.6 H 1.7 M -0.8 2.4 H 0.8" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(24.1 920)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="psu0" data-path="psu0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu0</title>
+    <rect id="psu0--opening" x="3" y="3" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu0--module" data-path="psu0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-ac@1:1.0.0" data-body-depth="365.8" data-airflow="front-to-back" data-hot-swap="yes" data-input-current-a="16" data-input-frequency="50-60 Hz" data-input-voltage="200-240 VAC" data-model="QFX10000-PWR-AC" data-output="12 VDC" data-power-output-w="2700" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(48.7,47.45) translate(-45.7,-44.45)">
+      <title>psu0--module</title>
+      <defs>
+        <pattern id="psu0--module--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+          <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#3a3e43" />
+          <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#3a3e43" />
+          <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#3a3e43" />
+          <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#3a3e43" />
+          <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#3a3e43" />
+        </pattern>
+      </defs>
+      <rect id="psu0--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
+      <g id="psu0--module--vents">
+        <rect x="1.6" y="1.4" width="88.2" height="86.2" fill="url(#psu0--module--hex)" />
+      </g>
+      <rect x="9.1" y="13.2" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect x="9.1" y="50.5" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect id="psu0--module--handle" x="9.1" y="43.6" width="73.9" height="6.3" rx="3.15" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" data-path="psu0/module/handle" data-class="handle" />
+      <g id="psu0--module--dip">
+        <rect x="74.7" y="15.5" width="7.2" height="10.3" rx="0.4" fill="#e8eaec" stroke="#17191c" stroke-width="0.3" />
+        <rect x="76.0" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+        <rect x="78.7" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+      </g>
+      <g id="psu0--module--screw">
+        <circle cx="56.0" cy="76.0" r="4.9" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <circle cx="56.0" cy="76.0" r="3.3" fill="#8a8f95" />
+      </g>
+      <g id="psu0--module--rocker">
+        <rect x="66.0" y="67.5" width="18.0" height="13.8" rx="1.0" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <rect x="68.0" y="69.4" width="14.0" height="10.0" rx="0.8" fill="#0b0c0d" />
+      </g>
+      <circle id="psu0--module--led-fault" cx="51.5" cy="10.7" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="psu0/module/led-fault" data-class="led" data-states="off fault" />
+      <circle id="psu0--module--led-pwr-ok" cx="58.9" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu0/module/led-pwr-ok" data-class="led" data-states="off ok warning" />
+      <circle id="psu0--module--led-inp2" cx="66.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu0/module/led-inp2" data-class="led" data-states="off ok warning" />
+      <circle id="psu0--module--led-inp1" cx="73.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu0/module/led-inp1" data-class="led" data-states="off ok warning" />
+      <g id="psu0--module--silkscreen">
+        <text x="51.5" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">FAULT</text>
+        <text x="58.9" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">PWR OK</text>
+        <text x="66.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="73.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="7.4" y="27.7" transform="rotate(-90 7.4 27.7)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="7.4" y="65.0" transform="rotate(-90 7.4 65.0)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="4.6" y="27.7" transform="rotate(-90 4.6 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="27.7" transform="rotate(-90 3.2 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="1.9" y="27.7" transform="rotate(-90 1.9 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">47-63Hz</text>
+        <text x="4.6" y="65.0" transform="rotate(-90 4.6 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="65.0" transform="rotate(-90 3.2 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="78.3" y="14.6" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">ON</text>
+        <text x="76.9" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">1</text>
+        <text x="79.6" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">2</text>
+        <text x="69.6" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">O</text>
+        <text x="80.4" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">-</text>
+      </g>
+      <g id="psu0--module--inp2" data-path="psu0/module/inp2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP2" data-input="ac" data-media="ac" transform="translate(11.3,15.5)">
+        <title>psu0--module--inp2</title>
+        <rect id="psu0--module--inp2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu0/module/inp2/opening" data-class="cutout" />
+        <rect id="psu0--module--inp2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu0--module--inp2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu0--module--inp2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu0--module--inp2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g id="psu0--module--inp1" data-path="psu0/module/inp1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP1" data-input="ac" data-media="ac" transform="translate(11.3,52.8)">
+        <title>psu0--module--inp1</title>
+        <rect id="psu0--module--inp1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu0/module/inp1/opening" data-class="cutout" />
+        <rect id="psu0--module--inp1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu0--module--inp1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu0--module--inp1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu0--module--inp1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="27.5 40" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu1" data-path="psu1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu1</title>
+    <rect id="psu1--opening" x="3" y="91.9" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu1--module" data-path="psu1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-ac@1:1.0.0" data-body-depth="365.8" data-airflow="front-to-back" data-hot-swap="yes" data-input-current-a="16" data-input-frequency="50-60 Hz" data-input-voltage="200-240 VAC" data-model="QFX10000-PWR-AC" data-output="12 VDC" data-power-output-w="2700" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(48.7,136.35) translate(-45.7,-44.45)">
+      <title>psu1--module</title>
+      <defs>
+        <pattern id="psu1--module--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+          <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#3a3e43" />
+          <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#3a3e43" />
+          <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#3a3e43" />
+          <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#3a3e43" />
+          <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#3a3e43" />
+        </pattern>
+      </defs>
+      <rect id="psu1--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
+      <g id="psu1--module--vents">
+        <rect x="1.6" y="1.4" width="88.2" height="86.2" fill="url(#psu1--module--hex)" />
+      </g>
+      <rect x="9.1" y="13.2" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect x="9.1" y="50.5" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect id="psu1--module--handle" x="9.1" y="43.6" width="73.9" height="6.3" rx="3.15" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" data-path="psu1/module/handle" data-class="handle" />
+      <g id="psu1--module--dip">
+        <rect x="74.7" y="15.5" width="7.2" height="10.3" rx="0.4" fill="#e8eaec" stroke="#17191c" stroke-width="0.3" />
+        <rect x="76.0" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+        <rect x="78.7" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+      </g>
+      <g id="psu1--module--screw">
+        <circle cx="56.0" cy="76.0" r="4.9" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <circle cx="56.0" cy="76.0" r="3.3" fill="#8a8f95" />
+      </g>
+      <g id="psu1--module--rocker">
+        <rect x="66.0" y="67.5" width="18.0" height="13.8" rx="1.0" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <rect x="68.0" y="69.4" width="14.0" height="10.0" rx="0.8" fill="#0b0c0d" />
+      </g>
+      <circle id="psu1--module--led-fault" cx="51.5" cy="10.7" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="psu1/module/led-fault" data-class="led" data-states="off fault" />
+      <circle id="psu1--module--led-pwr-ok" cx="58.9" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu1/module/led-pwr-ok" data-class="led" data-states="off ok warning" />
+      <circle id="psu1--module--led-inp2" cx="66.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu1/module/led-inp2" data-class="led" data-states="off ok warning" />
+      <circle id="psu1--module--led-inp1" cx="73.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu1/module/led-inp1" data-class="led" data-states="off ok warning" />
+      <g id="psu1--module--silkscreen">
+        <text x="51.5" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">FAULT</text>
+        <text x="58.9" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">PWR OK</text>
+        <text x="66.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="73.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="7.4" y="27.7" transform="rotate(-90 7.4 27.7)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="7.4" y="65.0" transform="rotate(-90 7.4 65.0)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="4.6" y="27.7" transform="rotate(-90 4.6 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="27.7" transform="rotate(-90 3.2 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="1.9" y="27.7" transform="rotate(-90 1.9 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">47-63Hz</text>
+        <text x="4.6" y="65.0" transform="rotate(-90 4.6 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="65.0" transform="rotate(-90 3.2 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="78.3" y="14.6" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">ON</text>
+        <text x="76.9" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">1</text>
+        <text x="79.6" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">2</text>
+        <text x="69.6" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">O</text>
+        <text x="80.4" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">-</text>
+      </g>
+      <g id="psu1--module--inp2" data-path="psu1/module/inp2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP2" data-input="ac" data-media="ac" transform="translate(11.3,15.5)">
+        <title>psu1--module--inp2</title>
+        <rect id="psu1--module--inp2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu1/module/inp2/opening" data-class="cutout" />
+        <rect id="psu1--module--inp2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu1--module--inp2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu1--module--inp2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu1--module--inp2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g id="psu1--module--inp1" data-path="psu1/module/inp1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP1" data-input="ac" data-media="ac" transform="translate(11.3,52.8)">
+        <title>psu1--module--inp1</title>
+        <rect id="psu1--module--inp1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu1/module/inp1/opening" data-class="cutout" />
+        <rect id="psu1--module--inp1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu1--module--inp1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu1--module--inp1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu1--module--inp1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="27.5 40" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu2" data-path="psu2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu2</title>
+    <rect id="psu2--opening" x="3" y="180.8" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu2--module" data-path="psu2/module" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-ac@1:1.0.0" data-body-depth="365.8" data-airflow="front-to-back" data-hot-swap="yes" data-input-current-a="16" data-input-frequency="50-60 Hz" data-input-voltage="200-240 VAC" data-model="QFX10000-PWR-AC" data-output="12 VDC" data-power-output-w="2700" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(48.7,225.25) translate(-45.7,-44.45)">
+      <title>psu2--module</title>
+      <defs>
+        <pattern id="psu2--module--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+          <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#3a3e43" />
+          <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#3a3e43" />
+          <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#3a3e43" />
+          <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#3a3e43" />
+          <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#3a3e43" />
+        </pattern>
+      </defs>
+      <rect id="psu2--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
+      <g id="psu2--module--vents">
+        <rect x="1.6" y="1.4" width="88.2" height="86.2" fill="url(#psu2--module--hex)" />
+      </g>
+      <rect x="9.1" y="13.2" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect x="9.1" y="50.5" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect id="psu2--module--handle" x="9.1" y="43.6" width="73.9" height="6.3" rx="3.15" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" data-path="psu2/module/handle" data-class="handle" />
+      <g id="psu2--module--dip">
+        <rect x="74.7" y="15.5" width="7.2" height="10.3" rx="0.4" fill="#e8eaec" stroke="#17191c" stroke-width="0.3" />
+        <rect x="76.0" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+        <rect x="78.7" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+      </g>
+      <g id="psu2--module--screw">
+        <circle cx="56.0" cy="76.0" r="4.9" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <circle cx="56.0" cy="76.0" r="3.3" fill="#8a8f95" />
+      </g>
+      <g id="psu2--module--rocker">
+        <rect x="66.0" y="67.5" width="18.0" height="13.8" rx="1.0" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <rect x="68.0" y="69.4" width="14.0" height="10.0" rx="0.8" fill="#0b0c0d" />
+      </g>
+      <circle id="psu2--module--led-fault" cx="51.5" cy="10.7" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="psu2/module/led-fault" data-class="led" data-states="off fault" />
+      <circle id="psu2--module--led-pwr-ok" cx="58.9" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu2/module/led-pwr-ok" data-class="led" data-states="off ok warning" />
+      <circle id="psu2--module--led-inp2" cx="66.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu2/module/led-inp2" data-class="led" data-states="off ok warning" />
+      <circle id="psu2--module--led-inp1" cx="73.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu2/module/led-inp1" data-class="led" data-states="off ok warning" />
+      <g id="psu2--module--silkscreen">
+        <text x="51.5" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">FAULT</text>
+        <text x="58.9" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">PWR OK</text>
+        <text x="66.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="73.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="7.4" y="27.7" transform="rotate(-90 7.4 27.7)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="7.4" y="65.0" transform="rotate(-90 7.4 65.0)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="4.6" y="27.7" transform="rotate(-90 4.6 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="27.7" transform="rotate(-90 3.2 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="1.9" y="27.7" transform="rotate(-90 1.9 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">47-63Hz</text>
+        <text x="4.6" y="65.0" transform="rotate(-90 4.6 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="65.0" transform="rotate(-90 3.2 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="78.3" y="14.6" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">ON</text>
+        <text x="76.9" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">1</text>
+        <text x="79.6" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">2</text>
+        <text x="69.6" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">O</text>
+        <text x="80.4" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">-</text>
+      </g>
+      <g id="psu2--module--inp2" data-path="psu2/module/inp2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP2" data-input="ac" data-media="ac" transform="translate(11.3,15.5)">
+        <title>psu2--module--inp2</title>
+        <rect id="psu2--module--inp2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu2/module/inp2/opening" data-class="cutout" />
+        <rect id="psu2--module--inp2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu2--module--inp2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu2--module--inp2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu2--module--inp2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g id="psu2--module--inp1" data-path="psu2/module/inp1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP1" data-input="ac" data-media="ac" transform="translate(11.3,52.8)">
+        <title>psu2--module--inp1</title>
+        <rect id="psu2--module--inp1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu2/module/inp1/opening" data-class="cutout" />
+        <rect id="psu2--module--inp1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu2--module--inp1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu2--module--inp1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu2--module--inp1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="27.5 40" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu3" data-path="psu3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psu3</title>
+    <rect id="psu3--opening" x="3" y="269.7" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu3--module" data-path="psu3/module" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-ac@1:1.0.0" data-body-depth="365.8" data-airflow="front-to-back" data-hot-swap="yes" data-input-current-a="16" data-input-frequency="50-60 Hz" data-input-voltage="200-240 VAC" data-model="QFX10000-PWR-AC" data-output="12 VDC" data-power-output-w="2700" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(48.7,314.15) translate(-45.7,-44.45)">
+      <title>psu3--module</title>
+      <defs>
+        <pattern id="psu3--module--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+          <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#3a3e43" />
+          <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#3a3e43" />
+          <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#3a3e43" />
+          <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#3a3e43" />
+          <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#3a3e43" />
+        </pattern>
+      </defs>
+      <rect id="psu3--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
+      <g id="psu3--module--vents">
+        <rect x="1.6" y="1.4" width="88.2" height="86.2" fill="url(#psu3--module--hex)" />
+      </g>
+      <rect x="9.1" y="13.2" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect x="9.1" y="50.5" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect id="psu3--module--handle" x="9.1" y="43.6" width="73.9" height="6.3" rx="3.15" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" data-path="psu3/module/handle" data-class="handle" />
+      <g id="psu3--module--dip">
+        <rect x="74.7" y="15.5" width="7.2" height="10.3" rx="0.4" fill="#e8eaec" stroke="#17191c" stroke-width="0.3" />
+        <rect x="76.0" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+        <rect x="78.7" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+      </g>
+      <g id="psu3--module--screw">
+        <circle cx="56.0" cy="76.0" r="4.9" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <circle cx="56.0" cy="76.0" r="3.3" fill="#8a8f95" />
+      </g>
+      <g id="psu3--module--rocker">
+        <rect x="66.0" y="67.5" width="18.0" height="13.8" rx="1.0" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <rect x="68.0" y="69.4" width="14.0" height="10.0" rx="0.8" fill="#0b0c0d" />
+      </g>
+      <circle id="psu3--module--led-fault" cx="51.5" cy="10.7" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="psu3/module/led-fault" data-class="led" data-states="off fault" />
+      <circle id="psu3--module--led-pwr-ok" cx="58.9" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu3/module/led-pwr-ok" data-class="led" data-states="off ok warning" />
+      <circle id="psu3--module--led-inp2" cx="66.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu3/module/led-inp2" data-class="led" data-states="off ok warning" />
+      <circle id="psu3--module--led-inp1" cx="73.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu3/module/led-inp1" data-class="led" data-states="off ok warning" />
+      <g id="psu3--module--silkscreen">
+        <text x="51.5" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">FAULT</text>
+        <text x="58.9" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">PWR OK</text>
+        <text x="66.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="73.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="7.4" y="27.7" transform="rotate(-90 7.4 27.7)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="7.4" y="65.0" transform="rotate(-90 7.4 65.0)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="4.6" y="27.7" transform="rotate(-90 4.6 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="27.7" transform="rotate(-90 3.2 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="1.9" y="27.7" transform="rotate(-90 1.9 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">47-63Hz</text>
+        <text x="4.6" y="65.0" transform="rotate(-90 4.6 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="65.0" transform="rotate(-90 3.2 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="78.3" y="14.6" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">ON</text>
+        <text x="76.9" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">1</text>
+        <text x="79.6" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">2</text>
+        <text x="69.6" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">O</text>
+        <text x="80.4" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">-</text>
+      </g>
+      <g id="psu3--module--inp2" data-path="psu3/module/inp2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP2" data-input="ac" data-media="ac" transform="translate(11.3,15.5)">
+        <title>psu3--module--inp2</title>
+        <rect id="psu3--module--inp2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu3/module/inp2/opening" data-class="cutout" />
+        <rect id="psu3--module--inp2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu3--module--inp2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu3--module--inp2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu3--module--inp2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g id="psu3--module--inp1" data-path="psu3/module/inp1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP1" data-input="ac" data-media="ac" transform="translate(11.3,52.8)">
+        <title>psu3--module--inp1</title>
+        <rect id="psu3--module--inp1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu3/module/inp1/opening" data-class="cutout" />
+        <rect id="psu3--module--inp1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu3--module--inp1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu3--module--inp1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu3--module--inp1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="27.5 40" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu4" data-path="psu4" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="4">
+    <title>psu4</title>
+    <rect id="psu4--opening" x="3" y="358.6" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu4--module" data-path="psu4/module" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-ac@1:1.0.0" data-body-depth="365.8" data-airflow="front-to-back" data-hot-swap="yes" data-input-current-a="16" data-input-frequency="50-60 Hz" data-input-voltage="200-240 VAC" data-model="QFX10000-PWR-AC" data-output="12 VDC" data-power-output-w="2700" data-role="ac-power-supply" data-states="ok fault absent" transform="translate(48.7,403.05) translate(-45.7,-44.45)">
+      <title>psu4--module</title>
+      <defs>
+        <pattern id="psu4--module--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+          <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#3a3e43" />
+          <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#3a3e43" />
+          <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#3a3e43" />
+          <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#3a3e43" />
+          <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#3a3e43" />
+        </pattern>
+      </defs>
+      <rect id="psu4--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
+      <g id="psu4--module--vents">
+        <rect x="1.6" y="1.4" width="88.2" height="86.2" fill="url(#psu4--module--hex)" />
+      </g>
+      <rect x="9.1" y="13.2" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect x="9.1" y="50.5" width="36.6" height="29.4" rx="1.6" fill="#44484d" />
+      <rect id="psu4--module--handle" x="9.1" y="43.6" width="73.9" height="6.3" rx="3.15" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" data-path="psu4/module/handle" data-class="handle" />
+      <g id="psu4--module--dip">
+        <rect x="74.7" y="15.5" width="7.2" height="10.3" rx="0.4" fill="#e8eaec" stroke="#17191c" stroke-width="0.3" />
+        <rect x="76.0" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+        <rect x="78.7" y="19.6" width="1.9" height="3.6" fill="#17191c" />
+      </g>
+      <g id="psu4--module--screw">
+        <circle cx="56.0" cy="76.0" r="4.9" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <circle cx="56.0" cy="76.0" r="3.3" fill="#8a8f95" />
+      </g>
+      <g id="psu4--module--rocker">
+        <rect x="66.0" y="67.5" width="18.0" height="13.8" rx="1.0" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+        <rect x="68.0" y="69.4" width="14.0" height="10.0" rx="0.8" fill="#0b0c0d" />
+      </g>
+      <circle id="psu4--module--led-fault" cx="51.5" cy="10.7" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="psu4/module/led-fault" data-class="led" data-states="off fault" />
+      <circle id="psu4--module--led-pwr-ok" cx="58.9" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu4/module/led-pwr-ok" data-class="led" data-states="off ok warning" />
+      <circle id="psu4--module--led-inp2" cx="66.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu4/module/led-inp2" data-class="led" data-states="off ok warning" />
+      <circle id="psu4--module--led-inp1" cx="73.2" cy="10.7" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="psu4/module/led-inp1" data-class="led" data-states="off ok warning" />
+      <g id="psu4--module--silkscreen">
+        <text x="51.5" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">FAULT</text>
+        <text x="58.9" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">PWR OK</text>
+        <text x="66.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="73.2" y="7.1" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="7.4" y="27.7" transform="rotate(-90 7.4 27.7)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP2</text>
+        <text x="7.4" y="65.0" transform="rotate(-90 7.4 65.0)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#e8eaec" text-anchor="middle">INP1</text>
+        <text x="4.6" y="27.7" transform="rotate(-90 4.6 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="27.7" transform="rotate(-90 3.2 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="1.9" y="27.7" transform="rotate(-90 1.9 27.7)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">47-63Hz</text>
+        <text x="4.6" y="65.0" transform="rotate(-90 4.6 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">200-220V 16A</text>
+        <text x="3.2" y="65.0" transform="rotate(-90 3.2 65.0)" font-family="sans-serif" font-size="1.1" fill="#e8eaec" text-anchor="middle">220-240V 16A</text>
+        <text x="78.3" y="14.6" font-family="sans-serif" font-size="1.5" fill="#e8eaec" text-anchor="middle">ON</text>
+        <text x="76.9" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">1</text>
+        <text x="79.6" y="28.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="middle">2</text>
+        <text x="69.6" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">O</text>
+        <text x="80.4" y="75.6" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">-</text>
+      </g>
+      <g id="psu4--module--inp2" data-path="psu4/module/inp2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP2" data-input="ac" data-media="ac" transform="translate(11.3,15.5)">
+        <title>psu4--module--inp2</title>
+        <rect id="psu4--module--inp2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu4/module/inp2/opening" data-class="cutout" />
+        <rect id="psu4--module--inp2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu4--module--inp2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu4--module--inp2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu4--module--inp2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g id="psu4--module--inp1" data-path="psu4/module/inp1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="feed INP1" data-input="ac" data-media="ac" transform="translate(11.3,52.8)">
+        <title>psu4--module--inp1</title>
+        <rect id="psu4--module--inp1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu4/module/inp1/opening" data-class="cutout" />
+        <rect id="psu4--module--inp1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="psu4--module--inp1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu4--module--inp1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="psu4--module--inp1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="27.5 40" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu5" data-path="psu5" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="5">
+    <title>psu5</title>
+    <rect id="psu5--opening" x="3" y="447.5" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu5--module" data-path="psu5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-cover@1:1.0.0" data-model="QFX10000 power supply cover" data-states="absent" transform="translate(48.7,491.95) translate(-45.7,-44.45)">
+      <title>psu5--module</title>
+      <rect id="psu5--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu5--module--pull">
+        <rect x="33.7" y="6.0" width="24.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="psu5--module--vents">
+        <rect x="17.7" y="26.0" width="56.0" height="52.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="psu6" data-path="psu6" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="6">
+    <title>psu6</title>
+    <rect id="psu6--opening" x="3" y="536.4" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu6--module" data-path="psu6/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-cover@1:1.0.0" data-model="QFX10000 power supply cover" data-states="absent" transform="translate(48.7,580.85) translate(-45.7,-44.45)">
+      <title>psu6--module</title>
+      <rect id="psu6--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu6--module--pull">
+        <rect x="33.7" y="6.0" width="24.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="psu6--module--vents">
+        <rect x="17.7" y="26.0" width="56.0" height="52.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="psu7" data-path="psu7" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="7">
+    <title>psu7</title>
+    <rect id="psu7--opening" x="3" y="625.3" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu7--module" data-path="psu7/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-cover@1:1.0.0" data-model="QFX10000 power supply cover" data-states="absent" transform="translate(48.7,669.75) translate(-45.7,-44.45)">
+      <title>psu7--module</title>
+      <rect id="psu7--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu7--module--pull">
+        <rect x="33.7" y="6.0" width="24.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="psu7--module--vents">
+        <rect x="17.7" y="26.0" width="56.0" height="52.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="psu8" data-path="psu8" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="8">
+    <title>psu8</title>
+    <rect id="psu8--opening" x="3" y="714.2" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu8--module" data-path="psu8/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-cover@1:1.0.0" data-model="QFX10000 power supply cover" data-states="absent" transform="translate(48.7,758.65) translate(-45.7,-44.45)">
+      <title>psu8--module</title>
+      <rect id="psu8--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu8--module--pull">
+        <rect x="33.7" y="6.0" width="24.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="psu8--module--vents">
+        <rect x="17.7" y="26.0" width="56.0" height="52.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="psu9" data-path="psu9" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="9">
+    <title>psu9</title>
+    <rect id="psu9--opening" x="3" y="803.1" width="91.4" height="88.9" fill="#101214" />
+    <g id="psu9--module" data-path="psu9/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx10000-pwr-cover@1:1.0.0" data-model="QFX10000 power supply cover" data-states="absent" transform="translate(48.7,847.55) translate(-45.7,-44.45)">
+      <title>psu9--module</title>
+      <rect id="psu9--module--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="psu9--module--pull">
+        <rect x="33.7" y="6.0" width="24.0" height="10.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+      </g>
+      <g id="psu9--module--vents">
+        <rect x="17.7" y="26.0" width="56.0" height="52.0" rx="1.0" fill="#bfc3c8" stroke="#9ba0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fan0" data-path="fan0" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="0">
+    <title>fan0</title>
+    <rect id="fan0--opening" x="96" y="0" width="168" height="929.6" fill="#101214" />
+    <g id="fan0--module" data-path="fan0/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx10016-fan@1:1.0.0" data-body-depth="102.0" data-airflow="front-to-back" data-fans-per-tray="21" data-hot-swap="yes" data-model="QFX10016-FAN" data-power-draw-max-w="975" data-power-draw-typical-w="475" data-role="fan-tray" data-states="ok fail absent" transform="translate(180,464.8) translate(-84,-464.8)">
+      <title>fan0--module</title>
+      <rect id="fan0--module--face" x="0" y="0" width="168.0" height="929.6" rx="1.2" fill="#565b61" stroke="#44484d" stroke-width="0.6" />
+      <rect x="0.6" y="0.6" width="166.8" height="16.0" fill="#44484d" />
+      <g id="fan0--module--screws">
+        <circle cx="14.5" cy="8.6" r="4.2" fill="#8a8f95" stroke="#33373c" stroke-width="0.4" />
+        <circle cx="153.5" cy="8.6" r="4.2" fill="#8a8f95" stroke="#33373c" stroke-width="0.4" />
+      </g>
+      <g id="fan0--module--lamps">
+        <circle id="fan0--module--led-fan" cx="14.1" cy="27.6" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="fan0/module/led-fan" data-class="led" data-states="off ok fault" />
+        <circle id="fan0--module--led-ftc" cx="23.0" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan0/module/led-ftc" data-class="led" data-states="off ok fault" />
+        <circle id="fan0--module--led-sib-a" cx="31.8" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan0/module/led-sib-a" data-class="led" data-states="off ok fault" />
+        <circle id="fan0--module--led-sib-b" cx="39.9" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan0/module/led-sib-b" data-class="led" data-states="off ok fault" />
+        <circle id="fan0--module--led-sib-c" cx="48.1" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan0/module/led-sib-c" data-class="led" data-states="off ok fault" />
+      </g>
+      <g id="fan0--module--mesh" fill="#33373c">
+        <rect x="87.7" y="51.6" width="34.6" height="34.0" rx="6.0" />
+        <rect x="128.9" y="51.6" width="34.6" height="34.0" rx="6.0" />
+        <rect x="5.3" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="883.0" width="34.6" height="34.0" rx="6.0" />
+        <rect x="128.9" y="883.0" width="34.6" height="34.0" rx="6.0" />
+      </g>
+      <g id="fan0--module--handle-top" data-path="fan0/module/handle-top" data-class="handle">
+        <rect x="3.5" y="85.9" width="162.2" height="7.7" rx="3.85" fill="#17191c" />
+      </g>
+      <g id="fan0--module--handle-bottom" data-path="fan0/module/handle-bottom" data-class="handle">
+        <rect x="3.5" y="872.0" width="162.2" height="7.7" rx="3.85" fill="#17191c" />
+      </g>
+      <g id="fan0--module--silkscreen">
+        <text x="14.1" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">FAN</text>
+        <text x="23.0" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">FTC</text>
+        <text x="40.0" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">SIB STATUS</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan1" data-path="fan1" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="1">
+    <title>fan1</title>
+    <rect id="fan1--opening" x="268" y="0" width="168" height="929.6" fill="#101214" />
+    <g id="fan1--module" data-path="fan1/module" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx10016-fan@1:1.0.0" data-body-depth="102.0" data-airflow="front-to-back" data-fans-per-tray="21" data-hot-swap="yes" data-model="QFX10016-FAN" data-power-draw-max-w="975" data-power-draw-typical-w="475" data-role="fan-tray" data-states="ok fail absent" transform="translate(352,464.8) translate(-84,-464.8)">
+      <title>fan1--module</title>
+      <rect id="fan1--module--face" x="0" y="0" width="168.0" height="929.6" rx="1.2" fill="#565b61" stroke="#44484d" stroke-width="0.6" />
+      <rect x="0.6" y="0.6" width="166.8" height="16.0" fill="#44484d" />
+      <g id="fan1--module--screws">
+        <circle cx="14.5" cy="8.6" r="4.2" fill="#8a8f95" stroke="#33373c" stroke-width="0.4" />
+        <circle cx="153.5" cy="8.6" r="4.2" fill="#8a8f95" stroke="#33373c" stroke-width="0.4" />
+      </g>
+      <g id="fan1--module--lamps">
+        <circle id="fan1--module--led-fan" cx="14.1" cy="27.6" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="fan1/module/led-fan" data-class="led" data-states="off ok fault" />
+        <circle id="fan1--module--led-ftc" cx="23.0" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan1/module/led-ftc" data-class="led" data-states="off ok fault" />
+        <circle id="fan1--module--led-sib-a" cx="31.8" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan1/module/led-sib-a" data-class="led" data-states="off ok fault" />
+        <circle id="fan1--module--led-sib-b" cx="39.9" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan1/module/led-sib-b" data-class="led" data-states="off ok fault" />
+        <circle id="fan1--module--led-sib-c" cx="48.1" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="fan1/module/led-sib-c" data-class="led" data-states="off ok fault" />
+      </g>
+      <g id="fan1--module--mesh" fill="#33373c">
+        <rect x="87.7" y="51.6" width="34.6" height="34.0" rx="6.0" />
+        <rect x="128.9" y="51.6" width="34.6" height="34.0" rx="6.0" />
+        <rect x="5.3" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="94.0" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="137.55" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="181.1" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="224.65" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="268.2" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="311.75" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="355.3" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="398.85" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="442.4" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="485.95" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="529.5" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="573.05" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="616.6" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="660.15" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="703.7" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="747.25" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="790.8" width="34.6" height="33.6" rx="6.0" />
+        <rect x="5.3" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="46.5" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="128.9" y="834.35" width="34.6" height="33.6" rx="6.0" />
+        <rect x="87.7" y="883.0" width="34.6" height="34.0" rx="6.0" />
+        <rect x="128.9" y="883.0" width="34.6" height="34.0" rx="6.0" />
+      </g>
+      <g id="fan1--module--handle-top" data-path="fan1/module/handle-top" data-class="handle">
+        <rect x="3.5" y="85.9" width="162.2" height="7.7" rx="3.85" fill="#17191c" />
+      </g>
+      <g id="fan1--module--handle-bottom" data-path="fan1/module/handle-bottom" data-class="handle">
+        <rect x="3.5" y="872.0" width="162.2" height="7.7" rx="3.85" fill="#17191c" />
+      </g>
+      <g id="fan1--module--silkscreen">
+        <text x="14.1" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">FAN</text>
+        <text x="23.0" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">FTC</text>
+        <text x="40.0" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">SIB STATUS</text>
+      </g>
+    </g>
+  </g>
+  <g id="esd-rear-jack" data-path="esd-rear-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="1" transform="translate(72.0,903.5)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one on the front status panel and one at the rear left" data-for="chassis">
+    <title>esd-rear-jack</title>
+    <circle id="esd-rear-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>
