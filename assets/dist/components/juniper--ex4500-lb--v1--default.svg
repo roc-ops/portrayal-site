@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="345.9mm" height="21.7mm" viewBox="0 0 345.9 21.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex4500-lb@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="ex4500-lb" data-path="ex4500-lb" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex4500-lb@1:1.0.0" data-power-absent="not-published" data-role="intraconnect" data-states="absent" transform="translate(0,0)">
+    <title>ex4500-lb</title>
+    <rect id="ex4500-lb--face" x="0" y="0" width="345.9" height="21.7" rx="1.4" fill="#74787d" stroke="#3f4247" stroke-width="0.5" />
+    <g id="ex4500-lb--screw-left" data-path="ex4500-lb/screw-left" data-class="screw" data-z-cyl="1.2">
+      <circle cx="6.8" cy="14.3" r="4.0" fill="#c9ccd0" stroke="#6f7378" stroke-width="0.35" />
+      <circle cx="6.8" cy="14.3" r="2.5" fill="none" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 4.7 14.3 H 8.9 M 6.8 12.2 V 16.4" stroke="#4d5156" stroke-width="0.5" />
+    </g>
+    <g id="ex4500-lb--screw-right" data-path="ex4500-lb/screw-right" data-class="screw" data-z-cyl="1.2">
+      <circle cx="337.1" cy="14.3" r="4.0" fill="#c9ccd0" stroke="#6f7378" stroke-width="0.35" />
+      <circle cx="337.1" cy="14.3" r="2.5" fill="none" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M 335.0 14.3 H 339.2 M 337.1 12.2 V 16.4" stroke="#4d5156" stroke-width="0.5" />
+    </g>
+    <circle id="ex4500-lb--led-status" cx="37.9" cy="14.3" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex4500-lb/led-status" data-class="led" data-states="green off" />
+    <g id="ex4500-lb--silkscreen">
+      <text x="30.0" y="15.8" font-family="sans-serif" font-size="4.2" fill="#e8eaec" text-anchor="middle">ST</text>
+      <text x="316.0" y="8.6" font-family="sans-serif" font-size="4.4" fill="#e8eaec" text-anchor="middle">EX4500-LB</text>
+    </g>
+  </g>
+</svg>
