@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.4mm" height="617.2mm" viewBox="0 0 439.4 617.2" data-device="ex6210" data-view="front" data-weight-empty-kg="57" data-weight-base-kg="72" data-weight-max-kg="98" data-weight-note="125 lb (57 kg) with the backplane only, 159 lb (72 kg) as the standard system ships, 215 lb (98 kg) fully loaded (guide Table 7); 213 to 215 lb (97 to 98 kg) with other line cards or supplies" data-width-note="17.3 in (43.9 cm) body; 19 in (48.3 cm) with the front-mounting brackets (guide Table 7)" data-depth-note="15.5 in (39.3 cm) (guide Table 7 and the datasheet)" data-backplane-capacity="4.4 Tbps maximum (datasheet, Aug 2011)" data-system-throughput="690 Mpps maximum (datasheet, Aug 2011)" data-fabric-bandwidth="64 Gbps full duplex per line card slot with one SRE module, 128 Gbps with two (guide); 720 Gbps of switching capacity per SRE module (datasheet)" data-port-density="up to 384 10/100/1000BASE-T ports with two SRE modules and eight line cards, up to 432 with one SRE module and nine line cards (guide, datasheet)" data-line-cards="EX6200-48T, EX6200-48P and EX6200-48F; not modelled (see gaps)" data-base-power-budget-w="500" data-power-envelope="unstated" data-base-power-budget-note="the maximum draw of the fan tray (300 W) and two SRE modules (100 W each); the same with one (guide, Calculating the Chassis Base Power Budget)" data-psu-types="2500 W AC, 5000 W AC or 2100 W DC; do not mix types, wattages or low-line and high-line feeds in one chassis" data-redundancy-note="up to four supplies; N+1 is the default and N+N (2+2) can be configured; a shipping order includes one supply" data-airflow-note="front to back; intake at the front right, exhaust at the rear left; each supply has its own fan" data-thermal-output-note="3.41 BTU/hr per watt of maximum system power (guide, Table 35)" data-operating-temp="0 to 40 C (32 to 104 F) (guide Table 42); 0 to 45 C in the 2011 datasheet" data-storage-temp="-40 to 70 C (-40 to 158 F) (datasheet)" data-humidity="10 to 85 percent noncondensing (guide Table 42); 5 to 90 percent in the 2011 datasheet" data-altitude="no performance degradation up to 10,000 ft (3048 m) (guide Table 42)" data-cpu="1.2 GHz dual-core on each SRE module (datasheet)" data-memory="2 GB DRAM and 2 GB flash on each SRE module (datasheet)" data-software="Junos OS Release 11.3R2 or later (guide)" data-redundancy="one or two SRE modules with graceful Routing Engine switchover; the fan tray, supplies and SRE modules are field-replaceable" data-sre-slots="slots 4 and 5 take an SRE module or a line card; at least one SRE module is required; with one, the guide recommends slot 4" data-oob="one 10/100/1000BASE-T and one Gigabit Ethernet SFP management port on each SRE module (one works at a time)" data-console="RJ-45 serial console on each SRE module" data-usb="one USB port on each SRE module" data-lcd="two-line, 16-character LCD with Menu and Enter buttons on each SRE module" data-acoustic="52 dBA with AC supplies, 54 dBA with DC supplies, at 27 C, ISO 7779 (datasheet, bystander position at the front)" data-seismic="Complies with Zone 4 earthquake requirements as per GR-63, Issue 4 (guide Table 42)" data-nebs="GR-63-Core, GR-1089-Core and SR-3580 NEBS Criteria Levels (Level 3) are listed under the customer-specific requirements of the 2011 datasheet, which marks the NEBS environmental standard in its feature table &quot;Roadmap&quot;" data-safety="CAN/CSA-C22.2 No. 60950-1, UL 60950-1, EN 60950-1, IEC 60950-1, EN 60825-1 (datasheet)" data-emc="FCC Part 15 Class A, EN 55022 Class A, VCCI Class A, CISPR 22 Class A, AS/NZS CISPR 22 Class A (datasheet)" data-materials="RoHS 5/6 (datasheet)" data-eol="announced" data-eol-announcement="https://support.juniper.net/support/eol/product/ex_series/" data-end-of-sale="2016-05-01" data-end-of-support="2022-12-31" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX6210","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/esd-warning@1":"1.0.0","juniper/ex6200-psu-shelf@1":"1.0.0"},"source-sha256":"fda7bd9efa40003cf886d884f8184d288b6cddcc399c6ccd337cc988e67fe16b","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX6210" data-sku="EX6210-CHAS" data-part-number="" x="0" y="0" width="439.4" height="617.2" rx="1.2" fill="#8b8e94" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="403" y="18.5" width="33" height="433.9" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="plate-0" data-kind="plate" x="393" y="2.1" width="20.2" height="13.4" rx="0.6" fill="#e8e9eb" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="0.9" y="3.4" width="39.6" height="11.3" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--logo-zone-2" data-path="region:logo-zone-2" data-class="region" x="349.8" y="0.8" width="36.5" height="13.9" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="425.7" cy="8.3" rx="3" ry="3" fill="#101214" id="cutout--esd-front-jack" data-path="cutout:esd-front-jack" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="53.1" y="11" font-family="sans-serif" font-size="9" text-anchor="start" fill="#1a1d1f" id="silk-model" data-path="silk:silk-model" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">EX6210</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 55.4)" id="silk-slot-0-mark" data-path="silk:silk-slot-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-0" />
+    <text x="398.8" y="55.4" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-0" data-path="silk:silk-slot-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-0">0</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 95.15)" id="silk-slot-1-mark" data-path="silk:silk-slot-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-1" />
+    <text x="398.8" y="95.15" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-1" data-path="silk:silk-slot-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-1">1</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 134.9)" id="silk-slot-2-mark" data-path="silk:silk-slot-2-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-2" />
+    <text x="398.8" y="134.9" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-2" data-path="silk:silk-slot-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-2">2</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 174.65)" id="silk-slot-3-mark" data-path="silk:silk-slot-3-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-3" />
+    <text x="398.8" y="174.65" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-3" data-path="silk:silk-slot-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-3">3</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 233)" id="silk-slot-4-mark" data-path="silk:silk-slot-4-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-4" />
+    <text x="398.8" y="233" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-4" data-path="silk:silk-slot-4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-4">4</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 292.2)" id="silk-slot-5-mark" data-path="silk:silk-slot-5-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-5" />
+    <text x="398.8" y="292.2" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-5" data-path="silk:silk-slot-5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-5">5</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 332.1)" id="silk-slot-6-mark" data-path="silk:silk-slot-6-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-6" />
+    <text x="398.8" y="332.1" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-6" data-path="silk:silk-slot-6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-6">6</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 371.85)" id="silk-slot-7-mark" data-path="silk:silk-slot-7-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-7" />
+    <text x="398.8" y="371.85" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-7" data-path="silk:silk-slot-7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-7">7</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 411.6)" id="silk-slot-8-mark" data-path="silk:silk-slot-8-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-8" />
+    <text x="398.8" y="411.6" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-8" data-path="silk:silk-slot-8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-8">8</text>
+    <path d="M 0 0 L 1.5 -2.7 L 3.0 0 Z" fill="none" stroke="#1a1d1f" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(395 451.35)" id="silk-slot-9-mark" data-path="silk:silk-slot-9-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-9" />
+    <text x="398.8" y="451.35" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#1a1d1f" id="silk-slot-9" data-path="silk:silk-slot-9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="slot-9">9</text>
+  </g>
+  <g id="psu-shelf" data-path="psu-shelf" data-class="mechanical" data-ref="juniper/ex6200-psu-shelf@1:1.0.0" data-redundancy="n+1" data-redundancy-note="n+1 by default and n+n (2+2) by configuration (guide, Understanding EX6210 Switch Component and Functionality Redundancy); a shipping order has one supply" data-role="shelf" data-rel-pos="4" transform="translate(0.0,556.3)" data-group="psus" data-group-role="service" data-description="the four power supply slots PSU 0 to PSU 3 at the foot of the front (guide Table 11 and Figure 5)" data-for="chassis">
+    <title>psu-shelf</title>
+    <rect id="psu-shelf--face" x="0" y="0" width="439.4" height="60.9" fill="#c9ccd0" stroke="#7d8186" stroke-width="0.4" />
+    <path d="M 0 43.3 H 439.4 M 109.1 43.3 V 59.9 M 217.4 43.3 V 59.9 M 325.7 43.3 V 59.9" stroke="#7d8186" stroke-width="0.4" fill="none" />
+    <g id="psu-shelf--screws" fill="#c9ccd0" stroke="#6b6f75" stroke-width="0.4">
+      <circle cx="110.8" cy="20.6" r="12.0" />
+      <circle cx="110.8" cy="20.6" r="5.0" />
+      <circle cx="110.8" cy="20.6" r="2.5" fill="#aeb2b7" />
+      <circle cx="219.1" cy="20.6" r="12.0" />
+      <circle cx="219.1" cy="20.6" r="5.0" />
+      <circle cx="219.1" cy="20.6" r="2.5" fill="#aeb2b7" />
+      <circle cx="327.4" cy="20.6" r="12.0" />
+      <circle cx="327.4" cy="20.6" r="5.0" />
+      <circle cx="327.4" cy="20.6" r="2.5" fill="#aeb2b7" />
+    </g>
+    <g id="psu-shelf--silkscreen" font-family="sans-serif" fill="#2b2e32" text-anchor="start">
+      <text x="23.5" y="55.6" font-size="5.4">PSU0</text>
+      <text x="121.7" y="55.6" font-size="5.4">PSU1</text>
+      <text x="229.1" y="55.6" font-size="5.4">PSU2</text>
+      <text x="339.1" y="55.6" font-size="5.4">PSU3</text>
+    </g>
+  </g>
+  <g id="slot-0" data-path="slot-0" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="0">
+    <title>slot-0</title>
+    <rect id="slot-0--opening" x="1.1" y="18.5" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="slot-1" data-path="slot-1" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="1">
+    <title>slot-1</title>
+    <rect id="slot-1--opening" x="1.1" y="58.25" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="slot-2" data-path="slot-2" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="2">
+    <title>slot-2</title>
+    <rect id="slot-2--opening" x="1.1" y="98" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="slot-3" data-path="slot-3" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="3">
+    <title>slot-3</title>
+    <rect id="slot-3--opening" x="1.1" y="137.75" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="slot-4" data-path="slot-4" data-class="bay" data-group="sre-slots" data-group-role="service" data-rel-pos="4">
+    <title>slot-4</title>
+    <rect id="slot-4--opening" x="1.1" y="177.5" width="392.1" height="56.7" fill="#101214" />
+  </g>
+  <g id="slot-5" data-path="slot-5" data-class="bay" data-group="sre-slots" data-group-role="service" data-rel-pos="5">
+    <title>slot-5</title>
+    <rect id="slot-5--opening" x="1.1" y="236.7" width="392.1" height="56.7" fill="#101214" />
+  </g>
+  <g id="slot-6" data-path="slot-6" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="6">
+    <title>slot-6</title>
+    <rect id="slot-6--opening" x="1.1" y="295.2" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="slot-7" data-path="slot-7" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="7">
+    <title>slot-7</title>
+    <rect id="slot-7--opening" x="1.1" y="334.95" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="slot-8" data-path="slot-8" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="8">
+    <title>slot-8</title>
+    <rect id="slot-8--opening" x="1.1" y="374.7" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="slot-9" data-path="slot-9" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="9">
+    <title>slot-9</title>
+    <rect id="slot-9--opening" x="1.1" y="414.45" width="392.1" height="38.1" fill="#101214" />
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="7.3" y="454.5" width="100.7" height="101.8" fill="#101214" />
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="115.8" y="454.5" width="100.7" height="101.8" fill="#101214" />
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="224.3" y="454.5" width="100.7" height="101.8" fill="#101214" />
+  </g>
+  <g id="psu-3" data-path="psu-3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psu-3</title>
+    <rect id="psu-3--opening" x="332.8" y="454.5" width="100.7" height="101.8" fill="#101214" />
+  </g>
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(422.7,5.3)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one at the front top right and one at the rear lower left (guide Figures 1 and 2)" data-for="chassis">
+    <title>esd-front-jack</title>
+    <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-front-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+  <g id="esd-label" data-path="esd-label" data-class="marking" data-behaviour="mounts" data-ref="common/esd-warning@1:1.0.0" data-rel-pos="1" transform="translate(399.25,4.55)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one at the front top right and one at the rear lower left (guide Figures 1 and 2)" data-for="chassis">
+    <title>esd-label</title>
+    <path id="esd-label--field" d="M 3.85 0.25 L 7.45 6.35 H 0.25 Z" fill="#161616" stroke="#f2c619" stroke-width="0.45" stroke-linejoin="round" />
+    <g id="esd-label--hand" fill="none" stroke="#f2c619" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 2.6 5.6 L 3.3 3.9 L 3.1 2.4 M 3.3 3.9 L 3.9 2.2 M 3.3 3.9 L 4.5 2.6 M 3.3 3.9 L 4.9 3.4" />
+      <path d="M 1.4 5.2 L 5.9 2.6" stroke-width="0.25" />
+    </g>
+    <g id="esd-label--silkscreen">
+      <text x="3.85" y="8.35" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="1.9" text-anchor="middle" fill="#3a3d41">ESD</text>
+    </g>
+  </g>
+</svg>

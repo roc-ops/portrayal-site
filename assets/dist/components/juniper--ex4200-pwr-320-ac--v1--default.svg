@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="90.0mm" height="41.5mm" viewBox="0 0 90.0 41.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex4200-pwr-320-ac@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="ex4200-pwr-320-ac" data-path="ex4200-pwr-320-ac" data-class="psu" data-behaviour="fills" data-ref="juniper/ex4200-pwr-320-ac@1:1.0.0" data-depth-beyond-chassis-mm="0" data-input-current="4 A (guide Table 12, switches with 8 PoE ports or 24 SFP ports)" data-input-voltage="100-240 VAC, 50-60 Hz" data-part-number="EX-PWR-320-AC" data-power-output-w="320" data-role="ac-power-supply" data-weight-kg="1.1" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex4200-pwr-320-ac</title>
+    <defs>
+      <pattern id="ex4200-pwr-320-ac--hex" x="0" y="0" width="3.2" height="2.77" patternUnits="userSpaceOnUse">
+        <polygon points="1.6,0.2 2.9,0.95 2.9,2.45 1.6,3.2 0.3,2.45 0.3,0.95" fill="#0e1012" transform="scale(0.85) translate(0.1 -0.2)" />
+      </pattern>
+    </defs>
+    <rect id="ex4200-pwr-320-ac--face" x="0" y="0" width="90.0" height="41.5" rx="0.8" fill="#3b3e46" stroke="#1d2024" stroke-width="0.4" />
+    <g id="ex4200-pwr-320-ac--vents">
+      <rect x="43.0" y="3.0" width="40.0" height="36.5" rx="0.6" fill="#1c1f22" />
+      <rect x="43.0" y="3.0" width="40.0" height="36.5" rx="0.6" fill="url(#ex4200-pwr-320-ac--hex)" />
+    </g>
+    <g id="ex4200-pwr-320-ac--lamps">
+      <circle id="ex4200-pwr-320-ac--led-ac-ok" cx="16.9" cy="9.9" r="0.9" fill="var(--led-color, #0f1113)" stroke="#6b7078" stroke-width="0.25" data-path="ex4200-pwr-320-ac/led-ac-ok" data-class="led" data-states="green off" />
+      <circle id="ex4200-pwr-320-ac--led-dc-ok" cx="26.3" cy="9.9" r="0.9" fill="var(--led-color, #0f1113)" stroke="#6b7078" stroke-width="0.25" data-path="ex4200-pwr-320-ac/led-dc-ok" data-class="led" data-states="green off" />
+    </g>
+    <g id="ex4200-pwr-320-ac--silkscreen" font-family="sans-serif" fill="#d6d9dc">
+      <text x="16.9" y="7.3" font-size="1.3" text-anchor="middle">AC OK</text>
+      <text x="26.3" y="7.3" font-size="1.3" text-anchor="middle">DC OK</text>
+    </g>
+    <g id="ex4200-pwr-320-ac--latch" data-path="ex4200-pwr-320-ac/latch" data-class="latch" data-z-out="2.0" data-z-color="#9ba0a6">
+      <rect x="1.5" y="3.0" width="8.2" height="9.6" rx="1.4" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.3" />
+      <circle cx="5.6" cy="7.8" r="2.4" fill="#d6d9dc" stroke="#4b5057" stroke-width="0.3" />
+      <path d="M 4.0 7.8 H 7.2" stroke="#4b5057" stroke-width="0.35" />
+    </g>
+    <g id="ex4200-pwr-320-ac--handle" data-path="ex4200-pwr-320-ac/handle" data-class="latch" data-z-out="3.0" data-z-color="#c9ccd0">
+      <rect x="44.0" y="4.6" width="36.0" height="5.0" rx="2.5" fill="none" stroke="#c9ccd0" stroke-width="1.1" />
+    </g>
+    <g id="ex4200-pwr-320-ac--inlet" data-path="ex4200-pwr-320-ac/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(11.5,17.5)">
+      <title>ex4200-pwr-320-ac--inlet</title>
+      <rect id="ex4200-pwr-320-ac--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ex4200-pwr-320-ac/inlet/opening" data-class="cutout" />
+      <path id="ex4200-pwr-320-ac--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="ex4200-pwr-320-ac--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <rect id="ex4200-pwr-320-ac--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <rect id="ex4200-pwr-320-ac--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>
