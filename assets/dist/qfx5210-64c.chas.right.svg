@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="579.9mm" height="88.9mm" viewBox="0 0 579.9 88.9" data-device="qfx5210-64c" data-view="right" data-weight-note="23.44 lb (10.63 kg) without power supplies and fans, 31.09 lb (14.1 kg) with them (Table 26)" data-port-speeds="QSFP28 ports 0 to 63 run at 100 GbE by default and at 40 GbE with a QSFP+ transceiver. They run at 50, 25 or 10 GbE by channelization or breakout cable (up to 128 logical ports). The SFP+ ports run at 1 or 10 GbE" data-power-typical-w="357" data-power-max-w="655" data-power-typical-dc-w="383" data-power-max-dc-w="696" data-power-envelope="as-tested" data-power-input-ac="90 to 264 VAC, 50 to 60 Hz, 12 A at 100 VAC or 6 A at 240 VAC" data-power-input-dc="rated -48 to -60 VDC, operating range -40 to -72 VDC, 25 A maximum" data-redundancy-note="two supplies, 2N, each carrying the whole load; one may be removed at a time while the switch runs" data-fans="four fan modules and the fans in the two supplies; the switch runs 30 seconds without thermal shutdown while one fan module is replaced" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing (up to 93 percent short term)" data-altitude="AFO builds no performance degradation to 1828.8 m (6000 ft); AFI builds none at sea level" data-cpu="2.2 GHz quad-core Intel Xeon" data-memory="16 GB" data-storage="100 GB SSD" data-software="Junos OS 18.1R1 and later" data-optics-qsfp28="100 GbE QSFP28 and 40 GbE QSFP+ transceivers. DAC and breakout cables (QSFP+ to SFP+ DACBO, QSFP28 to QSFP+ DACBO). High-wattage optics (above 3.5 W) only in ports 32 to 63 on the AFI builds (guide, QFX5210-64C Port Panel Overview and Table 25)" data-optics-sfp-plus="1 GbE or 10 GbE SFP+ transceivers (guide, QFX5210-64C Port Panel Overview)" data-channelization="ports 0 to 31 take 4 x 10, 4 x 25 and 2 x 50 GbE breakouts. Ports 32 to 63 take 2 x 50 GbE before Junos OS 19.1R1. From 19.1R1 on, any port" data-oob="RJ45 1000BASE-T management port (em0, MGMT)" data-console="RJ-45 console port (CON, RS-232)" data-usb="one USB 2.0 port" data-seismic="Designed to comply with Zone 4 earthquake requirements per GR-63, Issue 4" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5210-64C","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"8b12ebb73b3ce39f11bfa6d12b1a7f91f79594eea9a791e46ee513bdf135d473","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5210-64C" data-sku="QFX5210-64C-CHAS" data-part-number="" x="0" y="0" width="579.9" height="88.9" rx="1.2" fill="#949aa2" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>
