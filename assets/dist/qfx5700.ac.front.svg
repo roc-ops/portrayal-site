@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.8mm" height="222.25mm" viewBox="0 0 440.8 222.25" data-device="qfx5700" data-view="front" data-weight-full-kg="69.8" data-weight-note="with all FRUs installed (guide Table 5; datasheet Table 2)" data-cable-manager="6RU with the cable management system fitted (guide, QFX5700 Physical Specifications)" data-enclosure="IP20 (IEC 60529)" data-throughput="up to 12.8 Tbps unidirectional, 25.6 Tbps bidirectional (datasheet Table 1)" data-forwarding-capacity="5.3 Bpps" data-packet-buffer="132 MB shared" data-latency="900 ns" data-line-cards="FPC 0 to 7 take QFX5K-FPC-4CD (4 x 400G), QFX5K-FPC-16C (16 x 100G) or QFX5K-FPC-20Y (20 x 10/25/50G); at most 144 logical ports" data-power-typical-w="1259" data-power-max-w="2271" data-power-envelope="fully-configured" data-power-typical-scope="eight QFX5K-FPC-16C cards, 25 C, 50 percent IMIX load, no MACsec, no transceivers (guide Table 9); the 20Y and 4CD builds are 751 W and 1095 W" data-power-max-scope="eight QFX5K-FPC-16C cards, 40 C, SR optics, 100 percent IMIX load, MACsec on (guide Table 9); the 20Y and 4CD builds are 1622 W and 1762 W" data-psu-input-ac="200 to 277 VAC rated, 180 to 305 VAC, 47 to 63 Hz; the supplies detect HVDC (190 to 400 VDC) as well (guide Table 8)" data-psu-input-dc="40 to 72 VDC, rated 48 to 60 VDC; the input current selector sets 60 A (2700 W, 2200 W under the warning voltage) or 80 A (3000 W) (guide Tables 12)" data-operating-temp="0 C to 40 C (datasheet; the guide's Table 21 prints the same range as the non-operating temperature)" data-storage-temp="-40 C to 85 C shipping and storage (guide Table 21; the datasheet prints 70 C)" data-humidity="55 to 70 percent non-condensing (guide Table 21; the datasheet prints 5 to 90 percent)" data-altitude="6000 ft (1828 m)" data-cpu="Intel Hewitt Lake 6-core x86 at 2.9 GHz in each Routing and Control Board" data-memory="32 GB DDR4 (two 16 GB DIMMs), expandable to 64 GB" data-storage="two 100 GB M.2 SATA or NVMe SSDs per Routing and Control Board" data-switching-silicon="Broadcom Trident 4" data-operating-system="Junos OS Evolved" data-timing="BITS RJ-45 jack, 10 MHz and PPS SMB connectors in and out, on each Routing and Control Board" data-oob="MGMT RJ-45 on the Routing and Control Board, autosensing 10/100/1000 with link and activity lamps" data-console="CON RJ-45 serial on the Routing and Control Board" data-usb="one USB 2.0/3.0 port on the Routing and Control Board" data-safety="UL 60950-1, CAN/CSA-C22.2 No. 60950-1, EN 60950-1, IEC 60950-1, UL 62368-1, EN 60825-1 (datasheet)" data-emc="FCC 47 CFR Part 15, ICES-003, BS EN 55032, BS EN 55035, EN 300 386, CISPR 32, CISPR 35, IEC/EN 61000 series (datasheet)" data-materials="RoHS 6/6, China RoHS, REACH, WEEE; power supply efficiency 80 Plus Silver (datasheet)" data-acoustic="less than 7.2 Bels (EN 300 753)" data-seismic="tested and meets GR-63 (guide Table 21); designed for GR-63 Zone 4 (datasheet)" data-telco="GR-1089-Core Issue 8; Deutsche Telekom 1TR9; BT GS7; CLEI code (datasheet)" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-active { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-beacon { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-booting { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-detected { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-error { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-major { --led-color: #ef4444; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-major-and-minor { --led-color: #ef4444; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-major-and-minor { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-minor { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-online { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-primary { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper QFX5700","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/esd-warning@1":"1.0.0","common/rj45-eth@1":"1.2.0","juniper/qfx5700-fpc-blnk@1":"1.0.0","juniper/qfx5700-rcb-blnk@1":"1.0.0","juniper/qfx5700-rcb@1":"1.0.0","std/rj45@2":"2.1.0","std/smb@1":"1.0.0","std/usb-a@1":"1.3.0"},"source-sha256":"51ccb2f9738c9a4cead8d0425ddcca08602c3c5ebaf8a9b840515172b0af3bc9","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5700" data-sku="QFX5700-BASE-AC" data-part-number="" x="0" y="0" width="440.8" height="222.25" rx="1.2" fill="#8f949a" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-vent-o0-0-s0_3386-0_313112" width="8.86" height="5.11" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.3386 0.313112)">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-vent-o0-0-s0_3386-0_821918" width="8.86" height="5.11" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.3386 0.821918)">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-vent-o0-0-s0_869074-1_52642" width="8.86" height="5.11" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.869074 1.52642)">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-top" data-kind="vent-field" data-aperture="air" x="0" y="0" width="440.8" height="6.8" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_3386-0_313112)" data-vent="1" />
+    <rect id="vent-left" data-kind="vent-field" data-aperture="air" x="0.6" y="45.5" width="10.8" height="168.2" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_3386-0_821918)" data-vent="1" />
+    <rect id="model-plate" data-kind="plate" x="419.1" y="45.5" width="20.4" height="168.2" rx="0.6" fill="#c1c5ca" />
+    <rect id="vent-plate" data-kind="vent-field" data-aperture="air" x="421.5" y="77" width="15.4" height="108" rx="0.6" fill="url(#portrayal-vent-o0-0-s0_869074-1_52642)" data-vent="1" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="422.6" y="47.2" width="14.4" height="7.6" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="429.3" y="62" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#2a2d31" id="silk-model" data-path="silk:silk-model" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">JNP5700</text>
+    <text x="36.8" y="42.2" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#2a2d31" id="silk-rcb-0" data-path="silk:silk-rcb-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="rcb-0">RCB 0</text>
+    <path d="M -1.0 0.9 L 0 -0.9 L 1.0 0.9 Z" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(44.6 41.4)" id="silk-rcb-0-mark" data-path="silk:silk-rcb-0-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="rcb-0" />
+    <text x="248.2" y="42.2" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#2a2d31" id="silk-rcb-1" data-path="silk:silk-rcb-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="rcb-1">RCB 1</text>
+    <path d="M -1.0 0.9 L 0 -0.9 L 1.0 0.9 Z" fill="none" stroke="#2a2d31" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(256 41.4)" id="silk-rcb-1-mark" data-path="silk:silk-rcb-1-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="rcb-1" />
+    <text x="34.55" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-0" data-path="silk:silk-fpc-0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-0">FPC 0</text>
+    <text x="79.5" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-1" data-path="silk:silk-fpc-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-1">1</text>
+    <text x="124.45" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-2" data-path="silk:silk-fpc-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-2">2</text>
+    <text x="169.4" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-3" data-path="silk:silk-fpc-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-3">3</text>
+    <text x="214.35" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-4" data-path="silk:silk-fpc-4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-4">4</text>
+    <text x="259.3" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-5" data-path="silk:silk-fpc-5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-5">5</text>
+    <text x="304.25" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-6" data-path="silk:silk-fpc-6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-6">6</text>
+    <text x="349.2" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-7" data-path="silk:silk-fpc-7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-7">7</text>
+    <text x="394.15" y="218.9" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2a2d31" id="silk-fpc-8" data-path="silk:silk-fpc-8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fpc-8">8</text>
+  </g>
+  <g id="rcb-0" data-path="rcb-0" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="0">
+    <title>rcb-0</title>
+    <rect id="rcb-0--opening" x="12.7" y="7.6" width="198.8" height="30.8" fill="#101214" />
+    <g id="rcb-0--module" data-path="rcb-0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/qfx5700-rcb@1:1.0.0" data-power-draw-max-w="80" data-role="routing-engine" data-states="ok fail absent" transform="translate(112.1,23) translate(-99.4,-15.4)">
+      <title>rcb-0--module</title>
+      <defs>
+        <pattern id="rcb-0--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#2f3237" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#2f3237" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#2f3237" />
+        </pattern>
+      </defs>
+      <rect id="rcb-0--module--face" x="0" y="3.0" width="198.8" height="27.8" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <rect id="rcb-0--module--ejector-strip" x="0" y="0" width="198.8" height="3.0" fill="#9aa0a6" stroke="#7b8187" stroke-width="0.3" />
+      <g id="rcb-0--module--ejector-bars" fill="#7e848a" stroke="#5f656b" stroke-width="0.3">
+        <rect x="3.3" y="0.3" width="33.0" height="3.2" rx="1.2" />
+        <rect x="164.0" y="0.3" width="34.0" height="3.2" rx="1.2" />
+      </g>
+      <g id="rcb-0--module--vents">
+        <rect x="3.0" y="5.5" width="10.0" height="23.0" fill="url(#rcb-0--module--hex)" />
+        <rect x="14.0" y="17.5" width="30.0" height="11.0" fill="url(#rcb-0--module--hex)" />
+        <rect x="64.0" y="18.0" width="93.0" height="10.5" fill="url(#rcb-0--module--hex)" />
+        <rect x="85.0" y="6.5" width="31.0" height="11.0" fill="url(#rcb-0--module--hex)" />
+        <rect x="160.0" y="18.0" width="10.0" height="10.5" fill="url(#rcb-0--module--hex)" />
+        <rect x="186.0" y="5.5" width="11.0" height="17.0" fill="url(#rcb-0--module--hex)" />
+      </g>
+      <circle id="rcb-0--module--led-ssd0" cx="21.4" cy="8.5" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="rcb-0/module/led-ssd0" data-class="led" data-states="off detected active" />
+      <circle id="rcb-0--module--led-ssd1" cx="21.4" cy="13.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="rcb-0/module/led-ssd1" data-class="led" data-states="off detected active" />
+      <circle id="rcb-0--module--led-pwr" cx="86.4" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="rcb-0/module/led-pwr" data-class="led" data-states="off online beacon" />
+      <circle id="rcb-0--module--led-sts" cx="94.4" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="rcb-0/module/led-sts" data-class="led" data-states="off online beacon booting error" />
+      <circle id="rcb-0--module--led-alm" cx="100.5" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="rcb-0/module/led-alm" data-class="led" data-states="off major major-and-minor minor" />
+      <circle id="rcb-0--module--led-mst" cx="106.3" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="rcb-0/module/led-mst" data-class="led" data-states="off primary" />
+      <circle id="rcb-0--module--reset" cx="113.6" cy="2.4" r="0.8" fill="#1b1d20" stroke="#6b6f75" stroke-width="0.3" data-path="rcb-0/module/reset" data-class="button" />
+      <circle id="rcb-0--module--online" cx="35.0" cy="8.5" r="1.5" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35" data-path="rcb-0/module/online" data-class="button" />
+      <path d="M 30.8 7.4 V 8.6 M 29.7 8.0 A 1.3 1.3 0 1 0 31.9 8.0" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+      <rect x="176.0" y="23.2" width="21.6" height="5.4" rx="1.0" fill="#aeb3b9" stroke="#4a4e54" stroke-width="0.3" />
+      <path d="M 183.0 16.0 V 19.6 M 181.9 16.9 L 183.0 15.7 L 184.1 16.9" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+      <g id="rcb-0--module--silkscreen" font-family="sans-serif" fill="#2a2d31">
+        <text x="19.4" y="9.0" font-size="1.5" text-anchor="end">SSD0</text>
+        <text x="19.4" y="13.9" font-size="1.5" text-anchor="end">SSD1</text>
+        <text x="54.2" y="4.6" font-size="1.5" text-anchor="middle">OUT</text>
+        <text x="54.2" y="13.7" font-size="1.5" text-anchor="middle">IN</text>
+        <text x="48.7" y="22.9" font-size="1.5" text-anchor="middle">PPS</text>
+        <text x="59.6" y="22.9" font-size="1.5" text-anchor="middle">10 MHz</text>
+        <text x="83.6" y="7.2" font-size="1.5" text-anchor="middle" transform="rotate(90 83.6 7.2)">BITS</text>
+        <text x="88.0" y="2.3" font-size="1.2">OK/</text>
+        <text x="88.0" y="3.7" font-size="1.2">FAIL</text>
+        <text x="96.0" y="2.3" font-size="1.2">ON/</text>
+        <text x="96.0" y="3.7" font-size="1.2">OFF</text>
+        <text x="101.8" y="3.4" font-size="1.2">ALM</text>
+        <text x="107.6" y="3.4" font-size="1.2">MST</text>
+        <text x="115.0" y="3.4" font-size="1.2">RST</text>
+        <text x="115.4" y="7.2" font-size="1.5" text-anchor="middle" transform="rotate(90 115.4 7.2)">CON</text>
+        <text x="158.6" y="10.4" font-size="1.5" text-anchor="middle" transform="rotate(90 158.6 10.4)">MGMT</text>
+        <text x="186.8" y="26.9" font-size="2.0" font-weight="bold" text-anchor="middle">JNP5700-RCB</text>
+      </g>
+      <g id="rcb-0--module--usb" data-path="rcb-0/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB port for installing Junos OS Evolved" data-media="usb-a" transform="translate(172.3,10.45) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+        <title>rcb-0--module--usb</title>
+        <rect id="rcb-0--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="rcb-0/module/usb/opening" data-class="cutout" />
+        <rect id="rcb-0--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="rcb-0--module--mgmt" data-path="rcb-0/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" data-speed="1g" transform="translate(138.8,3.8)" data-group="mgmt" data-group-role="management">
+        <title>rcb-0--module--mgmt</title>
+        <g id="rcb-0--module--mgmt--jack" data-path="rcb-0/module/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>rcb-0--module--mgmt--jack</title>
+          <path id="rcb-0--module--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="rcb-0--module--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="rcb-0--module--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="rcb-0/module/mgmt/jack/opening" data-class="cutout" />
+          <g id="rcb-0--module--mgmt--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="rcb-0--module--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="rcb-0--module--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rcb-0/module/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="rcb-0--module--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rcb-0/module/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="rcb-0--module--con" data-path="rcb-0/module/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(118.2,0.6) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+        <title>rcb-0--module--con</title>
+        <path id="rcb-0--module--con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="rcb-0--module--con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="rcb-0--module--con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="rcb-0/module/con/opening" data-class="cutout" />
+        <g id="rcb-0--module--con--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="rcb-0--module--bits" data-path="rcb-0/module/bits" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS clocking" data-media="rj48" transform="translate(65.9,0.6) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management">
+        <title>rcb-0--module--bits</title>
+        <path id="rcb-0--module--bits--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="rcb-0--module--bits--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="rcb-0--module--bits--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="rcb-0/module/bits/opening" data-class="cutout" />
+        <g id="rcb-0--module--bits--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="rcb-0--module--pps-out" data-path="rcb-0/module/pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS out" data-media="coax-smb" transform="translate(46.3,6.1)" data-group="timing" data-group-role="management">
+        <title>rcb-0--module--pps-out</title>
+        <circle id="rcb-0--module--pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="rcb-0/module/pps-out/opening" data-class="cutout" />
+        <g id="rcb-0--module--pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="rcb-0--module--mhz-out" data-path="rcb-0/module/mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz out" data-media="coax-smb" transform="translate(57.2,6.1)" data-group="timing" data-group-role="management">
+        <title>rcb-0--module--mhz-out</title>
+        <circle id="rcb-0--module--mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="rcb-0/module/mhz-out/opening" data-class="cutout" />
+        <g id="rcb-0--module--mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="rcb-0--module--pps-in" data-path="rcb-0/module/pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS in" data-media="coax-smb" transform="translate(46.3,15.0)" data-group="timing" data-group-role="management">
+        <title>rcb-0--module--pps-in</title>
+        <circle id="rcb-0--module--pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="rcb-0/module/pps-in/opening" data-class="cutout" />
+        <g id="rcb-0--module--pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="rcb-0--module--mhz-in" data-path="rcb-0/module/mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz in" data-media="coax-smb" transform="translate(57.2,15.0)" data-group="timing" data-group-role="management">
+        <title>rcb-0--module--mhz-in</title>
+        <circle id="rcb-0--module--mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="rcb-0/module/mhz-in/opening" data-class="cutout" />
+        <g id="rcb-0--module--mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="rcb-1" data-path="rcb-1" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="1">
+    <title>rcb-1</title>
+    <rect id="rcb-1--opening" x="226.4" y="7.6" width="198.8" height="30.8" fill="#101214" />
+    <g id="rcb-1--module" data-path="rcb-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-rcb-blnk@1:1.0.0" data-states="absent" transform="translate(325.8,23) translate(-99.4,-15.4)">
+      <title>rcb-1--module</title>
+      <defs>
+        <pattern id="rcb-1--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="rcb-1--module--face" x="0" y="3.0" width="198.8" height="27.8" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <rect id="rcb-1--module--ejector-strip" x="0" y="0" width="198.8" height="3.0" fill="#9aa0a6" stroke="#7b8187" stroke-width="0.3" />
+      <g id="rcb-1--module--vents">
+        <rect x="12.0" y="8.0" width="174.0" height="17.0" rx="2.0" fill="url(#rcb-1--module--hex)" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-0" data-path="fpc-0" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="0">
+    <title>fpc-0</title>
+    <rect id="fpc-0--opening" x="12.4" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-0--module" data-path="fpc-0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(34.55,129.6) translate(-22.15,-84.1)">
+      <title>fpc-0--module</title>
+      <defs>
+        <pattern id="fpc-0--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-0--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-0--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-0--module--hex)" />
+      </g>
+      <g id="fpc-0--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-0--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-1" data-path="fpc-1" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="1">
+    <title>fpc-1</title>
+    <rect id="fpc-1--opening" x="57.35" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-1--module" data-path="fpc-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(79.5,129.6) translate(-22.15,-84.1)">
+      <title>fpc-1--module</title>
+      <defs>
+        <pattern id="fpc-1--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-1--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-1--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-1--module--hex)" />
+      </g>
+      <g id="fpc-1--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-1--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-2" data-path="fpc-2" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="2">
+    <title>fpc-2</title>
+    <rect id="fpc-2--opening" x="102.3" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-2--module" data-path="fpc-2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(124.45,129.6) translate(-22.15,-84.1)">
+      <title>fpc-2--module</title>
+      <defs>
+        <pattern id="fpc-2--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-2--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-2--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-2--module--hex)" />
+      </g>
+      <g id="fpc-2--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-2--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-3" data-path="fpc-3" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="3">
+    <title>fpc-3</title>
+    <rect id="fpc-3--opening" x="147.25" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-3--module" data-path="fpc-3/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(169.4,129.6) translate(-22.15,-84.1)">
+      <title>fpc-3--module</title>
+      <defs>
+        <pattern id="fpc-3--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-3--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-3--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-3--module--hex)" />
+      </g>
+      <g id="fpc-3--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-3--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-4" data-path="fpc-4" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="4">
+    <title>fpc-4</title>
+    <rect id="fpc-4--opening" x="192.2" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-4--module" data-path="fpc-4/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(214.35,129.6) translate(-22.15,-84.1)">
+      <title>fpc-4--module</title>
+      <defs>
+        <pattern id="fpc-4--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-4--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-4--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-4--module--hex)" />
+      </g>
+      <g id="fpc-4--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-4--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-5" data-path="fpc-5" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="5">
+    <title>fpc-5</title>
+    <rect id="fpc-5--opening" x="237.15" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-5--module" data-path="fpc-5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(259.3,129.6) translate(-22.15,-84.1)">
+      <title>fpc-5--module</title>
+      <defs>
+        <pattern id="fpc-5--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-5--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-5--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-5--module--hex)" />
+      </g>
+      <g id="fpc-5--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-5--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-6" data-path="fpc-6" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="6">
+    <title>fpc-6</title>
+    <rect id="fpc-6--opening" x="282.1" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-6--module" data-path="fpc-6/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(304.25,129.6) translate(-22.15,-84.1)">
+      <title>fpc-6--module</title>
+      <defs>
+        <pattern id="fpc-6--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-6--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-6--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-6--module--hex)" />
+      </g>
+      <g id="fpc-6--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-6--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-7" data-path="fpc-7" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="7">
+    <title>fpc-7</title>
+    <rect id="fpc-7--opening" x="327.05" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-7--module" data-path="fpc-7/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(349.2,129.6) translate(-22.15,-84.1)">
+      <title>fpc-7--module</title>
+      <defs>
+        <pattern id="fpc-7--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-7--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-7--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-7--module--hex)" />
+      </g>
+      <g id="fpc-7--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-7--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="fpc-8" data-path="fpc-8" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="8">
+    <title>fpc-8</title>
+    <rect id="fpc-8--opening" x="372" y="45.5" width="44.3" height="168.2" fill="#101214" />
+    <g id="fpc-8--module" data-path="fpc-8/module" data-class="blank" data-behaviour="fills" data-ref="juniper/qfx5700-fpc-blnk@1:1.0.0" data-states="absent" transform="translate(394.15,129.6) translate(-22.15,-84.1)">
+      <title>fpc-8--module</title>
+      <defs>
+        <pattern id="fpc-8--module--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+          <circle cx="1.2" cy="1.04" r="0.78" fill="#3a3d42" />
+          <circle cx="0" cy="3.12" r="0.78" fill="#3a3d42" />
+          <circle cx="2.4" cy="3.12" r="0.78" fill="#3a3d42" />
+        </pattern>
+      </defs>
+      <rect id="fpc-8--module--face" x="0" y="0" width="44.3" height="168.2" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+      <g id="fpc-8--module--vents">
+        <rect x="9.5" y="22.0" width="25.0" height="124.0" rx="9.0" fill="url(#fpc-8--module--hex)" />
+      </g>
+      <g id="fpc-8--module--latches" fill="#d9dce0" stroke="#5f656b" stroke-width="0.35">
+        <rect x="9.0" y="8.5" width="6.0" height="13.0" rx="0.8" />
+        <rect x="9.0" y="146.7" width="6.0" height="13.0" rx="0.8" />
+      </g>
+      <g id="fpc-8--module--screws" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35">
+        <circle cx="34.1" cy="6.0" r="2.6" />
+        <circle cx="34.1" cy="162.2" r="2.6" />
+      </g>
+    </g>
+  </g>
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(425.3,192.0)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one on the port side and one on the rear" data-for="chassis">
+    <title>esd-front-jack</title>
+    <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-front-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+  <g id="esd-front-label" data-path="esd-front-label" data-class="marking" data-behaviour="mounts" data-ref="common/esd-warning@1:1.0.0" data-rel-pos="1" transform="translate(424.5,201.0)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one on the port side and one on the rear" data-for="esd-front-jack">
+    <title>esd-front-label</title>
+    <path id="esd-front-label--field" d="M 3.85 0.25 L 7.45 6.35 H 0.25 Z" fill="#161616" stroke="#f2c619" stroke-width="0.45" stroke-linejoin="round" />
+    <g id="esd-front-label--hand" fill="none" stroke="#f2c619" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 2.6 5.6 L 3.3 3.9 L 3.1 2.4 M 3.3 3.9 L 3.9 2.2 M 3.3 3.9 L 4.5 2.6 M 3.3 3.9 L 4.9 3.4" />
+      <path d="M 1.4 5.2 L 5.9 2.6" stroke-width="0.25" />
+    </g>
+    <g id="esd-front-label--silkscreen">
+      <text x="3.85" y="8.35" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="1.9" text-anchor="middle" fill="#3a3d41">ESD</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.42mm" height="927.1mm" viewBox="0 0 439.42 927.1" data-device="ex8216" data-view="rear" data-weight-chassis-kg="73" data-weight-base-kg="123" data-weight-redundant-kg="126" data-weight-max-kg="220" data-weight-note="Guide Table 7: chassis with midplane and cover panels 160 lb (73 kg), base configuration 270 lb (123 kg), redundant configuration 278 lb (126 kg), fully loaded 486 lb (220 kg), the last with the heaviest line cards in all sixteen slots. The datasheet gives 142 lb (64 kg), 270 lb (122.5 kg), 318 lb (144 kg) and 422 lb (191 kg); the guide's table is carried (gap weights)." data-operating-temp="0 C to 40 C" data-humidity="10-85 percent noncondensing" data-altitude-max="10,000 ft (3048 m)" data-eol="announced" data-eol-announcement="https://www.juniper.net/support/pdf/eol/lod-q22017.pdf" data-airflow="side" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex8216-sf320@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-offline { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-offline { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Juniper EX8216","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","juniper/ex8216-sf320@1":"1.0.0"},"source-sha256":"cf3d98ba9d71ed0182287df2606e87901c8ca1a599e5bcb19a8e7d07e44d022a","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX8216" data-sku="EX8216-REDUND-DC" data-part-number="" x="0" y="0" width="439.42" height="927.1" rx="1.2" fill="#b3b7bb" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="10" y="745" width="419.4" height="165" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="plate-0" data-kind="plate" x="5.5" y="626" width="7" height="7" rx="3.5" fill="#55585b" />
+    <rect id="plate-1" data-kind="plate" x="5.5" y="641.86" width="7" height="7" rx="3.5" fill="#55585b" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="336" y="21" width="81" height="20" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="9" cy="681" rx="2" ry="2" fill="#101214" id="cutout--esd-rear" data-path="cutout:esd-rear" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="41.2" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf7">SF7</text>
+    <text x="81.9" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf6">SF6</text>
+    <text x="122.6" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf5">SF5</text>
+    <text x="163.3" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf4">SF4</text>
+    <text x="204" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf3">SF3</text>
+    <text x="244.7" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf2">SF2</text>
+    <text x="285.4" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf1">SF1</text>
+    <text x="326.1" y="97.5" font-family="sans-serif" font-size="4" text-anchor="middle" fill="#2b2f33" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sf0">SF0</text>
+  </g>
+  <g id="sf7" data-path="sf7" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="7">
+    <title>sf7</title>
+    <rect id="sf7--opening" x="21.2" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf7--module" data-path="sf7/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(41.2,412.3) translate(-20,-307)">
+      <title>sf7--module</title>
+      <rect id="sf7--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf7--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf7--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf7/module/lever" data-class="latch" />
+      <rect id="sf7--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf7/module/handle" data-class="latch" />
+      <circle id="sf7--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf7/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf7--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf7/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf7--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sf6" data-path="sf6" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="6">
+    <title>sf6</title>
+    <rect id="sf6--opening" x="61.9" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf6--module" data-path="sf6/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(81.9,412.3) translate(-20,-307)">
+      <title>sf6--module</title>
+      <rect id="sf6--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf6--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf6--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf6/module/lever" data-class="latch" />
+      <rect id="sf6--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf6/module/handle" data-class="latch" />
+      <circle id="sf6--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf6/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf6--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf6/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf6--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sf5" data-path="sf5" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="5">
+    <title>sf5</title>
+    <rect id="sf5--opening" x="102.6" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf5--module" data-path="sf5/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(122.6,412.3) translate(-20,-307)">
+      <title>sf5--module</title>
+      <rect id="sf5--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf5--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf5--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf5/module/lever" data-class="latch" />
+      <rect id="sf5--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf5/module/handle" data-class="latch" />
+      <circle id="sf5--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf5/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf5--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf5/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf5--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sf4" data-path="sf4" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="4">
+    <title>sf4</title>
+    <rect id="sf4--opening" x="143.3" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf4--module" data-path="sf4/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(163.3,412.3) translate(-20,-307)">
+      <title>sf4--module</title>
+      <rect id="sf4--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf4--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf4--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf4/module/lever" data-class="latch" />
+      <rect id="sf4--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf4/module/handle" data-class="latch" />
+      <circle id="sf4--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf4/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf4--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf4/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf4--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sf3" data-path="sf3" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="3">
+    <title>sf3</title>
+    <rect id="sf3--opening" x="184" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf3--module" data-path="sf3/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(204,412.3) translate(-20,-307)">
+      <title>sf3--module</title>
+      <rect id="sf3--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf3--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf3--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf3/module/lever" data-class="latch" />
+      <rect id="sf3--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf3/module/handle" data-class="latch" />
+      <circle id="sf3--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf3/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf3--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf3/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf3--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sf2" data-path="sf2" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="2">
+    <title>sf2</title>
+    <rect id="sf2--opening" x="224.7" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf2--module" data-path="sf2/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(244.7,412.3) translate(-20,-307)">
+      <title>sf2--module</title>
+      <rect id="sf2--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf2--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf2--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf2/module/lever" data-class="latch" />
+      <rect id="sf2--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf2/module/handle" data-class="latch" />
+      <circle id="sf2--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf2/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf2--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf2/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf2--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sf1" data-path="sf1" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="1">
+    <title>sf1</title>
+    <rect id="sf1--opening" x="265.4" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf1--module" data-path="sf1/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(285.4,412.3) translate(-20,-307)">
+      <title>sf1--module</title>
+      <rect id="sf1--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf1--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf1--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf1/module/lever" data-class="latch" />
+      <rect id="sf1--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf1/module/handle" data-class="latch" />
+      <circle id="sf1--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf1/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf1--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf1/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf1--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="sf0" data-path="sf0" data-class="bay" data-group="sfs" data-group-role="service" data-rel-pos="0">
+    <title>sf0</title>
+    <rect id="sf0--opening" x="306.1" y="105.3" width="40" height="614" fill="#101214" />
+    <g id="sf0--module" data-path="sf0/module" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(326.1,412.3) translate(-20,-307)">
+      <title>sf0--module</title>
+      <rect id="sf0--module--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="sf0--module--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+        <circle cx="22.4" cy="4.4" r="2.2" />
+        <circle cx="12.2" cy="13.4" r="1.7" />
+        <circle cx="22.1" cy="13.4" r="1.7" />
+      </g>
+      <rect id="sf0--module--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="sf0/module/lever" data-class="latch" />
+      <rect id="sf0--module--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="sf0/module/handle" data-class="latch" />
+      <circle id="sf0--module--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf0/module/led-st" data-class="led" data-states="off ok standby failed" />
+      <circle id="sf0--module--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="sf0/module/led-sf" data-class="led" data-states="off ok offline failed" />
+      <g id="sf0--module--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+        <text x="18.6" y="39.3" font-size="1.4">ST</text>
+        <text x="26.8" y="39.3" font-size="1.4">SF</text>
+        <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+        <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+      </g>
+    </g>
+  </g>
+  <g id="esd-rear-jack" data-path="esd-rear-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="2" transform="translate(6.0,678.0)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, front and rear" data-for="chassis">
+    <title>esd-rear-jack</title>
+    <circle id="esd-rear-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+</svg>

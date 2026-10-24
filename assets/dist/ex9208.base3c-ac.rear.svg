@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="355.6mm" viewBox="0 0 444.5 355.6" data-device="ex9208" data-view="rear" data-weight-kg="29.7" data-weight-max-kg="74.2" data-depth-total-mm="704.9" data-fabric-capacity="up to 7.5 Tbps backplane capacity (datasheet Table 1)" data-power-base-system-w="560" data-power-redundant-system-w="800" data-power-max-ac-w="4831" data-power-max-dc-w="4388" data-max-thermal-output="AC 16,473 BTU/h (4,831 W); DC 14,963 BTU/h (4,388 W) (datasheet, estimated, subject to change)" data-operating-temp="0 C to 40 C" data-storage-temp="-40 C to 70 C" data-humidity="5-90 percent noncondensing (operating), 5-95 percent noncondensing (nonoperating)" data-altitude="up to 3048 m" data-seismic="Designed to meet GR-63, Zone 4 earthquake requirements" data-nebs="SR-3580 NEBS Criteria Levels (Level 3 Compliance), GR-63-Core" data-eol="none-announced" data-airflow="side" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex9200-pwr-mx480-2520-ac@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/ex9200-pwr-mx480-2520-ac@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='juniper/ex9200-pwr-mx480-2520-ac@'] .state-yellow { --led-color: #f5a623; }
+</style>
+  <metadata>{"device":"Juniper EX9208","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/esd-warning@1":"1.0.0","juniper/ex9200-pwr-mx480-2520-ac@1":"1.0.0","juniper/mx-ground-stud-pair-5-8@1":"1.0.0","juniper/mx-ground-stud@1":"1.0.1","juniper/mx480-air-filter@1":"1.0.0","juniper/mx480-fan-tray@1":"1.0.0","std/c20-inlet@1":"1.4.0"},"source-sha256":"9718b0eff7ab2fae3d82b83ab7eb5374e777b078ec5566beee47370e731177aa","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX9208" data-sku="EX9208-BASE3C-AC" data-part-number="" x="0" y="0" width="444.5" height="355.6" rx="1.2" fill="#43474c" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="7.75" y="100" width="429" height="248" rx="1.2" fill="#b3b7bb" />
+    <rect id="plate-1" data-kind="plate" x="0" y="100" width="35.5" height="245" rx="0.6" fill="#3b4147" />
+    <rect id="plate-2" data-kind="plate" x="396.2" y="56.7" width="48.3" height="288.6" rx="0.6" fill="#1d2023" />
+    <rect id="plate-3" data-kind="plate" x="44" y="122.1" width="340.2" height="62" rx="0.6" fill="#e1e2e4" />
+    <rect id="plate-4" data-kind="plate" x="56.3" y="225.7" width="38.1" height="92" rx="1" fill="#5c6672" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="431.1" cy="25.26" rx="3.5" ry="3.5" fill="#101214" id="cutout--ground-stud-0" data-path="cutout:ground-stud-0" data-class="cutout" />
+    <ellipse cx="431.1" cy="41.14" rx="3.5" ry="3.5" fill="#101214" id="cutout--ground-stud-1" data-path="cutout:ground-stud-1" data-class="cutout" />
+    <ellipse cx="352.6" cy="207.2" rx="2" ry="2" fill="#101214" id="cutout--esd-rear" data-path="cutout:esd-rear" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="49.3" y="129.9" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem0">PEM 0</text>
+    <text x="151.6" y="129.9" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem1">PEM 1</text>
+    <text x="255.3" y="129.9" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem2">PEM 2</text>
+    <text x="359.2" y="129.9" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem3">PEM 3</text>
+    <text x="49.3" y="168.5" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="air-filter">AIR</text>
+    <text x="49.3" y="176.3" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="air-filter">FILTER</text>
+    <text x="367.5" y="169.7" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">FAN</text>
+    <text x="367.5" y="177.7" font-family="sans-serif" font-size="5" text-anchor="start" fill="#3a3e43" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">TRAY</text>
+    <path d="M 0 -4.2 A 4.2 4.2 0 1 0 0.01 -4.2 Z M -2.4 -1.1 H 2.4 M -1.6 0.5 H 1.6 M -0.7 2.1 H 0.7" fill="none" stroke="#8a8f95" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(431.7 52)" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="pem0" data-path="pem0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>pem0</title>
+    <rect id="pem0--opening" x="8.5" y="13.8" width="101.6" height="89.7" fill="#101214" />
+    <g id="pem0--module" data-path="pem0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/ex9200-pwr-mx480-2520-ac@1:1.0.0" data-airflow="front-to-back (the supply draws air from the front of the chassis and exhausts at its own rear)" data-input-current-a="16 (low line), 15.1 (high line)" data-input-voltage="100-120 VAC (low line) or 200-240 VAC (high line), 50-60 Hz" data-power-output-low-line-w="1167" data-power-output-w="2400" data-redundancy="high-line 1+1; low-line 2+2" data-states="ok fault absent" transform="translate(59.3,58.65) translate(-50.8,-44.85)">
+      <title>pem0--module</title>
+      <rect id="pem0--module--flange" x="0" y="70.0" width="101.6" height="19.7" rx="0.8" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.4" />
+      <rect id="pem0--module--face" x="0" y="0" width="101.6" height="74.0" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="pem0--module--vents" fill="none" stroke="#2e3338" stroke-width="4.0" stroke-dasharray="4.0 2.3">
+        <path d="M 11.8 6.2 H 82" />
+        <path d="M 11.8 12.5 H 82" />
+        <path d="M 11.8 18.8 H 82" />
+        <path d="M 11.8 25.1 H 82" />
+        <path d="M 50.5 31.4 H 82" />
+        <path d="M 50.5 37.7 H 82" />
+        <path d="M 50.5 44.0 H 82" />
+        <path d="M 50.5 50.3 H 82" />
+        <path d="M 50.5 56.6 H 82" />
+      </g>
+      <rect x="3.0" y="5.0" width="6.0" height="25.0" fill="#e8eaec" stroke="#8a8f94" stroke-width="0.2" />
+      <rect x="84.0" y="16.0" width="13.4" height="22.0" rx="0.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+      <g id="pem0--module--lamps">
+        <circle id="pem0--module--led-ac-ok" cx="91.8" cy="21.4" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem0/module/led-ac-ok" data-class="led" data-states="green yellow off" />
+        <circle id="pem0--module--led-dc-ok" cx="91.8" cy="27.1" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem0/module/led-dc-ok" data-class="led" data-states="green off" />
+        <circle id="pem0--module--led-ps-fail" cx="91.8" cy="32.8" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem0/module/led-ps-fail" data-class="led" data-states="red off" />
+      </g>
+      <g id="pem0--module--flange-hardware">
+        <circle cx="25.6" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+        <circle cx="76.5" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+        <rect x="31.7" y="76.5" width="39.1" height="10.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+      </g>
+      <g id="pem0--module--silkscreen">
+        <text x="89.6" y="21.8" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">AC OK</text>
+        <text x="89.6" y="27.5" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">DC OK</text>
+        <text x="89.6" y="33.2" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">PS FAIL</text>
+        <text x="35.0" y="79.6" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">Caution:</text>
+        <text x="35.0" y="82.2" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">To completely de-energize the</text>
+        <text x="35.0" y="84.4" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">system, disconnect all power cords</text>
+      </g>
+      <g id="pem0--module--handle" data-path="pem0/module/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+        <rect x="52.3" y="63.0" width="42.0" height="6.4" rx="3.2" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+      </g>
+      <g id="pem0--module--switch" data-path="pem0/module/switch" data-class="switch" data-z-out="2.4" data-z-color="#26292d">
+        <rect x="4.3" y="40.2" width="15.3" height="30.0" rx="1.4" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+        <rect x="7.0" y="45.0" width="9.9" height="20.4" rx="1.2" fill="#4a4f55" />
+        <path d="M 12.0 48.0 V 53.0" stroke="#e8eaec" stroke-width="0.8" />
+        <circle cx="12.0" cy="60.0" r="1.4" fill="none" stroke="#e8eaec" stroke-width="0.6" />
+      </g>
+      <g id="pem0--module--inlet" data-path="pem0/module/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="AC inlet" data-input="ac" data-media="ac" transform="translate(19.6,39.8) rotate(90 16.2 12.2)">
+        <title>pem0--module--inlet</title>
+        <rect id="pem0--module--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="pem0/module/inlet/opening" data-class="cutout" />
+        <rect id="pem0--module--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="pem0--module--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="pem0--module--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="pem0--module--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="pem1" data-path="pem1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>pem1</title>
+    <rect id="pem1--opening" x="112.2" y="13.8" width="101.6" height="89.7" fill="#101214" />
+    <g id="pem1--module" data-path="pem1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/ex9200-pwr-mx480-2520-ac@1:1.0.0" data-airflow="front-to-back (the supply draws air from the front of the chassis and exhausts at its own rear)" data-input-current-a="16 (low line), 15.1 (high line)" data-input-voltage="100-120 VAC (low line) or 200-240 VAC (high line), 50-60 Hz" data-power-output-low-line-w="1167" data-power-output-w="2400" data-redundancy="high-line 1+1; low-line 2+2" data-states="ok fault absent" transform="translate(163,58.65) translate(-50.8,-44.85)">
+      <title>pem1--module</title>
+      <rect id="pem1--module--flange" x="0" y="70.0" width="101.6" height="19.7" rx="0.8" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.4" />
+      <rect id="pem1--module--face" x="0" y="0" width="101.6" height="74.0" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="pem1--module--vents" fill="none" stroke="#2e3338" stroke-width="4.0" stroke-dasharray="4.0 2.3">
+        <path d="M 11.8 6.2 H 82" />
+        <path d="M 11.8 12.5 H 82" />
+        <path d="M 11.8 18.8 H 82" />
+        <path d="M 11.8 25.1 H 82" />
+        <path d="M 50.5 31.4 H 82" />
+        <path d="M 50.5 37.7 H 82" />
+        <path d="M 50.5 44.0 H 82" />
+        <path d="M 50.5 50.3 H 82" />
+        <path d="M 50.5 56.6 H 82" />
+      </g>
+      <rect x="3.0" y="5.0" width="6.0" height="25.0" fill="#e8eaec" stroke="#8a8f94" stroke-width="0.2" />
+      <rect x="84.0" y="16.0" width="13.4" height="22.0" rx="0.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+      <g id="pem1--module--lamps">
+        <circle id="pem1--module--led-ac-ok" cx="91.8" cy="21.4" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem1/module/led-ac-ok" data-class="led" data-states="green yellow off" />
+        <circle id="pem1--module--led-dc-ok" cx="91.8" cy="27.1" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem1/module/led-dc-ok" data-class="led" data-states="green off" />
+        <circle id="pem1--module--led-ps-fail" cx="91.8" cy="32.8" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem1/module/led-ps-fail" data-class="led" data-states="red off" />
+      </g>
+      <g id="pem1--module--flange-hardware">
+        <circle cx="25.6" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+        <circle cx="76.5" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+        <rect x="31.7" y="76.5" width="39.1" height="10.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+      </g>
+      <g id="pem1--module--silkscreen">
+        <text x="89.6" y="21.8" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">AC OK</text>
+        <text x="89.6" y="27.5" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">DC OK</text>
+        <text x="89.6" y="33.2" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">PS FAIL</text>
+        <text x="35.0" y="79.6" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">Caution:</text>
+        <text x="35.0" y="82.2" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">To completely de-energize the</text>
+        <text x="35.0" y="84.4" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">system, disconnect all power cords</text>
+      </g>
+      <g id="pem1--module--handle" data-path="pem1/module/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+        <rect x="52.3" y="63.0" width="42.0" height="6.4" rx="3.2" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+      </g>
+      <g id="pem1--module--switch" data-path="pem1/module/switch" data-class="switch" data-z-out="2.4" data-z-color="#26292d">
+        <rect x="4.3" y="40.2" width="15.3" height="30.0" rx="1.4" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+        <rect x="7.0" y="45.0" width="9.9" height="20.4" rx="1.2" fill="#4a4f55" />
+        <path d="M 12.0 48.0 V 53.0" stroke="#e8eaec" stroke-width="0.8" />
+        <circle cx="12.0" cy="60.0" r="1.4" fill="none" stroke="#e8eaec" stroke-width="0.6" />
+      </g>
+      <g id="pem1--module--inlet" data-path="pem1/module/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="AC inlet" data-input="ac" data-media="ac" transform="translate(19.6,39.8) rotate(90 16.2 12.2)">
+        <title>pem1--module--inlet</title>
+        <rect id="pem1--module--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="pem1/module/inlet/opening" data-class="cutout" />
+        <rect id="pem1--module--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="pem1--module--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="pem1--module--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="pem1--module--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="pem2" data-path="pem2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>pem2</title>
+    <rect id="pem2--opening" x="215.9" y="13.8" width="101.6" height="89.7" fill="#101214" />
+    <g id="pem2--module" data-path="pem2/module" data-class="psu" data-behaviour="fills" data-ref="juniper/ex9200-pwr-mx480-2520-ac@1:1.0.0" data-airflow="front-to-back (the supply draws air from the front of the chassis and exhausts at its own rear)" data-input-current-a="16 (low line), 15.1 (high line)" data-input-voltage="100-120 VAC (low line) or 200-240 VAC (high line), 50-60 Hz" data-power-output-low-line-w="1167" data-power-output-w="2400" data-redundancy="high-line 1+1; low-line 2+2" data-states="ok fault absent" transform="translate(266.7,58.65) translate(-50.8,-44.85)">
+      <title>pem2--module</title>
+      <rect id="pem2--module--flange" x="0" y="70.0" width="101.6" height="19.7" rx="0.8" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.4" />
+      <rect id="pem2--module--face" x="0" y="0" width="101.6" height="74.0" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="pem2--module--vents" fill="none" stroke="#2e3338" stroke-width="4.0" stroke-dasharray="4.0 2.3">
+        <path d="M 11.8 6.2 H 82" />
+        <path d="M 11.8 12.5 H 82" />
+        <path d="M 11.8 18.8 H 82" />
+        <path d="M 11.8 25.1 H 82" />
+        <path d="M 50.5 31.4 H 82" />
+        <path d="M 50.5 37.7 H 82" />
+        <path d="M 50.5 44.0 H 82" />
+        <path d="M 50.5 50.3 H 82" />
+        <path d="M 50.5 56.6 H 82" />
+      </g>
+      <rect x="3.0" y="5.0" width="6.0" height="25.0" fill="#e8eaec" stroke="#8a8f94" stroke-width="0.2" />
+      <rect x="84.0" y="16.0" width="13.4" height="22.0" rx="0.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+      <g id="pem2--module--lamps">
+        <circle id="pem2--module--led-ac-ok" cx="91.8" cy="21.4" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem2/module/led-ac-ok" data-class="led" data-states="green yellow off" />
+        <circle id="pem2--module--led-dc-ok" cx="91.8" cy="27.1" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem2/module/led-dc-ok" data-class="led" data-states="green off" />
+        <circle id="pem2--module--led-ps-fail" cx="91.8" cy="32.8" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" data-path="pem2/module/led-ps-fail" data-class="led" data-states="red off" />
+      </g>
+      <g id="pem2--module--flange-hardware">
+        <circle cx="25.6" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+        <circle cx="76.5" cy="84.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.3" />
+        <rect x="31.7" y="76.5" width="39.1" height="10.6" fill="#f2f3f4" stroke="#8a8f94" stroke-width="0.2" />
+      </g>
+      <g id="pem2--module--silkscreen">
+        <text x="89.6" y="21.8" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">AC OK</text>
+        <text x="89.6" y="27.5" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">DC OK</text>
+        <text x="89.6" y="33.2" font-family="sans-serif" font-size="1.4" fill="#222" text-anchor="end">PS FAIL</text>
+        <text x="35.0" y="79.6" font-family="sans-serif" font-size="1.5" fill="#222" text-anchor="start">Caution:</text>
+        <text x="35.0" y="82.2" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">To completely de-energize the</text>
+        <text x="35.0" y="84.4" font-family="sans-serif" font-size="1.1" fill="#222" text-anchor="start">system, disconnect all power cords</text>
+      </g>
+      <g id="pem2--module--handle" data-path="pem2/module/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+        <rect x="52.3" y="63.0" width="42.0" height="6.4" rx="3.2" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+      </g>
+      <g id="pem2--module--switch" data-path="pem2/module/switch" data-class="switch" data-z-out="2.4" data-z-color="#26292d">
+        <rect x="4.3" y="40.2" width="15.3" height="30.0" rx="1.4" fill="#1d2023" stroke="#0f1113" stroke-width="0.4" />
+        <rect x="7.0" y="45.0" width="9.9" height="20.4" rx="1.2" fill="#4a4f55" />
+        <path d="M 12.0 48.0 V 53.0" stroke="#e8eaec" stroke-width="0.8" />
+        <circle cx="12.0" cy="60.0" r="1.4" fill="none" stroke="#e8eaec" stroke-width="0.6" />
+      </g>
+      <g id="pem2--module--inlet" data-path="pem2/module/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-function="AC inlet" data-input="ac" data-media="ac" transform="translate(19.6,39.8) rotate(90 16.2 12.2)">
+        <title>pem2--module--inlet</title>
+        <rect id="pem2--module--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="pem2/module/inlet/opening" data-class="cutout" />
+        <rect id="pem2--module--inlet--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+        <rect id="pem2--module--inlet--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="pem2--module--inlet--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <rect id="pem2--module--inlet--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="pem3" data-path="pem3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>pem3</title>
+    <rect id="pem3--opening" x="319.6" y="13.8" width="101.6" height="89.7" fill="#101214" />
+  </g>
+  <g id="air-filter" data-path="air-filter" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="0">
+    <title>air-filter</title>
+    <rect id="air-filter--opening" x="20.5" y="103.6" width="12" height="240" fill="#101214" />
+    <g id="air-filter--module" data-path="air-filter/module" data-class="filter" data-behaviour="fills" data-ref="juniper/mx480-air-filter@1:1.0.0" data-model="MX480 Air Filter" data-states="absent" transform="translate(26.5,223.6) translate(-6,-120)">
+      <title>air-filter--module</title>
+      <rect id="air-filter--module--face" x="0" y="0" width="12.0" height="240.0" rx="1.4" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="air-filter--module--screws">
+        <circle cx="6.0" cy="10.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="6.0" cy="230.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-tray" data-path="fan-tray" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="1">
+    <title>fan-tray</title>
+    <rect id="fan-tray--opening" x="396.7" y="103.6" width="12" height="240" fill="#101214" />
+    <g id="fan-tray--module" data-path="fan-tray/module" data-class="fan" data-behaviour="fills" data-ref="juniper/mx480-fan-tray@1:1.0.0" data-airflow="side-to-side" data-fans="6" data-model="MX480 High-Capacity Fan Tray" data-power-draw-max-w="160" data-states="absent" transform="translate(402.7,223.6) translate(-6,-120)">
+      <title>fan-tray--module</title>
+      <rect id="fan-tray--module--face" x="0" y="0" width="12.0" height="240.0" rx="1.4" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="fan-tray--module--screws">
+        <circle cx="6.0" cy="10.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="6.0" cy="230.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="esd-rear-jack" data-path="esd-rear-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="2" transform="translate(349.6,204.2)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one at the front top left and one on the rear plate (guide Figures 5 and 6)" data-for="chassis">
+    <title>esd-rear-jack</title>
+    <circle id="esd-rear-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
+    <circle id="esd-rear-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />
+    <circle id="esd-rear-jack--contact" cx="3" cy="3" r="0.85" fill="#2a2e33" />
+  </g>
+  <g id="esd-rear-label" data-path="esd-rear-label" data-class="marking" data-behaviour="mounts" data-ref="common/esd-warning@1:1.0.0" data-rel-pos="3" transform="translate(366.65,203.95)" data-group="esd" data-group-role="furniture" data-description="the wrist-strap ESD points, one at the front top left and one on the rear plate (guide Figures 5 and 6)" data-for="chassis">
+    <title>esd-rear-label</title>
+    <path id="esd-rear-label--field" d="M 3.85 0.25 L 7.45 6.35 H 0.25 Z" fill="#161616" stroke="#f2c619" stroke-width="0.45" stroke-linejoin="round" />
+    <g id="esd-rear-label--hand" fill="none" stroke="#f2c619" stroke-width="0.35" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 2.6 5.6 L 3.3 3.9 L 3.1 2.4 M 3.3 3.9 L 3.9 2.2 M 3.3 3.9 L 4.5 2.6 M 3.3 3.9 L 4.9 3.4" />
+      <path d="M 1.4 5.2 L 5.9 2.6" stroke-width="0.25" />
+    </g>
+    <g id="esd-rear-label--silkscreen">
+      <text x="3.85" y="8.35" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="1.9" text-anchor="middle" fill="#3a3d41">ESD</text>
+    </g>
+  </g>
+  <g id="ground-studs" data-path="ground-studs" data-class="ground" data-behaviour="mounts" data-ref="juniper/mx-ground-stud-pair-5-8@1:1.0.0" data-connector="stud-pair-5-8" data-stud-size="1/4-20" data-rel-pos="0" transform="translate(419.66,29.7) rotate(90 11.4375 3.5)" data-group="grounding" data-group-role="furniture" data-description="the protective earthing stud pair at the rear upper right (guide Figures 6 and 7)" data-for="chassis">
+    <title>ground-studs</title>
+    <g id="ground-studs--pair" />
+    <g id="ground-studs--1" data-path="ground-studs/1" data-class="ground" data-behaviour="mounts" data-ref="juniper/mx-ground-stud@1:1.0.1" data-wall="#4a4f55" data-model="MX earthing stud" transform="translate(0,0)">
+      <title>ground-studs--1</title>
+      <circle id="ground-studs--1--washer" cx="3.5" cy="3.5" r="3.4" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.3" />
+      <g id="ground-studs--1--stud" data-z-cyl="5.0" data-z-lift="3.0" data-z-thread="0.8">
+        <circle cx="3.5" cy="3.5" r="2.4" fill="#8a8f95" stroke="#565b60" stroke-width="0.3" />
+        <circle cx="3.5" cy="3.5" r="1.1" fill="#6d7278" />
+      </g>
+      <g data-cp="mate" data-cp-at="3.5 3.5" data-cp-dir="front" data-cp-on="ground-studs--1--stud" />
+    </g>
+    <g id="ground-studs--2" data-path="ground-studs/2" data-class="ground" data-behaviour="mounts" data-ref="juniper/mx-ground-stud@1:1.0.1" data-wall="#4a4f55" data-model="MX earthing stud" transform="translate(15.875,0)">
+      <title>ground-studs--2</title>
+      <circle id="ground-studs--2--washer" cx="3.5" cy="3.5" r="3.4" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.3" />
+      <g id="ground-studs--2--stud" data-z-cyl="5.0" data-z-lift="3.0" data-z-thread="0.8">
+        <circle cx="3.5" cy="3.5" r="2.4" fill="#8a8f95" stroke="#565b60" stroke-width="0.3" />
+        <circle cx="3.5" cy="3.5" r="1.1" fill="#6d7278" />
+      </g>
+      <g data-cp="mate" data-cp-at="3.5 3.5" data-cp-dir="front" data-cp-on="ground-studs--2--stud" />
+    </g>
+    <g data-cp="mate" data-cp-at="11.4375 3.5" data-cp-dir="front" />
+  </g>
+</svg>

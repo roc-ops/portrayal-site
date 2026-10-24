@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="40.0mm" height="614.0mm" viewBox="0 0 40.0 614.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex8216-sf320@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-offline { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-offline { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8216-sf320@'] .state-standby { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="ex8216-sf320" data-path="ex8216-sf320" data-class="fabric" data-behaviour="fills" data-ref="juniper/ex8216-sf320@1:1.0.0" data-power-draw-max-w="75" data-role="switch-fabric" data-states="ok fail absent" transform="translate(0,0)">
+    <title>ex8216-sf320</title>
+    <rect id="ex8216-sf320--face" x="0" y="0" width="40.0" height="614.0" rx="0.8" fill="#c9ccd0" stroke="#8a8f94" stroke-width="0.4" />
+    <g id="ex8216-sf320--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+      <circle cx="22.4" cy="4.4" r="2.2" />
+      <circle cx="12.2" cy="13.4" r="1.7" />
+      <circle cx="22.1" cy="13.4" r="1.7" />
+    </g>
+    <rect id="ex8216-sf320--lever" x="30.5" y="10.2" width="6.0" height="119.0" rx="1.0" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="ex8216-sf320/lever" data-class="latch" />
+    <rect id="ex8216-sf320--handle" x="4.0" y="245.0" width="6.0" height="135.0" rx="3.0" fill="#8a8f95" stroke="#4a4f55" stroke-width="0.4" data-path="ex8216-sf320/handle" data-class="latch" />
+    <circle id="ex8216-sf320--led-st" cx="18.6" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8216-sf320/led-st" data-class="led" data-states="off ok standby failed" />
+    <circle id="ex8216-sf320--led-sf" cx="26.8" cy="35.8" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8216-sf320/led-sf" data-class="led" data-states="off ok offline failed" />
+    <g id="ex8216-sf320--silkscreen" font-family="sans-serif" fill="#2b2e33" text-anchor="middle">
+      <text x="18.6" y="39.3" font-size="1.4">ST</text>
+      <text x="26.8" y="39.3" font-size="1.4">SF</text>
+      <text x="18.0" y="49.5" font-size="2.4">EX8216</text>
+      <text x="18.0" y="53.8" font-size="2.4">SF320</text>
+    </g>
+  </g>
+</svg>
