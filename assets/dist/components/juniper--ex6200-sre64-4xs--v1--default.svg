@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="392.1mm" height="56.7mm" viewBox="0 0 392.1 56.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-backup { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-backup { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-booting { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-booting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-enabled { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-link { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-major { --led-color: #ef4444; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-minor { --led-color: #f59e0b; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-primary { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex6200-sre64-4xs@'] .state-running { --led-color: #22c55e; }</style>
+  <g id="ex6200-sre64-4xs" data-path="ex6200-sre64-4xs" data-class="supervisor" data-behaviour="fills" data-ref="juniper/ex6200-sre64-4xs@1:1.0.0" data-power-draw-max-w="100" data-role="routing-engine" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex6200-sre64-4xs</title>
+    <rect id="ex6200-sre64-4xs--face" x="0" y="0" width="392.1" height="56.7" rx="1.2" fill="#c9ccd0" stroke="#7d8186" stroke-width="0.4" />
+    <g id="ex6200-sre64-4xs--frames">
+      <rect x="94.2" y="40.4" width="60.4" height="14.0" rx="0.8" fill="#aeb2b7" stroke="#7d8186" stroke-width="0.3" />
+      <rect x="156.4" y="40.2" width="18.4" height="14.2" rx="0.8" fill="#aeb2b7" stroke="#7d8186" stroke-width="0.3" />
+      <rect x="178.8" y="38.4" width="19.6" height="16.0" rx="0.8" fill="#aeb2b7" stroke="#7d8186" stroke-width="0.3" />
+      <rect x="204.6" y="38.4" width="19.4" height="16.0" rx="0.8" fill="#aeb2b7" stroke="#7d8186" stroke-width="0.3" />
+      <rect x="250.0" y="42.0" width="16.8" height="8.8" rx="0.8" fill="#aeb2b7" stroke="#7d8186" stroke-width="0.3" />
+    </g>
+    <g id="ex6200-sre64-4xs--grips">
+      <rect x="16.7" y="12.4" width="5.2" height="29.0" rx="0.8" fill="#8e9298" stroke="#6b6f75" stroke-width="0.3" />
+      <rect x="371.1" y="12.4" width="5.2" height="29.0" rx="0.8" fill="#8e9298" stroke="#6b6f75" stroke-width="0.3" />
+    </g>
+    <g id="ex6200-sre64-4xs--screws">
+      <circle cx="6.4" cy="42.0" r="4.2" fill="#aeb2b7" stroke="#6b6f75" stroke-width="0.4" />
+      <path d="M 3.6 42.0 H 9.2 M 6.4 39.2 V 44.8" stroke="#6b6f75" stroke-width="0.5" />
+      <circle cx="385.5" cy="42.0" r="4.2" fill="#aeb2b7" stroke="#6b6f75" stroke-width="0.4" />
+      <path d="M 382.7 42.0 H 388.3 M 385.5 39.2 V 44.8" stroke="#6b6f75" stroke-width="0.5" />
+    </g>
+    <rect id="ex6200-sre64-4xs--lever-left" x="0" y="49.5" width="17.6" height="5.2" rx="0.8" fill="#8e9298" stroke="#5d6167" stroke-width="0.3" data-path="ex6200-sre64-4xs/lever-left" data-class="latch" />
+    <rect id="ex6200-sre64-4xs--lever-right" x="374.5" y="49.5" width="17.6" height="5.2" rx="0.8" fill="#8e9298" stroke="#5d6167" stroke-width="0.3" data-path="ex6200-sre64-4xs/lever-right" data-class="latch" />
+    <rect id="ex6200-sre64-4xs--lcd" x="287.4" y="32.5" width="40.0" height="14.2" rx="0.8" fill="#2a3733" stroke="#4a4f55" stroke-width="0.5" data-path="ex6200-sre64-4xs/lcd" data-class="display" data-characters="16" />
+    <g id="ex6200-sre64-4xs--btn-menu" data-path="ex6200-sre64-4xs/btn-menu" data-class="button">
+      <circle cx="333.9" cy="36.6" r="3.4" fill="#aeb2b7" stroke="#5d6167" stroke-width="0.4" />
+      <path d="M 331.9 35.4 H 335.9 M 331.9 36.6 H 335.9 M 331.9 37.8 H 335.9" stroke="#3a3e43" stroke-width="0.35" />
+    </g>
+    <g id="ex6200-sre64-4xs--btn-enter" data-path="ex6200-sre64-4xs/btn-enter" data-class="button">
+      <circle cx="333.9" cy="44.0" r="3.4" fill="#aeb2b7" stroke="#5d6167" stroke-width="0.4" />
+      <path d="M 335.4 42.4 V 44.4 H 332.4 M 333.2 43.5 L 332.2 44.4 L 333.2 45.3" fill="none" stroke="#3a3e43" stroke-width="0.35" />
+    </g>
+    <circle id="ex6200-sre64-4xs--led-uplink-0-link" cx="99.5" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-0-link" data-class="led" data-states="off link activity" />
+    <circle id="ex6200-sre64-4xs--led-uplink-0-status" cx="105.4" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-0-status" data-class="led" data-states="off enabled" />
+    <circle id="ex6200-sre64-4xs--led-uplink-1-link" cx="113.8" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-1-link" data-class="led" data-states="off link activity" />
+    <circle id="ex6200-sre64-4xs--led-uplink-1-status" cx="119.6" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-1-status" data-class="led" data-states="off enabled" />
+    <circle id="ex6200-sre64-4xs--led-uplink-2-link" cx="127.9" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-2-link" data-class="led" data-states="off link activity" />
+    <circle id="ex6200-sre64-4xs--led-uplink-2-status" cx="133.8" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-2-status" data-class="led" data-states="off enabled" />
+    <circle id="ex6200-sre64-4xs--led-uplink-3-link" cx="142.3" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-3-link" data-class="led" data-states="off link activity" />
+    <circle id="ex6200-sre64-4xs--led-uplink-3-status" cx="148.1" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-uplink-3-status" data-class="led" data-states="off enabled" />
+    <circle id="ex6200-sre64-4xs--led-mgmt-sfp-link" cx="161.5" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-mgmt-sfp-link" data-class="led" data-states="off link activity" />
+    <circle id="ex6200-sre64-4xs--led-mgmt-sfp-status" cx="167.4" cy="35.4" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-mgmt-sfp-status" data-class="led" data-states="off enabled" />
+    <circle id="ex6200-sre64-4xs--led-alm" cx="341.4" cy="33.5" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-alm" data-class="led" data-states="off major minor" />
+    <circle id="ex6200-sre64-4xs--led-sys" cx="341.4" cy="37.5" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-sys" data-class="led" data-states="off fault running booting" />
+    <circle id="ex6200-sre64-4xs--led-mst" cx="341.4" cy="41.6" r="1.0" fill="var(--led-color, #5a5f65)" stroke="#3a3e43" stroke-width="0.3" data-path="ex6200-sre64-4xs/led-mst" data-class="led" data-states="off primary backup" />
+    <g id="ex6200-sre64-4xs--silkscreen" font-family="sans-serif" fill="#2b2e32" text-anchor="middle">
+      <text x="35.8" y="9.0" font-size="2.0" text-anchor="start">EX6200-SRE64-4XS</text>
+      <text x="102.4" y="33.0" font-size="2.2">0</text>
+      <text x="116.7" y="33.0" font-size="2.2">1</text>
+      <text x="130.9" y="33.0" font-size="2.2">2</text>
+      <text x="145.2" y="33.0" font-size="2.2">3</text>
+      <path d="M 162.0 33.8 V 32.0 H 169.0 M 176.6 32.0 H 189.5 V 33.8" fill="none" stroke="#2b2e32" stroke-width="0.3" />
+      <text x="172.8" y="32.8" font-size="2.0">MGMT</text>
+      <g id="ex6200-sre64-4xs--usb-mark" transform="translate(255.2 36.8)" stroke="#2b2e32" fill="#2b2e32" stroke-linecap="round">
+        <line x1="0.9" y1="2" x2="5.5" y2="2" stroke-width="0.42" fill="none" />
+        <circle cx="0.75" cy="2" r="0.55" />
+        <path d="M 5.3 1.35 L 6.25 2 L 5.3 2.65 z" stroke="none" />
+        <path d="M 2.6 2 L 3.5 0.95 L 4.35 0.95" stroke-width="0.36" fill="none" />
+        <rect x="4.25" y="0.55" width="0.8" height="0.8" stroke="none" />
+        <path d="M 2.0 2 L 2.9 3.05 L 3.75 3.05" stroke-width="0.36" fill="none" />
+        <circle cx="4.05" cy="3.05" r="0.42" stroke="none" />
+      </g>
+      <text x="214.3" y="36.0" font-size="2.0">CONSOLE</text>
+      <text x="274.0" y="41.2" font-size="2.0">RESET</text>
+      <text x="344.2" y="34.2" font-size="1.8" text-anchor="start">ALM</text>
+      <text x="344.2" y="38.2" font-size="1.8" text-anchor="start">SYS</text>
+      <text x="344.2" y="42.3" font-size="1.8" text-anchor="start">MST</text>
+    </g>
+    <g id="ex6200-sre64-4xs--uplink-0" data-path="ex6200-sre64-4xs/uplink-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-function="uplink port 0" data-media="sfp-plus" data-speed="10g" transform="translate(95.9,42.4)" data-group="uplink" data-group-role="traffic" data-description="the four SFP+ uplink ports, labelled 0 to 3 from left to right">
+      <title>ex6200-sre64-4xs--uplink-0</title>
+      <rect id="ex6200-sre64-4xs--uplink-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex6200-sre64-4xs/uplink-0/opening" data-class="cutout" />
+      <rect id="ex6200-sre64-4xs--uplink-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex6200-sre64-4xs--uplink-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex6200-sre64-4xs--uplink-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--uplink-1" data-path="ex6200-sre64-4xs/uplink-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-function="uplink port 1" data-media="sfp-plus" data-speed="10g" transform="translate(110.15,42.4)" data-group="uplink" data-group-role="traffic" data-description="the four SFP+ uplink ports, labelled 0 to 3 from left to right">
+      <title>ex6200-sre64-4xs--uplink-1</title>
+      <rect id="ex6200-sre64-4xs--uplink-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex6200-sre64-4xs/uplink-1/opening" data-class="cutout" />
+      <rect id="ex6200-sre64-4xs--uplink-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex6200-sre64-4xs--uplink-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex6200-sre64-4xs--uplink-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--uplink-2" data-path="ex6200-sre64-4xs/uplink-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-function="uplink port 2" data-media="sfp-plus" data-speed="10g" transform="translate(124.4,42.4)" data-group="uplink" data-group-role="traffic" data-description="the four SFP+ uplink ports, labelled 0 to 3 from left to right">
+      <title>ex6200-sre64-4xs--uplink-2</title>
+      <rect id="ex6200-sre64-4xs--uplink-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex6200-sre64-4xs/uplink-2/opening" data-class="cutout" />
+      <rect id="ex6200-sre64-4xs--uplink-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex6200-sre64-4xs--uplink-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex6200-sre64-4xs--uplink-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--uplink-3" data-path="ex6200-sre64-4xs/uplink-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-function="uplink port 3" data-media="sfp-plus" data-speed="10g" transform="translate(138.65,42.4)" data-group="uplink" data-group-role="traffic" data-description="the four SFP+ uplink ports, labelled 0 to 3 from left to right">
+      <title>ex6200-sre64-4xs--uplink-3</title>
+      <rect id="ex6200-sre64-4xs--uplink-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex6200-sre64-4xs/uplink-3/opening" data-class="cutout" />
+      <rect id="ex6200-sre64-4xs--uplink-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex6200-sre64-4xs--uplink-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex6200-sre64-4xs--uplink-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--mgmt-sfp" data-path="ex6200-sre64-4xs/mgmt-sfp" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="out-of-band management" data-media="sfp" data-speed="1g" transform="translate(158.35,42.3)" data-group="mgmt" data-group-role="management">
+      <title>ex6200-sre64-4xs--mgmt-sfp</title>
+      <rect id="ex6200-sre64-4xs--mgmt-sfp--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="ex6200-sre64-4xs/mgmt-sfp/opening" data-class="cutout" />
+      <rect id="ex6200-sre64-4xs--mgmt-sfp--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="ex6200-sre64-4xs--mgmt-sfp--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex6200-sre64-4xs--mgmt-sfp--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="ex6200-sre64-4xs--mgmt-sfp--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--mgmt-rj45" data-path="ex6200-sre64-4xs/mgmt-rj45" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" data-speed="1g" transform="translate(180.7,39.8) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+      <title>ex6200-sre64-4xs--mgmt-rj45</title>
+      <g id="ex6200-sre64-4xs--mgmt-rj45--jack" data-path="ex6200-sre64-4xs/mgmt-rj45/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>ex6200-sre64-4xs--mgmt-rj45--jack</title>
+        <path id="ex6200-sre64-4xs--mgmt-rj45--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ex6200-sre64-4xs--mgmt-rj45--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ex6200-sre64-4xs--mgmt-rj45--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ex6200-sre64-4xs/mgmt-rj45/jack/opening" data-class="cutout" />
+        <g id="ex6200-sre64-4xs--mgmt-rj45--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="ex6200-sre64-4xs--mgmt-rj45--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="ex6200-sre64-4xs--mgmt-rj45--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ex6200-sre64-4xs/mgmt-rj45/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="ex6200-sre64-4xs--mgmt-rj45--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ex6200-sre64-4xs/mgmt-rj45/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--console" data-path="ex6200-sre64-4xs/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(206.4,39.8)" data-group="mgmt" data-group-role="management">
+      <title>ex6200-sre64-4xs--console</title>
+      <path id="ex6200-sre64-4xs--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ex6200-sre64-4xs--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ex6200-sre64-4xs--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ex6200-sre64-4xs/console/opening" data-class="cutout" />
+      <g id="ex6200-sre64-4xs--console--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--usb" data-path="ex6200-sre64-4xs/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB port for installing Junos OS or a configuration" data-media="usb-a" transform="translate(252.4,44.15)" data-group="mgmt" data-group-role="management">
+      <title>ex6200-sre64-4xs--usb</title>
+      <rect id="ex6200-sre64-4xs--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="ex6200-sre64-4xs/usb/opening" data-class="cutout" />
+      <rect id="ex6200-sre64-4xs--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="ex6200-sre64-4xs--reset" data-path="ex6200-sre64-4xs/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" transform="translate(272.0,43.8)">
+      <title>ex6200-sre64-4xs--reset</title>
+      <circle id="ex6200-sre64-4xs--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="ex6200-sre64-4xs--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="ex6200-sre64-4xs/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+    </g>
+  </g>
+</svg>

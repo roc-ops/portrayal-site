@@ -1,0 +1,1139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.7mm" height="43.7mm" viewBox="0 0 440.7 43.7" data-device="ex4550-32t" data-view="front" data-weight-note="19.4 lb (8.8 kg) with one power supply (Table 6)" data-depth-note="18.50 in (46.99 cm) (Table 6)" data-rj45-speeds="10 GbE, 1 GbE or 100 Mbps on each fixed port" data-expansion-ports="up to 48 ports with two 8-port modules, or 2 x 40 GbE with a QSFP+ module" data-power-max-w="403" data-power-envelope="fully-configured" data-power-input-ac="100 to 120 VAC and 200 to 240 VAC, 50 to 60 Hz; 7.8 A and 3.8 A" data-power-input-dc="operating range -36 to -72 VDC, nominal -48 VDC, 7 A maximum" data-redundancy-note="two supplies, load sharing; do not mix AC and DC, or AFI and AFO" data-fans="three fan modules and a fan in each supply; the switch runs 30 seconds while one fan module is replaced" data-heat-btu-h="1375 BTU an hour at the maximum system power (Table 22)" data-operating-temp="0 to 40 C (32 to 104 F)" data-humidity="10 to 85 percent noncondensing" data-altitude="no loss of performance to 10,000 ft (3,048 m)" data-software="Junos OS, first release 12.2R4" data-virtual-chassis="up to 10 switches, mixed with EX4200 and EX4500; a 10GBASE-T port joins only EX4550 switches" data-expansion="two module slots (front and rear), EX4550-EM-8XSFP, EX4550-EM-8XT, EX4550-EM-2QSFP and EX4550-VC-128G" data-oob="one RJ-45 management port with link and status lamps" data-console="mini-USB console port (active) and RJ-45 console port (passive)" data-usb="one USB port" data-seismic="GR-63, Issue 4, Zone 4 (guide Table 28)" data-eol="announced" data-eol-announcement="https://www.nomios.com/news-blog/juniper-announces-end-of-life-of-popular-ex-switches/" data-end-of-sale="2019-06-30" data-end-of-life="2024-06-30" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #mgmt--led-b.state-1000m { --led-color: #22c55e; }
+    #mgmt--led-b.state-1000m { animation: portrayal-blink 1s linear infinite; }
+    #led-port-0.state-activity, #led-port-0 .state-activity, #led-port-1.state-activity, #led-port-1 .state-activity, #led-port-2.state-activity, #led-port-2 .state-activity, #led-port-3.state-activity, #led-port-3 .state-activity, #led-port-4.state-activity, #led-port-4 .state-activity, #led-port-5.state-activity, #led-port-5 .state-activity, #led-port-6.state-activity, #led-port-6 .state-activity, #led-port-7.state-activity, #led-port-7 .state-activity, #led-port-8.state-activity, #led-port-8 .state-activity, #led-port-9.state-activity, #led-port-9 .state-activity, #led-port-10.state-activity, #led-port-10 .state-activity, #led-port-11.state-activity, #led-port-11 .state-activity, #led-port-12.state-activity, #led-port-12 .state-activity, #led-port-13.state-activity, #led-port-13 .state-activity, #led-port-14.state-activity, #led-port-14 .state-activity, #led-port-15.state-activity, #led-port-15 .state-activity, #led-port-16.state-activity, #led-port-16 .state-activity, #led-port-17.state-activity, #led-port-17 .state-activity, #led-port-18.state-activity, #led-port-18 .state-activity, #led-port-19.state-activity, #led-port-19 .state-activity, #led-port-20.state-activity, #led-port-20 .state-activity, #led-port-21.state-activity, #led-port-21 .state-activity, #led-port-22.state-activity, #led-port-22 .state-activity, #led-port-23.state-activity, #led-port-23 .state-activity, #led-port-24.state-activity, #led-port-24 .state-activity, #led-port-25.state-activity, #led-port-25 .state-activity, #led-port-26.state-activity, #led-port-26 .state-activity, #led-port-27.state-activity, #led-port-27 .state-activity, #led-port-28.state-activity, #led-port-28 .state-activity, #led-port-29.state-activity, #led-port-29 .state-activity, #led-port-30.state-activity, #led-port-30 .state-activity, #led-port-31.state-activity, #led-port-31 .state-activity, #mgmt--led-a.state-activity { --led-color: #22c55e; }
+    #led-port-0.state-activity [data-class='led'], #led-port-0 .state-activity, #led-port-1.state-activity [data-class='led'], #led-port-1 .state-activity, #led-port-2.state-activity [data-class='led'], #led-port-2 .state-activity, #led-port-3.state-activity [data-class='led'], #led-port-3 .state-activity, #led-port-4.state-activity [data-class='led'], #led-port-4 .state-activity, #led-port-5.state-activity [data-class='led'], #led-port-5 .state-activity, #led-port-6.state-activity [data-class='led'], #led-port-6 .state-activity, #led-port-7.state-activity [data-class='led'], #led-port-7 .state-activity, #led-port-8.state-activity [data-class='led'], #led-port-8 .state-activity, #led-port-9.state-activity [data-class='led'], #led-port-9 .state-activity, #led-port-10.state-activity [data-class='led'], #led-port-10 .state-activity, #led-port-11.state-activity [data-class='led'], #led-port-11 .state-activity, #led-port-12.state-activity [data-class='led'], #led-port-12 .state-activity, #led-port-13.state-activity [data-class='led'], #led-port-13 .state-activity, #led-port-14.state-activity [data-class='led'], #led-port-14 .state-activity, #led-port-15.state-activity [data-class='led'], #led-port-15 .state-activity, #led-port-16.state-activity [data-class='led'], #led-port-16 .state-activity, #led-port-17.state-activity [data-class='led'], #led-port-17 .state-activity, #led-port-18.state-activity [data-class='led'], #led-port-18 .state-activity, #led-port-19.state-activity [data-class='led'], #led-port-19 .state-activity, #led-port-20.state-activity [data-class='led'], #led-port-20 .state-activity, #led-port-21.state-activity [data-class='led'], #led-port-21 .state-activity, #led-port-22.state-activity [data-class='led'], #led-port-22 .state-activity, #led-port-23.state-activity [data-class='led'], #led-port-23 .state-activity, #led-port-24.state-activity [data-class='led'], #led-port-24 .state-activity, #led-port-25.state-activity [data-class='led'], #led-port-25 .state-activity, #led-port-26.state-activity [data-class='led'], #led-port-26 .state-activity, #led-port-27.state-activity [data-class='led'], #led-port-27 .state-activity, #led-port-28.state-activity [data-class='led'], #led-port-28 .state-activity, #led-port-29.state-activity [data-class='led'], #led-port-29 .state-activity, #led-port-30.state-activity [data-class='led'], #led-port-30 .state-activity, #led-port-31.state-activity [data-class='led'], #led-port-31 .state-activity, #mgmt--led-a.state-activity { animation: portrayal-blink 1s linear infinite; }
+    #led-mst.state-backup, #led-mst .state-backup { --led-color: #22c55e; }
+    #led-mst.state-backup [data-class='led'], #led-mst .state-backup { animation: portrayal-blink 1s linear infinite; }
+    #led-sys.state-booting, #led-sys .state-booting { --led-color: #22c55e; }
+    #led-sys.state-booting [data-class='led'], #led-sys .state-booting { animation: portrayal-blink 1s linear infinite; }
+    #led-sys.state-junos, #led-sys .state-junos { --led-color: #22c55e; }
+    #led-port-0.state-link, #led-port-0 .state-link, #led-port-1.state-link, #led-port-1 .state-link, #led-port-2.state-link, #led-port-2 .state-link, #led-port-3.state-link, #led-port-3 .state-link, #led-port-4.state-link, #led-port-4 .state-link, #led-port-5.state-link, #led-port-5 .state-link, #led-port-6.state-link, #led-port-6 .state-link, #led-port-7.state-link, #led-port-7 .state-link, #led-port-8.state-link, #led-port-8 .state-link, #led-port-9.state-link, #led-port-9 .state-link, #led-port-10.state-link, #led-port-10 .state-link, #led-port-11.state-link, #led-port-11 .state-link, #led-port-12.state-link, #led-port-12 .state-link, #led-port-13.state-link, #led-port-13 .state-link, #led-port-14.state-link, #led-port-14 .state-link, #led-port-15.state-link, #led-port-15 .state-link, #led-port-16.state-link, #led-port-16 .state-link, #led-port-17.state-link, #led-port-17 .state-link, #led-port-18.state-link, #led-port-18 .state-link, #led-port-19.state-link, #led-port-19 .state-link, #led-port-20.state-link, #led-port-20 .state-link, #led-port-21.state-link, #led-port-21 .state-link, #led-port-22.state-link, #led-port-22 .state-link, #led-port-23.state-link, #led-port-23 .state-link, #led-port-24.state-link, #led-port-24 .state-link, #led-port-25.state-link, #led-port-25 .state-link, #led-port-26.state-link, #led-port-26 .state-link, #led-port-27.state-link, #led-port-27 .state-link, #led-port-28.state-link, #led-port-28 .state-link, #led-port-29.state-link, #led-port-29 .state-link, #led-port-30.state-link, #led-port-30 .state-link, #led-port-31.state-link, #led-port-31 .state-link, #mgmt--led-a.state-link { --led-color: #22c55e; }
+    #led-alm.state-major, #led-alm .state-major { --led-color: #ef4444; }
+    #led-alm.state-minor, #led-alm .state-minor { --led-color: #eab308; }
+    #led-mst.state-primary, #led-mst .state-primary { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Juniper EX4550-32T","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-arrow-sm@1":"1.1.0","common/led-dot@1":"1.1.0","common/rj45-eth@1":"1.2.0","common/rj45-ganged-eth-plain@1":"1.0.0","juniper/ex4300-console-usb-mini@1":"1.0.0","juniper/ex4300-lcd-button@1":"1.0.0","juniper/ex4550-em-cover@1":"1.0.0","std/rj45-ganged@2":"2.1.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"494fb5952c43ae5cd385bee2f23cc6b4cf2420eda76e2ce2210745081936ebc5","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX4550-32T" data-sku="EX4550-32T-AFO" data-part-number="" x="0" y="0" width="440.7" height="43.7" rx="1.2" fill="#a3a7ac" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-top" data-kind="vent-field" data-aperture="air" x="127" y="0.7" width="228" height="5.9" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-left" data-kind="vent-field" data-aperture="air" x="95.7" y="10.9" width="5" height="24.6" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-right" data-kind="vent-field" data-aperture="air" x="355.8" y="10.9" width="4.6" height="24.6" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-mgmt" data-kind="vent-field" data-aperture="air" x="362" y="24.3" width="70.5" height="2.2" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="lcd-plate" data-kind="plate" x="360.4" y="3.3" width="75.5" height="21.2" rx="1" fill="#b4b8bd" />
+    <rect id="lcd" data-kind="display" x="372.5" y="9.4" width="36.5" height="10.5" rx="0.6" fill="#404c40" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="98.3" y="1.5" width="24.9" height="5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--mark-junos" data-path="region:mark-junos" data-class="region" x="395" y="4.5" width="15" height="4.2" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="106.4" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-0" data-path="cutout:port-0" data-class="cutout" />
+    <ellipse cx="108.025" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-0" data-path="cutout:led-port-0" data-class="cutout" />
+    <rect x="106.4" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" />
+    <ellipse cx="117.825" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-1" data-path="cutout:led-port-1" data-class="cutout" />
+    <rect x="119.9" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" />
+    <ellipse cx="121.525" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-2" data-path="cutout:led-port-2" data-class="cutout" />
+    <rect x="119.9" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" />
+    <ellipse cx="131.325" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-3" data-path="cutout:led-port-3" data-class="cutout" />
+    <rect x="133.4" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" />
+    <ellipse cx="135.025" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-4" data-path="cutout:led-port-4" data-class="cutout" />
+    <rect x="133.4" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" />
+    <ellipse cx="144.825" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-5" data-path="cutout:led-port-5" data-class="cutout" />
+    <rect x="146.9" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" />
+    <ellipse cx="148.525" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-6" data-path="cutout:led-port-6" data-class="cutout" />
+    <rect x="146.9" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" />
+    <ellipse cx="158.325" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-7" data-path="cutout:led-port-7" data-class="cutout" />
+    <rect x="170.46" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" />
+    <ellipse cx="172.085" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-8" data-path="cutout:led-port-8" data-class="cutout" />
+    <rect x="170.46" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" />
+    <ellipse cx="181.885" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-9" data-path="cutout:led-port-9" data-class="cutout" />
+    <rect x="183.96" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" />
+    <ellipse cx="185.585" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-10" data-path="cutout:led-port-10" data-class="cutout" />
+    <rect x="183.96" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" />
+    <ellipse cx="195.385" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-11" data-path="cutout:led-port-11" data-class="cutout" />
+    <rect x="197.46" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" />
+    <ellipse cx="199.085" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-12" data-path="cutout:led-port-12" data-class="cutout" />
+    <rect x="197.46" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" />
+    <ellipse cx="208.885" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-13" data-path="cutout:led-port-13" data-class="cutout" />
+    <rect x="210.96" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" />
+    <ellipse cx="212.585" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-14" data-path="cutout:led-port-14" data-class="cutout" />
+    <rect x="210.96" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" />
+    <ellipse cx="222.385" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-15" data-path="cutout:led-port-15" data-class="cutout" />
+    <rect x="234.52" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" />
+    <ellipse cx="236.145" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-16" data-path="cutout:led-port-16" data-class="cutout" />
+    <rect x="234.52" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" />
+    <ellipse cx="245.945" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-17" data-path="cutout:led-port-17" data-class="cutout" />
+    <rect x="248.02" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" />
+    <ellipse cx="249.645" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-18" data-path="cutout:led-port-18" data-class="cutout" />
+    <rect x="248.02" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" />
+    <ellipse cx="259.445" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-19" data-path="cutout:led-port-19" data-class="cutout" />
+    <rect x="261.52" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" />
+    <ellipse cx="263.145" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-20" data-path="cutout:led-port-20" data-class="cutout" />
+    <rect x="261.52" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-21" data-path="cutout:port-21" data-class="cutout" />
+    <ellipse cx="272.945" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-21" data-path="cutout:led-port-21" data-class="cutout" />
+    <rect x="275.02" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-22" data-path="cutout:port-22" data-class="cutout" />
+    <ellipse cx="276.645" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-22" data-path="cutout:led-port-22" data-class="cutout" />
+    <rect x="275.02" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-23" data-path="cutout:port-23" data-class="cutout" />
+    <ellipse cx="286.445" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-23" data-path="cutout:led-port-23" data-class="cutout" />
+    <rect x="298.58" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-24" data-path="cutout:port-24" data-class="cutout" />
+    <ellipse cx="300.205" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-24" data-path="cutout:led-port-24" data-class="cutout" />
+    <rect x="298.58" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-25" data-path="cutout:port-25" data-class="cutout" />
+    <ellipse cx="310.005" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-25" data-path="cutout:led-port-25" data-class="cutout" />
+    <rect x="312.08" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-26" data-path="cutout:port-26" data-class="cutout" />
+    <ellipse cx="313.705" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-26" data-path="cutout:led-port-26" data-class="cutout" />
+    <rect x="312.08" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-27" data-path="cutout:port-27" data-class="cutout" />
+    <ellipse cx="323.505" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-27" data-path="cutout:led-port-27" data-class="cutout" />
+    <rect x="325.58" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-28" data-path="cutout:port-28" data-class="cutout" />
+    <ellipse cx="327.205" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-28" data-path="cutout:led-port-28" data-class="cutout" />
+    <rect x="325.58" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-29" data-path="cutout:port-29" data-class="cutout" />
+    <ellipse cx="337.005" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-29" data-path="cutout:led-port-29" data-class="cutout" />
+    <rect x="339.08" y="9.5" width="12.7" height="11" fill="#101214" id="cutout--port-30" data-path="cutout:port-30" data-class="cutout" />
+    <ellipse cx="340.705" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-30" data-path="cutout:led-port-30" data-class="cutout" />
+    <rect x="339.08" y="24" width="12.7" height="11" fill="#101214" id="cutout--port-31" data-path="cutout:port-31" data-class="cutout" />
+    <ellipse cx="350.505" cy="8.2" rx="1.125" ry="1" fill="#101214" id="cutout--led-port-31" data-path="cutout:led-port-31" data-class="cutout" />
+    <ellipse cx="417.3" cy="11.1" rx="3.05" ry="3.05" fill="#101214" id="cutout--btn-menu" data-path="cutout:btn-menu" data-class="cutout" />
+    <ellipse cx="417.3" cy="20.1" rx="3.05" ry="3.05" fill="#101214" id="cutout--btn-enter" data-path="cutout:btn-enter" data-class="cutout" />
+    <ellipse cx="424.2" cy="8.9" rx="1" ry="1" fill="#101214" id="cutout--led-alm" data-path="cutout:led-alm" data-class="cutout" />
+    <ellipse cx="424.2" cy="12.8" rx="1" ry="1" fill="#101214" id="cutout--led-sys" data-path="cutout:led-sys" data-class="cutout" />
+    <ellipse cx="424.2" cy="16.5" rx="1" ry="1" fill="#101214" id="cutout--led-mst" data-path="cutout:led-mst" data-class="cutout" />
+    <rect x="363.8" y="26.9" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" />
+    <rect x="385.5" y="26.9" width="15.8" height="13.2" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <rect x="408" y="29.05" width="12" height="4.5" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <rect x="424.5" y="30.9" width="7.9" height="4.6" fill="#101214" id="cutout--console-mini" data-path="cutout:console-mini" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="108.3" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-0">0</text>
+    <text x="113.5" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1</text>
+    <text x="123.1" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2</text>
+    <text x="128.3" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3</text>
+    <text x="137.1" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4</text>
+    <text x="142.3" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5</text>
+    <text x="151.3" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6</text>
+    <text x="156.5" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7</text>
+    <text x="172.36" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="177.56" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="187.16" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="192.36" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="201.16" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12</text>
+    <text x="206.36" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13</text>
+    <text x="215.36" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14</text>
+    <text x="220.56" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15</text>
+    <text x="236.42" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16</text>
+    <text x="241.62" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17</text>
+    <text x="251.22" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18</text>
+    <text x="256.42" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19</text>
+    <text x="265.22" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20</text>
+    <text x="270.42" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21">21</text>
+    <text x="279.42" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-22">22</text>
+    <text x="284.62" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23">23</text>
+    <text x="300.48" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-24">24</text>
+    <text x="305.68" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25">25</text>
+    <text x="315.28" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-26">26</text>
+    <text x="320.48" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27">27</text>
+    <text x="329.28" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28">28</text>
+    <text x="334.48" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29">29</text>
+    <text x="343.48" y="38.6" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-30">30</text>
+    <text x="348.68" y="40.4" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e1e3e5" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-31">31</text>
+    <text x="372.4" y="8.2" font-family="sans-serif" font-size="3.9" text-anchor="start" fill="#f0f2f3" id="silk-model" data-path="silk:silk-model" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">EX4550</text>
+    <text x="427.6" y="9.77" font-family="sans-serif" font-size="2.8" text-anchor="start" fill="#e6e8ea" id="silk-alm" data-path="silk:silk-alm" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alm">ALM</text>
+    <text x="427.6" y="13.67" font-family="sans-serif" font-size="2.8" text-anchor="start" fill="#e6e8ea" id="silk-sys" data-path="silk:silk-sys" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys">SYS</text>
+    <text x="427.6" y="17.37" font-family="sans-serif" font-size="2.8" text-anchor="start" fill="#e6e8ea" id="silk-mst" data-path="silk:silk-mst" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-mst">MST</text>
+    <text x="382.3" y="30.1" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" id="silk-mgmt-m1" data-path="silk:silk-mgmt-m1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">M</text>
+    <text x="382.3" y="32.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" id="silk-mgmt-g" data-path="silk:silk-mgmt-g" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">G</text>
+    <text x="382.3" y="35.1" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" id="silk-mgmt-m2" data-path="silk:silk-mgmt-m2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">M</text>
+    <text x="382.3" y="37.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" id="silk-mgmt-t" data-path="silk:silk-mgmt-t" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">T</text>
+    <text x="403.9" y="30.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" id="silk-con-c" data-path="silk:silk-con-c" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">C</text>
+    <text x="403.9" y="33.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" id="silk-con-o" data-path="silk:silk-con-o" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">O</text>
+    <text x="403.9" y="36.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#e6e8ea" id="silk-con-n" data-path="silk:silk-con-n" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">N</text>
+    <path d="M 0 1.5 L 0 -0.825 M -0.42 -0.825 L 0.42 -0.825 L 0 -1.5 Z M 0 0.15 L -0.825 -0.45 M 0 -0.15 L 0.825 0.3" fill="none" stroke="#e6e8ea" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(414 37.2)" id="silk-usb-mark" data-path="silk:silk-usb-mark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb" />
+    <text x="428.45" y="38.4" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e6e8ea" id="silk-con-mini" data-path="silk:silk-con-mini" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console-mini">CON</text>
+  </g>
+  <g id="port-0" data-path="port-0" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="0" transform="translate(106.4,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-0</title>
+    <g id="port-0--jack" data-path="port-0/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-0--jack</title>
+      <path id="port-0--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-0--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-0--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-0/jack/opening" data-class="cutout" />
+      <g id="port-0--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-0--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="1" transform="translate(106.4,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-1</title>
+    <g id="port-1--jack" data-path="port-1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-1--jack</title>
+      <path id="port-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-1/jack/opening" data-class="cutout" />
+      <g id="port-1--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="2" transform="translate(119.9,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-2</title>
+    <g id="port-2--jack" data-path="port-2/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-2--jack</title>
+      <path id="port-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-2--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-2--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-2/jack/opening" data-class="cutout" />
+      <g id="port-2--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="3" transform="translate(119.9,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-3</title>
+    <g id="port-3--jack" data-path="port-3/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-3--jack</title>
+      <path id="port-3--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-3--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-3--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-3/jack/opening" data-class="cutout" />
+      <g id="port-3--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-3--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="4" transform="translate(133.4,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-4</title>
+    <g id="port-4--jack" data-path="port-4/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-4--jack</title>
+      <path id="port-4--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-4--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-4--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-4/jack/opening" data-class="cutout" />
+      <g id="port-4--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-4--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="5" transform="translate(133.4,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-5</title>
+    <g id="port-5--jack" data-path="port-5/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-5--jack</title>
+      <path id="port-5--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-5--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-5--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-5/jack/opening" data-class="cutout" />
+      <g id="port-5--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-5--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="6" transform="translate(146.9,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-6</title>
+    <g id="port-6--jack" data-path="port-6/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-6--jack</title>
+      <path id="port-6--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-6--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-6--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-6/jack/opening" data-class="cutout" />
+      <g id="port-6--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-6--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="7" transform="translate(146.9,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-7</title>
+    <g id="port-7--jack" data-path="port-7/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-7--jack</title>
+      <path id="port-7--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-7--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-7--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-7/jack/opening" data-class="cutout" />
+      <g id="port-7--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-7--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="8" transform="translate(170.46,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-8</title>
+    <g id="port-8--jack" data-path="port-8/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-8--jack</title>
+      <path id="port-8--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-8--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-8--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-8/jack/opening" data-class="cutout" />
+      <g id="port-8--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-8--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="9" transform="translate(170.46,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-9</title>
+    <g id="port-9--jack" data-path="port-9/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-9--jack</title>
+      <path id="port-9--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-9--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-9--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-9/jack/opening" data-class="cutout" />
+      <g id="port-9--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-9--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="10" transform="translate(183.96,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-10</title>
+    <g id="port-10--jack" data-path="port-10/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-10--jack</title>
+      <path id="port-10--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-10--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-10--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-10/jack/opening" data-class="cutout" />
+      <g id="port-10--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-10--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="11" transform="translate(183.96,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-11</title>
+    <g id="port-11--jack" data-path="port-11/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-11--jack</title>
+      <path id="port-11--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-11--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-11--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-11/jack/opening" data-class="cutout" />
+      <g id="port-11--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-11--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="12" transform="translate(197.46,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-12</title>
+    <g id="port-12--jack" data-path="port-12/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-12--jack</title>
+      <path id="port-12--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-12--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-12--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-12/jack/opening" data-class="cutout" />
+      <g id="port-12--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-12--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="13" transform="translate(197.46,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-13</title>
+    <g id="port-13--jack" data-path="port-13/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-13--jack</title>
+      <path id="port-13--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-13--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-13--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-13/jack/opening" data-class="cutout" />
+      <g id="port-13--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-13--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="14" transform="translate(210.96,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-14</title>
+    <g id="port-14--jack" data-path="port-14/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-14--jack</title>
+      <path id="port-14--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-14--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-14--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-14/jack/opening" data-class="cutout" />
+      <g id="port-14--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-14--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="15" transform="translate(210.96,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-15</title>
+    <g id="port-15--jack" data-path="port-15/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-15--jack</title>
+      <path id="port-15--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-15--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-15--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-15/jack/opening" data-class="cutout" />
+      <g id="port-15--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-15--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="16" transform="translate(234.52,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-16</title>
+    <g id="port-16--jack" data-path="port-16/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-16--jack</title>
+      <path id="port-16--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-16--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-16--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-16/jack/opening" data-class="cutout" />
+      <g id="port-16--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-16--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="17" transform="translate(234.52,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-17</title>
+    <g id="port-17--jack" data-path="port-17/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-17--jack</title>
+      <path id="port-17--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-17--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-17--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-17/jack/opening" data-class="cutout" />
+      <g id="port-17--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-17--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="18" transform="translate(248.02,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-18</title>
+    <g id="port-18--jack" data-path="port-18/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-18--jack</title>
+      <path id="port-18--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-18--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-18--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-18/jack/opening" data-class="cutout" />
+      <g id="port-18--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-18--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="19" transform="translate(248.02,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-19</title>
+    <g id="port-19--jack" data-path="port-19/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-19--jack</title>
+      <path id="port-19--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-19--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-19--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-19/jack/opening" data-class="cutout" />
+      <g id="port-19--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-19--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="20" transform="translate(261.52,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-20</title>
+    <g id="port-20--jack" data-path="port-20/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-20--jack</title>
+      <path id="port-20--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-20--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-20--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-20/jack/opening" data-class="cutout" />
+      <g id="port-20--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-20--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="21" transform="translate(261.52,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-21</title>
+    <g id="port-21--jack" data-path="port-21/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-21--jack</title>
+      <path id="port-21--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-21--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-21--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-21/jack/opening" data-class="cutout" />
+      <g id="port-21--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-21--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="22" transform="translate(275.02,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-22</title>
+    <g id="port-22--jack" data-path="port-22/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-22--jack</title>
+      <path id="port-22--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-22--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-22--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-22/jack/opening" data-class="cutout" />
+      <g id="port-22--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-22--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="23" transform="translate(275.02,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-23</title>
+    <g id="port-23--jack" data-path="port-23/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-23--jack</title>
+      <path id="port-23--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-23--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-23--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-23/jack/opening" data-class="cutout" />
+      <g id="port-23--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-23--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="24" transform="translate(298.58,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-24</title>
+    <g id="port-24--jack" data-path="port-24/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-24--jack</title>
+      <path id="port-24--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-24--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-24--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-24/jack/opening" data-class="cutout" />
+      <g id="port-24--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-24--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="25" transform="translate(298.58,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-25</title>
+    <g id="port-25--jack" data-path="port-25/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-25--jack</title>
+      <path id="port-25--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-25--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-25--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-25/jack/opening" data-class="cutout" />
+      <g id="port-25--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-25--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="26" transform="translate(312.08,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-26</title>
+    <g id="port-26--jack" data-path="port-26/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-26--jack</title>
+      <path id="port-26--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-26--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-26--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-26/jack/opening" data-class="cutout" />
+      <g id="port-26--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-26--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="27" transform="translate(312.08,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-27</title>
+    <g id="port-27--jack" data-path="port-27/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-27--jack</title>
+      <path id="port-27--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-27--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-27--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-27/jack/opening" data-class="cutout" />
+      <g id="port-27--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-27--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="28" transform="translate(325.58,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-28</title>
+    <g id="port-28--jack" data-path="port-28/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-28--jack</title>
+      <path id="port-28--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-28--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-28--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-28/jack/opening" data-class="cutout" />
+      <g id="port-28--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-28--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-29" data-path="port-29" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="29" transform="translate(325.58,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-29</title>
+    <g id="port-29--jack" data-path="port-29/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-29--jack</title>
+      <path id="port-29--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-29--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-29--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-29/jack/opening" data-class="cutout" />
+      <g id="port-29--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-29--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-30" data-path="port-30" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="30" transform="translate(339.08,9.5) rotate(180 6.35 5.5)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-30</title>
+    <g id="port-30--jack" data-path="port-30/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-30--jack</title>
+      <path id="port-30--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-30--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-30--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-30/jack/opening" data-class="cutout" />
+      <g id="port-30--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-30--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="port-31" data-path="port-31" data-class="port" data-ref="common/rj45-ganged-eth-plain@1:1.0.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="31" transform="translate(339.08,24.0)" data-group="rj45" data-group-role="traffic" data-description="Ports 0 to 31 as printed, the even ports on the upper row. Each runs at 10 GbE, 1 GbE or 100 Mbps.">
+    <title>port-31</title>
+    <g id="port-31--jack" data-path="port-31/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>port-31--jack</title>
+      <path id="port-31--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-31--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="port-31--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="port-31/jack/opening" data-class="cutout" />
+      <g id="port-31--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="port-31--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="led-port-0" data-path="led-port-0" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="0" transform="translate(106.9,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-0">
+    <title>led-port-0</title>
+    <path id="led-port-0--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-0/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-1" data-path="led-port-1" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="1" transform="translate(116.7,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-1">
+    <title>led-port-1</title>
+    <path id="led-port-1--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-1/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-2" data-path="led-port-2" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="2" transform="translate(120.4,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-2">
+    <title>led-port-2</title>
+    <path id="led-port-2--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-2/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-3" data-path="led-port-3" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="3" transform="translate(130.2,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-3">
+    <title>led-port-3</title>
+    <path id="led-port-3--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-3/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-4" data-path="led-port-4" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="4" transform="translate(133.9,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-4">
+    <title>led-port-4</title>
+    <path id="led-port-4--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-4/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-5" data-path="led-port-5" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="5" transform="translate(143.7,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-5">
+    <title>led-port-5</title>
+    <path id="led-port-5--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-5/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-6" data-path="led-port-6" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="6" transform="translate(147.4,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-6">
+    <title>led-port-6</title>
+    <path id="led-port-6--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-6/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-7" data-path="led-port-7" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="7" transform="translate(157.2,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-7">
+    <title>led-port-7</title>
+    <path id="led-port-7--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-7/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-8" data-path="led-port-8" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="8" transform="translate(170.96,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-8">
+    <title>led-port-8</title>
+    <path id="led-port-8--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-8/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-9" data-path="led-port-9" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="9" transform="translate(180.76,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-9">
+    <title>led-port-9</title>
+    <path id="led-port-9--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-9/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-10" data-path="led-port-10" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="10" transform="translate(184.46,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-10">
+    <title>led-port-10</title>
+    <path id="led-port-10--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-10/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-11" data-path="led-port-11" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="11" transform="translate(194.26,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-11">
+    <title>led-port-11</title>
+    <path id="led-port-11--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-11/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-12" data-path="led-port-12" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="12" transform="translate(197.96,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-12">
+    <title>led-port-12</title>
+    <path id="led-port-12--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-12/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-13" data-path="led-port-13" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="13" transform="translate(207.76,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-13">
+    <title>led-port-13</title>
+    <path id="led-port-13--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-13/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-14" data-path="led-port-14" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="14" transform="translate(211.46,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-14">
+    <title>led-port-14</title>
+    <path id="led-port-14--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-14/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-15" data-path="led-port-15" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="15" transform="translate(221.26,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-15">
+    <title>led-port-15</title>
+    <path id="led-port-15--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-15/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-16" data-path="led-port-16" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="16" transform="translate(235.02,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-16">
+    <title>led-port-16</title>
+    <path id="led-port-16--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-16/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-17" data-path="led-port-17" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="17" transform="translate(244.82,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-17">
+    <title>led-port-17</title>
+    <path id="led-port-17--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-17/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-18" data-path="led-port-18" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="18" transform="translate(248.52,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-18">
+    <title>led-port-18</title>
+    <path id="led-port-18--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-18/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-19" data-path="led-port-19" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="19" transform="translate(258.32,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-19">
+    <title>led-port-19</title>
+    <path id="led-port-19--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-19/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-20" data-path="led-port-20" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="20" transform="translate(262.02,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-20">
+    <title>led-port-20</title>
+    <path id="led-port-20--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-20/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-21" data-path="led-port-21" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="21" transform="translate(271.82,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-21">
+    <title>led-port-21</title>
+    <path id="led-port-21--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-21/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-22" data-path="led-port-22" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="22" transform="translate(275.52,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-22">
+    <title>led-port-22</title>
+    <path id="led-port-22--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-22/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-23" data-path="led-port-23" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="23" transform="translate(285.32,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-23">
+    <title>led-port-23</title>
+    <path id="led-port-23--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-23/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-24" data-path="led-port-24" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="24" transform="translate(299.08,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-24">
+    <title>led-port-24</title>
+    <path id="led-port-24--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-24/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-25" data-path="led-port-25" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="25" transform="translate(308.88,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-25">
+    <title>led-port-25</title>
+    <path id="led-port-25--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-25/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-26" data-path="led-port-26" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="26" transform="translate(312.58,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-26">
+    <title>led-port-26</title>
+    <path id="led-port-26--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-26/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-27" data-path="led-port-27" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="27" transform="translate(322.38,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-27">
+    <title>led-port-27</title>
+    <path id="led-port-27--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-27/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-28" data-path="led-port-28" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="28" transform="translate(326.08,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-28">
+    <title>led-port-28</title>
+    <path id="led-port-28--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-28/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-29" data-path="led-port-29" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="29" transform="translate(335.88,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-29">
+    <title>led-port-29</title>
+    <path id="led-port-29--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-29/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-30" data-path="led-port-30" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="30" transform="translate(339.58,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-30">
+    <title>led-port-30</title>
+    <path id="led-port-30--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-30/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-31" data-path="led-port-31" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="31" transform="translate(349.38,7.2)" data-group="rj45-leds" data-group-role="indicator" data-description="The link and activity lamp of each 10GBASE-T port, a triangle at the corner of its column (guide Table 14)" data-states="off link activity" data-for="port-31">
+    <title>led-port-31</title>
+    <path id="led-port-31--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-31/lamp" data-class="led" data-states="off link activity" data-z-dome="0.16" />
+  </g>
+  <g id="btn-menu" data-path="btn-menu" data-class="button" data-ref="juniper/ex4300-lcd-button@1:1.0.0" data-function="LCD menu" data-role="lcd-navigation" data-rel-pos="0" transform="translate(414.25,8.05)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-menu</title>
+    <circle cx="3.05" cy="3.05" r="3.0" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-menu--cap" cx="3.05" cy="3.05" r="2.45" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-menu/cap" data-class="button" data-z-out="0.6" data-z-color="#c9ccd0" />
+    <g stroke="#2b2e35" stroke-width="0.3" fill="#2b2e35">
+      <circle cx="1.9" cy="2.2" r="0.25" />
+      <circle cx="1.9" cy="3.05" r="0.25" />
+      <circle cx="1.9" cy="3.9" r="0.25" />
+      <path d="M 2.5 2.2 H 4.3 M 2.5 3.05 H 4.3 M 2.5 3.9 H 4.3" fill="none" />
+    </g>
+  </g>
+  <g id="btn-enter" data-path="btn-enter" data-class="button" data-ref="juniper/ex4300-lcd-button@1:1.0.0" data-function="LCD enter" data-role="lcd-navigation" data-rel-pos="1" transform="translate(414.25,17.05)" data-group="lcd-buttons" data-group-role="management" data-description="the LCD panel's Menu and Enter buttons" data-for="chassis">
+    <title>btn-enter</title>
+    <circle cx="3.05" cy="3.05" r="3.0" fill="#9ba0a6" stroke="#4b5057" stroke-width="0.2" />
+    <circle id="btn-enter--cap" cx="3.05" cy="3.05" r="2.45" fill="#d6d9dc" stroke="#7a7f86" stroke-width="0.2" data-path="btn-enter/cap" data-class="button" data-z-out="0.6" data-z-color="#c9ccd0" />
+    <g stroke="#2b2e35" stroke-width="0.32" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 4.3 2.0 V 3.3 H 1.9" />
+      <path d="M 2.7 2.5 L 1.9 3.3 L 2.7 4.1" />
+    </g>
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(423.2,7.9)" data-group="status-leds" data-group-role="indicator" data-description="Table 11 - red: major alarm; yellow: minor alarm; unlit: no alarm or the switch is halted" data-states="off major minor" data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off major minor" data-z-dome="0.3" />
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(423.2,11.8)" data-group="status-leds" data-group-role="indicator" data-description="Table 11 - green steady: Junos OS loaded; green blinking: the switch is booting; unlit: off or halted" data-states="off junos booting" data-for="chassis">
+    <title>led-sys</title>
+    <circle id="led-sys--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys/lamp" data-class="led" data-states="off junos booting" data-z-dome="0.3" />
+  </g>
+  <g id="led-mst" data-path="led-mst" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(423.2,15.5)" data-group="status-leds" data-group-role="indicator" data-description="Table 11 - standalone: green steady when working; Virtual Chassis: green steady primary, blinking backup, unlit line card" data-states="off primary backup" data-for="chassis">
+    <title>led-mst</title>
+    <circle id="led-mst--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-mst--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-mst/lamp" data-class="led" data-states="off primary backup" data-z-dome="0.3" />
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="0" transform="translate(363.8,26.9)" data-group="mgmt" data-group-role="management" data-description="Tables 12 and 13 - the link and activity lamp is green steady with a link and blinking with traffic; the status lamp blinks once a second at 10 Mbps, twice at 100 Mbps and three times at 1000 Mbps">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off link activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off 1000m" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(385.5,26.9)" data-group="mgmt" data-group-role="management" data-description="the RJ-45 console port; on the EX4550 it is passive and the mini-USB console port is the active one (guide, Console Port Connector Pinout Information)">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="2" transform="translate(408.0,29.05)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="console-mini" data-path="console-mini" data-class="port" data-ref="juniper/ex4300-console-usb-mini@1:1.0.0" data-wall="#8d949c" data-media="mini-usb-b" data-role="console" data-rel-pos="3" transform="translate(424.5,30.9)" data-group="mgmt" data-group-role="management">
+    <title>console-mini</title>
+    <rect id="console-mini--shell" x="0" y="0" width="7.9" height="4.6" rx="0.6" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.15" />
+    <path id="console-mini--opening" d="M 0.7 1.4 L 1.5 0.7 H 6.4 L 7.2 1.4 V 3.2 L 6.4 3.9 H 1.5 L 0.7 3.2 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="console-mini/opening" data-class="port" data-inner="1" />
+    <rect x="1.7" y="2.2" width="4.5" height="0.7" fill="#3a4046" />
+    <g data-cp="mate" data-cp-at="3.95 2.3" data-cp-dir="front" />
+  </g>
+  <g id="em-1" data-path="em-1" data-class="bay" data-group="expansion" data-group-role="traffic" data-rel-pos="0">
+    <title>em-1</title>
+    <rect id="em-1--opening" x="2.5" y="1.35" width="86.5" height="41" fill="#101214" />
+    <g id="em-1--module" data-path="em-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/ex4550-em-cover@1:1.0.0" data-weight-note="not published" data-states="absent" transform="translate(45.75,21.85) translate(-43.25,-20.5)">
+      <title>em-1--module</title>
+      <rect id="em-1--module--face" x="0" y="0" width="86.5" height="41" rx="0.6" fill="#6f7378" stroke="#3f4247" stroke-width="0.4" />
+      <g id="em-1--module--screw-left" data-path="em-1/module/screw-left" data-class="screw" data-z-cyl="1.2">
+        <circle cx="4.9" cy="20.5" r="3.5" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+        <circle cx="4.9" cy="20.5" r="2.2" fill="none" stroke="#6f7378" stroke-width="0.3" />
+        <path d="M 3.1 20.5 H 6.7 M 4.9 18.7 V 22.3" stroke="#4d5156" stroke-width="0.5" />
+      </g>
+      <g id="em-1--module--screw-right" data-path="em-1/module/screw-right" data-class="screw" data-z-cyl="1.2">
+        <circle cx="81.6" cy="20.5" r="3.5" fill="#b9bdc2" stroke="#6f7378" stroke-width="0.3" />
+        <circle cx="81.6" cy="20.5" r="2.2" fill="none" stroke="#6f7378" stroke-width="0.3" />
+        <path d="M 79.8 20.5 H 83.4 M 81.6 18.7 V 22.3" stroke="#4d5156" stroke-width="0.5" />
+      </g>
+    </g>
+  </g>
+</svg>
