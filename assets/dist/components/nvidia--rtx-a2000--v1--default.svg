@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="79.2mm" height="41.91mm" viewBox="0 0 79.2 41.91">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="rtx-a2000" data-path="rtx-a2000" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/rtx-a2000@1:1.0.0" data-body-depth="167.64" data-wall="#8a9199" data-airflow="blower; it draws air from the card's broad side and exhausts toward the bracket" data-cooling="active" data-display-ports="4 x mini DisplayPort 1.4a with latching mechanism on the bracket" data-form-factor="Low profile, 2.7 in x 6.6 in, dual slot, on a low profile bracket" data-memory="RTX A2000: 6 GB GDDR6; RTX A2000 12GB: 12 GB GDDR6; both 192-bit, 288 GB/s" data-model="RTX A2000" data-nvlink="none" data-part-numbers="PNY VCNRTXA2000-PB (retail), VCNRTXA2000-SB (single bulk), VCNRTXA2000-BLK (bulk); RTX A2000 12GB: PNY VCNRTXA200012GB-PB (retail), VCNRTXA200012GB-SB (single bulk), VCNRTXA200012GB-EDU (education), VCNRTXA200012GB-BLK (bulk)" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="low" data-power-draw-max-w="70" data-power-input="host PCIe slot only" data-role="gpu" transform="translate(0,0)">
+    <title>rtx-a2000</title>
+    <defs>
+      <pattern id="rtx-a2000--hole" patternUnits="userSpaceOnUse" x="27.95" y="19.18" width="4.03" height="4.02">
+        <rect x="0" y="0" width="3.2" height="3.2" fill="#101112" />
+      </pattern>
+    </defs>
+    <path id="rtx-a2000--plate" d="M1.9 7.64 L7.8 7.64 L11.94 3.5 L79.2 3.5 L79.2 39.1 L77.0 39.1 L74.2 41.9 L11.4 41.9 L7.8 38.3 L1.9 38.3 A1.9 1.9 0 0 1 0 36.4 L0 29.9 A1.9 1.9 0 0 1 1.9 28.0 L7.8 28.0 L10.5 25.1 A2.2 2.2 0 0 0 10.5 20.8 L7.8 17.9 L1.9 17.9 A1.9 1.9 0 0 1 0 16.0 L0 9.54 A1.9 1.9 0 0 1 1.9 7.64 Z" fill="#b9bec3" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+    <path id="rtx-a2000--flange-fold" d="M78.8 3.8 V38.8" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#b9bec3" />
+    <rect id="rtx-a2000--panel" x="25.9" y="18.0" width="52.2" height="17.7" rx="2.2" fill="none" stroke="#a5aaaf" stroke-width="0.25" />
+    <g id="rtx-a2000--latches" fill="#101112">
+      <rect x="66.05" y="14.2" width="5.9" height="2.2" />
+      <rect x="53.25" y="14.2" width="5.9" height="2.2" />
+      <rect x="40.45" y="14.2" width="5.9" height="2.2" />
+      <rect x="27.85" y="14.2" width="5.9" height="2.2" />
+      <rect x="61.6" y="14.3" width="2.0" height="2.0" />
+      <rect x="48.8" y="14.3" width="2.0" height="2.0" />
+      <rect x="36.1" y="14.3" width="2.0" height="2.0" />
+    </g>
+    <g id="rtx-a2000--display-port-1" data-path="rtx-a2000/display-port-1" data-class="connector">
+      <rect x="64.35" y="7.0" width="9.3" height="6.1" rx="1.3" fill="#d3d5d7" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M65.35 7.8 H72.65 V11.0 L71.35 12.3 H66.65 L65.35 11.0 Z" fill="#18191b" />
+      <rect x="66.6" y="9.3" width="4.8" height="1.6" fill="#6b6e72" />
+    </g>
+    <g id="rtx-a2000--display-port-2" data-path="rtx-a2000/display-port-2" data-class="connector">
+      <rect x="51.55" y="7.0" width="9.3" height="6.1" rx="1.3" fill="#d3d5d7" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M52.55 7.8 H59.85 V11.0 L58.55 12.3 H53.85 L52.55 11.0 Z" fill="#18191b" />
+      <rect x="53.8" y="9.3" width="4.8" height="1.6" fill="#6b6e72" />
+    </g>
+    <g id="rtx-a2000--display-port-3" data-path="rtx-a2000/display-port-3" data-class="connector">
+      <rect x="38.75" y="7.0" width="9.3" height="6.1" rx="1.3" fill="#d3d5d7" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M39.75 7.8 H47.05 V11.0 L45.75 12.3 H41.05 L39.75 11.0 Z" fill="#18191b" />
+      <rect x="41.0" y="9.3" width="4.8" height="1.6" fill="#6b6e72" />
+    </g>
+    <g id="rtx-a2000--display-port-4" data-path="rtx-a2000/display-port-4" data-class="connector">
+      <rect x="26.15" y="7.0" width="9.3" height="6.1" rx="1.3" fill="#d3d5d7" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M27.15 7.8 H34.45 V11.0 L33.15 12.3 H28.45 L27.15 11.0 Z" fill="#18191b" />
+      <rect x="28.4" y="9.3" width="4.8" height="1.6" fill="#6b6e72" />
+    </g>
+    <rect id="rtx-a2000--vent" x="27.95" y="19.18" width="47.53" height="15.26" fill="url(#rtx-a2000--hole)" data-path="rtx-a2000/vent" data-class="vent" />
+    <rect x="27.95" y="28.65" width="3.2" height="1.8" fill="#b9bec3" />
+    <rect x="72.28" y="28.65" width="3.2" height="1.8" fill="#b9bec3" />
+    <g id="rtx-a2000--screws">
+      <g id="rtx-a2000--screw-1" data-path="rtx-a2000/screw-1" data-class="screw">
+        <circle cx="75.2" cy="31.97" r="2.9" fill="#b9bec3" stroke="#a5aaaf" stroke-width="0.2" />
+        <circle cx="75.2" cy="31.97" r="2.25" fill="#cfd2d5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="75.2" cy="31.97" r="0.9" fill="#4a4f55" />
+      </g>
+      <g id="rtx-a2000--screw-2" data-path="rtx-a2000/screw-2" data-class="screw">
+        <circle cx="28.9" cy="31.97" r="2.9" fill="#b9bec3" stroke="#a5aaaf" stroke-width="0.2" />
+        <circle cx="28.9" cy="31.97" r="2.25" fill="#cfd2d5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="28.9" cy="31.97" r="0.9" fill="#4a4f55" />
+      </g>
+    </g>
+  </g>
+</svg>
