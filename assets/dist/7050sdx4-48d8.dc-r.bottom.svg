@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="475.0mm" viewBox="0 0 440.0 475.0" data-device="7050sdx4-48d8" data-view="bottom" data-weight="10.4 kg (23.0 lbs) (guide Table 1, data sheet)" data-size-over-ears="48.3 x 4.4 x 47.5 cm (19 x 1.75 x 18.7 in) with the mounting ears (guide Table 1)" data-throughput="8.0 (16) Tbps" data-packets-per-second="2.7 Bpps" data-latency="from 900 ns" data-packet-buffer="82 MB (fully shared)" data-ports-max-speed="8 ports of 400 Gbps; 16 of 200 Gbps; 72 of 100 Gbps; 72 of 50 Gbps; 16 of 40 Gbps; 72 of 25 Gbps; 72 of 10 Gbps" data-interfaces-max="72" data-power-typical-w="165" data-power-max-w="520" data-power-envelope="as-tested" data-power-measure="typical at 25 C ambient with 50 percent load on all ports, excluding transceivers (data sheet)" data-psu-redundancy="1+1" data-input-ac="100 - 120 / 200 - 240 VAC, 12 / 6 A (PWR-1011-AC), IEC 60320 C14" data-input-dc="-48 to -60 VDC (PWR-1011-DC)" data-efficiency="93 percent (Platinum) AC, 94 percent DC (data sheet)" data-airflow="back-to-front" data-fan-redundancy="N+1 hot-swap fan modules" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-25 to 70 C (guide Table 2); the data sheet says -40 to 70 C" data-humidity="5 to 90 percent non-condensing" data-altitude="0 to 3,000 m (10,000 ft) operating" data-cpu="Quad-Core x86" data-memory="16 GB" data-storage="16 GB flash" data-optics-sfp-dd="100G, 50G, 25G and 10G modes, in the 48 SFP-DD cages (data sheet)" data-optics-qsfp-dd="400G, 200G, 100G and 40G with breakout, in the eight QSFP-DD cages (data sheet)" data-eos-license="license group LIC-FIX-3; minimum EOS 4.30.2" data-console="RJ-45 RS-232 serial on the rear, 9600 baud 8N1, no flow control" data-oob="one 10/100/1000 management port on the rear" data-usb="one USB port on the rear, for software or configuration updates" data-emc="FCC Class A, ICES-003, EN 55032, EN IEC 61000-3-2:2019, EN 61000-3-3, EN 55035, EN 300 386" data-safety="EN 62368-1, IEC 62368-1, CSA/UL 62368-1" data-certifications="BSMI, CE, KCC, NRTL, RCM, UKCA, VCCI, TEC, ANATEL, ICASA, NOM Equivalency (data sheet)" data-rohs="RoHS 2011/65/EU and 2015/863/EU (data sheet, Directives)" data-eol="none-announced" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Arista 7050SDX4-48D8","device-version":"1.0.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"a84e84bf4990ac9f7239ba959b2a7de064a7a02c043cfc8cc43c33448d0edfd9","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="7050SDX4-48D8" x="0" y="0" width="440" height="475" rx="1.2" fill="#b2b5b7" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>
