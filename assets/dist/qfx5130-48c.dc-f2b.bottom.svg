@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.9mm" height="520.7mm" viewBox="0 0 438.9 520.7" data-device="qfx5130-48c" data-view="bottom" data-weight-note="27 lb (12.24 kg) with power supplies and fans installed (guide Table 31)" data-throughput="up to 8 Tbps unidirectional and 16 Tbps bidirectional (datasheet Table 2)" data-forwarding-capacity="2.7 billion packets per second (datasheet Table 2)" data-packet-buffer="82 MB shared (datasheet Table 2)" data-breakout-ports="16 x 200 GbE + 48 x 100/50/25/10 GbE + 2 x 10 GbE, or 72 x 100/50/25/10 GbE + 2 x 10 GbE, or 74 x 10 GbE (datasheet Table 2)" data-network-port-speeds="ports 0 to 47 default to 100 GbE with SFP56-DD optics; ports 48 to 55 default to 400 GbE with QSFP-DD optics (guide, Setting Port Speed and Channelization)" data-power-typical-w="219" data-power-max-w="609" data-power-envelope="as-tested" data-power-measurement-note="Maximum at 40 C ambient with SR optics at 100 percent load with IMIX traffic; typical at 25 C with DACs at 50 percent load with IMIX traffic, excluding transceivers (datasheet Table 4)" data-power-dc-typical-w="238" data-power-dc-max-w="587" data-power-input-ac="100 to 127 VAC and 200 to 240 VAC, 50 to 60 Hz; 12 A at 100 to 127 VAC, 9 A at 200 to 240 VAC (guide Table 20)" data-power-input-dc="rated -48 to -60 VDC, operating -40 to -72 VDC, 40 A maximum (guide Table 27)" data-redundancy-note="two supplies, 1+1, each able to carry the whole switch; both should be installed, on feeds A and B" data-fans="six fan modules, redundant at the rotor level; the switch runs 240 seconds without thermal shutdown while one is replaced" data-airflow-note="AFO is front-to-back (port-to-FRU); AFI is back-to-front (FRU-to-port); no mixing of fans and supplies of different direction" data-operating-temp="0 to 40 C (32 to 104 F), for AFO and for AFI (guide Table 30, datasheet Table 3)" data-storage-temp="-40 to 70 C (-40 to 158 F) in the shipping container" data-humidity="5 to 90 percent noncondensing, operating and non-operating" data-altitude="no performance degradation to 1829 m (6000 ft) at 0 to 40 C (guide, Environmental Specifications; datasheet Table 3, AFI with 400G ZR optics is limited to sea level at 40 C)" data-cpu="Intel Ice Lake, 4 core (datasheet Table 2)" data-memory="32 GB (16 GB x 2) DDR4" data-storage="two internal 100 GB SSDs (datasheet Table 2); the guide's RMA procedure describes two SSDs" data-switch-chip="Broadcom Trident4" data-software="Junos OS Evolved, first release 23.4R1-S1-EVO for the QFX5130-48C and 23.4R2-S1-EVO for the QFX5130-48CM" data-optics-sfp-dd="100 GbE SFP56-DD cables and 400 GbE AOCs on ports 0 to 47 (guide, Network Ports for QFX5130-48C)" data-optics-qsfp-dd="400 GbE QSFP-DD optics on ports 48 to 55; breakout cables for 100/25/10 GbE (datasheet)" data-optics-sfp-plus="ports 56 and 57 take 10 GbE modules only, on the rear management panel" data-macsec="QFX5130-48CM only, with the S-QFX5KC3-MACSEC-X licence: 32 x 100G SFP56-DD and 4 x 400G QSFP-DD ports support MACsec, up to 9.6 Tbps bidirectional (guide, product overview)" data-oob="one RJ-45 management port with link and status lamps" data-console="one RJ-45 console port" data-usb="one USB port" data-timing-outputs="10 MHz and 1 PPS output connectors" data-safety="UL 60950-1:2007 R5.19; CAN/CSA-C22.2 No. 60950-1-07+A1:2011+A2:2014; IEC 62368-1:2014 and 2018; UL 62368-1:2019 R10.21; CSA C22.2 No. 62368-1:19; IEC/EN 60825-1 (datasheet Table 6)" data-emc="FCC 47 CFR Part 15; ICES-003 / ICES-GEN; BS EN 55032; BS EN 55035; EN 300 386; CISPR 32; CISPR 35; IEC/EN 61000 series; AS/NZS CISPR 32; VCCI-CISPR 32; BSMI CNS 15936; KS C 9835; KS C 9832 (datasheet Table 6)" data-substances="RoHS; TSCA; POPs; WEEE; California Prop 65; REACH (datasheet Table 6)" data-eol="none-announced" data-airflow="front-to-back" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper QFX5130-48C","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"fd3e6f6b17cf2fd93f4b73f8a1d28152497bb000a90fa38393870d5dfe5e63c0","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="QFX5130-48C" data-sku="QFX5130-48C-D-AFO" data-part-number="" x="0" y="0" width="438.9" height="520.7" rx="1.2" fill="#d6d6d7" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>
