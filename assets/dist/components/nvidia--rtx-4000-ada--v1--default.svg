@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="21.59mm" viewBox="0 0 120.02 21.59">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="rtx-4000-ada" data-path="rtx-4000-ada" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/rtx-4000-ada@1:1.0.0" data-body-depth="241.3" data-airflow="blower; it draws air from the card's broad side and its backplate and exhausts toward the bracket" data-cooling="active" data-display-ports="4 x DisplayPort 1.4a on the bracket" data-form-factor="Full-height, full-length (FHFL) 4.4 in x 9.5 in, single slot" data-memory="20 GB GDDR6, 160-bit, 360 GB/s" data-model="RTX 4000 Ada" data-nvlink="none" data-part-numbers="PNY VCNRTX4000ADA-PB (retail), YVCNRTX4000ADA-KIT (kit), VCNRTX4000ADA-EDU (education), VCNRTX4000ADA-BLK (bulk), VCNRTX4000ADASYNC-PB (with the Sync card); NVIDIA 900-5G190-2270-000" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="full" data-power-draw-max-w="130" data-power-input="host PCIe slot and one PCIe CEM5 16-pin (12VHPWR) auxiliary connector; a 1x PCIe 8-pin to 1x CEM5 16-pin adapter is in the box" data-role="gpu" transform="translate(0,0)">
+    <title>rtx-4000-ada</title>
+    <g id="rtx-4000-ada--bracket" data-path="rtx-4000-ada/bracket" data-class="bracket" data-ref="std/pcie-bracket-fh@2:2.0.0" data-wall="#8a9199" data-card-height-max="111.28" data-chassis-opening="100.71" data-material="0.86 mm (20 GA) low carbon steel, zinc plated" data-return-flange-depth="9.4" data-return-flange-length="21.59" data-tapped-hole-pitch="85.4" transform="translate(0,0)">
+      <title>rtx-4000-ada--bracket</title>
+      <path d="M1.91 17.48 L7.27 17.48 L11.38 21.59 L114.28 21.59 L117.18 19.05 L118.75 19.05 A1.27 1.27 0 0 0 120.02 17.78 L120.02 1.27 A1.27 1.27 0 0 0 118.75 0 L117.18 0 L115.29 3.17 L11.38 3.17 L7.27 7.28 L1.91 7.28 A1.91 1.91 0 0 0 0 9.19 L0 15.57 A1.91 1.91 0 0 0 1.91 17.48 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+      <rect id="rtx-4000-ada--bracket--opening" x="19.96" y="6.35" width="89.9" height="12.06" rx="1.0" fill="#1b1f22" stroke="#41474d" stroke-width="0.35" data-path="rtx-4000-ada/bracket/opening" data-class="cutout" data-description="the connector opening, 89.9 by 12.06, sitting 3.18 in from each long edge" />
+      <path id="rtx-4000-ada--bracket--flange-fold" d="M119.16 3.57 V18.65" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+      <path d="M5.08 7.58 V17.18" stroke="#5f666d" stroke-width="0.3" fill="none" />
+    </g>
+    <rect id="rtx-4000-ada--plate" x="11.38" y="3.17" width="102.9" height="18.42" fill="#999898" />
+    <rect x="11.38" y="3.17" width="102.9" height="1.43" fill="#5c5c5b" />
+    <rect x="11.38" y="19.71" width="102.9" height="1.88" fill="#5c5c5b" />
+    <g id="rtx-4000-ada--display-port-4" transform="translate(31.36 6.18)" data-path="rtx-4000-ada/display-port-4" data-class="connector">
+      <path d="M0.8 0 L16.8 0 A0.8 0.8 0 0 1 17.6 0.8 L17.6 3.5 L14.3 6.8 L0.8 6.8 A0.8 0.8 0 0 1 0 6.0 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c4c4c3" stroke="#555453" stroke-width="0.3" />
+      <path d="M1.0 0.9 L16.6 0.9 L16.6 3.3 L13.9 5.9 L1.0 5.9 Z" fill="#141516" />
+      <path d="M2.4 2.1 H15.2 M2.4 3.9 H13.0" stroke="#7d8288" stroke-width="0.65" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-4000-ada--display-port-3" transform="translate(52.90 6.18)" data-path="rtx-4000-ada/display-port-3" data-class="connector">
+      <path d="M0.8 0 L16.8 0 A0.8 0.8 0 0 1 17.6 0.8 L17.6 3.5 L14.3 6.8 L0.8 6.8 A0.8 0.8 0 0 1 0 6.0 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c4c4c3" stroke="#555453" stroke-width="0.3" />
+      <path d="M1.0 0.9 L16.6 0.9 L16.6 3.3 L13.9 5.9 L1.0 5.9 Z" fill="#141516" />
+      <path d="M2.4 2.1 H15.2 M2.4 3.9 H13.0" stroke="#7d8288" stroke-width="0.65" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-4000-ada--display-port-2" transform="translate(73.54 6.18)" data-path="rtx-4000-ada/display-port-2" data-class="connector">
+      <path d="M0.8 0 L16.8 0 A0.8 0.8 0 0 1 17.6 0.8 L17.6 3.5 L14.3 6.8 L0.8 6.8 A0.8 0.8 0 0 1 0 6.0 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c4c4c3" stroke="#555453" stroke-width="0.3" />
+      <path d="M1.0 0.9 L16.6 0.9 L16.6 3.3 L13.9 5.9 L1.0 5.9 Z" fill="#141516" />
+      <path d="M2.4 2.1 H15.2 M2.4 3.9 H13.0" stroke="#7d8288" stroke-width="0.65" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-4000-ada--display-port-1" transform="translate(94.07 6.18)" data-path="rtx-4000-ada/display-port-1" data-class="connector">
+      <path d="M0.8 0 L16.8 0 A0.8 0.8 0 0 1 17.6 0.8 L17.6 3.5 L14.3 6.8 L0.8 6.8 A0.8 0.8 0 0 1 0 6.0 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c4c4c3" stroke="#555453" stroke-width="0.3" />
+      <path d="M1.0 0.9 L16.6 0.9 L16.6 3.3 L13.9 5.9 L1.0 5.9 Z" fill="#141516" />
+      <path d="M2.4 2.1 H15.2 M2.4 3.9 H13.0" stroke="#7d8288" stroke-width="0.65" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-4000-ada--vent" fill="#101112" data-path="rtx-4000-ada/vent" data-class="vent">
+      <rect x="34.70" y="14.70" width="3.7" height="3.7" />
+      <rect x="39.51" y="14.70" width="3.7" height="3.7" />
+      <rect x="44.31" y="14.70" width="3.7" height="3.7" />
+      <rect x="49.12" y="14.70" width="3.7" height="3.7" />
+      <rect x="53.92" y="14.70" width="3.7" height="3.7" />
+      <rect x="58.73" y="14.70" width="3.7" height="3.7" />
+      <rect x="63.53" y="14.70" width="3.7" height="3.7" />
+      <rect x="68.34" y="14.70" width="3.7" height="3.7" />
+      <rect x="73.14" y="14.70" width="3.7" height="3.7" />
+      <rect x="77.95" y="14.70" width="3.7" height="3.7" />
+      <rect x="82.75" y="14.70" width="3.7" height="3.7" />
+      <rect x="87.56" y="14.70" width="3.7" height="3.7" />
+      <rect x="92.36" y="14.70" width="3.7" height="3.7" />
+      <rect x="97.17" y="14.70" width="3.7" height="3.7" />
+      <rect x="101.97" y="14.70" width="3.7" height="3.7" />
+      <rect x="106.78" y="14.70" width="3.7" height="3.7" />
+    </g>
+    <g id="rtx-4000-ada--screw-1" data-path="rtx-4000-ada/screw-1" data-class="screw">
+      <circle cx="31.58" cy="16.55" r="2.05" fill="#a9a9a8" stroke="#3d3d3c" stroke-width="0.3" />
+      <circle cx="31.58" cy="16.55" r="0.8" fill="#2a2a2a" />
+    </g>
+    <g id="rtx-4000-ada--screw-2" data-path="rtx-4000-ada/screw-2" data-class="screw">
+      <circle cx="114.67" cy="16.55" r="2.05" fill="#a9a9a8" stroke="#3d3d3c" stroke-width="0.3" />
+      <circle cx="114.67" cy="16.55" r="0.8" fill="#2a2a2a" />
+    </g>
+  </g>
+</svg>
