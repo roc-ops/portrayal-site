@@ -23,10 +23,10 @@
   ]
  },
  "by-kind": {
-  "declared": 2738,
-  "derived": 1147
+  "declared": 2754,
+  "derived": 1152
  },
- "devices": 467,
+ "devices": 470,
  "gaps": [
   {
    "because": "vendor-silent",
@@ -10719,6 +10719,105 @@
    "manufacturer": "Cisco",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "n9k-c9508",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The guide gives a typical and maximum draw per module and no figure for the chassis itself; the chassis total is whatever its occupants sum to. The line cards are not in this batch, so a total here is a floor.",
+   "scope": [
+    "power-supplies"
+   ],
+   "wanted": "a chassis-level draw from Cisco, or confirmation that the sum of the module table is the answer",
+   "what": "chassis-power-figure"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "n9k-c9508",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The clearance figure (PDF p24, callout 14) gives the width of the chassis plus the vertical mounting brackets as 19.2 in (48.8 cm). The ear model has no field for an overall width, so the mounting-bracket region is not sized by it and the front face stays the 444.5 mm chassis width.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "ear support for an overall width, or a dimensioned front view of the bracket",
+   "what": "bracket-width"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "n9k-c9508",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The guide has no flat front or rear elevation, and the NetBox elevations are not held. Every position on both faces is derived from the dimension table and the arrangement in the isometric figures; see the front-stack and rear-stack provenance. No position is measured.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "a flat front and rear elevation of the chassis with dimensions, or the NetBox elevation images",
+   "what": "no-flat-views"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "n9k-c9508",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The guide says a blank module sits in an empty supervisor or system-controller slot (\"remove the blank module that is already in that slot. Unscrew its captive screw\") and gives it no part number, drawing or dimension. The supervisor and system-controller bays therefore show nothing when empty.",
+   "scope": [
+    "supervisors",
+    "system-controllers"
+   ],
+   "wanted": "the part number and a drawing of the supervisor and system-controller slot blanks",
+   "what": "supervisor-and-controller-slot-blanks"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "n9k-c9508",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The bay sizes are the module envelopes of the dimension table, and the positions are the stack derived from them; none is a measurement of the chassis. The fan-tray bays and the fabric-module bays occupy the same area of the rear face because the fabric modules are behind the fan trays.",
+   "scope": [
+    "line-cards",
+    "supervisors",
+    "system-controllers",
+    "fabric",
+    "fan-trays",
+    "power-supplies"
+   ],
+   "wanted": "a dimensioned rear view with the fan trays removed",
+   "what": "bay-extents-derived"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "n9k-c9508",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The side and top faces are named in the figures (handles on both sides, mounting bracket, rack rail positions) and no figure dimensions any feature on them, so those faces carry regions with no coordinates. The bottom face is empty: no view of it is published.",
+   "scope": [
+    "top",
+    "bottom",
+    "left",
+    "right"
+   ],
+   "wanted": "a dimensioned side and top view",
+   "what": "top-bottom-side-faces"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "n9k-c9508",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
   },
   {
    "because": "needs-drawing",
@@ -36618,6 +36717,180 @@
    "kind": "derived",
    "manufacturer": "MaiaEdge",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group ports - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "crs326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "The dimensions drawing has no rear view; the rear is read off studio photographs that look down on it, so the y positions are estimated.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "A dimensioned rear view.",
+   "what": "rear-elevation"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "crs326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "The earthing stud has a wing nut (photograph 1941; the drawing's 11 mm). common/ground-stud draws a hex nut and a lug seat, so the stud is chassis art and exports no earth. The reason is the nearest the schema has: the part itself is what is missing, and the library has no `needs-part` reason.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "A wing-nut earth stud part, so the stud is placed and not drawn as chassis art.",
+   "what": "earth-stud-part"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "crs326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "Searched the brochure, the quick guide page and the CSS326 quick guide for an LED table: none. The lamps carry the component's own vocabulary and no colour or meaning is stated.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "MikroTik's LED description for the CRS326.",
+   "what": "led-states"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "crs326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "Neither the brochure nor the product page gives a weight; the NetBox device type says 1.08 kg, a community figure not carried.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "MikroTik's weight.",
+   "what": "weight"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "crs326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "The saved product page carries no Discontinued badge and MikroTik publishes no end-of-life page, so no lifecycle is written.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "none",
+   "what": "eol"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "crs326-24g-2s-plus-rm",
+   "kind": "derived",
+   "manufacturer": "MikroTik",
+   "wanted": "an `attrs.performance` section; `attrs.platform.memory`; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in `attrs.environmental` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "crs326-24g-2s-plus-rm",
+   "kind": "derived",
+   "manufacturer": "MikroTik",
+   "wanted": "`physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "css326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "The earthing stud has a wing nut (photograph 1268; the drawing's 11 mm). common/ground-stud draws a hex nut and a lug seat, so the stud is chassis art and exports no earth. The reason is the nearest the schema has: the part itself is what is missing, and the library has no `needs-part` reason.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "A wing-nut earth stud part, so the stud is placed and not drawn as chassis art.",
+   "what": "earth-stud-part"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "css326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "Searched the brochure, the CSS326 quick guide and the product page for an LED table: none. The lamps carry the component's own vocabulary and no colour or meaning is stated.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "MikroTik's LED description for the CSS326.",
+   "what": "led-states"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "css326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "The dimensions drawing has no rear view; the rear is read off studio photograph 1268, which looks slightly down on it, so the y positions are estimated.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "A dimensioned rear view.",
+   "what": "rear-elevation"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "css326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "Neither the brochure, the quick guide nor the product page gives a weight; the NetBox device type for the CSS326 gives none either.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "MikroTik's weight.",
+   "what": "weight"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "css326-24g-2s-plus-rm",
+   "kind": "declared",
+   "manufacturer": "MikroTik",
+   "note": "The saved product page carries no Discontinued badge and MikroTik publishes no end-of-life page, so no lifecycle is written.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "none",
+   "what": "eol"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "css326-24g-2s-plus-rm",
+   "kind": "derived",
+   "manufacturer": "MikroTik",
+   "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in `attrs.environmental` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "css326-24g-2s-plus-rm",
+   "kind": "derived",
+   "manufacturer": "MikroTik",
+   "wanted": "`physical-context` on port group rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
   },
   {
