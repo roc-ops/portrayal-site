@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="272.0mm" height="44.0mm" viewBox="0 0 272.0 44.0" data-device="crs309-1g-8s-plus-in" data-view="front" data-power-max-w="23" data-power-without-attachments="17 W (brochure and product page, without attachments)" data-power-input="DC jack 12 - 57 V, or PoE in on Ethernet 1, 18 - 57 V. The quick guide says 11 - 57 V for the jack; the rear prints DC 12-57 V" data-power-adapter="24 V 1.2 A, in the box" data-poe-standard="IEEE 802.3af/at, and passive PoE (in)" data-cooling="passive (product page); no fan" data-operating-temp-c="-40 to 70 (tested)" data-cpu="98DX8208, 800 MHz, dual core" data-switch-chip="98DX8208" data-ram="512 MB" data-storage="16 MB flash" data-os="SwOS / RouterOS (dual boot)" data-optics-sfp-plus="brochure: the eight SFP+ slots support up to 10 Gbit modules, none included" data-certification="CE, EAC, RoHS" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='common/led-sq@'] .state-amber-flashing { --led-color: #f59e0b; }
+    g[data-ref^='common/led-sq@'] .state-amber-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-blue { --led-color: #3b82f6; }
+    g[data-ref^='common/led-sq@'] .state-blue-flashing { --led-color: #3b82f6; }
+    g[data-ref^='common/led-sq@'] .state-blue-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-green { --led-color: #22c55e; }
+    g[data-ref^='common/led-sq@'] .state-green-flashing { --led-color: #22c55e; }
+    g[data-ref^='common/led-sq@'] .state-green-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-red-flashing { --led-color: #ef4444; }
+    g[data-ref^='common/led-sq@'] .state-red-flashing { animation: portrayal-blink 1s linear infinite; }
+    #led-pwr.state-blue, #led-pwr .state-blue { --led-color: #2563eb; }
+    #led-user.state-green, #led-user .state-green { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"MikroTik CRS309-1G-8S+IN","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/db9-receptacle@1":"1.1.0","common/led-dot@1":"1.1.0","common/led-sq@1":"1.0.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","std/db9@1":"1.1.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.1"},"source-sha256":"d16b627f77fe0830805ef494bdf4311f1a8615a977d860025807b9d3e1cc7ed9","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CRS309-1G-8S+IN" data-sku="CRS309-1G-8S+IN" data-part-number="" x="0" y="0" width="272" height="44" rx="1.2" fill="#d4d4d4" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-left" data-kind="vent-field" data-aperture="air" x="7.4" y="12" width="16.4" height="10.1" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-main" data-kind="vent-field" data-aperture="air" x="24.2" y="5.3" width="176.5" height="9.5" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="vent-right" data-kind="vent-field" data-aperture="air" x="206.4" y="15.4" width="38.2" height="6.3" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="246.5" y="37.5" width="20.5" height="5.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="24.05" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-1" data-path="cutout:cage-1" data-class="cutout" />
+    <rect x="24.75" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-1-act" data-path="cutout:led-sfp-1-act" data-class="cutout" />
+    <rect x="34.35" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-1-10g" data-path="cutout:led-sfp-1-10g" data-class="cutout" />
+    <rect x="43.81" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-2" data-path="cutout:cage-2" data-class="cutout" />
+    <rect x="44.51" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-2-act" data-path="cutout:led-sfp-2-act" data-class="cutout" />
+    <rect x="54.11" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-2-10g" data-path="cutout:led-sfp-2-10g" data-class="cutout" />
+    <rect x="63.57" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-3" data-path="cutout:cage-3" data-class="cutout" />
+    <rect x="64.27" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-3-act" data-path="cutout:led-sfp-3-act" data-class="cutout" />
+    <rect x="73.87" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-3-10g" data-path="cutout:led-sfp-3-10g" data-class="cutout" />
+    <rect x="83.33" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-4" data-path="cutout:cage-4" data-class="cutout" />
+    <rect x="84.03" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-4-act" data-path="cutout:led-sfp-4-act" data-class="cutout" />
+    <rect x="93.63" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-4-10g" data-path="cutout:led-sfp-4-10g" data-class="cutout" />
+    <rect x="103.09" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-5" data-path="cutout:cage-5" data-class="cutout" />
+    <rect x="103.79" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-5-act" data-path="cutout:led-sfp-5-act" data-class="cutout" />
+    <rect x="113.39" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-5-10g" data-path="cutout:led-sfp-5-10g" data-class="cutout" />
+    <rect x="122.85" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-6" data-path="cutout:cage-6" data-class="cutout" />
+    <rect x="123.55" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-6-act" data-path="cutout:led-sfp-6-act" data-class="cutout" />
+    <rect x="133.15" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-6-10g" data-path="cutout:led-sfp-6-10g" data-class="cutout" />
+    <rect x="142.61" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-7" data-path="cutout:cage-7" data-class="cutout" />
+    <rect x="143.31" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-7-act" data-path="cutout:led-sfp-7-act" data-class="cutout" />
+    <rect x="152.91" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-7-10g" data-path="cutout:led-sfp-7-10g" data-class="cutout" />
+    <rect x="162.37" y="27.1" width="14.5" height="10" fill="#101214" id="cutout--cage-8" data-path="cutout:cage-8" data-class="cutout" />
+    <rect x="163.07" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-8-act" data-path="cutout:led-sfp-8-act" data-class="cutout" />
+    <rect x="172.67" y="21.5" width="3" height="3" fill="#101214" id="cutout--led-sfp-8-10g" data-path="cutout:led-sfp-8-10g" data-class="cutout" />
+    <rect x="186.9" y="23.1" width="15.8" height="13.2" fill="#101214" id="cutout--eth-1" data-path="cutout:eth-1" data-class="cutout" />
+    <rect x="212.37" y="26.1" width="20.47" height="11.4" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <ellipse cx="243.2" cy="32.8" rx="2" ry="2" fill="#101214" id="cutout--btn-reset" data-path="cutout:btn-reset" data-class="cutout" />
+    <ellipse cx="251" cy="29.4" rx="1" ry="1" fill="#101214" id="cutout--led-user" data-path="cutout:led-user" data-class="cutout" />
+    <ellipse cx="250.8" cy="34.5" rx="1" ry="1" fill="#101214" id="cutout--led-pwr" data-path="cutout:led-pwr" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="222.6" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">CONSOLE</text>
+    <text x="243.2" y="30.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-reset">RESET</text>
+    <text x="253.6" y="30.02" font-family="sans-serif" font-size="2" text-anchor="start" fill="#2b2b2b" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-user">USER</text>
+    <text x="253.4" y="35.12" font-family="sans-serif" font-size="2" text-anchor="start" fill="#2b2b2b" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr">PWR</text>
+    <text x="194.8" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="eth-1">POE/BOOT</text>
+    <text x="31.3" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-1">SFP+ 1</text>
+    <text x="51.06" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-2">SFP+ 2</text>
+    <text x="70.82" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-3">SFP+ 3</text>
+    <text x="90.58" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-4">SFP+ 4</text>
+    <text x="110.34" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-5">SFP+ 5</text>
+    <text x="130.1" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-6">SFP+ 6</text>
+    <text x="149.86" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-7">SFP+ 7</text>
+    <text x="169.62" y="40.5" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-8">SFP+ 8</text>
+    <text x="26.25" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-1-act">ACT</text>
+    <text x="35.85" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-1-10g">10G</text>
+    <text x="46.01" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-2-act">ACT</text>
+    <text x="55.61" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-2-10g">10G</text>
+    <text x="65.77" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-3-act">ACT</text>
+    <text x="75.37" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-3-10g">10G</text>
+    <text x="85.53" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-4-act">ACT</text>
+    <text x="95.13" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-4-10g">10G</text>
+    <text x="105.29" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-5-act">ACT</text>
+    <text x="114.89" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-5-10g">10G</text>
+    <text x="125.05" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-6-act">ACT</text>
+    <text x="134.65" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-6-10g">10G</text>
+    <text x="144.81" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-7-act">ACT</text>
+    <text x="154.41" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-7-10g">10G</text>
+    <text x="164.57" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-8-act">ACT</text>
+    <text x="174.17" y="20.9" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sfp-8-10g">10G</text>
+    <text x="269.1" y="7" font-family="sans-serif" font-size="5.2" text-anchor="end" fill="#2b2b2b" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Cloud Router Switch</text>
+    <text x="268.4" y="12" font-family="sans-serif" font-size="3" text-anchor="end" fill="#2b2b2b" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">CRS309-1G-8S+IN</text>
+  </g>
+  <g id="cage-1" data-path="cage-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="1" transform="translate(24.05,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-1</title>
+    <rect id="cage-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-1/opening" data-class="cutout" />
+    <rect id="cage-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-2" data-path="cage-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="2" transform="translate(43.81,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-2</title>
+    <rect id="cage-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-2/opening" data-class="cutout" />
+    <rect id="cage-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-3" data-path="cage-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="3" transform="translate(63.57,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-3</title>
+    <rect id="cage-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-3/opening" data-class="cutout" />
+    <rect id="cage-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-4" data-path="cage-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="4" transform="translate(83.33,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-4</title>
+    <rect id="cage-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-4/opening" data-class="cutout" />
+    <rect id="cage-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-5" data-path="cage-5" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="5" transform="translate(103.09,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-5</title>
+    <rect id="cage-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-5/opening" data-class="cutout" />
+    <rect id="cage-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-5--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-6" data-path="cage-6" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="6" transform="translate(122.85,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-6</title>
+    <rect id="cage-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-6/opening" data-class="cutout" />
+    <rect id="cage-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-6--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-7" data-path="cage-7" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="7" transform="translate(142.61,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-7</title>
+    <rect id="cage-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-7/opening" data-class="cutout" />
+    <rect id="cage-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-7--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-8" data-path="cage-8" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="8" transform="translate(162.37,27.1)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight SFP+ cages, printed SFP+ 1 to SFP+ 8; they take 1.25 Gb SFP and 10 Gb SFP+ modules">
+    <title>cage-8</title>
+    <rect id="cage-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-8/opening" data-class="cutout" />
+    <rect id="cage-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-8--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="led-sfp-1-act" data-path="led-sfp-1-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="1" transform="translate(24.75,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-1">
+    <title>led-sfp-1-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-1-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-1-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-1-10g" data-path="led-sfp-1-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="2" transform="translate(34.35,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-1">
+    <title>led-sfp-1-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-1-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-1-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-2-act" data-path="led-sfp-2-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="3" transform="translate(44.51,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-2">
+    <title>led-sfp-2-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-2-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-2-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-2-10g" data-path="led-sfp-2-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="4" transform="translate(54.11,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-2">
+    <title>led-sfp-2-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-2-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-2-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-3-act" data-path="led-sfp-3-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="5" transform="translate(64.27,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-3">
+    <title>led-sfp-3-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-3-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-3-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-3-10g" data-path="led-sfp-3-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="6" transform="translate(73.87,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-3">
+    <title>led-sfp-3-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-3-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-3-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-4-act" data-path="led-sfp-4-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="7" transform="translate(84.03,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-4">
+    <title>led-sfp-4-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-4-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-4-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-4-10g" data-path="led-sfp-4-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="8" transform="translate(93.63,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-4">
+    <title>led-sfp-4-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-4-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-4-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-5-act" data-path="led-sfp-5-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="9" transform="translate(103.79,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-5">
+    <title>led-sfp-5-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-5-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-5-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-5-10g" data-path="led-sfp-5-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="10" transform="translate(113.39,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-5">
+    <title>led-sfp-5-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-5-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-5-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-6-act" data-path="led-sfp-6-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="11" transform="translate(123.55,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-6">
+    <title>led-sfp-6-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-6-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-6-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-6-10g" data-path="led-sfp-6-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="12" transform="translate(133.15,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-6">
+    <title>led-sfp-6-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-6-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-6-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-7-act" data-path="led-sfp-7-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="13" transform="translate(143.31,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-7">
+    <title>led-sfp-7-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-7-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-7-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-7-10g" data-path="led-sfp-7-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="14" transform="translate(152.91,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-7">
+    <title>led-sfp-7-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-7-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-7-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-8-act" data-path="led-sfp-8-act" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="15" transform="translate(163.07,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-8">
+    <title>led-sfp-8-act</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-8-act--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-8-act/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-sfp-8-10g" data-path="led-sfp-8-10g" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="16" transform="translate(172.67,21.5)" data-group="sfp-leds" data-group-role="indicator" data-description="two lamps per cage, ACT and 10G, the ACT lamp of cage n numbered 2n-1 and its 10G lamp 2n" data-for="cage-8">
+    <title>led-sfp-8-10g</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-sfp-8-10g--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-sfp-8-10g/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="eth-1" data-path="eth-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-poe="802.3af/at or passive PoE (in), 18 - 57 V" data-speed="1g" data-rel-pos="1" transform="translate(186.9,23.1)" data-group="eth" data-group-role="management" data-description="the 10/100/1000 Ethernet port printed POE/BOOT, which takes PoE in">
+    <title>eth-1</title>
+    <g id="eth-1--jack" data-path="eth-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>eth-1--jack</title>
+      <path id="eth-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="eth-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="eth-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="eth-1/jack/opening" data-class="cutout" />
+      <g id="eth-1--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="eth-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="eth-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="eth-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="eth-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="eth-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" data-role="rs232" data-rel-pos="1" transform="translate(207.2,25.55)" data-group="console" data-group-role="management" data-description="the DE-9 serial console">
+    <title>console</title>
+    <g id="console--bore-floor">
+      <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+      <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+    </g>
+    <path id="console--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+    <g id="console--shell" data-path="console/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+      <title>console--shell</title>
+      <path id="console--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="console/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+      <path id="console--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+      <circle id="console--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <circle id="console--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+      <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+  </g>
+  <g id="btn-reset" data-path="btn-reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" data-rel-pos="1" transform="translate(241.2,30.8)" data-group="controls" data-group-role="management" data-description="the RESET button" data-for="chassis">
+    <title>btn-reset</title>
+    <circle id="btn-reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="btn-reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="btn-reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="led-user" data-path="led-user" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(250.0,28.4)" data-group="status-leds" data-group-role="indicator" data-description="the USER and PWR lamps" data-states="off green" data-for="chassis">
+    <title>led-user</title>
+    <circle id="led-user--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-user--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-user/lamp" data-class="led" data-states="off green" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr" data-path="led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(249.8,33.5)" data-group="status-leds" data-group-role="indicator" data-description="the USER and PWR lamps" data-states="off blue" data-for="chassis">
+    <title>led-pwr</title>
+    <circle id="led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr/lamp" data-class="led" data-states="off blue" data-z-dome="0.3" />
+  </g>
+</svg>

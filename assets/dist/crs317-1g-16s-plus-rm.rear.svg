@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="443.0mm" height="44.0mm" viewBox="0 0 443.0 44.0" data-device="crs317-1g-16s-plus-rm" data-view="rear" data-power-max-w="44" data-power-input="100 - 240 V AC, 50 - 60 Hz, two inputs (IEC C14), built-in supplies" data-power-redundancy="only one supply is active at a time and the other is for redundancy (quick guide)" data-cooling="passive heatsinks with two fans that switch on when hot" data-operating-temp-c="-20 to 60 (tested)" data-cpu="98DX8216B0, 800 MHz, two cores" data-switch-chip="98DX8216" data-ram="1 GB" data-storage="16 MB flash" data-os="SwOS / RouterOS (dual boot)" data-vlan-limit="IEEE 802.1Q, up to 4K VLANs" data-optics-sfp-plus="brochure: the SFP+ cages support both 1.25 Gb SFP and 10 Gb SFP+ modules, with DDMI support, none included" data-certification="CE, EAC, RoHS" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"MikroTik CRS317-1G-16S+RM","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/screw-head@1":"1.1.0","std/c14-inlet@1":"1.4.0"},"source-sha256":"663e5e4db668bc2ef6919e10f2f8eb9253edd39b84d7e772bdba2a7611e4340d","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CRS317-1G-16S+RM" data-sku="CRS317-1G-16S+RM" data-part-number="" x="0" y="0" width="443" height="44" rx="1.2" fill="#dbdbdb" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="fan-0" data-kind="vent-field" data-aperture="air" x="142.55" y="1.25" width="36.5" height="36.5" rx="18.25" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="fan-1" data-kind="vent-field" data-aperture="air" x="181.85" y="1.25" width="36.5" height="36.5" rx="18.25" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="heatsink" data-kind="heatsink" x="220" y="1" width="165.5" height="42" rx="0.6" fill="#a9a39d" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="23.2" y="9" width="28" height="20" fill="#101214" id="cutout--ac-inlet-1" data-path="cutout:ac-inlet-1" data-class="cutout" />
+    <rect x="88.7" y="9" width="28" height="20" fill="#101214" id="cutout--ac-inlet-2" data-path="cutout:ac-inlet-2" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="41.7" y="32.4" font-family="sans-serif" font-size="2.7" text-anchor="middle" fill="#2b2b2b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-1">POWER 1</text>
+    <text x="41.7" y="36.4" font-family="sans-serif" font-size="2.7" text-anchor="middle" fill="#2b2b2b" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-1">100-240V~2A MAX 50/60Hz</text>
+    <text x="105.3" y="32.4" font-family="sans-serif" font-size="2.7" text-anchor="middle" fill="#2b2b2b" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-2">POWER 2</text>
+    <text x="105.3" y="36.4" font-family="sans-serif" font-size="2.7" text-anchor="middle" fill="#2b2b2b" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-2">100-240V~2A MAX 50/60Hz</text>
+    <path d="M 0 0 V 40 M 7.1 0 V 40 M 14.2 0 V 40 M 21.3 0 V 40 M 28.4 0 V 40 M 35.5 0 V 40 M 42.6 0 V 40 M 49.7 0 V 40 M 56.8 0 V 40 M 63.9 0 V 40 M 71.0 0 V 40 M 78.1 0 V 40 M 85.2 0 V 40 M 92.3 0 V 40 M 99.4 0 V 40 M 106.5 0 V 40 M 113.6 0 V 40 M 120.7 0 V 40 M 127.8 0 V 40 M 134.9 0 V 40 M 142.0 0 V 40" fill="none" stroke="#6f6a65" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(225 2)" id="heatsink-fins" data-path="silk:heatsink-fins" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="ac-inlet-1" data-path="ac-inlet-1" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="1" transform="translate(23.2,9.0)" data-group="inlets" data-group-role="service" data-description="the two IEC C14 AC inlets, printed POWER 1 and POWER 2">
+    <title>ac-inlet-1</title>
+    <rect id="ac-inlet-1--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-1/opening" data-class="cutout" />
+    <path id="ac-inlet-1--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-1--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="ac-inlet-2" data-path="ac-inlet-2" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="2" transform="translate(88.7,9.0)" data-group="inlets" data-group-role="service" data-description="the two IEC C14 AC inlets, printed POWER 1 and POWER 2">
+    <title>ac-inlet-2</title>
+    <rect id="ac-inlet-2--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-2/opening" data-class="cutout" />
+    <path id="ac-inlet-2--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-2--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-2--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-2--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="rear-screw-1" data-path="rear-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(29.1,2.4)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-1</title>
+    <circle id="rear-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="rear-screw-2" data-path="rear-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(123.9,2.4)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-2</title>
+    <circle id="rear-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>
