@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="311.15mm" viewBox="0 0 444.5 311.15" data-device="n9k-c9504" data-view="rear" data-weight-fully-loaded-kg="116" data-power-supply-capacity-w="3000 W per supply (3150 W for the N9K-PUV2-3000W-B), up to four" data-power-redundancy-modes="combined, n+1, n+n" data-cooling-path="front-to-back; air enters at the line-card and power-supply side, leaves at the fan trays" data-fan-trays="three, FAN 1 to FAN 3, on the rear face" data-operating-temp="32 to 104degF (0 to 40degC)" data-storage-temp="-40 to 158degF (-40 to 70degC)" data-humidity-operating="5 to 90 percent" data-humidity-non-operating="5 to 95 percent" data-altitude-operating="0 to 13,123 ft (0 to 4,000 m)" data-operating-system="Cisco NX-OS" data-airflow="front-to-back" data-power="ac hvdc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-blue { --led-color: #2a7de1; }
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-blue { --led-color: #2a7de1; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-amber { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-green { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-red { --led-color: #d0021b; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-red { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-yellow { --led-color: #f5c518; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-flashing-yellow { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-c9504-fm-g@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-sc-a@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-sc-a@'] .state-blue { --led-color: #2a7de1; }
+    g[data-ref^='cisco/n9k-sc-a@'] .state-blue { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-sc-a@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-sc-a@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='cisco/n9k-sc-a@'] .state-red { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"Cisco N9K-C9504","device-version":"2.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"cisco/n9k-c9504-fan2@1":"1.0.0","cisco/n9k-c9504-fm-g@1":"1.0.0","cisco/n9k-sc-a@1":"1.0.0"},"source-sha256":"24d29c96e2c2481f4d546367f11ed9373552352dbce9f3010faf0819506c84d1","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="N9K-C9504" x="0" y="0" width="444.5" height="311.15" rx="1.2" fill="#d0d2cf" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+  <rect id="region--fan-tray-slots" data-path="region:fan-tray-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--fabric-module-slots" data-path="region:fabric-module-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--system-controller-slots" data-path="region:system-controller-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--grounding-pad" data-path="region:grounding-pad" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--chassis-handles" data-path="region:chassis-handles" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <g id="fm-1" data-path="fm-1" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="0" data-under="fan-1">
+    <title>fm-1</title>
+    <rect id="fm-1--opening" x="30.735" y="17.14" width="62.48" height="238.76" fill="#101214" />
+    <g id="fm-1--module" data-path="fm-1/module" data-class="fabric" data-behaviour="fills" data-ref="cisco/n9k-c9504-fm-g@1:1.0.0" data-body-depth="297.18" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FM-G" data-power-draw-max-w="504" data-power-draw-typical-w="270" data-role="fabric-module" data-weight-kg="3.53" transform="translate(61.975,136.52) translate(-31.24,-119.38)">
+      <title>fm-1--module</title>
+      <rect id="fm-1--module--plate" x="0.4" y="0.4" width="61.68" height="237.96" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="fm-1--module--vent" x="6" y="18" width="50.5" height="172" rx="1" fill="#34373a" />
+      <g id="fm-1--module--ejector-top">
+        <rect x="14" y="5" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="fm-1--module--ejector-bot">
+        <rect x="14" y="194" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <circle id="fm-1--module--bcn" cx="11.5" cy="209.7" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-1/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp. The BCN lamp on the fan tray that covers the module also lights." />
+      <circle id="fm-1--module--status" cx="49.5" cy="209.7" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-1/module/status" data-class="led" data-states="green flashing-green flashing-yellow flashing-red flashing-amber off" data-description="Status lamp." />
+      <g id="fm-1--module--silkscreen">
+        <text x="11.5" y="216" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+      </g>
+    </g>
+  </g>
+  <g id="fm-2" data-path="fm-2" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="1" data-under="fan-1">
+    <title>fm-2</title>
+    <rect id="fm-2--opening" x="94.745" y="17.14" width="62.48" height="238.76" fill="#101214" />
+    <g id="fm-2--module" data-path="fm-2/module" data-class="fabric" data-behaviour="fills" data-ref="cisco/n9k-c9504-fm-g@1:1.0.0" data-body-depth="297.18" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FM-G" data-power-draw-max-w="504" data-power-draw-typical-w="270" data-role="fabric-module" data-weight-kg="3.53" transform="translate(125.985,136.52) translate(-31.24,-119.38)">
+      <title>fm-2--module</title>
+      <rect id="fm-2--module--plate" x="0.4" y="0.4" width="61.68" height="237.96" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="fm-2--module--vent" x="6" y="18" width="50.5" height="172" rx="1" fill="#34373a" />
+      <g id="fm-2--module--ejector-top">
+        <rect x="14" y="5" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="fm-2--module--ejector-bot">
+        <rect x="14" y="194" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <circle id="fm-2--module--bcn" cx="11.5" cy="209.7" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-2/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp. The BCN lamp on the fan tray that covers the module also lights." />
+      <circle id="fm-2--module--status" cx="49.5" cy="209.7" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-2/module/status" data-class="led" data-states="green flashing-green flashing-yellow flashing-red flashing-amber off" data-description="Status lamp." />
+      <g id="fm-2--module--silkscreen">
+        <text x="11.5" y="216" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fan-trays" data-group-role="service" data-rel-pos="0">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="29.845" y="1.9" width="128.27" height="269.24" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="cisco/n9k-c9504-fan2@1:1.0.0" data-body-depth="138.94" data-airflow="port-side intake" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FAN2" data-power-draw-max-w="600" data-power-draw-typical-w="105" data-role="fan-tray" data-weight-kg="3.45" transform="translate(93.98,136.52) translate(-64.135,-134.62)">
+      <title>fan-1--module</title>
+      <rect id="fan-1--module--plate" x="0.5" y="0.5" width="127.27" height="268.24" rx="1" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.4" />
+      <rect id="fan-1--module--vent" x="8" y="22" width="112.27" height="204" rx="1" fill="#34373a" />
+      <g id="fan-1--module--handle-upper">
+        <path d="M 22 110 L 104 50" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+      </g>
+      <g id="fan-1--module--handle-lower">
+        <path d="M 22 200 L 104 140" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+      </g>
+      <g id="fan-1--module--screw-top-l">
+        <circle cx="20" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="20" cy="10" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-1--module--screw-top-r">
+        <circle cx="108.27" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="108.27" cy="10" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-1--module--screw-bot-l">
+        <circle cx="20" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="20" cy="259" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-1--module--screw-bot-r">
+        <circle cx="108.27" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="108.27" cy="259" r="1.7" fill="#6d7379" />
+      </g>
+      <circle id="fan-1--module--bcn" cx="101.5" cy="239.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-1/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, lower right." />
+      <circle id="fan-1--module--fan" cx="109.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-1/module/fan" data-class="led" data-states="green red off" data-description="FAN lamp. Green when the tray is operational, red when a fan has failed." />
+      <circle id="fan-1--module--fab" cx="117.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-1/module/fab" data-class="led" data-states="green amber off" data-description="FAB lamp. Green when the fabric modules behind the tray are operational, amber when one is not." />
+      <g id="fan-1--module--silkscreen">
+        <text x="101.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+        <text x="109.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAN</text>
+        <text x="117.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAB</text>
+      </g>
+    </g>
+  </g>
+  <g id="fm-3" data-path="fm-3" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="2" data-under="fan-2">
+    <title>fm-3</title>
+    <rect id="fm-3--opening" x="159.005" y="17.14" width="62.48" height="238.76" fill="#101214" />
+    <g id="fm-3--module" data-path="fm-3/module" data-class="fabric" data-behaviour="fills" data-ref="cisco/n9k-c9504-fm-g@1:1.0.0" data-body-depth="297.18" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FM-G" data-power-draw-max-w="504" data-power-draw-typical-w="270" data-role="fabric-module" data-weight-kg="3.53" transform="translate(190.245,136.52) translate(-31.24,-119.38)">
+      <title>fm-3--module</title>
+      <rect id="fm-3--module--plate" x="0.4" y="0.4" width="61.68" height="237.96" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="fm-3--module--vent" x="6" y="18" width="50.5" height="172" rx="1" fill="#34373a" />
+      <g id="fm-3--module--ejector-top">
+        <rect x="14" y="5" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="fm-3--module--ejector-bot">
+        <rect x="14" y="194" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <circle id="fm-3--module--bcn" cx="11.5" cy="209.7" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-3/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp. The BCN lamp on the fan tray that covers the module also lights." />
+      <circle id="fm-3--module--status" cx="49.5" cy="209.7" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-3/module/status" data-class="led" data-states="green flashing-green flashing-yellow flashing-red flashing-amber off" data-description="Status lamp." />
+      <g id="fm-3--module--silkscreen">
+        <text x="11.5" y="216" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+      </g>
+    </g>
+  </g>
+  <g id="fm-4" data-path="fm-4" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="3" data-under="fan-2">
+    <title>fm-4</title>
+    <rect id="fm-4--opening" x="223.015" y="17.14" width="62.48" height="238.76" fill="#101214" />
+    <g id="fm-4--module" data-path="fm-4/module" data-class="fabric" data-behaviour="fills" data-ref="cisco/n9k-c9504-fm-g@1:1.0.0" data-body-depth="297.18" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FM-G" data-power-draw-max-w="504" data-power-draw-typical-w="270" data-role="fabric-module" data-weight-kg="3.53" transform="translate(254.255,136.52) translate(-31.24,-119.38)">
+      <title>fm-4--module</title>
+      <rect id="fm-4--module--plate" x="0.4" y="0.4" width="61.68" height="237.96" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="fm-4--module--vent" x="6" y="18" width="50.5" height="172" rx="1" fill="#34373a" />
+      <g id="fm-4--module--ejector-top">
+        <rect x="14" y="5" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="fm-4--module--ejector-bot">
+        <rect x="14" y="194" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <circle id="fm-4--module--bcn" cx="11.5" cy="209.7" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-4/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp. The BCN lamp on the fan tray that covers the module also lights." />
+      <circle id="fm-4--module--status" cx="49.5" cy="209.7" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-4/module/status" data-class="led" data-states="green flashing-green flashing-yellow flashing-red flashing-amber off" data-description="Status lamp." />
+      <g id="fm-4--module--silkscreen">
+        <text x="11.5" y="216" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fan-trays" data-group-role="service" data-rel-pos="1">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="158.115" y="1.9" width="128.27" height="269.24" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="cisco/n9k-c9504-fan2@1:1.0.0" data-body-depth="138.94" data-airflow="port-side intake" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FAN2" data-power-draw-max-w="600" data-power-draw-typical-w="105" data-role="fan-tray" data-weight-kg="3.45" transform="translate(222.25,136.52) translate(-64.135,-134.62)">
+      <title>fan-2--module</title>
+      <rect id="fan-2--module--plate" x="0.5" y="0.5" width="127.27" height="268.24" rx="1" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.4" />
+      <rect id="fan-2--module--vent" x="8" y="22" width="112.27" height="204" rx="1" fill="#34373a" />
+      <g id="fan-2--module--handle-upper">
+        <path d="M 22 110 L 104 50" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+      </g>
+      <g id="fan-2--module--handle-lower">
+        <path d="M 22 200 L 104 140" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+      </g>
+      <g id="fan-2--module--screw-top-l">
+        <circle cx="20" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="20" cy="10" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-2--module--screw-top-r">
+        <circle cx="108.27" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="108.27" cy="10" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-2--module--screw-bot-l">
+        <circle cx="20" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="20" cy="259" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-2--module--screw-bot-r">
+        <circle cx="108.27" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="108.27" cy="259" r="1.7" fill="#6d7379" />
+      </g>
+      <circle id="fan-2--module--bcn" cx="101.5" cy="239.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-2/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, lower right." />
+      <circle id="fan-2--module--fan" cx="109.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-2/module/fan" data-class="led" data-states="green red off" data-description="FAN lamp. Green when the tray is operational, red when a fan has failed." />
+      <circle id="fan-2--module--fab" cx="117.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-2/module/fab" data-class="led" data-states="green amber off" data-description="FAB lamp. Green when the fabric modules behind the tray are operational, amber when one is not." />
+      <g id="fan-2--module--silkscreen">
+        <text x="101.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+        <text x="109.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAN</text>
+        <text x="117.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAB</text>
+      </g>
+    </g>
+  </g>
+  <g id="fm-5" data-path="fm-5" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="4" data-under="fan-3">
+    <title>fm-5</title>
+    <rect id="fm-5--opening" x="287.275" y="17.14" width="62.48" height="238.76" fill="#101214" />
+    <g id="fm-5--module" data-path="fm-5/module" data-class="fabric" data-behaviour="fills" data-ref="cisco/n9k-c9504-fm-g@1:1.0.0" data-body-depth="297.18" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FM-G" data-power-draw-max-w="504" data-power-draw-typical-w="270" data-role="fabric-module" data-weight-kg="3.53" transform="translate(318.515,136.52) translate(-31.24,-119.38)">
+      <title>fm-5--module</title>
+      <rect id="fm-5--module--plate" x="0.4" y="0.4" width="61.68" height="237.96" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="fm-5--module--vent" x="6" y="18" width="50.5" height="172" rx="1" fill="#34373a" />
+      <g id="fm-5--module--ejector-top">
+        <rect x="14" y="5" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="fm-5--module--ejector-bot">
+        <rect x="14" y="194" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <circle id="fm-5--module--bcn" cx="11.5" cy="209.7" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-5/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp. The BCN lamp on the fan tray that covers the module also lights." />
+      <circle id="fm-5--module--status" cx="49.5" cy="209.7" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-5/module/status" data-class="led" data-states="green flashing-green flashing-yellow flashing-red flashing-amber off" data-description="Status lamp." />
+      <g id="fm-5--module--silkscreen">
+        <text x="11.5" y="216" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+      </g>
+    </g>
+  </g>
+  <g id="fm-6" data-path="fm-6" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="5" data-under="fan-3">
+    <title>fm-6</title>
+    <rect id="fm-6--opening" x="351.285" y="17.14" width="62.48" height="238.76" fill="#101214" />
+    <g id="fm-6--module" data-path="fm-6/module" data-class="fabric" data-behaviour="fills" data-ref="cisco/n9k-c9504-fm-g@1:1.0.0" data-body-depth="297.18" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FM-G" data-power-draw-max-w="504" data-power-draw-typical-w="270" data-role="fabric-module" data-weight-kg="3.53" transform="translate(382.525,136.52) translate(-31.24,-119.38)">
+      <title>fm-6--module</title>
+      <rect id="fm-6--module--plate" x="0.4" y="0.4" width="61.68" height="237.96" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="fm-6--module--vent" x="6" y="18" width="50.5" height="172" rx="1" fill="#34373a" />
+      <g id="fm-6--module--ejector-top">
+        <rect x="14" y="5" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="fm-6--module--ejector-bot">
+        <rect x="14" y="194" width="34" height="9" rx="2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <circle id="fm-6--module--bcn" cx="11.5" cy="209.7" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-6/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp. The BCN lamp on the fan tray that covers the module also lights." />
+      <circle id="fm-6--module--status" cx="49.5" cy="209.7" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fm-6/module/status" data-class="led" data-states="green flashing-green flashing-yellow flashing-red flashing-amber off" data-description="Status lamp." />
+      <g id="fm-6--module--silkscreen">
+        <text x="11.5" y="216" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fan-trays" data-group-role="service" data-rel-pos="2">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="286.385" y="1.9" width="128.27" height="269.24" fill="#101214" />
+    <g id="fan-3--module" data-path="fan-3/module" data-class="fan" data-behaviour="fills" data-ref="cisco/n9k-c9504-fan2@1:1.0.0" data-body-depth="138.94" data-airflow="port-side intake" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FAN2" data-power-draw-max-w="600" data-power-draw-typical-w="105" data-role="fan-tray" data-weight-kg="3.45" transform="translate(350.52,136.52) translate(-64.135,-134.62)">
+      <title>fan-3--module</title>
+      <rect id="fan-3--module--plate" x="0.5" y="0.5" width="127.27" height="268.24" rx="1" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.4" />
+      <rect id="fan-3--module--vent" x="8" y="22" width="112.27" height="204" rx="1" fill="#34373a" />
+      <g id="fan-3--module--handle-upper">
+        <path d="M 22 110 L 104 50" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+      </g>
+      <g id="fan-3--module--handle-lower">
+        <path d="M 22 200 L 104 140" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+      </g>
+      <g id="fan-3--module--screw-top-l">
+        <circle cx="20" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="20" cy="10" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-3--module--screw-top-r">
+        <circle cx="108.27" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="108.27" cy="10" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-3--module--screw-bot-l">
+        <circle cx="20" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="20" cy="259" r="1.7" fill="#6d7379" />
+      </g>
+      <g id="fan-3--module--screw-bot-r">
+        <circle cx="108.27" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="108.27" cy="259" r="1.7" fill="#6d7379" />
+      </g>
+      <circle id="fan-3--module--bcn" cx="101.5" cy="239.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-3/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, lower right." />
+      <circle id="fan-3--module--fan" cx="109.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-3/module/fan" data-class="led" data-states="green red off" data-description="FAN lamp. Green when the tray is operational, red when a fan has failed." />
+      <circle id="fan-3--module--fab" cx="117.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="fan-3/module/fab" data-class="led" data-states="green amber off" data-description="FAB lamp. Green when the fabric modules behind the tray are operational, amber when one is not." />
+      <g id="fan-3--module--silkscreen">
+        <text x="101.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+        <text x="109.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAN</text>
+        <text x="117.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAB</text>
+      </g>
+    </g>
+  </g>
+  <g id="sc-1" data-path="sc-1" data-class="bay" data-group="system-controllers" data-group-role="management" data-rel-pos="0">
+    <title>sc-1</title>
+    <rect id="sc-1--opening" x="23.85" y="273" width="198.37" height="36.07" fill="#101214" />
+    <g id="sc-1--module" data-path="sc-1/module" data-class="supervisor" data-behaviour="fills" data-ref="cisco/n9k-sc-a@1:1.0.0" data-body-depth="272.8" data-eol="unknown" data-hot-swappable="True" data-model="N9K-SC-A" data-power-draw-max-w="25" data-power-draw-typical-w="14" data-role="system-controller" transform="translate(123.035,291.035) translate(-99.185,-18.035)">
+      <title>sc-1--module</title>
+      <rect id="sc-1--module--plate" x="0.4" y="0.4" width="197.57" height="35.27" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="sc-1--module--ejector-left">
+        <rect x="1.5" y="3" width="7" height="30" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="sc-1--module--ejector-right">
+        <rect x="189.9" y="3" width="7" height="30" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <rect id="sc-1--module--vent" x="40" y="4" width="140" height="28" rx="1" fill="#34373a" />
+      <circle id="sc-1--module--bcn" cx="13.5" cy="15.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="sc-1/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, left side of the module." />
+      <circle id="sc-1--module--sts" cx="19.5" cy="15.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sc-1/module/sts" data-class="led" data-states="green amber red off" data-description="STS lamp." />
+      <circle id="sc-1--module--act" cx="25.5" cy="15.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sc-1/module/act" data-class="led" data-states="green amber off" data-description="ACT lamp. Green when active, amber when standby." />
+      <g id="sc-1--module--silkscreen">
+        <text x="13.5" y="22" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">BCN</text>
+        <text x="19.5" y="22" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">STS</text>
+        <text x="25.5" y="22" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">ACT</text>
+      </g>
+    </g>
+  </g>
+  <g id="sc-2" data-path="sc-2" data-class="bay" data-group="system-controllers" data-group-role="management" data-rel-pos="1">
+    <title>sc-2</title>
+    <rect id="sc-2--opening" x="222.22" y="273" width="198.37" height="36.07" fill="#101214" />
+    <g id="sc-2--module" data-path="sc-2/module" data-class="supervisor" data-behaviour="fills" data-ref="cisco/n9k-sc-a@1:1.0.0" data-body-depth="272.8" data-eol="unknown" data-hot-swappable="True" data-model="N9K-SC-A" data-power-draw-max-w="25" data-power-draw-typical-w="14" data-role="system-controller" transform="translate(321.405,291.035) translate(-99.185,-18.035)">
+      <title>sc-2--module</title>
+      <rect id="sc-2--module--plate" x="0.4" y="0.4" width="197.57" height="35.27" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="sc-2--module--ejector-left">
+        <rect x="1.5" y="3" width="7" height="30" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="sc-2--module--ejector-right">
+        <rect x="189.9" y="3" width="7" height="30" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <rect id="sc-2--module--vent" x="40" y="4" width="140" height="28" rx="1" fill="#34373a" />
+      <circle id="sc-2--module--bcn" cx="13.5" cy="15.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="sc-2/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, left side of the module." />
+      <circle id="sc-2--module--sts" cx="19.5" cy="15.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sc-2/module/sts" data-class="led" data-states="green amber red off" data-description="STS lamp." />
+      <circle id="sc-2--module--act" cx="25.5" cy="15.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sc-2/module/act" data-class="led" data-states="green amber off" data-description="ACT lamp. Green when active, amber when standby." />
+      <g id="sc-2--module--silkscreen">
+        <text x="13.5" y="22" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">BCN</text>
+        <text x="19.5" y="22" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">STS</text>
+        <text x="25.5" y="22" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">ACT</text>
+      </g>
+    </g>
+  </g>
+</svg>

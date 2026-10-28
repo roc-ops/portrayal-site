@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.4mm" height="495.3mm" viewBox="0 0 439.4 495.3" data-device="n9k-c93180yc-fx3" data-view="top" data-weight-note="21 lb (9.52 kg) chassis; each fan module 0.26 lb (0.12 kg); each 650 W AC power supply 2.42 lb (1.1 kg), no weight given for the other supplies" data-power-typical-w="375" data-power-max-w="600" data-power-envelope="unstated" data-heat-dissipation-btu-hr="2047.285" data-power-input-ac="100 to 240 V, 50 to 60 Hz" data-power-input-hvac="200 to 277 V" data-power-input-dc="-48 to -72 V nominal, as printed" data-power-input-hvdc="240 to 380 V" data-power-supply-options="650W AC, 1200W HVAC/HVDC or 930W DC (two)" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 70 C (-40 to 158 F)" data-humidity="5 to 90% operating, 5 to 95% non-operating" data-altitude="0 to 4000 m (0 to 13,123 ft), the specifications table" data-optics-sfp28="guide: &quot;48 100M/1/10/25-Gigabit Ethernet SFP28 ports (ports 1-48)&quot;. Auto-negotiation is not supported at 10G on ports 1 to 48 and on ports 49 to 52 with a QSA. SFP-10G-T-X and SFP-10G-OLT20-X are supported on a stated pattern of ports, with the neighbours limited to passive copper." data-optics-qsfp28="guide: &quot;6 10/25/40/50/100-Gigabit QSFP28 ports (ports 49-54)&quot;" data-timing="1PPS and 10MHz SMB ports, a GPS/GNSS SMA antenna port and a ToD RJ-45 port. The guide says PTP grandmaster function is supported beginning with NX-OS release 10.3(2)F." data-usb="1 USB port" data-regulatory="Products should comply with CEMarkings according to directives 2004/108/EC and 2006/95/EC." data-safety="CAN/CSA-C22.2 No. 60950-1 Second Edition, CAN/CSA-C22.2 No. 62368-1-19 Third Edition, ANSI/UL 60950-1 Second edition, IEC 62368-1, EN 62368-1, AS/NZS 62368-1, GB4943" data-emissions="47CFR Part 15 (CFR 47) Class A, AS/NZS CISPR22 Class A, CISPR22 Class A, EN55022 Class A, ICES003 Class A, VCCI Class A, EN61000-3-2, EN61000-3-3, KN22 Class A, CNS13438 Class A" data-immunity="EN55024, CISPR24, EN300386, KN 61000-4 series" data-rohs="The product is RoH-6 compliant with exceptions for leaded-ball grid-array (BGA) balls and lead press-fit connectors." data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Cisco N9K-C93180YC-FX3","device-version":"0.1.3","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"caced48ad56f2e012faa42343faad79fb578fa9fc0c5d4f07803cd1d720c4904","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="N9K-C93180YC-FX3" data-sku="N9K-C93180YC-FX3H" data-part-number="N9K-C93180YC-FX3H" x="0" y="0" width="439.4" height="495.3" rx="1.2" fill="#d0d2cf" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

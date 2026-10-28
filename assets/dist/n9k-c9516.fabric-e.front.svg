@@ -1,0 +1,671 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="933.45mm" viewBox="0 0 444.5 933.45" data-device="n9k-c9516" data-view="front" data-weight-fully-loaded-kg="258" data-power-supply-capacity-w="3000 W per supply (3150 W for the N9K-PUV2-3000W-B), up to ten" data-power-redundancy-modes="combined, n+1, n+n" data-cooling-path="front-to-back; air enters at the line-card and power-supply side, leaves at the fan trays" data-fan-trays="three, FAN 1 to FAN 3, on the rear face" data-operating-temp="32 to 104degF (0 to 40degC)" data-storage-temp="-40 to 158degF (-40 to 70degC)" data-humidity-operating="5 to 90 percent" data-humidity-non-operating="5 to 95 percent" data-altitude-operating="0 to 13,123 ft (0 to 4,000 m)" data-operating-system="Cisco NX-OS" data-eol="announced" data-eol-announcement="https://www.cisco.com/c/en/us/products/collateral/switches/nexus-9000-series-switches/n9500-cloud-16-slot-chassis-comp-eol.html" data-airflow="front-to-back">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/n9k-pac-3000w-b@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-pac-3000w-b@'] .state-flashing-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-pac-3000w-b@'] .state-flashing-amber { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-pac-3000w-b@'] .state-flashing-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-pac-3000w-b@'] .state-flashing-green { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-pac-3000w-b@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-sup-a@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-sup-a@'] .state-blue { --led-color: #2a7de1; }
+    g[data-ref^='cisco/n9k-sup-a@'] .state-blue { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-sup-a@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-sup-a@'] .state-green { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-sup-a@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='cisco/n9k-sup-a@'] .state-red { animation: portrayal-blink 1s linear infinite; }
+    #led-bcn.state-beacon, #led-bcn .state-beacon { --led-color: #3b82f6; }
+    #led-sup.state-fault, #led-sup .state-fault, #led-fab.state-fault, #led-fab .state-fault, #led-iom.state-fault, #led-iom .state-fault, #led-psu.state-fault, #led-psu .state-fault, #led-fan.state-fault, #led-fan .state-fault, #led-pwr-mgmt.state-fault, #led-pwr-mgmt .state-fault { --led-color: #f5a623; }
+    #led-sup.state-ok, #led-sup .state-ok, #led-fab.state-ok, #led-fab .state-ok, #led-iom.state-ok, #led-iom .state-ok, #led-psu.state-ok, #led-psu .state-ok, #led-fan.state-ok, #led-fan .state-ok, #led-pwr-mgmt.state-ok, #led-pwr-mgmt .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Cisco N9K-C9516","device-version":"2.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"cisco/n9k-c9500-lc-cv@1":"1.0.0","cisco/n9k-pac-3000w-b@1":"1.0.0","cisco/n9k-psu-blank@1":"1.0.0","cisco/n9k-sup-a@1":"1.0.0","common/led-dot@1":"1.1.0","common/rj45-ganged-eth@1":"1.2.0","std/rj45-ganged@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"5b4337eb09859f98e33d0bcf8f08cb9ecf094ab213d34ecf9cc2818dc3845b7b","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="N9K-C9516" x="0" y="0" width="444.5" height="933.45" rx="1.2" fill="#d0d2cf" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="444.5" height="44.45" rx="0.6" fill="#c9ccd0" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="10" y="10" width="40" height="18" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--chassis-leds" data-path="region:chassis-leds" data-class="region" data-members="led-bcn led-sup led-fab led-iom led-psu led-fan led-pwr-mgmt" x="182" y="17" width="110" height="20" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--line-card-slots" data-path="region:line-card-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--supervisor-slots" data-path="region:supervisor-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--power-supply-slots" data-path="region:power-supply-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--mounting-brackets" data-path="region:mounting-brackets" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="186" y="33" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">BCN</text>
+    <text x="203" y="33" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">SUP</text>
+    <text x="220" y="33" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">FAB</text>
+    <text x="237" y="33" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">IOM</text>
+    <text x="254" y="33" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">PSU</text>
+    <text x="271" y="33" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">FAN</text>
+    <text x="288" y="33" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">PWR MGMT</text>
+  </g>
+  <g id="led-bcn" data-path="led-bcn" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(184.5,21.0)" data-group="leds" data-group-role="indicator" data-states="off beacon" data-for="chassis">
+    <title>led-bcn</title>
+    <circle id="led-bcn--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-bcn--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-bcn/lamp" data-class="led" data-states="off beacon" data-z-dome="0.3" />
+  </g>
+  <g id="led-sup" data-path="led-sup" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(201.5,21.0)" data-group="leds" data-group-role="indicator" data-states="off ok fault" data-for="chassis">
+    <title>led-sup</title>
+    <circle id="led-sup--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sup--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sup/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fab" data-path="led-fab" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(218.5,21.0)" data-group="leds" data-group-role="indicator" data-states="off ok fault" data-for="chassis">
+    <title>led-fab</title>
+    <circle id="led-fab--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fab--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fab/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-iom" data-path="led-iom" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(235.5,21.0)" data-group="leds" data-group-role="indicator" data-states="off ok fault" data-for="chassis">
+    <title>led-iom</title>
+    <circle id="led-iom--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-iom--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-iom/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-psu" data-path="led-psu" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(252.5,21.0)" data-group="leds" data-group-role="indicator" data-states="off ok fault" data-for="chassis">
+    <title>led-psu</title>
+    <circle id="led-psu--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-psu--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-psu/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan" data-path="led-fan" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(269.5,21.0)" data-group="leds" data-group-role="indicator" data-states="off ok fault" data-for="chassis">
+    <title>led-fan</title>
+    <circle id="led-fan--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr-mgmt" data-path="led-pwr-mgmt" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(286.5,21.0)" data-group="leds" data-group-role="indicator" data-states="off ok fault" data-for="chassis">
+    <title>led-pwr-mgmt</title>
+    <circle id="led-pwr-mgmt--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr-mgmt--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr-mgmt/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="lc-1" data-path="lc-1" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="0">
+    <title>lc-1</title>
+    <rect id="lc-1--opening" x="6.35" y="44.45" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-1--module" data-path="lc-1/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,66.675) translate(-215.9,-22.225)">
+      <title>lc-1--module</title>
+      <rect id="lc-1--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-1--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-1--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-2" data-path="lc-2" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="1">
+    <title>lc-2</title>
+    <rect id="lc-2--opening" x="6.35" y="88.9" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-2--module" data-path="lc-2/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,111.125) translate(-215.9,-22.225)">
+      <title>lc-2--module</title>
+      <rect id="lc-2--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-2--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-2--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-3" data-path="lc-3" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="2">
+    <title>lc-3</title>
+    <rect id="lc-3--opening" x="6.35" y="133.35" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-3--module" data-path="lc-3/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,155.575) translate(-215.9,-22.225)">
+      <title>lc-3--module</title>
+      <rect id="lc-3--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-3--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-3--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-4" data-path="lc-4" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="3">
+    <title>lc-4</title>
+    <rect id="lc-4--opening" x="6.35" y="177.8" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-4--module" data-path="lc-4/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,200.025) translate(-215.9,-22.225)">
+      <title>lc-4--module</title>
+      <rect id="lc-4--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-4--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-4--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-5" data-path="lc-5" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="4">
+    <title>lc-5</title>
+    <rect id="lc-5--opening" x="6.35" y="222.25" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-5--module" data-path="lc-5/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,244.475) translate(-215.9,-22.225)">
+      <title>lc-5--module</title>
+      <rect id="lc-5--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-5--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-5--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-6" data-path="lc-6" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="5">
+    <title>lc-6</title>
+    <rect id="lc-6--opening" x="6.35" y="266.7" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-6--module" data-path="lc-6/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,288.925) translate(-215.9,-22.225)">
+      <title>lc-6--module</title>
+      <rect id="lc-6--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-6--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-6--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-7" data-path="lc-7" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="6">
+    <title>lc-7</title>
+    <rect id="lc-7--opening" x="6.35" y="311.15" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-7--module" data-path="lc-7/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,333.375) translate(-215.9,-22.225)">
+      <title>lc-7--module</title>
+      <rect id="lc-7--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-7--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-7--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-8" data-path="lc-8" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="7">
+    <title>lc-8</title>
+    <rect id="lc-8--opening" x="6.35" y="355.6" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-8--module" data-path="lc-8/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,377.825) translate(-215.9,-22.225)">
+      <title>lc-8--module</title>
+      <rect id="lc-8--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-8--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-8--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-9" data-path="lc-9" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="8">
+    <title>lc-9</title>
+    <rect id="lc-9--opening" x="6.35" y="400.05" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-9--module" data-path="lc-9/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,422.275) translate(-215.9,-22.225)">
+      <title>lc-9--module</title>
+      <rect id="lc-9--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-9--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-9--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-10" data-path="lc-10" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="9">
+    <title>lc-10</title>
+    <rect id="lc-10--opening" x="6.35" y="444.5" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-10--module" data-path="lc-10/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,466.725) translate(-215.9,-22.225)">
+      <title>lc-10--module</title>
+      <rect id="lc-10--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-10--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-10--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-11" data-path="lc-11" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="10">
+    <title>lc-11</title>
+    <rect id="lc-11--opening" x="6.35" y="488.95" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-11--module" data-path="lc-11/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,511.175) translate(-215.9,-22.225)">
+      <title>lc-11--module</title>
+      <rect id="lc-11--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-11--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-11--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-12" data-path="lc-12" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="11">
+    <title>lc-12</title>
+    <rect id="lc-12--opening" x="6.35" y="533.4" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-12--module" data-path="lc-12/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,555.625) translate(-215.9,-22.225)">
+      <title>lc-12--module</title>
+      <rect id="lc-12--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-12--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-12--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-13" data-path="lc-13" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="12">
+    <title>lc-13</title>
+    <rect id="lc-13--opening" x="6.35" y="577.85" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-13--module" data-path="lc-13/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,600.075) translate(-215.9,-22.225)">
+      <title>lc-13--module</title>
+      <rect id="lc-13--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-13--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-13--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-14" data-path="lc-14" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="13">
+    <title>lc-14</title>
+    <rect id="lc-14--opening" x="6.35" y="622.3" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-14--module" data-path="lc-14/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,644.525) translate(-215.9,-22.225)">
+      <title>lc-14--module</title>
+      <rect id="lc-14--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-14--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-14--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-15" data-path="lc-15" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="14">
+    <title>lc-15</title>
+    <rect id="lc-15--opening" x="6.35" y="666.75" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-15--module" data-path="lc-15/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,688.975) translate(-215.9,-22.225)">
+      <title>lc-15--module</title>
+      <rect id="lc-15--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-15--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-15--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="lc-16" data-path="lc-16" data-class="bay" data-group="line-cards" data-group-role="traffic" data-rel-pos="15">
+    <title>lc-16</title>
+    <rect id="lc-16--opening" x="6.35" y="711.2" width="431.8" height="44.45" fill="#101214" />
+    <g id="lc-16--module" data-path="lc-16/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-c9500-lc-cv@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="N9K-C9500-LC-CV" data-role="airflow-blank" transform="translate(222.25,733.425) translate(-215.9,-22.225)">
+      <title>lc-16--module</title>
+      <rect id="lc-16--module--plate" x="0.4" y="0.4" width="431" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="lc-16--module--latch-left">
+        <rect x="1.5" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="lc-16--module--latch-right">
+        <rect x="418.3" y="6" width="12" height="32" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="sup-1" data-path="sup-1" data-class="bay" data-group="supervisors" data-group-role="management" data-rel-pos="0">
+    <title>sup-1</title>
+    <rect id="sup-1--opening" x="6.35" y="755.65" width="203.2" height="44.45" fill="#101214" />
+    <g id="sup-1--module" data-path="sup-1/module" data-class="supervisor" data-behaviour="fills" data-ref="cisco/n9k-sup-a@1:1.0.0" data-body-depth="525.0" data-cpu="4 cores, 4 threads" data-eol="end-of-sale" data-hot-swappable="True" data-memory="16 GB" data-model="N9K-SUP-A" data-power-draw-max-w="90" data-power-draw-typical-w="69" data-role="supervisor" data-storage="64 GB SSD" transform="translate(107.95,777.875) translate(-101.6,-22.225)">
+      <title>sup-1--module</title>
+      <rect id="sup-1--module--plate" x="0.4" y="0.4" width="202.4" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="sup-1--module--ejector-left">
+        <rect x="1.5" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <rect x="4" y="12" width="4" height="20" rx="1.5" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="sup-1--module--ejector-right">
+        <rect x="192.7" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <rect x="195.2" y="12" width="4" height="20" rx="1.5" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <rect id="sup-1--module--vent" x="34" y="3" width="30" height="38.5" rx="1" fill="#34373a" />
+      <rect id="sup-1--module--vent-right" x="168" y="3" width="22" height="38.5" rx="1" fill="#34373a" />
+      <circle id="sup-1--module--bcn" cx="15.5" cy="32.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-1/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, lower left." />
+      <circle id="sup-1--module--sts" cx="21.5" cy="32.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-1/module/sts" data-class="led" data-states="green amber red off" data-description="STS lamp, lower left." />
+      <circle id="sup-1--module--act" cx="27.5" cy="32.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-1/module/act" data-class="led" data-states="green amber off" data-description="ACT lamp, lower left. Green when active, amber when standby." />
+      <circle id="sup-1--module--mgmt-link" cx="119.5" cy="9.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-1/module/mgmt-link" data-class="led" data-states="green off" data-description="Management port LINK lamp, above the port." />
+      <circle id="sup-1--module--mgmt-act" cx="125.5" cy="9.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-1/module/mgmt-act" data-class="led" data-states="green off" data-description="Management port ACT lamp, above the port." />
+      <g id="sup-1--module--silkscreen">
+        <text x="15.5" y="39" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">BCN</text>
+        <text x="21.5" y="39" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">STS</text>
+        <text x="27.5" y="39" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">ACT</text>
+      </g>
+      <g id="sup-1--module--console" data-path="sup-1/module/console" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(74.0,16.0)" data-group="ports" data-group-role="management">
+        <title>sup-1--module--console</title>
+        <path id="sup-1--module--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sup-1--module--console--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sup-1--module--console--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sup-1/module/console/opening" data-class="cutout" />
+        <g id="sup-1--module--console--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="sup-1--module--mgmt-eth" data-path="sup-1/module/mgmt-eth" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" transform="translate(116.0,16.0)" data-group="ports" data-group-role="management">
+        <title>sup-1--module--mgmt-eth</title>
+        <g id="sup-1--module--mgmt-eth--jack" data-path="sup-1/module/mgmt-eth/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>sup-1--module--mgmt-eth--jack</title>
+          <path id="sup-1--module--mgmt-eth--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sup-1--module--mgmt-eth--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sup-1--module--mgmt-eth--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sup-1/module/mgmt-eth/jack/opening" data-class="cutout" />
+          <g id="sup-1--module--mgmt-eth--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="sup-1--module--mgmt-eth--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="sup-1--module--mgmt-eth--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sup-1/module/mgmt-eth/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="sup-1--module--mgmt-eth--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sup-1/module/mgmt-eth/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="sup-1--module--usb-1" data-path="sup-1/module/usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(150.0,12.0)" data-group="ports" data-group-role="management">
+        <title>sup-1--module--usb-1</title>
+        <rect id="sup-1--module--usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="sup-1/module/usb-1/opening" data-class="cutout" />
+        <rect id="sup-1--module--usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="sup-1--module--usb-2" data-path="sup-1/module/usb-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(150.0,24.0)" data-group="ports" data-group-role="management">
+        <title>sup-1--module--usb-2</title>
+        <rect id="sup-1--module--usb-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="sup-1/module/usb-2/opening" data-class="cutout" />
+        <rect id="sup-1--module--usb-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="sup-2" data-path="sup-2" data-class="bay" data-group="supervisors" data-group-role="management" data-rel-pos="1">
+    <title>sup-2</title>
+    <rect id="sup-2--opening" x="209.55" y="755.65" width="203.2" height="44.45" fill="#101214" />
+    <g id="sup-2--module" data-path="sup-2/module" data-class="supervisor" data-behaviour="fills" data-ref="cisco/n9k-sup-a@1:1.0.0" data-body-depth="525.0" data-cpu="4 cores, 4 threads" data-eol="end-of-sale" data-hot-swappable="True" data-memory="16 GB" data-model="N9K-SUP-A" data-power-draw-max-w="90" data-power-draw-typical-w="69" data-role="supervisor" data-storage="64 GB SSD" transform="translate(311.15,777.875) translate(-101.6,-22.225)">
+      <title>sup-2--module</title>
+      <rect id="sup-2--module--plate" x="0.4" y="0.4" width="202.4" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="sup-2--module--ejector-left">
+        <rect x="1.5" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <rect x="4" y="12" width="4" height="20" rx="1.5" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <g id="sup-2--module--ejector-right">
+        <rect x="192.7" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <rect x="195.2" y="12" width="4" height="20" rx="1.5" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+      </g>
+      <rect id="sup-2--module--vent" x="34" y="3" width="30" height="38.5" rx="1" fill="#34373a" />
+      <rect id="sup-2--module--vent-right" x="168" y="3" width="22" height="38.5" rx="1" fill="#34373a" />
+      <circle id="sup-2--module--bcn" cx="15.5" cy="32.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-2/module/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, lower left." />
+      <circle id="sup-2--module--sts" cx="21.5" cy="32.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-2/module/sts" data-class="led" data-states="green amber red off" data-description="STS lamp, lower left." />
+      <circle id="sup-2--module--act" cx="27.5" cy="32.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-2/module/act" data-class="led" data-states="green amber off" data-description="ACT lamp, lower left. Green when active, amber when standby." />
+      <circle id="sup-2--module--mgmt-link" cx="119.5" cy="9.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-2/module/mgmt-link" data-class="led" data-states="green off" data-description="Management port LINK lamp, above the port." />
+      <circle id="sup-2--module--mgmt-act" cx="125.5" cy="9.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="sup-2/module/mgmt-act" data-class="led" data-states="green off" data-description="Management port ACT lamp, above the port." />
+      <g id="sup-2--module--silkscreen">
+        <text x="15.5" y="39" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">BCN</text>
+        <text x="21.5" y="39" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">STS</text>
+        <text x="27.5" y="39" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">ACT</text>
+      </g>
+      <g id="sup-2--module--console" data-path="sup-2/module/console" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(74.0,16.0)" data-group="ports" data-group-role="management">
+        <title>sup-2--module--console</title>
+        <path id="sup-2--module--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sup-2--module--console--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sup-2--module--console--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sup-2/module/console/opening" data-class="cutout" />
+        <g id="sup-2--module--console--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="sup-2--module--mgmt-eth" data-path="sup-2/module/mgmt-eth" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" transform="translate(116.0,16.0)" data-group="ports" data-group-role="management">
+        <title>sup-2--module--mgmt-eth</title>
+        <g id="sup-2--module--mgmt-eth--jack" data-path="sup-2/module/mgmt-eth/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>sup-2--module--mgmt-eth--jack</title>
+          <path id="sup-2--module--mgmt-eth--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sup-2--module--mgmt-eth--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sup-2--module--mgmt-eth--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sup-2/module/mgmt-eth/jack/opening" data-class="cutout" />
+          <g id="sup-2--module--mgmt-eth--jack--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <path id="sup-2--module--mgmt-eth--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="sup-2--module--mgmt-eth--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sup-2/module/mgmt-eth/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="sup-2--module--mgmt-eth--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sup-2/module/mgmt-eth/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <g id="sup-2--module--usb-1" data-path="sup-2/module/usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(150.0,12.0)" data-group="ports" data-group-role="management">
+        <title>sup-2--module--usb-1</title>
+        <rect id="sup-2--module--usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="sup-2/module/usb-1/opening" data-class="cutout" />
+        <rect id="sup-2--module--usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+      <g id="sup-2--module--usb-2" data-path="sup-2/module/usb-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(150.0,24.0)" data-group="ports" data-group-role="management">
+        <title>sup-2--module--usb-2</title>
+        <rect id="sup-2--module--usb-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="sup-2/module/usb-2/opening" data-class="cutout" />
+        <rect id="sup-2--module--usb-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-1" data-path="ps-1" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="0">
+    <title>ps-1</title>
+    <rect id="ps-1--opening" x="0" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-1--module" data-path="ps-1/module" data-class="psu" data-behaviour="fills" data-ref="cisco/n9k-pac-3000w-b@1:1.0.0" data-body-depth="450.85" data-airflow="port-side intake" data-efficiency="90% or greater (20 to 100% load)" data-eol="unknown" data-hot-swappable="True" data-inlet="c20" data-input="ac" data-input-frequency="50 to 60 Hz" data-input-voltage="200-277 VAC" data-model="N9K-PAC-3000W-B" data-power-output-w="3000" data-role="power-module" transform="translate(22.225,866.775) translate(-22.225,-66.675)">
+      <title>ps-1--module</title>
+      <rect id="ps-1--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="ps-1--module--vent" x="10.5" y="4" width="30" height="56" rx="1" fill="#2f3235" />
+      <g id="ps-1--module--handle">
+        <rect x="33.5" y="10" width="5.5" height="44" rx="2.2" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.35" />
+      </g>
+      <circle id="ps-1--module--ok" cx="5.7" cy="8.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-1/module/ok" data-class="led" data-states="green flashing-green off" data-description="OK lamp, upper left of the module." />
+      <circle id="ps-1--module--fail" cx="5.7" cy="14" r="1.5" fill="var(--led-color, #f5a623)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-1/module/fail" data-class="led" data-states="amber flashing-amber off" data-description="FAIL or FAIL/ID lamp, below the OK lamp." />
+      <g id="ps-1--module--inlet">
+        <rect x="6" y="76" width="32.5" height="42" rx="1.5" fill="#3a3c3e" stroke="#9aa0a6" stroke-width="0.4" />
+        <rect x="11" y="84" width="22.5" height="26" rx="1" fill="#1d1f21" />
+      </g>
+      <g id="ps-1--module--screw-bot">
+        <circle cx="22.2" cy="125.5" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="125.5" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-2" data-path="ps-2" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="1">
+    <title>ps-2</title>
+    <rect id="ps-2--opening" x="44.45" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-2--module" data-path="ps-2/module" data-class="psu" data-behaviour="fills" data-ref="cisco/n9k-pac-3000w-b@1:1.0.0" data-body-depth="450.85" data-airflow="port-side intake" data-efficiency="90% or greater (20 to 100% load)" data-eol="unknown" data-hot-swappable="True" data-inlet="c20" data-input="ac" data-input-frequency="50 to 60 Hz" data-input-voltage="200-277 VAC" data-model="N9K-PAC-3000W-B" data-power-output-w="3000" data-role="power-module" transform="translate(66.675,866.775) translate(-22.225,-66.675)">
+      <title>ps-2--module</title>
+      <rect id="ps-2--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="ps-2--module--vent" x="10.5" y="4" width="30" height="56" rx="1" fill="#2f3235" />
+      <g id="ps-2--module--handle">
+        <rect x="33.5" y="10" width="5.5" height="44" rx="2.2" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.35" />
+      </g>
+      <circle id="ps-2--module--ok" cx="5.7" cy="8.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-2/module/ok" data-class="led" data-states="green flashing-green off" data-description="OK lamp, upper left of the module." />
+      <circle id="ps-2--module--fail" cx="5.7" cy="14" r="1.5" fill="var(--led-color, #f5a623)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-2/module/fail" data-class="led" data-states="amber flashing-amber off" data-description="FAIL or FAIL/ID lamp, below the OK lamp." />
+      <g id="ps-2--module--inlet">
+        <rect x="6" y="76" width="32.5" height="42" rx="1.5" fill="#3a3c3e" stroke="#9aa0a6" stroke-width="0.4" />
+        <rect x="11" y="84" width="22.5" height="26" rx="1" fill="#1d1f21" />
+      </g>
+      <g id="ps-2--module--screw-bot">
+        <circle cx="22.2" cy="125.5" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="125.5" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-3" data-path="ps-3" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="2">
+    <title>ps-3</title>
+    <rect id="ps-3--opening" x="88.9" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-3--module" data-path="ps-3/module" data-class="psu" data-behaviour="fills" data-ref="cisco/n9k-pac-3000w-b@1:1.0.0" data-body-depth="450.85" data-airflow="port-side intake" data-efficiency="90% or greater (20 to 100% load)" data-eol="unknown" data-hot-swappable="True" data-inlet="c20" data-input="ac" data-input-frequency="50 to 60 Hz" data-input-voltage="200-277 VAC" data-model="N9K-PAC-3000W-B" data-power-output-w="3000" data-role="power-module" transform="translate(111.125,866.775) translate(-22.225,-66.675)">
+      <title>ps-3--module</title>
+      <rect id="ps-3--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="ps-3--module--vent" x="10.5" y="4" width="30" height="56" rx="1" fill="#2f3235" />
+      <g id="ps-3--module--handle">
+        <rect x="33.5" y="10" width="5.5" height="44" rx="2.2" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.35" />
+      </g>
+      <circle id="ps-3--module--ok" cx="5.7" cy="8.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-3/module/ok" data-class="led" data-states="green flashing-green off" data-description="OK lamp, upper left of the module." />
+      <circle id="ps-3--module--fail" cx="5.7" cy="14" r="1.5" fill="var(--led-color, #f5a623)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-3/module/fail" data-class="led" data-states="amber flashing-amber off" data-description="FAIL or FAIL/ID lamp, below the OK lamp." />
+      <g id="ps-3--module--inlet">
+        <rect x="6" y="76" width="32.5" height="42" rx="1.5" fill="#3a3c3e" stroke="#9aa0a6" stroke-width="0.4" />
+        <rect x="11" y="84" width="22.5" height="26" rx="1" fill="#1d1f21" />
+      </g>
+      <g id="ps-3--module--screw-bot">
+        <circle cx="22.2" cy="125.5" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="125.5" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-4" data-path="ps-4" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="3">
+    <title>ps-4</title>
+    <rect id="ps-4--opening" x="133.35" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-4--module" data-path="ps-4/module" data-class="psu" data-behaviour="fills" data-ref="cisco/n9k-pac-3000w-b@1:1.0.0" data-body-depth="450.85" data-airflow="port-side intake" data-efficiency="90% or greater (20 to 100% load)" data-eol="unknown" data-hot-swappable="True" data-inlet="c20" data-input="ac" data-input-frequency="50 to 60 Hz" data-input-voltage="200-277 VAC" data-model="N9K-PAC-3000W-B" data-power-output-w="3000" data-role="power-module" transform="translate(155.575,866.775) translate(-22.225,-66.675)">
+      <title>ps-4--module</title>
+      <rect id="ps-4--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="ps-4--module--vent" x="10.5" y="4" width="30" height="56" rx="1" fill="#2f3235" />
+      <g id="ps-4--module--handle">
+        <rect x="33.5" y="10" width="5.5" height="44" rx="2.2" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.35" />
+      </g>
+      <circle id="ps-4--module--ok" cx="5.7" cy="8.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-4/module/ok" data-class="led" data-states="green flashing-green off" data-description="OK lamp, upper left of the module." />
+      <circle id="ps-4--module--fail" cx="5.7" cy="14" r="1.5" fill="var(--led-color, #f5a623)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-4/module/fail" data-class="led" data-states="amber flashing-amber off" data-description="FAIL or FAIL/ID lamp, below the OK lamp." />
+      <g id="ps-4--module--inlet">
+        <rect x="6" y="76" width="32.5" height="42" rx="1.5" fill="#3a3c3e" stroke="#9aa0a6" stroke-width="0.4" />
+        <rect x="11" y="84" width="22.5" height="26" rx="1" fill="#1d1f21" />
+      </g>
+      <g id="ps-4--module--screw-bot">
+        <circle cx="22.2" cy="125.5" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="125.5" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-5" data-path="ps-5" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="4">
+    <title>ps-5</title>
+    <rect id="ps-5--opening" x="177.8" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-5--module" data-path="ps-5/module" data-class="psu" data-behaviour="fills" data-ref="cisco/n9k-pac-3000w-b@1:1.0.0" data-body-depth="450.85" data-airflow="port-side intake" data-efficiency="90% or greater (20 to 100% load)" data-eol="unknown" data-hot-swappable="True" data-inlet="c20" data-input="ac" data-input-frequency="50 to 60 Hz" data-input-voltage="200-277 VAC" data-model="N9K-PAC-3000W-B" data-power-output-w="3000" data-role="power-module" transform="translate(200.025,866.775) translate(-22.225,-66.675)">
+      <title>ps-5--module</title>
+      <rect id="ps-5--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="ps-5--module--vent" x="10.5" y="4" width="30" height="56" rx="1" fill="#2f3235" />
+      <g id="ps-5--module--handle">
+        <rect x="33.5" y="10" width="5.5" height="44" rx="2.2" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.35" />
+      </g>
+      <circle id="ps-5--module--ok" cx="5.7" cy="8.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-5/module/ok" data-class="led" data-states="green flashing-green off" data-description="OK lamp, upper left of the module." />
+      <circle id="ps-5--module--fail" cx="5.7" cy="14" r="1.5" fill="var(--led-color, #f5a623)" stroke="#9aa0a6" stroke-width="0.25" data-path="ps-5/module/fail" data-class="led" data-states="amber flashing-amber off" data-description="FAIL or FAIL/ID lamp, below the OK lamp." />
+      <g id="ps-5--module--inlet">
+        <rect x="6" y="76" width="32.5" height="42" rx="1.5" fill="#3a3c3e" stroke="#9aa0a6" stroke-width="0.4" />
+        <rect x="11" y="84" width="22.5" height="26" rx="1" fill="#1d1f21" />
+      </g>
+      <g id="ps-5--module--screw-bot">
+        <circle cx="22.2" cy="125.5" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="125.5" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-6" data-path="ps-6" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="5">
+    <title>ps-6</title>
+    <rect id="ps-6--opening" x="222.25" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-6--module" data-path="ps-6/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-psu-blank@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="Nexus 9500 power supply slot blank" data-role="airflow-blank" transform="translate(244.475,866.775) translate(-22.225,-66.675)">
+      <title>ps-6--module</title>
+      <rect id="ps-6--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="ps-6--module--screw-bot">
+        <circle cx="22.2" cy="124" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="124" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-7" data-path="ps-7" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="6">
+    <title>ps-7</title>
+    <rect id="ps-7--opening" x="266.7" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-7--module" data-path="ps-7/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-psu-blank@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="Nexus 9500 power supply slot blank" data-role="airflow-blank" transform="translate(288.925,866.775) translate(-22.225,-66.675)">
+      <title>ps-7--module</title>
+      <rect id="ps-7--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="ps-7--module--screw-bot">
+        <circle cx="22.2" cy="124" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="124" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-8" data-path="ps-8" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="7">
+    <title>ps-8</title>
+    <rect id="ps-8--opening" x="311.15" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-8--module" data-path="ps-8/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-psu-blank@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="Nexus 9500 power supply slot blank" data-role="airflow-blank" transform="translate(333.375,866.775) translate(-22.225,-66.675)">
+      <title>ps-8--module</title>
+      <rect id="ps-8--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="ps-8--module--screw-bot">
+        <circle cx="22.2" cy="124" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="124" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-9" data-path="ps-9" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="8">
+    <title>ps-9</title>
+    <rect id="ps-9--opening" x="355.6" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-9--module" data-path="ps-9/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-psu-blank@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="Nexus 9500 power supply slot blank" data-role="airflow-blank" transform="translate(377.825,866.775) translate(-22.225,-66.675)">
+      <title>ps-9--module</title>
+      <rect id="ps-9--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="ps-9--module--screw-bot">
+        <circle cx="22.2" cy="124" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="124" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+  <g id="ps-10" data-path="ps-10" data-class="bay" data-group="power-supplies" data-group-role="service" data-rel-pos="9">
+    <title>ps-10</title>
+    <rect id="ps-10--opening" x="400.05" y="800.1" width="44.45" height="133.35" fill="#101214" />
+    <g id="ps-10--module" data-path="ps-10/module" data-class="blank" data-behaviour="fills" data-ref="cisco/n9k-psu-blank@1:1.0.0" data-body-depth="25.0" data-eol="unknown" data-model="Nexus 9500 power supply slot blank" data-role="airflow-blank" transform="translate(422.275,866.775) translate(-22.225,-66.675)">
+      <title>ps-10--module</title>
+      <rect id="ps-10--module--plate" x="0.4" y="0.4" width="43.65" height="132.55" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+      <g id="ps-10--module--screw-bot">
+        <circle cx="22.2" cy="124" r="3" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+        <circle cx="22.2" cy="124" r="1.3" fill="#6d7379" />
+      </g>
+    </g>
+  </g>
+</svg>
