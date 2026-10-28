@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="311.15mm" viewBox="0 0 444.5 311.15" data-device="n9k-c9504" data-view="rear" data-weight-fully-loaded-kg="116" data-power-supply-capacity-w="3000 W per supply (3150 W for the N9K-PUV2-3000W-B), up to four" data-power-redundancy-modes="combined, n+1, n+n" data-cooling-path="front-to-back; air enters at the line-card and power-supply side, leaves at the fan trays" data-fan-trays="three, FAN 1 to FAN 3, on the rear face" data-operating-temp="32 to 104degF (0 to 40degC)" data-storage-temp="-40 to 158degF (-40 to 70degC)" data-humidity-operating="5 to 90 percent" data-humidity-non-operating="5 to 95 percent" data-altitude-operating="0 to 13,123 ft (0 to 4,000 m)" data-operating-system="Cisco NX-OS" data-airflow="front-to-back">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Cisco N9K-C9504","device-version":"2.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"24d29c96e2c2481f4d546367f11ed9373552352dbce9f3010faf0819506c84d1","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="N9K-C9504" x="0" y="0" width="444.5" height="311.15" rx="1.2" fill="#d0d2cf" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+  <rect id="region--fan-tray-slots" data-path="region:fan-tray-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--fabric-module-slots" data-path="region:fabric-module-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--system-controller-slots" data-path="region:system-controller-slots" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--grounding-pad" data-path="region:grounding-pad" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <rect id="region--chassis-handles" data-path="region:chassis-handles" data-class="region" x="0" y="0" width="0" height="0" rx="0.8" fill="none" stroke="none" data-extent="none" pointer-events="none" />
+  <g id="fm-1" data-path="fm-1" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="0" data-under="fan-1">
+    <title>fm-1</title>
+    <rect id="fm-1--opening" x="30.735" y="17.14" width="62.48" height="238.76" fill="#101214" data-depth="297.18" data-wall="#2a2e31" />
+  </g>
+  <g id="fm-2" data-path="fm-2" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="1" data-under="fan-1">
+    <title>fm-2</title>
+    <rect id="fm-2--opening" x="94.745" y="17.14" width="62.48" height="238.76" fill="#101214" data-depth="297.18" data-wall="#2a2e31" />
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fan-trays" data-group-role="service" data-rel-pos="0">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="29.845" y="1.9" width="128.27" height="269.24" fill="#101214" data-depth="138.94" data-wall="#2a2e31" />
+  </g>
+  <g id="fm-3" data-path="fm-3" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="2" data-under="fan-2">
+    <title>fm-3</title>
+    <rect id="fm-3--opening" x="159.005" y="17.14" width="62.48" height="238.76" fill="#101214" data-depth="297.18" data-wall="#2a2e31" />
+  </g>
+  <g id="fm-4" data-path="fm-4" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="3" data-under="fan-2">
+    <title>fm-4</title>
+    <rect id="fm-4--opening" x="223.015" y="17.14" width="62.48" height="238.76" fill="#101214" data-depth="297.18" data-wall="#2a2e31" />
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fan-trays" data-group-role="service" data-rel-pos="1">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="158.115" y="1.9" width="128.27" height="269.24" fill="#101214" data-depth="138.94" data-wall="#2a2e31" />
+  </g>
+  <g id="fm-5" data-path="fm-5" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="4" data-under="fan-3">
+    <title>fm-5</title>
+    <rect id="fm-5--opening" x="287.275" y="17.14" width="62.48" height="238.76" fill="#101214" data-depth="297.18" data-wall="#2a2e31" />
+  </g>
+  <g id="fm-6" data-path="fm-6" data-class="bay" data-group="fabric" data-group-role="service" data-rel-pos="5" data-under="fan-3">
+    <title>fm-6</title>
+    <rect id="fm-6--opening" x="351.285" y="17.14" width="62.48" height="238.76" fill="#101214" data-depth="297.18" data-wall="#2a2e31" />
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fan-trays" data-group-role="service" data-rel-pos="2">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="286.385" y="1.9" width="128.27" height="269.24" fill="#101214" data-depth="138.94" data-wall="#2a2e31" />
+  </g>
+  <g id="sc-1" data-path="sc-1" data-class="bay" data-group="system-controllers" data-group-role="management" data-rel-pos="0">
+    <title>sc-1</title>
+    <rect id="sc-1--opening" x="23.85" y="273" width="198.37" height="36.07" fill="#101214" data-depth="272.8" data-wall="#2a2e31" />
+  </g>
+  <g id="sc-2" data-path="sc-2" data-class="bay" data-group="system-controllers" data-group-role="management" data-rel-pos="1">
+    <title>sc-2</title>
+    <rect id="sc-2--opening" x="222.22" y="273" width="198.37" height="36.07" fill="#101214" data-depth="272.8" data-wall="#2a2e31" />
+  </g>
+</svg>
