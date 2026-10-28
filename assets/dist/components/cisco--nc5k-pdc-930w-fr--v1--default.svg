@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="98.0mm" height="40.0mm" viewBox="0 0 98.0 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/nc5k-pdc-930w-fr@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='cisco/nc5k-pdc-930w-fr@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="nc5k-pdc-930w-fr" data-path="nc5k-pdc-930w-fr" data-class="psu" data-behaviour="fills" data-ref="cisco/nc5k-pdc-930w-fr@1:1.0.0" data-wall="#3a3e43" data-airflow="front-to-back" data-efficiency="94% (at 50% load)" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-48/-60" data-power-output-w="930" data-states="absent" transform="translate(0,0)">
+    <title>nc5k-pdc-930w-fr</title>
+    <rect id="nc5k-pdc-930w-fr--body" x="0" y="0" width="98" height="40" rx="0.6" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+    <path id="nc5k-pdc-930w-fr--warning-mark" d="M 4.2 3.2 L 7.0 8.0 L 1.4 8.0 Z" fill="none" stroke="#1b1d20" stroke-width="0.35" />
+    <circle id="nc5k-pdc-930w-fr--fail" cx="4.0" cy="13.8" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="nc5k-pdc-930w-fr/fail" data-class="led" data-states="off fault" />
+    <g id="nc5k-pdc-930w-fr--input-mark" fill="none" stroke="#1b1d20" stroke-width="0.35">
+      <circle cx="4.2" cy="24.4" r="2.4" />
+      <path d="M 2.6 24.4 Q 3.4 22.8 4.2 24.4 T 5.8 24.4" />
+    </g>
+    <circle id="nc5k-pdc-930w-fr--ok" cx="4.0" cy="30.6" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="nc5k-pdc-930w-fr/ok" data-class="led" data-states="off ok" />
+    <g id="nc5k-pdc-930w-fr--fan" data-path="nc5k-pdc-930w-fr/fan" data-class="rotor" data-z-vent="24">
+      <circle cx="30.2" cy="17.5" r="15.0" fill="#0d0f11" />
+      <path d="M 19.6 6.9 L 40.8 28.1 M 40.8 6.9 L 19.6 28.1" stroke="#c3c7cc" stroke-width="2.0" />
+      <circle cx="30.2" cy="17.5" r="8.8" fill="#5b8fd9" />
+      <circle cx="30.2" cy="17.5" r="7.0" fill="#f4f6f8" />
+    </g>
+    <g fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3">
+      <circle cx="15.2" cy="3.4" r="2.2" />
+      <circle cx="45.2" cy="3.4" r="2.2" />
+    </g>
+    <g stroke="#5c6167" stroke-width="0.4">
+      <path d="M 13.9 3.4 H 16.5 M 15.2 2.1 V 4.7" />
+      <path d="M 43.9 3.4 H 46.5 M 45.2 2.1 V 4.7" />
+    </g>
+    <rect id="nc5k-pdc-930w-fr--handle" x="9.6" y="32.8" width="41.4" height="6.4" rx="2.4" fill="#1b1d20" data-path="nc5k-pdc-930w-fr/handle" data-class="handle" data-z-uhandle="20.0" data-z-color="#1b1d20" />
+    <rect id="nc5k-pdc-930w-fr--dc-housing" x="72.6" y="4.4" width="19.0" height="32.2" rx="1.0" fill="#f1f2f3" stroke="#7a8087" stroke-width="0.3" />
+    <g fill="#8d9399" stroke="#5c6167" stroke-width="0.25">
+      <rect x="75.6" y="5.4" width="9.6" height="9.6" rx="0.5" />
+      <rect x="75.6" y="15.6" width="9.6" height="9.6" rx="0.5" />
+      <rect x="75.6" y="26.4" width="9.6" height="9.0" rx="0.5" />
+    </g>
+    <g id="nc5k-pdc-930w-fr--latch" data-path="nc5k-pdc-930w-fr/latch" data-class="latch" data-z-out="3.0">
+      <rect x="90.4" y="10.8" width="6.0" height="12.6" rx="2.4" fill="#5aa832" stroke="#3c7a1f" stroke-width="0.3" />
+    </g>
+    <g id="nc5k-pdc-930w-fr--silkscreen" font-family="sans-serif" font-size="2.4" fill="#1b1d20">
+      <text id="nc5k-pdc-930w-fr--silk-minus-dc" x="64.6" y="11.6">-DC</text>
+      <text id="nc5k-pdc-930w-fr--silk-plus-dc" x="64.6" y="21.4">+DC</text>
+      <g id="nc5k-pdc-930w-fr--silk-earth" fill="none" stroke="#1b1d20" stroke-width="0.3">
+        <circle cx="66.6" cy="31.2" r="2.4" />
+        <path d="M 66.6 28.9 V 31.0 M 65.0 31.0 H 68.2 M 65.6 32.0 H 67.6 M 66.1 33.0 H 67.1" />
+      </g>
+    </g>
+  </g>
+</svg>

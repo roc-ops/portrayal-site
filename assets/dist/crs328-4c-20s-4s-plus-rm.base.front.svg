@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="443.0mm" height="44.0mm" viewBox="0 0 443.0 44.0" data-device="crs328-4c-20s-4s-plus-rm" data-view="front" data-power-max-w="43" data-power-input="100 - 240 V AC, two inputs (IEC C14), built-in supplies with failover" data-cooling="two built-in fans, temperature based fan control" data-operating-temp-c="-20 to 60 (tested)" data-cpu="98DX3236A1, 800 MHz" data-switch-chip="98DX3236A1" data-ram="512 MB" data-storage="16 MB flash" data-os="SwOS / RouterOS (dual boot)" data-vlan-limit="IEEE 802.1Q, up to 4K VLANs" data-optics-sfp="brochure: twenty SFP cages for 1G modules and four combo SFP cages, none included" data-optics-sfp-plus="brochure: four SFP+ cages for 10G modules, none included" data-combo-ports="four combo ports, each a gigabit RJ45 jack and an SFP cage of which only one can be used at a time (quick guide)" data-certification="CE, EAC, RoHS" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-pwr2.state-blue, #led-pwr2 .state-blue, #led-pwr1.state-blue, #led-pwr1 .state-blue { --led-color: #2563eb; }
+    #led-fault.state-red, #led-fault .state-red { --led-color: #ef4444; }
+    #led-user.state-yellow, #led-user .state-yellow { --led-color: #e5d800; }
+</style>
+  <metadata>{"device":"MikroTik CRS328-4C-20S-4S+RM","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","std/rj45@2":"2.1.0","std/sfp-ganged@1":"1.1.1","std/sfp@1":"1.4.1"},"source-sha256":"f2ac39e454af94b64dcfa5d78e96a3da02205614531a58fd731823ec23c9808f","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CRS328-4C-20S-4S+RM" data-sku="CRS328-4C-20S-4S+RM" data-part-number="" x="0" y="0" width="443" height="44" rx="1.2" fill="#d9d9d9" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-sfp-1" data-kind="jack-plate" x="18.3" y="8.65" width="58.9" height="26.6" rx="0.6" fill="#bcbdbd" />
+    <rect id="plate-sfp-2" data-kind="jack-plate" x="88.3" y="8.65" width="58.9" height="26.6" rx="0.6" fill="#bcbdbd" />
+    <rect id="plate-sfp-3" data-kind="jack-plate" x="158.6" y="8.65" width="58.9" height="26.6" rx="0.6" fill="#bcbdbd" />
+    <rect id="plate-copper" data-kind="jack-plate" x="228.1" y="6.4" width="35.1" height="28.8" rx="0.6" fill="#bcbdbd" />
+    <rect id="plate-sfp-plus" data-kind="jack-plate" x="274" y="8.65" width="30" height="26.6" rx="0.6" fill="#bcbdbd" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="407" y="34" width="29" height="8" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="19.25" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" />
+    <rect x="19.25" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" />
+    <rect x="33.5" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" />
+    <rect x="33.5" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" />
+    <rect x="47.75" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" />
+    <rect x="47.75" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" />
+    <rect x="62" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" />
+    <rect x="62" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" />
+    <rect x="89.45" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" />
+    <rect x="89.45" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" />
+    <rect x="103.7" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" />
+    <rect x="103.7" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" />
+    <rect x="117.95" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" />
+    <rect x="117.95" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" />
+    <rect x="132.2" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" />
+    <rect x="132.2" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" />
+    <rect x="159.65" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" />
+    <rect x="159.65" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" />
+    <rect x="173.9" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" />
+    <rect x="173.9" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" />
+    <rect x="188.15" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--combo-sfp-1" data-path="cutout:combo-sfp-1" data-class="cutout" />
+    <rect x="188.15" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--combo-sfp-2" data-path="cutout:combo-sfp-2" data-class="cutout" />
+    <rect x="202.4" y="23.75" width="14.25" height="10.4" fill="#101214" id="cutout--combo-sfp-3" data-path="cutout:combo-sfp-3" data-class="cutout" />
+    <rect x="202.4" y="9.75" width="14.25" height="10.4" fill="#101214" id="cutout--combo-sfp-4" data-path="cutout:combo-sfp-4" data-class="cutout" />
+    <rect x="229.6" y="22" width="15.8" height="13.2" fill="#101214" id="cutout--copper-1" data-path="cutout:copper-1" data-class="cutout" />
+    <rect x="229.6" y="7.4" width="15.8" height="13.2" fill="#101214" id="cutout--copper-2" data-path="cutout:copper-2" data-class="cutout" />
+    <rect x="246.4" y="22" width="15.8" height="13.2" fill="#101214" id="cutout--copper-3" data-path="cutout:copper-3" data-class="cutout" />
+    <rect x="246.4" y="7.4" width="15.8" height="13.2" fill="#101214" id="cutout--copper-4" data-path="cutout:copper-4" data-class="cutout" />
+    <rect x="274.4" y="23.85" width="14.5" height="10" fill="#101214" id="cutout--cage-1" data-path="cutout:cage-1" data-class="cutout" />
+    <rect x="274.4" y="9.85" width="14.5" height="10" fill="#101214" id="cutout--cage-2" data-path="cutout:cage-2" data-class="cutout" />
+    <rect x="289.5" y="23.85" width="14.5" height="10" fill="#101214" id="cutout--cage-3" data-path="cutout:cage-3" data-class="cutout" />
+    <rect x="289.5" y="9.85" width="14.5" height="10" fill="#101214" id="cutout--cage-4" data-path="cutout:cage-4" data-class="cutout" />
+    <rect x="311.3" y="22.4" width="15.8" height="13.2" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <ellipse cx="332.2" cy="30.8" rx="2" ry="2" fill="#101214" id="cutout--btn-reset" data-path="cutout:btn-reset" data-class="cutout" />
+    <ellipse cx="342.4" cy="30.8" rx="2" ry="2" fill="#101214" id="cutout--btn-mode" data-path="cutout:btn-mode" data-class="cutout" />
+    <ellipse cx="307.9" cy="16.2" rx="1" ry="1" fill="#101214" id="cutout--led-user" data-path="cutout:led-user" data-class="cutout" />
+    <ellipse cx="307.9" cy="21.1" rx="1" ry="1" fill="#101214" id="cutout--led-fault" data-path="cutout:led-fault" data-class="cutout" />
+    <ellipse cx="307.9" cy="26.2" rx="1" ry="1" fill="#101214" id="cutout--led-pwr2" data-path="cutout:led-pwr2" data-class="cutout" />
+    <ellipse cx="307.9" cy="31" rx="1" ry="1" fill="#101214" id="cutout--led-pwr1" data-path="cutout:led-pwr1" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="26.38" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1</text>
+    <text x="26.38" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2</text>
+    <text x="40.62" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3</text>
+    <text x="40.62" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4</text>
+    <text x="54.88" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5</text>
+    <text x="54.88" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6</text>
+    <text x="69.12" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7</text>
+    <text x="69.12" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="96.58" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="96.58" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="110.83" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="110.83" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12</text>
+    <text x="125.08" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13</text>
+    <text x="125.08" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14</text>
+    <text x="139.32" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15</text>
+    <text x="139.32" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16</text>
+    <text x="166.78" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17</text>
+    <text x="166.78" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18</text>
+    <text x="181.03" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19</text>
+    <text x="181.03" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20</text>
+    <text x="281.65" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-1">1</text>
+    <text x="281.65" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-2">2</text>
+    <text x="296.75" y="38.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-3">3</text>
+    <text x="296.75" y="6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-4">4</text>
+    <path d="M 0 0 H 78.1" fill="none" stroke="#2b2b2b" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(188 1.2)" id="combo-top" data-path="silk:combo-top" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0 0 H 78.1" fill="none" stroke="#2b2b2b" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(188 40.3)" id="combo-bottom" data-path="silk:combo-bottom" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0 0 V 39.1" fill="none" stroke="#2b2b2b" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(188 1.2)" id="combo-left" data-path="silk:combo-left" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0 0 V 39.1" fill="none" stroke="#2b2b2b" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(266.1 1.2)" id="combo-right" data-path="silk:combo-right" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="223.5" y="4.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2b2b" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">COMBO</text>
+    <text x="195.28" y="4.4" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="combo-sfp-2">2F</text>
+    <text x="209.53" y="4.4" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="combo-sfp-4">4F</text>
+    <text x="195.28" y="38.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="combo-sfp-1">1F</text>
+    <text x="209.53" y="38.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="combo-sfp-3">3F</text>
+    <text x="237.5" y="4.4" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-2">2T</text>
+    <text x="254.3" y="4.4" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-4">4T</text>
+    <text x="237.5" y="38.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-1">1T</text>
+    <text x="254.3" y="38.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:36" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-3">3T</text>
+    <text x="78.6" y="21.2" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2b2b" transform="rotate(-90 78.6 21.2)" data-path="silk:37" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">SFP</text>
+    <text x="148.5" y="21.2" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2b2b" transform="rotate(-90 148.5 21.2)" data-path="silk:38" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">SFP</text>
+    <text x="218.4" y="21.2" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2b2b" transform="rotate(-90 218.4 21.2)" data-path="silk:39" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">SFP</text>
+    <text x="265.2" y="21.2" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2b2b" transform="rotate(-90 265.2 21.2)" data-path="silk:40" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">GIGABIT ETH</text>
+    <text x="272.6" y="21.2" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2b2b" transform="rotate(-90 272.6 21.2)" data-path="silk:41" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">SFP+</text>
+    <text x="319.2" y="40.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:42" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">CONSOLE</text>
+    <text x="332.2" y="40.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:43" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-reset">RESET</text>
+    <text x="342.4" y="40.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2b2b" data-path="silk:44" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-mode">MODE</text>
+    <text x="316.3" y="5" font-family="sans-serif" font-size="2" text-anchor="start" fill="#2b2b2b" data-path="silk:45" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-user">USER</text>
+    <text x="316.3" y="8.3" font-family="sans-serif" font-size="2" text-anchor="start" fill="#2b2b2b" data-path="silk:46" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-fault">FAULT</text>
+    <text x="316.3" y="11.6" font-family="sans-serif" font-size="2" text-anchor="start" fill="#2b2b2b" data-path="silk:47" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr2">PWR 2</text>
+    <text x="316.3" y="14.9" font-family="sans-serif" font-size="2" text-anchor="start" fill="#2b2b2b" data-path="silk:48" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr1">PWR 1</text>
+    <text x="439" y="9.7" font-family="sans-serif" font-size="5.1" text-anchor="end" fill="#2b2b2b" data-path="silk:49" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Cloud Router Switch</text>
+    <text x="438.6" y="14.2" font-family="sans-serif" font-size="3.2" text-anchor="end" fill="#2b2b2b" data-path="silk:50" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">CRS328-4C-20S-4S+RM</text>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="1" transform="translate(19.25,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <rect id="port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="2" transform="translate(19.25,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="3" transform="translate(33.5,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="4" transform="translate(33.5,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="5" transform="translate(47.75,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="6" transform="translate(47.75,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="7" transform="translate(62.0,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="8" transform="translate(62.0,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="9" transform="translate(89.45,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="10" transform="translate(89.45,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-10--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="11" transform="translate(103.7,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-11--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="12" transform="translate(103.7,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-12--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="13" transform="translate(117.95,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-13--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="14" transform="translate(117.95,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-14--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="15" transform="translate(132.2,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-15--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="16" transform="translate(132.2,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-16--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="17" transform="translate(159.65,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-17--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="18" transform="translate(159.65,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-18--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="19" transform="translate(173.9,23.75) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-19--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="20" transform="translate(173.9,9.75)" data-group="sfp" data-group-role="traffic" data-description="the 20 SFP cages, printed 1 to 20 with the odd numbers on the lower row">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-20--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="combo-sfp-1" data-path="combo-sfp-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="1" transform="translate(188.15,23.75) rotate(180 7.125 5.2)" data-group="combo-sfp" data-group-role="traffic" data-description="the four combo SFP cages, printed 1F to 4F; combo-sfp-N shares its number with the copper jack copper-N printed NT, and only one of the pair can be used at a time">
+    <title>combo-sfp-1</title>
+    <rect id="combo-sfp-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="combo-sfp-1/opening" data-class="cutout" />
+    <rect id="combo-sfp-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="combo-sfp-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="combo-sfp-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="combo-sfp-2" data-path="combo-sfp-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="2" transform="translate(188.15,9.75)" data-group="combo-sfp" data-group-role="traffic" data-description="the four combo SFP cages, printed 1F to 4F; combo-sfp-N shares its number with the copper jack copper-N printed NT, and only one of the pair can be used at a time">
+    <title>combo-sfp-2</title>
+    <rect id="combo-sfp-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="combo-sfp-2/opening" data-class="cutout" />
+    <rect id="combo-sfp-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="combo-sfp-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="combo-sfp-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="combo-sfp-3" data-path="combo-sfp-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="3" transform="translate(202.4,23.75) rotate(180 7.125 5.2)" data-group="combo-sfp" data-group-role="traffic" data-description="the four combo SFP cages, printed 1F to 4F; combo-sfp-N shares its number with the copper jack copper-N printed NT, and only one of the pair can be used at a time">
+    <title>combo-sfp-3</title>
+    <rect id="combo-sfp-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="combo-sfp-3/opening" data-class="cutout" />
+    <rect id="combo-sfp-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="combo-sfp-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="combo-sfp-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="combo-sfp-4" data-path="combo-sfp-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="4" transform="translate(202.4,9.75)" data-group="combo-sfp" data-group-role="traffic" data-description="the four combo SFP cages, printed 1F to 4F; combo-sfp-N shares its number with the copper jack copper-N printed NT, and only one of the pair can be used at a time">
+    <title>combo-sfp-4</title>
+    <rect id="combo-sfp-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="combo-sfp-4/opening" data-class="cutout" />
+    <rect id="combo-sfp-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="combo-sfp-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="combo-sfp-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="copper-1" data-path="copper-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="1" transform="translate(229.6,22.0) rotate(180 7.9 6.6)" data-group="combo-copper" data-group-role="traffic" data-description="the four combo gigabit RJ45 jacks, printed 1T to 4T; copper-N shares its number with the SFP cage combo-sfp-N printed NF, and only one of the pair can be used at a time">
+    <title>copper-1</title>
+    <g id="copper-1--jack" data-path="copper-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>copper-1--jack</title>
+      <path id="copper-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-1/jack/opening" data-class="cutout" />
+      <g id="copper-1--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="copper-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="copper-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="copper-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-2" data-path="copper-2" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="2" transform="translate(229.6,7.4)" data-group="combo-copper" data-group-role="traffic" data-description="the four combo gigabit RJ45 jacks, printed 1T to 4T; copper-N shares its number with the SFP cage combo-sfp-N printed NF, and only one of the pair can be used at a time">
+    <title>copper-2</title>
+    <g id="copper-2--jack" data-path="copper-2/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>copper-2--jack</title>
+      <path id="copper-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-2--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-2--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-2/jack/opening" data-class="cutout" />
+      <g id="copper-2--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="copper-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="copper-2--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="copper-2--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-3" data-path="copper-3" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="3" transform="translate(246.4,22.0) rotate(180 7.9 6.6)" data-group="combo-copper" data-group-role="traffic" data-description="the four combo gigabit RJ45 jacks, printed 1T to 4T; copper-N shares its number with the SFP cage combo-sfp-N printed NF, and only one of the pair can be used at a time">
+    <title>copper-3</title>
+    <g id="copper-3--jack" data-path="copper-3/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>copper-3--jack</title>
+      <path id="copper-3--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-3--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-3--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-3/jack/opening" data-class="cutout" />
+      <g id="copper-3--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="copper-3--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="copper-3--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-3/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="copper-3--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-3/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-4" data-path="copper-4" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="4" transform="translate(246.4,7.4)" data-group="combo-copper" data-group-role="traffic" data-description="the four combo gigabit RJ45 jacks, printed 1T to 4T; copper-N shares its number with the SFP cage combo-sfp-N printed NF, and only one of the pair can be used at a time">
+    <title>copper-4</title>
+    <g id="copper-4--jack" data-path="copper-4/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>copper-4--jack</title>
+      <path id="copper-4--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-4--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-4--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-4/jack/opening" data-class="cutout" />
+      <g id="copper-4--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="copper-4--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="copper-4--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-4/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="copper-4--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-4/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="cage-1" data-path="cage-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="1" transform="translate(274.4,23.85) rotate(180 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ cages, printed 1 to 4; they take 10 Gb SFP+ modules">
+    <title>cage-1</title>
+    <rect id="cage-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-1/opening" data-class="cutout" />
+    <rect id="cage-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-2" data-path="cage-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="2" transform="translate(274.4,9.85)" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ cages, printed 1 to 4; they take 10 Gb SFP+ modules">
+    <title>cage-2</title>
+    <rect id="cage-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-2/opening" data-class="cutout" />
+    <rect id="cage-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-3" data-path="cage-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="3" transform="translate(289.5,23.85) rotate(180 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ cages, printed 1 to 4; they take 10 Gb SFP+ modules">
+    <title>cage-3</title>
+    <rect id="cage-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-3/opening" data-class="cutout" />
+    <rect id="cage-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="cage-4" data-path="cage-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="4" transform="translate(289.5,9.85)" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ cages, printed 1 to 4; they take 10 Gb SFP+ modules">
+    <title>cage-4</title>
+    <rect id="cage-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cage-4/opening" data-class="cutout" />
+    <rect id="cage-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="cage-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="cage-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(311.3,22.4)" data-group="console" data-group-role="management" data-description="the RJ45 serial console">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="btn-reset" data-path="btn-reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" data-rel-pos="1" transform="translate(330.2,28.8)" data-group="controls" data-group-role="management" data-description="the RESET and MODE buttons" data-for="chassis">
+    <title>btn-reset</title>
+    <circle id="btn-reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="btn-reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="btn-reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="btn-mode" data-path="btn-mode" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="mode" data-rel-pos="2" transform="translate(340.4,28.8)" data-group="controls" data-group-role="management" data-description="the RESET and MODE buttons" data-for="chassis">
+    <title>btn-mode</title>
+    <circle id="btn-mode--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="btn-mode--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="btn-mode/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="led-user" data-path="led-user" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(306.9,15.2)" data-group="status-leds" data-group-role="indicator" data-description="the USER, FAULT, PWR 2 and PWR 1 lamps" data-states="off yellow" data-for="chassis">
+    <title>led-user</title>
+    <circle id="led-user--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-user--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-user/lamp" data-class="led" data-states="off yellow" data-z-dome="0.3" />
+  </g>
+  <g id="led-fault" data-path="led-fault" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(306.9,20.1)" data-group="status-leds" data-group-role="indicator" data-description="the USER, FAULT, PWR 2 and PWR 1 lamps" data-states="off red" data-for="chassis">
+    <title>led-fault</title>
+    <circle id="led-fault--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fault--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fault/lamp" data-class="led" data-states="off red" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr2" data-path="led-pwr2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(306.9,25.2)" data-group="status-leds" data-group-role="indicator" data-description="the USER, FAULT, PWR 2 and PWR 1 lamps" data-states="off blue" data-for="chassis">
+    <title>led-pwr2</title>
+    <circle id="led-pwr2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr2/lamp" data-class="led" data-states="off blue" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr1" data-path="led-pwr1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(306.9,30.0)" data-group="status-leds" data-group-role="indicator" data-description="the USER, FAULT, PWR 2 and PWR 1 lamps" data-states="off blue" data-for="chassis">
+    <title>led-pwr1</title>
+    <circle id="led-pwr1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr1/lamp" data-class="led" data-states="off blue" data-z-dome="0.3" />
+  </g>
+</svg>

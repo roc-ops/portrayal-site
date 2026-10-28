@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="442.5mm" height="88.9mm" viewBox="0 0 442.5 88.9" data-device="ncs-5002" data-view="rear" data-weight-note="46 lb (20.9 kg) with two 650 W power supplies and two fan modules" data-power-supply-options="NC5K-PAC-650W-FR/-BK (AC), NC5K-PDC-930W-FR/-BK (DC), two, 1+1 redundant" data-operating-temp="32 to 104 F (0 to 40 C)" data-storage-temp="-40 to 158 F (-40 to 70 C)" data-humidity="5 to 95% (non condensing)" data-altitude="0 to 10,000 ft (0 to 3000 m)" data-optics-sfp-plus="guide Chapter 1: eighty one-GE/ten-GE SFP+ ports, 40 regular on the baseboard and 40 DWDM and ZR capable on the mezzanine (metallic grey); four 100G QSFP28 ports (light green)" data-redundancy="two 1+1 power supplies and two 1+1 fan modules, all hot-swappable; the system works with a single fan failure and more than one fan failure shuts it down" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/nc5k-pac-650w-bk@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='cisco/nc5k-pac-650w-bk@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Cisco NCS 5002","device-version":"1.0.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"cisco/nc5k-pac-650w-bk@1":"1.0.0","cisco/ncs-5002-fn-bk@1":"1.0.0","std/c14-inlet@1":"1.4.0"},"source-sha256":"bd9dfa08f2b7183eb8540596b33a028396d9914d6d0a233619bd960396289000","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NCS 5002" x="0" y="0" width="442.5" height="88.9" rx="1.2" fill="#c9cccf" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="2" y="46.3" width="98" height="40" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="cisco/nc5k-pac-650w-bk@1:1.0.0" data-wall="#3a3e43" data-airflow="back-to-front" data-efficiency="94% (at 50% load)" data-hot-swappable="yes" data-inlet="c14" data-input="ac" data-input-frequency="47 Hz to 53 Hz" data-input-voltage="110/220" data-power-output-w="650" data-states="absent" transform="translate(51,66.3) translate(-49,-20)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--body" x="0" y="0" width="98" height="40" rx="0.6" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+      <path id="psu-1--module--warning-mark" d="M 4.2 4.8 L 7.3 10.2 L 1.1 10.2 Z" fill="#1b1d20" />
+      <circle id="psu-1--module--fail" cx="3.9" cy="13.6" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-1/module/fail" data-class="led" data-states="off fault" />
+      <g id="psu-1--module--input-mark" fill="none" stroke="#1b1d20" stroke-width="0.35">
+        <circle cx="4.2" cy="23.3" r="2.4" />
+        <path d="M 2.6 23.3 Q 3.4 21.7 4.2 23.3 T 5.8 23.3" />
+      </g>
+      <circle id="psu-1--module--ok" cx="3.9" cy="29.8" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-1/module/ok" data-class="led" data-states="off ok" />
+      <g id="psu-1--module--fan" data-path="psu-1/module/fan" data-class="rotor" data-z-vent="24">
+        <circle cx="30.2" cy="20.0" r="18.6" fill="#0d0f11" />
+        <path d="M 17.1 6.9 L 43.3 33.1 M 43.3 6.9 L 17.1 33.1" stroke="#c3c7cc" stroke-width="2.2" />
+        <circle cx="30.2" cy="20.0" r="10.0" fill="#5b8fd9" />
+        <circle cx="30.2" cy="20.0" r="8.0" fill="#f4f6f8" />
+      </g>
+      <g fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3">
+        <circle cx="14.7" cy="4.4" r="2.4" />
+        <circle cx="45.7" cy="4.4" r="2.4" />
+      </g>
+      <g stroke="#5c6167" stroke-width="0.4">
+        <path d="M 13.3 4.4 H 16.1 M 14.7 3.0 V 5.8" />
+        <path d="M 44.3 4.4 H 47.1 M 45.7 3.0 V 5.8" />
+      </g>
+      <rect id="psu-1--module--inlet-surround" x="65.4" y="4.4" width="23.0" height="29.6" rx="1.2" fill="#3a3e43" />
+      <rect id="psu-1--module--handle" x="56.1" y="2.2" width="5.9" height="36.0" rx="2.9" fill="#1b1d20" data-path="psu-1/module/handle" data-class="handle" data-z-uhandle="20.0" data-z-color="#1b1d20" />
+      <g id="psu-1--module--latch" data-path="psu-1/module/latch" data-class="latch" data-z-out="3.0">
+        <rect x="89.0" y="10.2" width="6.8" height="19.5" rx="1.2" fill="#8d9399" stroke="#5c6167" stroke-width="0.3" />
+        <rect x="91.6" y="15.0" width="1.4" height="7.2" rx="0.3" fill="#e9ecef" stroke="#5c6167" stroke-width="0.2" />
+      </g>
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(63.3,9.2) rotate(90 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="109" y="1.95" width="110" height="85" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="cisco/ncs-5002-fn-bk@1:1.0.0" data-wall="#15181b" data-airflow="back-to-front" data-hot-swappable="yes" data-power-absent="not-published" data-states="absent" transform="translate(164,44.45) translate(-55,-42.5)">
+      <title>fan-1--module</title>
+      <defs>
+        <pattern id="fan-1--module--ncs-5002-fan-mesh" width="3.0" height="2.6" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.3" r="0.9" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="fan-1--module--body" x="0" y="0" width="110" height="85" rx="0.5" fill="#26292d" stroke="#15181b" stroke-width="0.4" />
+      <g id="fan-1--module--grille" data-path="fan-1/module/grille" data-class="rotor" data-z-vent="30">
+        <ellipse cx="55" cy="42.5" rx="47" ry="36.5" fill="#d9dcdf" />
+        <ellipse cx="55" cy="42.5" rx="47" ry="36.5" fill="url(#fan-1--module--ncs-5002-fan-mesh)" />
+        <ellipse cx="55" cy="42.5" rx="47" ry="36.5" fill="none" stroke="#4a4f55" stroke-width="0.3" />
+      </g>
+      <g id="fan-1--module--screw-left" data-path="fan-1/module/screw-left" data-class="fastener" data-z-cyl="1.6">
+        <circle cx="4.5" cy="4.5" r="2.5" fill="#b8bdc2" stroke="#7a8087" stroke-width="0.3" />
+        <path d="M 3.2 4.5 H 5.8 M 4.5 3.2 V 5.8" stroke="#3a4046" stroke-width="0.35" fill="none" />
+      </g>
+      <g id="fan-1--module--screw-right" data-path="fan-1/module/screw-right" data-class="fastener" data-z-cyl="1.6">
+        <circle cx="105.5" cy="4.5" r="2.5" fill="#b8bdc2" stroke="#7a8087" stroke-width="0.3" />
+        <path d="M 104.2 4.5 H 106.8 M 105.5 3.2 V 5.8" stroke="#3a4046" stroke-width="0.35" fill="none" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="223" y="1.95" width="110" height="85" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="cisco/ncs-5002-fn-bk@1:1.0.0" data-wall="#15181b" data-airflow="back-to-front" data-hot-swappable="yes" data-power-absent="not-published" data-states="absent" transform="translate(278,44.45) translate(-55,-42.5)">
+      <title>fan-2--module</title>
+      <defs>
+        <pattern id="fan-2--module--ncs-5002-fan-mesh" width="3.0" height="2.6" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.3" r="0.9" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="fan-2--module--body" x="0" y="0" width="110" height="85" rx="0.5" fill="#26292d" stroke="#15181b" stroke-width="0.4" />
+      <g id="fan-2--module--grille" data-path="fan-2/module/grille" data-class="rotor" data-z-vent="30">
+        <ellipse cx="55" cy="42.5" rx="47" ry="36.5" fill="#d9dcdf" />
+        <ellipse cx="55" cy="42.5" rx="47" ry="36.5" fill="url(#fan-2--module--ncs-5002-fan-mesh)" />
+        <ellipse cx="55" cy="42.5" rx="47" ry="36.5" fill="none" stroke="#4a4f55" stroke-width="0.3" />
+      </g>
+      <g id="fan-2--module--screw-left" data-path="fan-2/module/screw-left" data-class="fastener" data-z-cyl="1.6">
+        <circle cx="4.5" cy="4.5" r="2.5" fill="#b8bdc2" stroke="#7a8087" stroke-width="0.3" />
+        <path d="M 3.2 4.5 H 5.8 M 4.5 3.2 V 5.8" stroke="#3a4046" stroke-width="0.35" fill="none" />
+      </g>
+      <g id="fan-2--module--screw-right" data-path="fan-2/module/screw-right" data-class="fastener" data-z-cyl="1.6">
+        <circle cx="105.5" cy="4.5" r="2.5" fill="#b8bdc2" stroke="#7a8087" stroke-width="0.3" />
+        <path d="M 104.2 4.5 H 106.8 M 105.5 3.2 V 5.8" stroke="#3a4046" stroke-width="0.35" fill="none" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="342.5" y="46.3" width="98" height="40" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="psu" data-behaviour="fills" data-ref="cisco/nc5k-pac-650w-bk@1:1.0.0" data-wall="#3a3e43" data-airflow="back-to-front" data-efficiency="94% (at 50% load)" data-hot-swappable="yes" data-inlet="c14" data-input="ac" data-input-frequency="47 Hz to 53 Hz" data-input-voltage="110/220" data-power-output-w="650" data-states="absent" transform="translate(391.5,66.3) translate(-49,-20)">
+      <title>psu-2--module</title>
+      <rect id="psu-2--module--body" x="0" y="0" width="98" height="40" rx="0.6" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+      <path id="psu-2--module--warning-mark" d="M 4.2 4.8 L 7.3 10.2 L 1.1 10.2 Z" fill="#1b1d20" />
+      <circle id="psu-2--module--fail" cx="3.9" cy="13.6" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-2/module/fail" data-class="led" data-states="off fault" />
+      <g id="psu-2--module--input-mark" fill="none" stroke="#1b1d20" stroke-width="0.35">
+        <circle cx="4.2" cy="23.3" r="2.4" />
+        <path d="M 2.6 23.3 Q 3.4 21.7 4.2 23.3 T 5.8 23.3" />
+      </g>
+      <circle id="psu-2--module--ok" cx="3.9" cy="29.8" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-2/module/ok" data-class="led" data-states="off ok" />
+      <g id="psu-2--module--fan" data-path="psu-2/module/fan" data-class="rotor" data-z-vent="24">
+        <circle cx="30.2" cy="20.0" r="18.6" fill="#0d0f11" />
+        <path d="M 17.1 6.9 L 43.3 33.1 M 43.3 6.9 L 17.1 33.1" stroke="#c3c7cc" stroke-width="2.2" />
+        <circle cx="30.2" cy="20.0" r="10.0" fill="#5b8fd9" />
+        <circle cx="30.2" cy="20.0" r="8.0" fill="#f4f6f8" />
+      </g>
+      <g fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3">
+        <circle cx="14.7" cy="4.4" r="2.4" />
+        <circle cx="45.7" cy="4.4" r="2.4" />
+      </g>
+      <g stroke="#5c6167" stroke-width="0.4">
+        <path d="M 13.3 4.4 H 16.1 M 14.7 3.0 V 5.8" />
+        <path d="M 44.3 4.4 H 47.1 M 45.7 3.0 V 5.8" />
+      </g>
+      <rect id="psu-2--module--inlet-surround" x="65.4" y="4.4" width="23.0" height="29.6" rx="1.2" fill="#3a3e43" />
+      <rect id="psu-2--module--handle" x="56.1" y="2.2" width="5.9" height="36.0" rx="2.9" fill="#1b1d20" data-path="psu-2/module/handle" data-class="handle" data-z-uhandle="20.0" data-z-color="#1b1d20" />
+      <g id="psu-2--module--latch" data-path="psu-2/module/latch" data-class="latch" data-z-out="3.0">
+        <rect x="89.0" y="10.2" width="6.8" height="19.5" rx="1.2" fill="#8d9399" stroke="#5c6167" stroke-width="0.3" />
+        <rect x="91.6" y="15.0" width="1.4" height="7.2" rx="0.3" fill="#e9ecef" stroke="#5c6167" stroke-width="0.2" />
+      </g>
+      <g id="psu-2--module--inlet" data-path="psu-2/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(63.3,9.2) rotate(90 14.0 10.0)">
+        <title>psu-2--module--inlet</title>
+        <rect id="psu-2--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-2/module/inlet/opening" data-class="cutout" />
+        <path id="psu-2--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-2--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+</svg>

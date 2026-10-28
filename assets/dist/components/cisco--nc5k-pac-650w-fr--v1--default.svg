@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="98.0mm" height="40.0mm" viewBox="0 0 98.0 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/nc5k-pac-650w-fr@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='cisco/nc5k-pac-650w-fr@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="nc5k-pac-650w-fr" data-path="nc5k-pac-650w-fr" data-class="psu" data-behaviour="fills" data-ref="cisco/nc5k-pac-650w-fr@1:1.0.0" data-wall="#3a3e43" data-airflow="front-to-back" data-efficiency="94% (at 50% load)" data-hot-swappable="yes" data-inlet="c14" data-input="ac" data-input-frequency="47 Hz to 53 Hz" data-input-voltage="110/220" data-power-output-w="650" data-states="absent" transform="translate(0,0)">
+    <title>nc5k-pac-650w-fr</title>
+    <rect id="nc5k-pac-650w-fr--body" x="0" y="0" width="98" height="40" rx="0.6" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+    <path id="nc5k-pac-650w-fr--warning-mark" d="M 4.2 4.8 L 7.3 10.2 L 1.1 10.2 Z" fill="#1b1d20" />
+    <circle id="nc5k-pac-650w-fr--fail" cx="3.9" cy="13.6" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="nc5k-pac-650w-fr/fail" data-class="led" data-states="off fault" />
+    <g id="nc5k-pac-650w-fr--input-mark" fill="none" stroke="#1b1d20" stroke-width="0.35">
+      <circle cx="4.2" cy="23.3" r="2.4" />
+      <path d="M 2.6 23.3 Q 3.4 21.7 4.2 23.3 T 5.8 23.3" />
+    </g>
+    <circle id="nc5k-pac-650w-fr--ok" cx="3.9" cy="29.8" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="nc5k-pac-650w-fr/ok" data-class="led" data-states="off ok" />
+    <g id="nc5k-pac-650w-fr--fan" data-path="nc5k-pac-650w-fr/fan" data-class="rotor" data-z-vent="24">
+      <circle cx="30.2" cy="20.0" r="18.6" fill="#0d0f11" />
+      <path d="M 17.1 6.9 L 43.3 33.1 M 43.3 6.9 L 17.1 33.1" stroke="#c3c7cc" stroke-width="2.2" />
+      <circle cx="30.2" cy="20.0" r="10.0" fill="#5b8fd9" />
+      <circle cx="30.2" cy="20.0" r="8.0" fill="#f4f6f8" />
+    </g>
+    <g fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3">
+      <circle cx="14.7" cy="4.4" r="2.4" />
+      <circle cx="45.7" cy="4.4" r="2.4" />
+    </g>
+    <g stroke="#5c6167" stroke-width="0.4">
+      <path d="M 13.3 4.4 H 16.1 M 14.7 3.0 V 5.8" />
+      <path d="M 44.3 4.4 H 47.1 M 45.7 3.0 V 5.8" />
+    </g>
+    <rect id="nc5k-pac-650w-fr--inlet-surround" x="65.4" y="4.4" width="23.0" height="29.6" rx="1.2" fill="#3a3e43" />
+    <rect id="nc5k-pac-650w-fr--handle" x="56.1" y="2.2" width="5.9" height="36.0" rx="2.9" fill="#1b1d20" data-path="nc5k-pac-650w-fr/handle" data-class="handle" data-z-uhandle="20.0" data-z-color="#1b1d20" />
+    <g id="nc5k-pac-650w-fr--latch" data-path="nc5k-pac-650w-fr/latch" data-class="latch" data-z-out="3.0">
+      <rect x="89.0" y="10.2" width="6.8" height="19.5" rx="1.2" fill="#8d9399" stroke="#5c6167" stroke-width="0.3" />
+      <rect x="91.6" y="15.0" width="1.4" height="7.2" rx="0.3" fill="#e9ecef" stroke="#5c6167" stroke-width="0.2" />
+    </g>
+    <g id="nc5k-pac-650w-fr--inlet" data-path="nc5k-pac-650w-fr/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(63.3,9.2) rotate(90 14.0 10.0)">
+      <title>nc5k-pac-650w-fr--inlet</title>
+      <rect id="nc5k-pac-650w-fr--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="nc5k-pac-650w-fr/inlet/opening" data-class="cutout" />
+      <path id="nc5k-pac-650w-fr--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="nc5k-pac-650w-fr--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <rect id="nc5k-pac-650w-fr--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <rect id="nc5k-pac-650w-fr--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

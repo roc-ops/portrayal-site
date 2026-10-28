@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="272.0mm" height="44.0mm" viewBox="0 0 272.0 44.0" data-device="crs309-1g-8s-plus-in" data-view="rear" data-power-max-w="23" data-power-without-attachments="17 W (brochure and product page, without attachments)" data-power-input="DC jack 12 - 57 V, or PoE in on Ethernet 1, 18 - 57 V. The quick guide says 11 - 57 V for the jack; the rear prints DC 12-57 V" data-power-adapter="24 V 1.2 A, in the box" data-poe-standard="IEEE 802.3af/at, and passive PoE (in)" data-cooling="passive (product page); no fan" data-operating-temp-c="-40 to 70 (tested)" data-cpu="98DX8208, 800 MHz, dual core" data-switch-chip="98DX8208" data-ram="512 MB" data-storage="16 MB flash" data-os="SwOS / RouterOS (dual boot)" data-optics-sfp-plus="brochure: the eight SFP+ slots support up to 10 Gbit modules, none included" data-certification="CE, EAC, RoHS" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"MikroTik CRS309-1G-8S+IN","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/dc-barrel@1":"1.0.2","common/ground-symbol@1":"1.0.0","common/screw-head@1":"1.1.0"},"source-sha256":"d16b627f77fe0830805ef494bdf4311f1a8615a977d860025807b9d3e1cc7ed9","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CRS309-1G-8S+IN" data-sku="CRS309-1G-8S+IN" data-part-number="" x="0" y="0" width="272" height="44" rx="1.2" fill="#d4d4d4" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="cable-slot" data-kind="cable-slot" x="8.1" y="22" width="32.2" height="14.7" rx="7.3" fill="#a9acaf" />
+    <rect id="heatsink" data-kind="heatsink" x="85" y="3" width="172.7" height="41" rx="0.6" fill="#a9a39d" />
+    <rect id="earth-stud-base" data-kind="earth-stud" x="256.2" y="32.7" width="8" height="8" rx="4" fill="#b4b8bc" />
+    <rect id="earth-stud-nut" data-kind="earth-stud" x="258.2" y="34.7" width="4" height="4" rx="2" fill="#8d9298" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="65" y="23.7" font-family="sans-serif" font-size="2.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">DC 12-57 V</text>
+    <path d="M -7.5 0 a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0 M -6.8 0 h 1.6 M -4.5 0 H -1 M -1 0 a 1 1 0 1 0 2 0 a 1 1 0 1 0 -2 0 M 1 0 H 4.5 M 4.5 0 a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0 M 5.2 0 h 1.6 M 6 -0.8 v 1.6" fill="none" stroke="#2b2b2b" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(65.6 42)" id="polarity" data-path="silk:polarity" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0 0 V 38 M 7.13 0 V 38 M 14.26 0 V 38 M 21.39 0 V 38 M 28.52 0 V 38 M 35.65 0 V 38 M 42.78 0 V 38 M 49.91 0 V 38 M 57.04 0 V 38 M 64.17 0 V 38 M 71.3 0 V 38 M 78.43 0 V 38 M 85.56 0 V 38 M 92.69 0 V 38 M 99.82 0 V 38 M 106.95 0 V 38 M 114.08 0 V 38 M 121.21 0 V 38 M 128.34 0 V 38 M 135.47 0 V 38 M 142.6 0 V 38 M 149.73 0 V 38 M 156.86 0 V 38" fill="none" stroke="#6f6a65" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(90 4)" id="heatsink-fins" data-path="silk:heatsink-fins" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="dc-in" data-path="dc-in" data-class="inlet" data-ref="common/dc-barrel@1:1.0.2" data-current-max-a="1.2" data-input="dc" data-input-voltage="12-57 VDC" data-rel-pos="1" transform="translate(59.8,24.7)" data-group="inlets" data-group-role="service" data-description="the DC jack">
+    <title>dc-in</title>
+    <rect id="dc-in--body" x="0" y="0" width="12" height="13" rx="0.8" fill="#c9cdd1" />
+    <rect id="dc-in--inlet" x="1.5" y="2" width="9" height="9" rx="1" fill="#17191c" stroke="#5c6167" stroke-width="0.3" data-path="dc-in/inlet" data-class="inlet" />
+    <circle id="dc-in--inlet-bore" cx="6" cy="6.5" r="3.1" fill="#000000" />
+    <circle id="dc-in--inlet-pin" cx="6" cy="6.5" r="0.9" fill="#8a9099" />
+    <g data-cp="mate" data-cp-at="6 6.5" data-cp-dir="front" />
+    <g data-cp="power" data-cp-at="6 6.5" data-cp-dir="front" />
+  </g>
+  <g id="earth-mark" data-path="earth-mark" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="1" transform="translate(257.6,22.7)" data-group="furniture" data-group-role="furniture" data-for="chassis">
+    <title>earth-mark</title>
+    <g id="earth-mark--symbol" stroke="#c7ccd1" fill="none" data-path="earth-mark/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="rear-screw-1" data-path="rear-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(23.0,3.4)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-1</title>
+    <circle id="rear-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="rear-screw-2" data-path="rear-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(260.4,3.4)" data-group="furniture" data-group-role="furniture">
+    <title>rear-screw-2</title>
+    <circle id="rear-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

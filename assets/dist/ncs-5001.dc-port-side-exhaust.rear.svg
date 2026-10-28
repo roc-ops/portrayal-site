@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="442.5mm" height="43.7mm" viewBox="0 0 442.5 43.7" data-device="ncs-5001" data-view="rear" data-weight-note="21 lb (9.5 kg) with two 650 W power supplies and two fan modules; a Chapter 2 sentence says 22 lb" data-power-supply-options="NC5K-PAC-650W-FR/-BK (AC), NC5K-PDC-930W-FR/-BK (DC), two, 1+1 redundant" data-operating-temp="32 to 104 F (0 to 40 C)" data-storage-temp="-40 to 158 F (-40 to 70 C)" data-humidity="5 to 95% (non condensing)" data-altitude="0 to 10,000 ft (0 to 3000 m)" data-optics-sfp-plus="guide Chapter 1: forty one-GE/ten-GE SFP+ ports, 16 regular and 24 DWDM and ZR capable (purple); four 100G QSFP28 ports (light green)" data-redundancy="two 1+1 power supplies and two 1+1 fan modules, all hot-swappable; the system works with a single fan failure and more than one fan failure shuts it down" data-airflow="back-to-front" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/nc5k-pdc-930w-bk@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='cisco/nc5k-pdc-930w-bk@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Cisco NCS 5001","device-version":"0.1.2","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"cisco/nc5k-pdc-930w-bk@1":"1.0.0","cisco/ncs-5001-fn-bk@1":"1.0.1","std/usb-a@1":"1.3.0"},"source-sha256":"bfafe91a6b1418d9ca642a97322d0b61094d55a7a0afd792967923aabef8352e","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NCS 5001" x="0" y="0" width="442.5" height="43.7" rx="1.2" fill="#c9cccf" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="round-1" data-kind="plate" x="288.5" y="20" width="8" height="8" rx="4" fill="#2b2f33" />
+    <rect id="round-2" data-kind="plate" x="300" y="20" width="8" height="8" rx="4" fill="#2b2f33" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="316" y="16" width="4.5" height="12" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-rel-pos="3" transform="translate(312.25,19.75) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="2" y="1.85" width="98" height="40" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="cisco/nc5k-pdc-930w-bk@1:1.0.0" data-wall="#3a3e43" data-airflow="back-to-front" data-efficiency="94% (at 50% load)" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-48/-60" data-power-output-w="930" data-states="absent" transform="translate(51,21.85) translate(-49,-20)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--body" x="0" y="0" width="98" height="40" rx="0.6" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+      <path id="psu-1--module--warning-mark" d="M 4.2 3.2 L 7.0 8.0 L 1.4 8.0 Z" fill="none" stroke="#1b1d20" stroke-width="0.35" />
+      <circle id="psu-1--module--fail" cx="4.0" cy="13.8" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-1/module/fail" data-class="led" data-states="off fault" />
+      <g id="psu-1--module--input-mark" fill="none" stroke="#1b1d20" stroke-width="0.35">
+        <circle cx="4.2" cy="24.4" r="2.4" />
+        <path d="M 2.6 24.4 Q 3.4 22.8 4.2 24.4 T 5.8 24.4" />
+      </g>
+      <circle id="psu-1--module--ok" cx="4.0" cy="30.6" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-1/module/ok" data-class="led" data-states="off ok" />
+      <g id="psu-1--module--fan" data-path="psu-1/module/fan" data-class="rotor" data-z-vent="24">
+        <circle cx="30.2" cy="17.5" r="15.0" fill="#0d0f11" />
+        <path d="M 19.6 6.9 L 40.8 28.1 M 40.8 6.9 L 19.6 28.1" stroke="#c3c7cc" stroke-width="2.0" />
+        <circle cx="30.2" cy="17.5" r="8.8" fill="#5b8fd9" />
+        <circle cx="30.2" cy="17.5" r="7.0" fill="#f4f6f8" />
+      </g>
+      <g fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3">
+        <circle cx="15.2" cy="3.4" r="2.2" />
+        <circle cx="45.2" cy="3.4" r="2.2" />
+      </g>
+      <g stroke="#5c6167" stroke-width="0.4">
+        <path d="M 13.9 3.4 H 16.5 M 15.2 2.1 V 4.7" />
+        <path d="M 43.9 3.4 H 46.5 M 45.2 2.1 V 4.7" />
+      </g>
+      <rect id="psu-1--module--handle" x="9.6" y="32.8" width="41.4" height="6.4" rx="2.4" fill="#1b1d20" data-path="psu-1/module/handle" data-class="handle" data-z-uhandle="20.0" data-z-color="#1b1d20" />
+      <rect id="psu-1--module--dc-housing" x="72.6" y="4.4" width="19.0" height="32.2" rx="1.0" fill="#f1f2f3" stroke="#7a8087" stroke-width="0.3" />
+      <g fill="#8d9399" stroke="#5c6167" stroke-width="0.25">
+        <rect x="75.6" y="5.4" width="9.6" height="9.6" rx="0.5" />
+        <rect x="75.6" y="15.6" width="9.6" height="9.6" rx="0.5" />
+        <rect x="75.6" y="26.4" width="9.6" height="9.0" rx="0.5" />
+      </g>
+      <g id="psu-1--module--latch" data-path="psu-1/module/latch" data-class="latch" data-z-out="3.0">
+        <rect x="90.4" y="10.8" width="6.0" height="12.6" rx="2.4" fill="#5aa832" stroke="#3c7a1f" stroke-width="0.3" />
+      </g>
+      <g id="psu-1--module--silkscreen" font-family="sans-serif" font-size="2.4" fill="#1b1d20">
+        <text id="psu-1--module--silk-minus-dc" x="64.6" y="11.6">-DC</text>
+        <text id="psu-1--module--silk-plus-dc" x="64.6" y="21.4">+DC</text>
+        <g id="psu-1--module--silk-earth" fill="none" stroke="#1b1d20" stroke-width="0.3">
+          <circle cx="66.6" cy="31.2" r="2.4" />
+          <path d="M 66.6 28.9 V 31.0 M 65.0 31.0 H 68.2 M 65.6 32.0 H 67.6 M 66.1 33.0 H 67.1" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="104" y="1.85" width="88" height="40" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="cisco/ncs-5001-fn-bk@1:1.0.1" data-wall="#15181b" data-airflow="back-to-front" data-hot-swappable="yes" data-power-absent="not-published" data-states="absent" transform="translate(148,21.85) translate(-44,-20)">
+      <title>fan-1--module</title>
+      <defs>
+        <pattern id="fan-1--module--ncs-5001-fan-mesh" width="3.0" height="2.6" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.3" r="0.9" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="fan-1--module--body" x="0" y="0" width="88" height="40" rx="0.5" fill="#26292d" stroke="#15181b" stroke-width="0.4" />
+      <g id="fan-1--module--grille" data-path="fan-1/module/grille" data-class="rotor" data-z-vent="24">
+        <rect x="3" y="2" width="82" height="36" rx="0.6" fill="#d9dcdf" />
+        <rect x="3" y="2" width="82" height="36" fill="url(#fan-1--module--ncs-5001-fan-mesh)" />
+        <rect x="3" y="2" width="82" height="36" rx="0.6" fill="none" stroke="#4a4f55" stroke-width="0.3" />
+      </g>
+      <g id="fan-1--module--handle" data-path="fan-1/module/handle" data-class="handle" data-z-uhandle="12.0" data-z-color="#4a4f55">
+        <path d="M14 10H74A6 6 0 0 1 80 16V24A6 6 0 0 1 74 30H14A6 6 0 0 1 8 24V16A6 6 0 0 1 14 10ZM15 13.5H73A2.5 2.5 0 0 1 75.5 16V24A2.5 2.5 0 0 1 73 26.5H15A2.5 2.5 0 0 1 12.5 24V16A2.5 2.5 0 0 1 15 13.5Z" fill="#4a4f55" fill-rule="evenodd" stroke="#15181b" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="196" y="1.85" width="88" height="40" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="cisco/ncs-5001-fn-bk@1:1.0.1" data-wall="#15181b" data-airflow="back-to-front" data-hot-swappable="yes" data-power-absent="not-published" data-states="absent" transform="translate(240,21.85) translate(-44,-20)">
+      <title>fan-2--module</title>
+      <defs>
+        <pattern id="fan-2--module--ncs-5001-fan-mesh" width="3.0" height="2.6" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.3" r="0.9" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="fan-2--module--body" x="0" y="0" width="88" height="40" rx="0.5" fill="#26292d" stroke="#15181b" stroke-width="0.4" />
+      <g id="fan-2--module--grille" data-path="fan-2/module/grille" data-class="rotor" data-z-vent="24">
+        <rect x="3" y="2" width="82" height="36" rx="0.6" fill="#d9dcdf" />
+        <rect x="3" y="2" width="82" height="36" fill="url(#fan-2--module--ncs-5001-fan-mesh)" />
+        <rect x="3" y="2" width="82" height="36" rx="0.6" fill="none" stroke="#4a4f55" stroke-width="0.3" />
+      </g>
+      <g id="fan-2--module--handle" data-path="fan-2/module/handle" data-class="handle" data-z-uhandle="12.0" data-z-color="#4a4f55">
+        <path d="M14 10H74A6 6 0 0 1 80 16V24A6 6 0 0 1 74 30H14A6 6 0 0 1 8 24V16A6 6 0 0 1 14 10ZM15 13.5H73A2.5 2.5 0 0 1 75.5 16V24A2.5 2.5 0 0 1 73 26.5H15A2.5 2.5 0 0 1 12.5 24V16A2.5 2.5 0 0 1 15 13.5Z" fill="#4a4f55" fill-rule="evenodd" stroke="#15181b" stroke-width="0.3" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="342.5" y="1.85" width="98" height="40" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="psu" data-behaviour="fills" data-ref="cisco/nc5k-pdc-930w-bk@1:1.0.0" data-wall="#3a3e43" data-airflow="back-to-front" data-efficiency="94% (at 50% load)" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-48/-60" data-power-output-w="930" data-states="absent" transform="translate(391.5,21.85) translate(-49,-20)">
+      <title>psu-2--module</title>
+      <rect id="psu-2--module--body" x="0" y="0" width="98" height="40" rx="0.6" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+      <path id="psu-2--module--warning-mark" d="M 4.2 3.2 L 7.0 8.0 L 1.4 8.0 Z" fill="none" stroke="#1b1d20" stroke-width="0.35" />
+      <circle id="psu-2--module--fail" cx="4.0" cy="13.8" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-2/module/fail" data-class="led" data-states="off fault" />
+      <g id="psu-2--module--input-mark" fill="none" stroke="#1b1d20" stroke-width="0.35">
+        <circle cx="4.2" cy="24.4" r="2.4" />
+        <path d="M 2.6 24.4 Q 3.4 22.8 4.2 24.4 T 5.8 24.4" />
+      </g>
+      <circle id="psu-2--module--ok" cx="4.0" cy="30.6" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="psu-2/module/ok" data-class="led" data-states="off ok" />
+      <g id="psu-2--module--fan" data-path="psu-2/module/fan" data-class="rotor" data-z-vent="24">
+        <circle cx="30.2" cy="17.5" r="15.0" fill="#0d0f11" />
+        <path d="M 19.6 6.9 L 40.8 28.1 M 40.8 6.9 L 19.6 28.1" stroke="#c3c7cc" stroke-width="2.0" />
+        <circle cx="30.2" cy="17.5" r="8.8" fill="#5b8fd9" />
+        <circle cx="30.2" cy="17.5" r="7.0" fill="#f4f6f8" />
+      </g>
+      <g fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3">
+        <circle cx="15.2" cy="3.4" r="2.2" />
+        <circle cx="45.2" cy="3.4" r="2.2" />
+      </g>
+      <g stroke="#5c6167" stroke-width="0.4">
+        <path d="M 13.9 3.4 H 16.5 M 15.2 2.1 V 4.7" />
+        <path d="M 43.9 3.4 H 46.5 M 45.2 2.1 V 4.7" />
+      </g>
+      <rect id="psu-2--module--handle" x="9.6" y="32.8" width="41.4" height="6.4" rx="2.4" fill="#1b1d20" data-path="psu-2/module/handle" data-class="handle" data-z-uhandle="20.0" data-z-color="#1b1d20" />
+      <rect id="psu-2--module--dc-housing" x="72.6" y="4.4" width="19.0" height="32.2" rx="1.0" fill="#f1f2f3" stroke="#7a8087" stroke-width="0.3" />
+      <g fill="#8d9399" stroke="#5c6167" stroke-width="0.25">
+        <rect x="75.6" y="5.4" width="9.6" height="9.6" rx="0.5" />
+        <rect x="75.6" y="15.6" width="9.6" height="9.6" rx="0.5" />
+        <rect x="75.6" y="26.4" width="9.6" height="9.0" rx="0.5" />
+      </g>
+      <g id="psu-2--module--latch" data-path="psu-2/module/latch" data-class="latch" data-z-out="3.0">
+        <rect x="90.4" y="10.8" width="6.0" height="12.6" rx="2.4" fill="#5aa832" stroke="#3c7a1f" stroke-width="0.3" />
+      </g>
+      <g id="psu-2--module--silkscreen" font-family="sans-serif" font-size="2.4" fill="#1b1d20">
+        <text id="psu-2--module--silk-minus-dc" x="64.6" y="11.6">-DC</text>
+        <text id="psu-2--module--silk-plus-dc" x="64.6" y="21.4">+DC</text>
+        <g id="psu-2--module--silk-earth" fill="none" stroke="#1b1d20" stroke-width="0.3">
+          <circle cx="66.6" cy="31.2" r="2.4" />
+          <path d="M 66.6 28.9 V 31.0 M 65.0 31.0 H 68.2 M 65.6 32.0 H 67.6 M 66.1 33.0 H 67.1" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
