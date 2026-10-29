@@ -38,7 +38,7 @@ Notes:
 - core-1 (asr-9006, configuration base): ASR-9006-AC-V2 is a best guess among
   2 NetBox device types; none names this configuration.
 - leaf-1 (as7726-32x, configuration ac-f2b): 7726-32X-O-AC-F is a best guess
-  among 4 NetBox device types; none names this configuration.
+  among 8 NetBox device types; none names this configuration.
 - generic/qsfp-lc@2: no NetBox module type; seated in core-1, leaf-1.
 - common/psu-ac-650@3: no NetBox module type; seated in leaf-1.
 - common/fan-module@1: no NetBox module type; seated in leaf-1.

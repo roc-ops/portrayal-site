@@ -33,7 +33,11 @@
   "front": [
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -51,7 +55,11 @@
    },
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -69,7 +77,11 @@
    },
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -87,7 +99,11 @@
    },
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -105,7 +121,11 @@
    },
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -123,7 +143,11 @@
    },
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -141,7 +165,11 @@
    },
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -159,7 +187,11 @@
    },
    {
     "accepts": [
-     "cisco/n9k-c9500-lc-cv@1"
+     "cisco/n9k-c9500-lc-cv@1",
+     "cisco/n9k-x9736c-fx@1",
+     "cisco/n9k-x97160yc-ex@1",
+     "cisco/n9k-x9732c-fx@1",
+     "cisco/n9k-x9716d-gx@1"
     ],
     "at": [
      6.35,
@@ -2485,12 +2517,23 @@
    "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
-   "note": "The guide gives a typical and maximum draw per module and no figure for the chassis itself; the chassis total is whatever its occupants sum to. The line cards are not in this batch, so a total here is a floor.",
+   "note": "The guide gives a typical and maximum draw per module and no figure for the chassis itself; the chassis total is whatever its occupants sum to. Each line card carries its own typical and maximum draw, so a loaded chassis's total is the sum of its occupants; none is written here.",
    "scope": [
     "power-supplies"
    ],
    "wanted": "a chassis-level draw from Cisco, or confirmation that the sum of the module table is the answer",
    "what": "chassis-power-figure"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "Which fabric module each line card goes with, and how many are needed, is listed here and NOT ENFORCED: no bay or card restricts the fabric module it is seated with. The guide's Overview Table 1 (PDF pp8-9, printed 2-3) pairs the cards modelled here with the N9K-C9508-FM-E, -FM-E2 and -FM-G; the count is the fabric modules required for maximum bandwidth, read by line order. N9K-X9736C-FX: FM-E 5, FM-E2 5, FM-G 5. N9K-X97160YC-EX: FM-E 4, FM-E2 4, FM-G 4. N9K-X9732C-FX: FM-E 4 plus 1 for redundancy, FM-E2 4 plus 1 for redundancy, FM-G 4. N9K-X9716D-GX: FM-G 4 only. The guide's notes: all fabric modules in the switch must be of one type; with the -FM-G the empty slots take N9K-C9508-FAN-PWR and the N9K-C9508-FAN2 fan trays are used; and \"Do not mix ACI-mode line cards with NX-OS mode line cards in the same switch\" (PDF p7, printed 1). \"Migrate the switch to 400-Gigabit -GX line cards\" (PDF p114, printed 108) says to replace the older fabric modules with N9K-C9508-FM-G modules.",
+   "scope": [
+    "line-cards"
+   ],
+   "wanted": "a restriction in the format between a card and the fabric modules it is seated with",
+   "what": "line-card-fabric-pairing"
   },
   {
    "because": "needs-drawing",
@@ -2606,9 +2649,9 @@
    "confidence": "datasheet",
    "note": "datasheet - Cisco's support page lists the Nexus 9508 as available (support page \"Cisco Nexus 9000 Series Switches\", https://www.cisco.com/c/en/us/support/switches/nexus-9000-series-switches/series.html). Sale status of each module is per module: N9K-SUP-A, N9K-SUP-B, N9K-C9508-FM, -FM-S and -FM-E are end-of-sale by notice; the others have no status on the support page and are recorded as unknown."
   },
-  "line-cards-not-here": {
+  "line-cards": {
    "confidence": "datasheet",
-   "note": "The eight line-card slots accept only the line-card blank N9K-C9500-LC-CV in this batch. The line cards follow in a later batch and will be added to these slots."
+   "note": "datasheet - the eight line-card slots accept the line-card blank N9K-C9500-LC-CV and the line cards this guide supports among those modelled: N9K-X9736C-FX, N9K-X97160YC-EX, N9K-X9732C-FX and N9K-X9716D-GX, which Overview Table 1 and the power tables (PDF pp8-9 and 18-19, printed 2-3 and 12-13) list. A line card is accepted because this chassis's own guide supports it. The other 9500 line cards follow in later batches; the N9K-X9788TC-FX is listed in the guide and not modelled, because the guides name its 48 ports three ways and no figure of its faceplate is held. The guide's weights section (PDF p120, printed 114) has a heading and no table, so no line-card weight is read from this guide."
   },
   "power-slots": {
    "confidence": "datasheet",
