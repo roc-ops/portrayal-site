@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="431.8mm" height="44.45mm" viewBox="0 0 431.8 44.45">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/n9k-x9716d-gx@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-x9716d-gx@'] .state-amber { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-x9716d-gx@'] .state-blue { --led-color: #2a7de1; }
+    g[data-ref^='cisco/n9k-x9716d-gx@'] .state-blue { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-x9716d-gx@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-x9716d-gx@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='cisco/n9k-x9716d-gx@'] .state-red { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="n9k-x9716d-gx" data-path="n9k-x9716d-gx" data-class="line-card" data-behaviour="fills" data-ref="cisco/n9k-x9716d-gx@1:1.0.0" data-body-depth="419.1" data-chassis="Nexus 9504, Nexus 9508" data-eol="unknown" data-hot-swappable="True" data-media="QSFP-DD, 400 Gigabit Ethernet" data-model="N9K-X9716D-GX" data-power-draw-max-w="1680" data-power-draw-typical-w="650" data-qsfp-dd="16" data-role="line-card" data-weight-kg="6.8" transform="translate(0,0)">
+    <title>n9k-x9716d-gx</title>
+    <rect id="n9k-x9716d-gx--plate" x="0.4" y="0.4" width="431.0" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <g id="n9k-x9716d-gx--ejector-left">
+      <rect x="1.5" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="n9k-x9716d-gx--release-left" x="4" y="17" width="4" height="10" rx="1" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+    </g>
+    <g id="n9k-x9716d-gx--ejector-right">
+      <rect x="421.3" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="n9k-x9716d-gx--release-right" x="423.8" y="17" width="4" height="10" rx="1" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+    </g>
+    <rect id="n9k-x9716d-gx--vent-top" x="21" y="2.6" width="392" height="5" rx="0.8" fill="#34373a" />
+    <rect id="n9k-x9716d-gx--vent-bottom" x="21" y="36.9" width="392" height="5" rx="0.8" fill="#34373a" />
+    <circle id="n9k-x9716d-gx--bcn" cx="14" cy="13.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="n9k-x9716d-gx/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, at the left of the face." />
+    <circle id="n9k-x9716d-gx--sts" cx="14" cy="26.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="n9k-x9716d-gx/sts" data-class="led" data-states="green red amber off" data-description="STS lamp, at the left of the face." />
+    <rect id="n9k-x9716d-gx--logo-zone" x="413.5" y="18" width="8" height="8" fill="none" data-path="n9k-x9716d-gx/logo-zone" data-class="mechanical" data-description="The maker's mark, reserved and not drawn." />
+    <g id="n9k-x9716d-gx--silkscreen">
+      <text x="14" y="18.6" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">BCN</text>
+      <text x="14" y="31.6" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">STS</text>
+    </g>
+    <g id="n9k-x9716d-gx--port-1" data-path="n9k-x9716d-gx/port-1" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(46,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-1</title>
+      <rect id="n9k-x9716d-gx--port-1--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-1/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-1--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-1--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-2" data-path="n9k-x9716d-gx/port-2" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(46,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-2</title>
+      <rect id="n9k-x9716d-gx--port-2--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-2/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-2--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-2--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-3" data-path="n9k-x9716d-gx/port-3" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(93,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-3</title>
+      <rect id="n9k-x9716d-gx--port-3--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-3/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-3--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-3--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-4" data-path="n9k-x9716d-gx/port-4" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(93,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-4</title>
+      <rect id="n9k-x9716d-gx--port-4--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-4/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-4--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-4--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-5" data-path="n9k-x9716d-gx/port-5" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(140,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-5</title>
+      <rect id="n9k-x9716d-gx--port-5--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-5/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-5--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-5--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-6" data-path="n9k-x9716d-gx/port-6" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(140,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-6</title>
+      <rect id="n9k-x9716d-gx--port-6--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-6/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-6--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-6--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-7" data-path="n9k-x9716d-gx/port-7" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(187,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-7</title>
+      <rect id="n9k-x9716d-gx--port-7--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-7/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-7--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-7--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-8" data-path="n9k-x9716d-gx/port-8" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(187,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-8</title>
+      <rect id="n9k-x9716d-gx--port-8--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-8/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-8--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-8--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-9" data-path="n9k-x9716d-gx/port-9" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(234,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-9</title>
+      <rect id="n9k-x9716d-gx--port-9--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-9/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-9--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-9--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-10" data-path="n9k-x9716d-gx/port-10" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(234,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-10</title>
+      <rect id="n9k-x9716d-gx--port-10--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-10/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-10--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-10--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-11" data-path="n9k-x9716d-gx/port-11" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(281,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-11</title>
+      <rect id="n9k-x9716d-gx--port-11--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-11/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-11--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-11--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-12" data-path="n9k-x9716d-gx/port-12" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(281,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-12</title>
+      <rect id="n9k-x9716d-gx--port-12--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-12/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-12--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-12--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-13" data-path="n9k-x9716d-gx/port-13" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(328,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-13</title>
+      <rect id="n9k-x9716d-gx--port-13--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-13/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-13--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-13--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-14" data-path="n9k-x9716d-gx/port-14" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(328,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-14</title>
+      <rect id="n9k-x9716d-gx--port-14--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-14/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-14--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-14--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-15" data-path="n9k-x9716d-gx/port-15" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(375,9.8)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-15</title>
+      <rect id="n9k-x9716d-gx--port-15--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-15/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-15--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-15--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--port-16" data-path="n9k-x9716d-gx/port-16" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(375,24.65) rotate(180 9.5 5.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9716d-gx--port-16</title>
+      <rect id="n9k-x9716d-gx--port-16--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="n9k-x9716d-gx/port-16/opening" data-class="cutout" />
+      <rect id="n9k-x9716d-gx--port-16--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="n9k-x9716d-gx--port-16--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9716d-gx--port-16--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9716d-gx--link-1" data-path="n9k-x9716d-gx/link-1" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(52,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-1</title>
+      <path id="n9k-x9716d-gx--link-1--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-1/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-2" data-path="n9k-x9716d-gx/link-2" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(56.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-2</title>
+      <path id="n9k-x9716d-gx--link-2--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-2/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-3" data-path="n9k-x9716d-gx/link-3" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(99,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-3</title>
+      <path id="n9k-x9716d-gx--link-3--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-3/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-4" data-path="n9k-x9716d-gx/link-4" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(103.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-4</title>
+      <path id="n9k-x9716d-gx--link-4--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-4/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-5" data-path="n9k-x9716d-gx/link-5" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(146,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-5</title>
+      <path id="n9k-x9716d-gx--link-5--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-5/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-6" data-path="n9k-x9716d-gx/link-6" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(150.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-6</title>
+      <path id="n9k-x9716d-gx--link-6--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-6/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-7" data-path="n9k-x9716d-gx/link-7" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(193,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-7</title>
+      <path id="n9k-x9716d-gx--link-7--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-7/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-8" data-path="n9k-x9716d-gx/link-8" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(197.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-8</title>
+      <path id="n9k-x9716d-gx--link-8--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-8/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-9" data-path="n9k-x9716d-gx/link-9" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(240,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-9</title>
+      <path id="n9k-x9716d-gx--link-9--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-9/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-10" data-path="n9k-x9716d-gx/link-10" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(244.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-10</title>
+      <path id="n9k-x9716d-gx--link-10--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-10/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-11" data-path="n9k-x9716d-gx/link-11" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(287,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-11</title>
+      <path id="n9k-x9716d-gx--link-11--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-11/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-12" data-path="n9k-x9716d-gx/link-12" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(291.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-12</title>
+      <path id="n9k-x9716d-gx--link-12--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-12/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-13" data-path="n9k-x9716d-gx/link-13" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(334,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-13</title>
+      <path id="n9k-x9716d-gx--link-13--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-13/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-14" data-path="n9k-x9716d-gx/link-14" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(338.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-14</title>
+      <path id="n9k-x9716d-gx--link-14--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-14/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-15" data-path="n9k-x9716d-gx/link-15" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(381,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-15</title>
+      <path id="n9k-x9716d-gx--link-15--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-15/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9716d-gx--link-16" data-path="n9k-x9716d-gx/link-16" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(385.75,21.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9716d-gx--link-16</title>
+      <path id="n9k-x9716d-gx--link-16--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9716d-gx/link-16/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+  </g>
+</svg>

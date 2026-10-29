@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="492.8mm" height="44.45mm" viewBox="0 0 492.8 44.45" data-device="ws-c4948e-f" data-view="left" data-weight-note="6.35 kg (14 lb) base system, no power supply or fan tray; 8.62 kg (19 lb) fully loaded with 2 power supplies and fan tray" data-acoustics="55.6 dBA typical and 58.6 dBA maximum sound pressure; 62.6 dBA typical and 65.6 dBA maximum sound power (ISO 7779, 25 C)" data-switching-capacity="176 Gbps" data-throughput="131 mpps for IPv4, 110 mpps for IPv6" data-routes-max="57,000" data-mac-entries-max="55,000" data-multicast-routes-max="28,000" data-system-buffer="17.5 MB" data-airflow-cfm="28 CFM at low speed, 44 CFM at full speed" data-power-typical-w="230" data-power-max-w="275" data-power-envelope="unstated" data-heat-dissipation-btu-hr="1364" data-power-input-ac="90 to 264 VAC" data-power-current-max="AC: 4 A at 120 VAC, 2 A at 240 VAC" data-power-supply-options="PWR-C49E-300AC-F (300 W AC, reversed airflow); no DC supply is available for the -F" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 75 C (-40 to 167 F)" data-humidity="10 to 90%, noncondensing" data-altitude="-60 to 2000 m (-196 to 6561 ft)" data-mtbf-hours="149,261" data-processor="1 GHz" data-memory="1 GB SDRAM" data-optics-sfp-plus="data sheet: &quot;supports 10 Gigabit Ethernet SFP and SFP+ on all the four uplinks&quot;. The installation guide's Table 1-1: 4 1-GB or 10-GB uplink ports, each needing an SFP or SFP+ transceiver." data-reset="recessed on the front panel; needs a pointed object" data-regulatory="Products bear CE Marking, indicating compliance with the 89/336/EEC and 73/23/EEC directives" data-safety="UL 60950-1, CAN/CSA-C22.2 No. 60950-1, EN 60950-1, IEC 60950-1, AS/NZS 60950, IEC 60825-1, IEC 60825-2, EN 60825-1, EN 60825-2, 21 CFR 1040" data-emissions="FCC Part 15 (CFR 47) Class A, ICES-003 Class A, EN55022 Class A, CISPR22 Class A, AS/NZS 3548 Class A, VCCI Class A, EN55024, ETS300 386, EN50082-1, EN61000-3-2, EN61000-3-3" data-nebs="GR-63-Core NEBS Level 3, GR-1089-Core NEBS Level 3" data-etsi="ETS 300 019 Storage Class 1.1, Transportation Class 2.3, Stationary Use Class 3.1" data-rohs="RoHS-6 compliance" data-eol="announced" data-eol-announcement="https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-4900-series-switches/eos-eol-notice-c51-738116.html" data-end-of-sale="2017-10-31" data-end-of-life="2022-10-31" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Cisco WS-C4948E-F","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"479358aed6e315eb65fd704925d3ea6c937521c7d71f7fa259e75424f19c576d","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="WS-C4948E-F" data-sku="WS-C4948E-F-E" data-part-number="" x="0" y="0" width="492.8" height="44.45" rx="1.2" fill="#d3d4d1" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

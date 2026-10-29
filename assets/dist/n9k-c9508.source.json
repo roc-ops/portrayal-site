@@ -148,17 +148,26 @@
    ]
   }
  },
- "description": "Cisco Nexus 9508 - the 13 RU, eight-line-card modular chassis of the Nexus 9500 family, running NX-OS mode. The FRONT carries the chassis lamps across the top, eight line-card slots LC 1 to LC 8 from top to bottom, two supervisor slots SUP 1 and SUP 2 side by side below them, and eight power-supply slots PS 1 to PS 8 standing on end along the bottom. The REAR carries three fan trays FAN 1 to FAN 3, six fabric-module slots FM 1 to FM 6 behind the fan trays, and two system controllers SC 1 and SC 2 below them. Air enters at the front and leaves at the rear. This batch draws the chassis and its common equipment; the line cards are added in a later batch, so each line-card slot holds its blank.",
+ "description": "Cisco Nexus 9508 - the 13 RU, eight-line-card modular chassis of the Nexus 9500 family, running NX-OS mode. The FRONT carries the chassis lamps across the top, eight line-card slots LC 1 to LC 8 from top to bottom, two supervisor slots SUP 1 and SUP 2 side by side below them, and eight power-supply slots PS 1 to PS 8 standing on end along the bottom. The REAR carries three fan trays FAN 1 to FAN 3, six fabric-module slots FM 1 to FM 6 behind the fan trays, and two system controllers SC 1 and SC 2 below them. Air enters at the front and leaves at the rear. Each line-card slot holds its blank and accepts the line-card blank and the four line cards modelled so far (N9K-X9736C-FX, N9K-X97160YC-EX, N9K-X9732C-FX and N9K-X9716D-GX); the other 9500 line cards follow.",
  "format": 1,
  "gaps": [
   {
-   "note": "The guide gives a typical and maximum draw per module and no figure for the chassis itself; the chassis total is whatever its occupants sum to. The line cards are not in this batch, so a total here is a floor.",
+   "note": "The guide gives a typical and maximum draw per module and no figure for the chassis itself; the chassis total is whatever its occupants sum to. Each line card carries its own typical and maximum draw, so a loaded chassis's total is the sum of its occupants; none is written here.",
    "reason": "vendor-silent",
    "scope": [
     "power-supplies"
    ],
    "wanted": "a chassis-level draw from Cisco, or confirmation that the sum of the module table is the answer",
    "what": "chassis-power-figure"
+  },
+  {
+   "note": "Which fabric module each line card goes with, and how many are needed, is listed here and NOT ENFORCED: no bay or card restricts the fabric module it is seated with. The guide's Overview Table 1 (PDF pp8-9, printed 2-3) pairs the cards modelled here with the N9K-C9508-FM-E, -FM-E2 and -FM-G; the count is the fabric modules required for maximum bandwidth, read by line order. N9K-X9736C-FX: FM-E 5, FM-E2 5, FM-G 5. N9K-X97160YC-EX: FM-E 4, FM-E2 4, FM-G 4. N9K-X9732C-FX: FM-E 4 plus 1 for redundancy, FM-E2 4 plus 1 for redundancy, FM-G 4. N9K-X9716D-GX: FM-G 4 only. The guide's notes: all fabric modules in the switch must be of one type; with the -FM-G the empty slots take N9K-C9508-FAN-PWR and the N9K-C9508-FAN2 fan trays are used; and \"Do not mix ACI-mode line cards with NX-OS mode line cards in the same switch\" (PDF p7, printed 1). \"Migrate the switch to 400-Gigabit -GX line cards\" (PDF p114, printed 108) says to replace the older fabric modules with N9K-C9508-FM-G modules.",
+   "reason": "needs-drawing",
+   "scope": [
+    "line-cards"
+   ],
+   "wanted": "a restriction in the format between a card and the fabric modules it is seated with",
+   "what": "line-card-fabric-pairing"
   },
   {
    "note": "The clearance figure (PDF p24, callout 14) gives the width of the chassis plus the vertical mounting brackets as 19.2 in (48.8 cm). The ear model has no field for an overall width, so the mounting-bracket region is not sized by it and the front face stays the 444.5 mm chassis width.",
@@ -319,9 +328,9 @@
    "confidence": "datasheet",
    "note": "datasheet - Cisco's support page lists the Nexus 9508 as available (support page \"Cisco Nexus 9000 Series Switches\", https://www.cisco.com/c/en/us/support/switches/nexus-9000-series-switches/series.html). Sale status of each module is per module: N9K-SUP-A, N9K-SUP-B, N9K-C9508-FM, -FM-S and -FM-E are end-of-sale by notice; the others have no status on the support page and are recorded as unknown."
   },
-  "line-cards-not-here": {
+  "line-cards": {
    "confidence": "datasheet",
-   "note": "The eight line-card slots accept only the line-card blank N9K-C9500-LC-CV in this batch. The line cards follow in a later batch and will be added to these slots."
+   "note": "datasheet - the eight line-card slots accept the line-card blank N9K-C9500-LC-CV and the line cards this guide supports among those modelled: N9K-X9736C-FX, N9K-X97160YC-EX, N9K-X9732C-FX and N9K-X9716D-GX, which Overview Table 1 and the power tables (PDF pp8-9 and 18-19, printed 2-3 and 12-13) list. A line card is accepted because this chassis's own guide supports it. The other 9500 line cards follow in later batches; the N9K-X9788TC-FX is listed in the guide and not modelled, because the guides name its 48 ports three ways and no figure of its faceplate is held. The guide's weights section (PDF p120, printed 114) has a heading and no table, so no line-card weight is read from this guide."
   },
   "power-slots": {
    "confidence": "datasheet",
@@ -356,7 +365,7 @@
    "title": "Cisco Nexus 9516 Hardware Installation Guide (supervisor, system controller and supply cross-check)"
   }
  ],
- "version": "1.0.1",
+ "version": "1.1.0",
  "views": {
   "bottom": {
    "empty": "Searched and not published. The guide has no view of the underside of the chassis. The bottom-support rails (N9K-C9500-RMK) stand under it in the rack and their position on the chassis is not shown.",
@@ -370,7 +379,11 @@
     "bays": [
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,
@@ -387,7 +400,11 @@
      },
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,
@@ -404,7 +421,11 @@
      },
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,
@@ -421,7 +442,11 @@
      },
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,
@@ -438,7 +463,11 @@
      },
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,
@@ -455,7 +484,11 @@
      },
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,
@@ -472,7 +505,11 @@
      },
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,
@@ -489,7 +526,11 @@
      },
      {
       "accepts": [
-       "cisco/n9k-c9500-lc-cv@1"
+       "cisco/n9k-c9500-lc-cv@1",
+       "cisco/n9k-x9736c-fx@1",
+       "cisco/n9k-x97160yc-ex@1",
+       "cisco/n9k-x9732c-fx@1",
+       "cisco/n9k-x9716d-gx@1"
       ],
       "at": [
        6.35,

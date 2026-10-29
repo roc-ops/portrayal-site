@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.4mm" height="44.45mm" viewBox="0 0 444.4 44.45" data-device="ws-c4948e-f" data-view="rear" data-weight-note="6.35 kg (14 lb) base system, no power supply or fan tray; 8.62 kg (19 lb) fully loaded with 2 power supplies and fan tray" data-acoustics="55.6 dBA typical and 58.6 dBA maximum sound pressure; 62.6 dBA typical and 65.6 dBA maximum sound power (ISO 7779, 25 C)" data-switching-capacity="176 Gbps" data-throughput="131 mpps for IPv4, 110 mpps for IPv6" data-routes-max="57,000" data-mac-entries-max="55,000" data-multicast-routes-max="28,000" data-system-buffer="17.5 MB" data-airflow-cfm="28 CFM at low speed, 44 CFM at full speed" data-power-typical-w="230" data-power-max-w="275" data-power-envelope="unstated" data-heat-dissipation-btu-hr="1364" data-power-input-ac="90 to 264 VAC" data-power-current-max="AC: 4 A at 120 VAC, 2 A at 240 VAC" data-power-supply-options="PWR-C49E-300AC-F (300 W AC, reversed airflow); no DC supply is available for the -F" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-40 to 75 C (-40 to 167 F)" data-humidity="10 to 90%, noncondensing" data-altitude="-60 to 2000 m (-196 to 6561 ft)" data-mtbf-hours="149,261" data-processor="1 GHz" data-memory="1 GB SDRAM" data-optics-sfp-plus="data sheet: &quot;supports 10 Gigabit Ethernet SFP and SFP+ on all the four uplinks&quot;. The installation guide's Table 1-1: 4 1-GB or 10-GB uplink ports, each needing an SFP or SFP+ transceiver." data-reset="recessed on the front panel; needs a pointed object" data-regulatory="Products bear CE Marking, indicating compliance with the 89/336/EEC and 73/23/EEC directives" data-safety="UL 60950-1, CAN/CSA-C22.2 No. 60950-1, EN 60950-1, IEC 60950-1, AS/NZS 60950, IEC 60825-1, IEC 60825-2, EN 60825-1, EN 60825-2, 21 CFR 1040" data-emissions="FCC Part 15 (CFR 47) Class A, ICES-003 Class A, EN55022 Class A, CISPR22 Class A, AS/NZS 3548 Class A, VCCI Class A, EN55024, ETS300 386, EN50082-1, EN61000-3-2, EN61000-3-3" data-nebs="GR-63-Core NEBS Level 3, GR-1089-Core NEBS Level 3" data-etsi="ETS 300 019 Storage Class 1.1, Transportation Class 2.3, Stationary Use Class 3.1" data-rohs="RoHS-6 compliance" data-eol="announced" data-eol-announcement="https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-4900-series-switches/eos-eol-notice-c51-738116.html" data-end-of-sale="2017-10-31" data-end-of-life="2022-10-31" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/pwr-c49e-300ac-f@'] .state-fault { --led-color: #ef4444; }
+    g[data-ref^='cisco/pwr-c49e-300ac-f@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Cisco WS-C4948E-F","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"cisco/pwr-c49e-300ac-f@1":"1.0.0","cisco/ws-x4993-f@1":"1.0.0","cisco/ws-x4994-f@1":"1.0.0","common/ground-symbol@1":"1.0.0","common/rocker-switch@1":"1.2.0","std/c14-inlet@1":"1.4.0"},"source-sha256":"479358aed6e315eb65fd704925d3ea6c937521c7d71f7fa259e75424f19c576d","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="WS-C4948E-F" data-sku="WS-C4948E-F-E" data-part-number="" x="0" y="0" width="444.4" height="44.45" rx="1.2" fill="#d3d4d1" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="end-plate" data-kind="plate" x="425.7" y="0" width="18.7" height="44.45" rx="0.6" fill="#4e5e65" />
+    <rect id="end-label" data-kind="plate" x="429.4" y="1.7" width="10.6" height="29" rx="0.6" fill="#dbc64c" />
+  </g>
+  <rect id="region--power" data-path="region:power" data-class="region" data-members="psu-1" x="0.8" y="1" width="117.3" height="41.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--cooling" data-path="region:cooling" data-class="region" data-members="fan-tray" x="117.6" y="1" width="192.1" height="41.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--power-2" data-path="region:power-2" data-class="region" data-members="psu-2" x="309.2" y="1" width="117.3" height="41.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="ground-mark" data-path="ground-mark" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="5" transform="translate(434.5,34.0)" data-group="furniture" data-group-role="furniture">
+    <title>ground-mark</title>
+    <g id="ground-mark--symbol" stroke="#c7ccd1" fill="none" data-path="ground-mark/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="1.6" y="2" width="115.7" height="39.5" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="cisco/pwr-c49e-300ac-f@1:1.0.0" data-wall="#2b2e31" data-airflow="back-to-front" data-inlet="c14" data-input="ac" data-input-current-max="4 A at 100 VAC, 2 A at 240 VAC" data-input-frequency="47 to 63 Hz" data-input-voltage="low-line 85 to 132 VAC, high-line 170 to 264 VAC" data-model="PWR-C49E-300AC-F" data-output="25 A at +12 VDC" data-power-output-w="300" data-weight-kg="0.9" data-states="absent" transform="translate(59.45,21.75) translate(-57.85,-19.75)">
+      <title>psu-1--module</title>
+      <defs>
+        <pattern id="psu-1--module--c49f-mesh" width="6.6" height="3.82" patternUnits="userSpaceOnUse">
+          <path d="M 1.9 0 L 0.95 1.65 L -0.95 1.65 L -1.9 0 L -0.95 -1.65 L 0.95 -1.65 Z" fill="#0d0f11" />
+          <path d="M 8.5 0 L 7.55 1.65 L 5.65 1.65 L 4.7 0 L 5.65 -1.65 L 7.55 -1.65 Z" fill="#0d0f11" />
+          <path d="M 5.2 1.91 L 4.25 3.56 L 2.35 3.56 L 1.4 1.91 L 2.35 0.26 L 4.25 0.26 Z" fill="#0d0f11" />
+          <path d="M 1.9 3.82 L 0.95 5.47 L -0.95 5.47 L -1.9 3.82 L -0.95 2.17 L 0.95 2.17 Z" fill="#0d0f11" />
+          <path d="M 8.5 3.82 L 7.55 5.47 L 5.65 5.47 L 4.7 3.82 L 5.65 2.17 L 7.55 2.17 Z" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="psu-1--module--body" x="0" y="0" width="115.7" height="39.5" rx="0.6" fill="#4e5e65" stroke="#2b2e31" stroke-width="0.4" />
+      <g id="psu-1--module--screw" data-path="psu-1/module/screw" data-class="screw">
+        <circle cx="6.3" cy="19.4" r="3.0" fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3" />
+        <path d="M 4.6 19.4 H 8.0 M 6.3 17.7 V 21.1" stroke="#5c6167" stroke-width="0.45" />
+      </g>
+      <rect id="psu-1--module--switch-surround" x="17.8" y="0.5" width="29.0" height="36.8" rx="1.0" fill="#2f3b41" />
+      <g id="psu-1--module--fan" data-path="psu-1/module/fan" data-class="rotor" data-z-vent="24">
+        <rect id="psu-1--module--fan-back" x="50.5" y="1.2" width="38.1" height="37.2" rx="0.6" fill="#8b9aa1" />
+        <rect id="psu-1--module--fan-holes" x="50.5" y="1.2" width="38.1" height="37.2" fill="url(#psu-1--module--c49f-mesh)" />
+      </g>
+      <circle id="psu-1--module--input-ok" cx="94.8" cy="34.0" r="1.2" fill="var(--led-color, #2b2e31)" stroke="#9aa1a8" stroke-width="0.2" data-path="psu-1/module/input-ok" data-class="led" data-states="off ok fault" />
+      <circle id="psu-1--module--output-ok" cx="103.2" cy="34.0" r="1.2" fill="var(--led-color, #2b2e31)" stroke="#9aa1a8" stroke-width="0.2" data-path="psu-1/module/output-ok" data-class="led" data-states="off ok fault" />
+      <g id="psu-1--module--silkscreen" font-family="sans-serif" fill="#e4e7ea">
+        <text id="psu-1--module--silk-model" x="99.0" y="4.6" font-size="1.5" text-anchor="middle">PWR-C49E-300AC-F</text>
+        <text id="psu-1--module--silk-volts" x="99.0" y="19.8" font-size="1.4" text-anchor="middle">100 - 240VAC</text>
+        <text id="psu-1--module--silk-amps" x="99.0" y="22.0" font-size="1.4" text-anchor="middle">4 - 2 A</text>
+        <text id="psu-1--module--silk-hertz" x="99.0" y="24.2" font-size="1.4" text-anchor="middle">50 - 60 Hz</text>
+        <text id="psu-1--module--silk-input" x="94.8" y="28.6" font-size="1.3" text-anchor="middle">INPUT</text>
+        <text id="psu-1--module--silk-input-ok" x="94.8" y="30.6" font-size="1.3" text-anchor="middle">OK</text>
+        <text id="psu-1--module--silk-output" x="103.2" y="28.6" font-size="1.3" text-anchor="middle">OUTPUT</text>
+        <text id="psu-1--module--silk-output-ok" x="103.2" y="30.6" font-size="1.3" text-anchor="middle">OK</text>
+      </g>
+      <rect id="psu-1--module--handle" x="110.2" y="6.3" width="4.4" height="28.7" rx="2.2" fill="#c9ced2" stroke="#7a8087" stroke-width="0.3" data-path="psu-1/module/handle" data-class="handle" data-z-uhandle="18.0" data-z-color="#3a3d41" />
+      <g id="psu-1--module--power-switch" data-path="psu-1/module/power-switch" data-class="button" data-ref="common/rocker-switch@1:1.2.0" transform="translate(21.3,1.0)">
+        <title>psu-1--module--power-switch</title>
+        <defs>
+          <linearGradient id="psu-1--module--power-switch--rise-left" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#3b4045" />
+            <stop offset="1" stop-color="#1c1f22" />
+          </linearGradient>
+          <linearGradient id="psu-1--module--power-switch--rise-right" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#1c1f22" />
+            <stop offset="1" stop-color="#3b4045" />
+          </linearGradient>
+        </defs>
+        <g id="psu-1--module--power-switch--bezel" data-z-out="1.5" data-z-color="#1d2023">
+          <rect x="0.1" y="0.1" width="20.8" height="14.8" rx="0.8" fill="#1d2023" stroke="#55595e" stroke-width="0.2" />
+        </g>
+        <g id="psu-1--module--power-switch--rocker" data-path="psu-1/module/power-switch/rocker" data-class="button">
+          <g id="psu-1--module--power-switch--rocker-off" data-show-from="state" data-show="off" data-z-out="4.9" data-z-profile="0:4.9,17.5:2.2">
+            <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="url(#psu-1--module--power-switch--rise-left)" stroke="#44484d" stroke-width="0.2" />
+            <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="none" fill-opacity="0.85" data-fill-from="rocker-color" />
+            <line x1="4.4" y1="7.5" x2="7.2" y2="7.5" stroke="#e9ecef" stroke-width="0.6" />
+            <circle cx="15.2" cy="7.5" r="1.35" fill="none" stroke="#e9ecef" stroke-width="0.5" />
+          </g>
+          <g id="psu-1--module--power-switch--rocker-on" data-show-from="state" data-show="on" display="none" data-z-out="4.9" data-z-profile="0:2.2,17.5:4.9">
+            <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="url(#psu-1--module--power-switch--rise-right)" stroke="#44484d" stroke-width="0.2" />
+            <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="none" fill-opacity="0.85" data-fill-from="rocker-color" />
+            <line x1="4.4" y1="7.5" x2="7.2" y2="7.5" stroke="#e9ecef" stroke-width="0.6" />
+            <circle cx="15.2" cy="7.5" r="1.35" fill="none" stroke="#e9ecef" stroke-width="0.5" />
+          </g>
+        </g>
+      </g>
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(18.3,16.6) rotate(180 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-tray" data-path="fan-tray" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-tray</title>
+    <rect id="fan-tray--opening" x="118.3" y="2" width="190.7" height="39.5" fill="#101214" />
+    <g id="fan-tray--module" data-path="fan-tray/module" data-class="fan" data-behaviour="fills" data-ref="cisco/ws-x4993-f@1:1.0.0" data-wall="#15181b" data-airflow="back-to-front" data-fans="4" data-model="WS-X4993-F" data-power-absent="not-published" data-states="absent" transform="translate(213.65,21.75) translate(-95.35,-19.75)">
+      <title>fan-tray--module</title>
+      <defs>
+        <pattern id="fan-tray--module--x4993f-mesh" width="3.4" height="2.9" patternUnits="userSpaceOnUse">
+          <circle cx="0.85" cy="0.75" r="0.75" fill="#0d0f11" />
+          <circle cx="2.55" cy="2.2" r="0.75" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="fan-tray--module--body" x="0" y="0" width="190.7" height="39.5" rx="0.5" fill="#506b73" stroke="#2b3a40" stroke-width="0.4" />
+      <g id="fan-tray--module--grille" data-path="fan-tray/module/grille" data-class="rotor" data-z-vent="26">
+        <rect id="fan-tray--module--grille-back" x="12.0" y="1.5" width="171.9" height="36.5" rx="0.5" fill="#3f565d" />
+        <rect id="fan-tray--module--grille-holes" x="12.0" y="1.5" width="171.9" height="36.5" fill="url(#fan-tray--module--x4993f-mesh)" />
+      </g>
+      <g id="fan-tray--module--screw-left" data-path="fan-tray/module/screw-left" data-class="screw">
+        <circle cx="5.7" cy="19.9" r="3.0" fill="#e9ecef" stroke="#8d949b" stroke-width="0.3" />
+        <path d="M 4.0 19.9 H 7.4 M 5.7 18.2 V 21.6" stroke="#5c6167" stroke-width="0.45" />
+      </g>
+      <g id="fan-tray--module--screw-right" data-path="fan-tray/module/screw-right" data-class="screw">
+        <circle cx="187.6" cy="19.9" r="3.0" fill="#e9ecef" stroke="#8d949b" stroke-width="0.3" />
+        <path d="M 185.9 19.9 H 189.3 M 187.6 18.2 V 21.6" stroke="#5c6167" stroke-width="0.45" />
+      </g>
+      <rect id="fan-tray--module--handle" x="66.7" y="17.8" width="57.3" height="5.2" rx="2.6" fill="#c9ced2" stroke="#8d949b" stroke-width="0.4" data-path="fan-tray/module/handle" data-class="handle" data-z-uhandle="12.0" data-z-color="#c9ced2" />
+      <g id="fan-tray--module--silkscreen" font-family="sans-serif" fill="#e4e7ea">
+        <text id="fan-tray--module--silk-model" x="1.2" y="3.4" font-size="1.4" text-anchor="start">WS-X4993-F</text>
+        <text id="fan-tray--module--silk-ps1" x="5.7" y="34.6" font-size="1.7" text-anchor="middle">PS 1</text>
+        <text id="fan-tray--module--silk-ps2" x="186.4" y="34.6" font-size="1.7" text-anchor="middle">PS 2</text>
+      </g>
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="310" y="2" width="115.7" height="39.5" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="blank" data-behaviour="fills" data-ref="cisco/ws-x4994-f@1:1.0.0" data-model="WS-X4994-F" data-role="airflow-blank" transform="translate(367.85,21.75) translate(-57.85,-19.75)">
+      <title>psu-2--module</title>
+      <rect id="psu-2--module--plate" x="0" y="0" width="115.7" height="39.5" rx="0.6" fill="#4e5e65" stroke="#2b3a40" stroke-width="0.4" />
+    </g>
+  </g>
+</svg>
