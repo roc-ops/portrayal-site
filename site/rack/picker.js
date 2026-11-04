@@ -13,6 +13,8 @@
 // REPLACING A PLACED DEVICE (`replacing`) is the same choice at a place already
 // settled: `rack` is the rack without the old device, each device says where it
 // would go (`ruOf`), and the panel says so instead of offering a half or a rail.
+// Enter waits for the person to search or choose: the panel opens with the search
+// focused and a device already selected, and a swap nobody chose is not harmless.
 
 import {el} from './dom.js';
 import {fits} from '../../vendor/rack/fit.js';
@@ -29,7 +31,8 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
   // fit() only depends on the rack, this U and this face - all fixed for the
   // life of this panel - so it is computed once per entry, not on every
   // keystroke.
-  const live = entries.filter(e => e.ru !== 0 && (!onlyMount || (e.mount ?? 'rack') === onlyMount));
+  const live = entries.filter(e => e.ru !== 0 && (!onlyMount || (e.mount ?? 'rack') === onlyMount)
+    && (!replacing || (e.name !== replacing.except && e.mount !== 'rack-face' && !isZeroUPart(e))));
   // A ZERO-U PART (the kit's fit.js fitsZeroU) stands beside an upright, its bottom level with
   // this U, and takes none; a NARROW RAIL PART goes on one rail. Each is judged
   // where it would go - the upright, the rail - as chosen below (state.at, state.side).
@@ -185,15 +188,16 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
     if (!f.ok) { fitLine.textContent = f.reason; fitLine.className = 'rk-error'; return; }
     const chosenCfg = cfg.value || entry.default || entry.configs?.[0] || '';
     setState({cfgByRef: {...state.cfgByRef, [entry.name]: chosenCfg}});
-    onPlace(entry, chosenCfg, replacing ? {ru: ruAt(entry)} : isZeroUPart(entry) ? {at: state.at, between: !!state.between}
+    onPlace(entry, chosenCfg, replacing ? {} : isZeroUPart(entry) ? {at: state.at, between: !!state.between}
       : isNarrow(entry) ? {side: state.side} : mayHalf(entry) ? {ru: ruAt(entry, state.half)} : {});
   }
 
-  query.addEventListener('input', () => { setState({query: query.value}); redraw(); });
-  query.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); doPlace(); } });
+  let chosen = !replacing;
+  query.addEventListener('input', () => { chosen = true; setState({query: query.value}); redraw(); });
+  query.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); if (chosen) doPlace(); } });
   fitsOnly.addEventListener('change', () => { setState({fitsOnly: fitsOnly.checked}); redraw(); });
   vendor.addEventListener('change', () => { setState({vendor: vendor.value}); redraw(); });
-  device.addEventListener('change', () => { setState({device: device.value}); renderCfgAndFit(); });
+  device.addEventListener('change', () => { chosen = true; setState({device: device.value}); renderCfgAndFit(); });
   device.addEventListener('dblclick', doPlace);
   cfg.addEventListener('change', () => setState({cfgByRef: {...state.cfgByRef, [state.device]: cfg.value}}));
   place.addEventListener('click', doPlace);

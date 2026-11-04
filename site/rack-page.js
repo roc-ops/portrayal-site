@@ -500,23 +500,29 @@ function place(entry, cfg, face, ru, extra = {}) {
 
 // One device out and another in at the same place, as one step. Its label is the
 // new device's name unless the person asks to keep one they gave it. The panel
-// may outlive the rack it was built for: this acts on the device as it is now.
+// says first what will not come across. It may outlive the rack it was built
+// for: the swap works its place out from the device and the rack as they are now.
 function replacePanel(it, r) {
-  const n = cablesOf(r, it.id).length;
-  const without = ed.preview({op: 'remove', id: it.id}).rack;
-  const given = it.label !== (chassisOf(it.ref)?.model ?? it.ref);
-  const keep = given ? el('input', {id: 'repKeepLabel', type: 'checkbox'}) : null;
+  const n = cablesOf(r, it.id).length, ms = managersOf(r, it.id);
+  const without = cur => ed.preview({op: 'remove', id: cur.id}).rack;
+  const given = it.label !== it.ref && it.label !== chassisOf(it.ref)?.model;
+  const keep = given ? el('input', {id: 'repKeepLabel', type: 'checkbox', ...(S.sel.keepLabel ? {checked: ''} : {})}) : null;
+  keep?.addEventListener('change', () => { S.sel.keepLabel = keep.checked; });   // a redraw of the panel keeps the tick
+  const lost = [it.turned && 'turned state', it.roll && 'roll', it.setback && 'setback'].filter(Boolean);
   const rows = [
     ...(keep ? [el('label', {class: 'rk-check'}, [keep, ` Keep the label ${it.label}`])] : []),
     ...(n ? [el('p', {id: 'repCables', class: 'rk-muted', text: `Its ${n} cable${n === 1 ? ' becomes a loose end' : 's become loose ends'}.`})] : []),
+    ...(ms.length ? [el('p', {id: 'repManagers', class: 'rk-muted', text: `Its cable manager${ms.length === 1 ? '' : 's'} ${ms.map(m => m.label).join(', ')} stay${ms.length === 1 ? 's' : ''} on the rack, no longer bolted to it.`})] : []),
+    ...(lost.length ? [el('p', {id: 'repLost', class: 'rk-muted', text: `The new device does not keep its ${lost.join(', ')}.`})] : []),
   ];
-  return catalogPanel({entries: S.entries, rack: without, face: it.face, ru: it.ru, chassisOf,
-    pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; }, onlyMount: 'rack',
-    replacing: {title: `Replace ${it.label}`, ruOf: entry => replaceSpot(without, it, entry, chassisOf), rows,
+  return catalogPanel({entries: S.entries, rack: without(it), face: it.face, ru: it.ru, chassisOf,
+    pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
+    replacing: {title: `Replace ${it.label}`, except: it.ref, ruOf: entry => replaceSpot(without(it), it, entry, chassisOf), rows,
       onCancel: () => { S.focusNext = 'iReplace'; select({kind: 'item', id: it.id}); }},
-    onPlace: (entry, cfg, {ru}) => {
+    onPlace: (entry, cfg) => {
       const cur = itemById(it.id);
       if (S.sel?.kind !== 'replace' || S.sel.id !== it.id || !cur) { render(); return; }
+      const ru = replaceSpot(without(cur), cur, entry, chassisOf);
       const label = keep?.checked ? cur.label : entry.model || entry.name;
       const res = edit(replaceCommands(cur, {ref: entry.name, cfg, ru, label}), {say: true});
       if (!res.error) { S.sel = {kind: 'item', id: res.created.ids[0]}; S.focusNext = 'iReplace'; }
@@ -1893,7 +1899,8 @@ function renderSide() {
       available: availableDepth(r, it, chassisOf),
       onPatch: patch => patchItem(it.id, patch),
       onMove: () => select({kind: 'move', id: it.id}),
-      onReplace: () => select({kind: 'replace', id: it.id}),
+      // A new search: what the last placement looked for would hide what this one needs.
+      onReplace: () => { const {query: _q, vendor: _v, device: _d, ...rest} = S.pick; S.pick = rest; select({kind: 'replace', id: it.id}); },
       // A device with cables asks in the side panel, where it can offer the
       // choice a dialog cannot (spec §9.3); one without keeps the plain question.
       // Like the remove panel's buttons, this one may outlive the rack it was

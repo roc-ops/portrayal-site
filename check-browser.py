@@ -14366,6 +14366,15 @@ def check_rack_place(page, base):
     return bad
 
 
+REPLACE_WARN_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js');
+  let r = M.newRack({name: 'Replace warnings'});
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: 'ac-f2b', ru: 20, face: 'front', turned: true, label: 'tor-1'}));
+  ({rack: r} = M.withItem(r, {ref: '33548-x02', cfg: 'base', ru: 20, face: 'front', on: 'i1', unit: 1, label: 'mgr'}));
+  return r;
+}"""
+
+
 @extra("rack.html: Replace swaps a placed device where it stands, as one step")
 def check_rack_replace(page, base):
     bad = []
@@ -14395,14 +14404,22 @@ def check_rack_replace(page, base):
     page.wait_for_selector("#iReplace", timeout=READY_MS)
     if items() != start:
         bad.append(f"cancel: the rack changed: {items()}")
-    # Only what goes in the rack's units is offered: not a rail-face part, nor one that stands beside the rack.
+    # Enter on the search it opens on swaps nothing until the person has searched or chosen.
     open_panel()
-    mounts = page.evaluate("""async () => {
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(200)
+    if items() != start or not page.query_selector("#catPlace"):
+        bad.append(f"enter: Enter on an untouched panel swapped the device: {items()}")
+    # What takes units is offered, as the picker offers it; a rail-face part, one beside the rack and the device itself are not.
+    page.uncheck("#catFitsOnly")
+    offered = page.evaluate("""async () => {
       const C = await import('/vendor/rack/catalog.js'), cat = (await C.loadCatalog('/assets/dist/')).devices;
-      return [...document.querySelectorAll('#catDevice option')].map(o => cat[o.value]?.mount ?? 'rack');
+      return [...document.querySelectorAll('#catDevice option')].map(o => [o.value, cat[o.value]?.mount ?? 'rack']);
     }""")
-    if not mounts or set(mounts) != {"rack"}:
-        bad.append(f"offered: the list holds mounts {sorted(set(mounts))}")
+    mounts = {m for _, m in offered}
+    if mounts & {"rack-face", "rack-side"} or not {"rack", "desktop"} <= mounts or any(r == "as7726-32x" for r, _ in offered):
+        bad.append(f"offered: the list holds mounts {sorted(mounts)}, the device itself {any(r == 'as7726-32x' for r, _ in offered)}")
+    page.check("#catFitsOnly")
     # A taller device with room above keeps the bottom U, and says where it will stand. Its label is its own.
     page.fill("#catQuery", "R740xd")
     page.select_option("#catDevice", "r740xd")
@@ -14434,9 +14451,9 @@ def check_rack_replace(page, base):
         bad.append("label: a device with a given label offers no way to keep it")
     else:
         page.check("#repKeepLabel")
+    # A search and Enter is the quick way through.
     page.fill("#catQuery", "R740xd")
-    page.select_option("#catDevice", "r740xd")
-    page.click("#catPlace")
+    page.press("#catQuery", "Enter")
     page.wait_for_function("() => window.__rack.doc().racks[0].items.some(i => i.ref === 'r740xd')", timeout=READY_MS)
     moved = [i for i in items() if i[0] == "r740xd"]
     if moved != [["r740xd", 19, "front", "tor-1"]]:
@@ -14450,6 +14467,26 @@ def check_rack_replace(page, base):
     warned = page.text_content("#repCables") if page.query_selector("#repCables") else ""
     if "1 cable becomes a loose end" not in (warned or ""):
         bad.append(f"cables: the panel says {warned!r}")
+    # What will not come across is said first: a bolted cable manager, and a turned device's state.
+    page.click("#catCancel")
+    page.wait_for_selector("#iReplace", timeout=READY_MS)
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(REPLACE_WARN_FIXTURE))     # (no cables, so no routes to wait for)
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="33548-x02"]', timeout=READY_MS)
+    page.wait_for_timeout(400)
+    tok = render_token(page)
+    page.dispatch_event('svg[data-pane="front"] [data-item-id="i1"][data-panel="mounted"]', "click")
+    wait_rendered(page, "replace: device with a manager selected", tok)
+    open_panel()
+    said = {k: (page.text_content(f"#{k}") if page.query_selector(f"#{k}") else "") for k in ("repManagers", "repLost")}
+    if "mgr" not in said["repManagers"] or "turned" not in said["repLost"]:
+        bad.append(f"warnings: the panel says {said}")
+    # The tick survives a redraw of the panel.
+    page.check("#repKeepLabel")
+    page.click('#mode [data-mode="3d"]')
+    page.click('#mode [data-mode="2d"]')
+    page.wait_for_selector("#repKeepLabel", timeout=READY_MS)
+    if not page.is_checked("#repKeepLabel"):
+        bad.append("label: the tick was lost when the panel was drawn again")
     # Left / Right is for looking: Replace says where replacing is done, as Move does, and offers no picker.
     page.click("#catCancel")
     page.wait_for_selector("#iReplace", timeout=READY_MS)
