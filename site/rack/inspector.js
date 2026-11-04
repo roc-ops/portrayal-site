@@ -9,7 +9,7 @@ import {unitsOf} from '../../vendor/rack/fit.js';
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current) === String(value) ? {selected: ''} : {})});
 
-export function inspectorPanel({item, rack, chassis, available, onPatch, onMove, onRemove, onExplore}) {
+export function inspectorPanel({item, rack, chassis, available, onPatch, onMove, onReplace, onRemove, onExplore}) {
   const err = el('p', {class: 'rk-error', role: 'alert'});
   const apply = (patch, reset) => {
     const r = onPatch(patch);
@@ -47,6 +47,7 @@ export function inspectorPanel({item, rack, chassis, available, onPatch, onMove,
     el('div', {class: 'rk-actions'}, [
       button('iExplore', 'Open in Explorer', onExplore),
       button('iMove', 'Move', onMove),
+      button('iReplace', 'Replace', onReplace),
       button('iRemove', 'Remove', onRemove),
     ]),
     err,

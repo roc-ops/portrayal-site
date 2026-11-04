@@ -9,6 +9,10 @@
 // list, the fit line) rather than being rebuilt from S.pick by the page -
 // rebuilding the whole panel on every keystroke would recreate #catQuery and
 // drop focus mid-word.
+//
+// REPLACING A PLACED DEVICE (`replacing`) is the same choice at a place already
+// settled: `rack` is the rack without the old device, each device says where it
+// would go (`ruOf`), and the panel says so instead of offering a half or a rail.
 
 import {el} from './dom.js';
 import {fits} from '../../vendor/rack/fit.js';
@@ -21,7 +25,7 @@ const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean);
 const hay = e => `${e.manufacturer ?? ''} ${e.model ?? ''} ${e.family ?? ''} ${e.name}`.toLowerCase();
 const ALL = 'all';
 
-export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chassisOf, pick, onState, onPlace, onlyMount = null}) {
+export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chassisOf, pick, onState, onPlace, onlyMount = null, replacing = null}) {
   // fit() only depends on the rack, this U and this face - all fixed for the
   // life of this panel - so it is computed once per entry, not on every
   // keystroke.
@@ -42,8 +46,8 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
   // whose other half is taken, in its own sentence.
   const mayHalf = e => !isZeroUPart(e) && e.mount !== 'rack-face' && !Number.isInteger(unitsOf(e));
   const HALVES = ['lower', 'upper'];
-  const whole = onHalf == null && Number.isInteger(ru);
-  const ruAt = (e, half) => (mayHalf(e) && whole && half === 'upper' ? ru + 0.5 : ru);
+  const whole = onHalf == null && Number.isInteger(ru) && !replacing;
+  const ruAt = (e, half) => (replacing ? replacing.ruOf(e) : mayHalf(e) && whole && half === 'upper' ? ru + 0.5 : ru);
   // `choice` is the upright, the rail or the half; null means the one chosen now.
   const fitFor = (e, choice = null) => {
     const at = choice ?? state.at, side = choice ?? state.side, half = choice ?? state.half;
@@ -83,7 +87,7 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
   const cfg = el('select', {id: 'catCfg', 'aria-label': 'Configuration'});
   const fitLine = el('p', {id: 'catFit'});
   const empty = el('p', {class: 'rk-muted'});
-  const place = el('button', {type: 'button', id: 'catPlace', text: 'Place'});
+  const place = el('button', {type: 'button', id: 'catPlace', text: replacing ? 'Replace' : 'Place'});
   const at = el('select', {id: 'catAt', 'aria-label': 'Upright'},
     points.map(p => el('option', {value: p, text: p, ...(p === state.at ? {selected: ''} : {})})));
   const between = el('input', {id: 'catBetween', type: 'checkbox', ...(state.between ? {checked: ''} : {})});
@@ -145,6 +149,7 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
     }
     const f = fitFor(entry);
     fitLine.textContent = !f.ok ? f.reason
+      : replacing ? `Fits here: ${spanText(rack.frame, {ru: ruAt(entry), ref: entry.name}, chassisOf)}.`
       : isZeroUPart(entry) ? `Fits here: it stands beside the rack at ${state.at}, its bottom level with U${uLabel(rack.frame, ru)}, and takes no U.`
       : isNarrow(entry) ? `Fits here: it mounts on the ${state.side} rail's face and takes no U of its own.`
       : entry.mount === 'rack-face' && host ? `Fits here: it mounts on the rail face over ${host.label}, and takes no U of its own.`
@@ -180,7 +185,7 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
     if (!f.ok) { fitLine.textContent = f.reason; fitLine.className = 'rk-error'; return; }
     const chosenCfg = cfg.value || entry.default || entry.configs?.[0] || '';
     setState({cfgByRef: {...state.cfgByRef, [entry.name]: chosenCfg}});
-    onPlace(entry, chosenCfg, isZeroUPart(entry) ? {at: state.at, between: !!state.between}
+    onPlace(entry, chosenCfg, replacing ? {ru: ruAt(entry)} : isZeroUPart(entry) ? {at: state.at, between: !!state.between}
       : isNarrow(entry) ? {side: state.side} : mayHalf(entry) ? {ru: ruAt(entry, state.half)} : {});
   }
 
@@ -192,6 +197,8 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
   device.addEventListener('dblclick', doPlace);
   cfg.addEventListener('change', () => setState({cfgByRef: {...state.cfgByRef, [state.device]: cfg.value}}));
   place.addEventListener('click', doPlace);
+  const cancel = el('button', {type: 'button', id: 'catCancel', text: 'Cancel'});
+  if (replacing) cancel.addEventListener('click', replacing.onCancel);
   // The upright and the rail change what fits: the lists follow.
   at.addEventListener('change', () => { setState({at: at.value}); redraw(); });
   between.addEventListener('change', () => setState({between: between.checked}));
@@ -201,9 +208,9 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
   redraw();
   queueMicrotask(() => query.focus());
 
-  return el('div', {class: 'rk-picker'}, [
+  const panel = el('div', {class: 'rk-picker'}, [
     // a half picked as one is named as the kit names a span: "the upper half of U12"
-    el('h3', {text: `${whole ? `U${uLabel(rack.frame, ru)}` : (t => t[0].toUpperCase() + t.slice(1))(spanText(rack.frame, {ru, ref: ''}, () => ({ru: 0.5})))} · ${face}, ${host ? `${whole ? 'on' : 'beside'} ${host.label}` : 'empty'}`}),
+    el('h3', {text: replacing ? replacing.title : `${whole ? `U${uLabel(rack.frame, ru)}` : (t => t[0].toUpperCase() + t.slice(1))(spanText(rack.frame, {ru, ref: ''}, () => ({ru: 0.5})))} · ${face}, ${host ? `${whole ? 'on' : 'beside'} ${host.label}` : 'empty'}`}),
     el('label', {}, ['Search', query]),
     el('label', {class: 'rk-check'}, [fitsOnly, ' Only what fits here']),
     el('label', {}, ['Vendor', vendor]),
@@ -211,7 +218,11 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
     empty,
     el('label', {}, ['Configuration', cfg]),
     atRow, betweenRow, sideRow, halfRow,
+    ...(replacing?.rows ?? []),
     fitLine,
-    el('div', {class: 'rk-actions'}, [place]),
+    el('div', {class: 'rk-actions'}, replacing ? [place, cancel] : [place]),
   ]);
+  // The page leaves Esc in a field alone, and this panel opens with the search focused.
+  if (replacing) panel.addEventListener('keydown', ev => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); replacing.onCancel(); } });
+  return panel;
 }

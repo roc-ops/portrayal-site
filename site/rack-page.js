@@ -18,6 +18,7 @@ import {loadCableTypes} from '../vendor/rack/cable-types.js';
 import {frameForm, pickId} from './rack/frame-form.js';
 import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
+import {replaceSpot, replaceCommands} from './rack/replace.js';
 import {projectionIdRefusal} from './rack/part-path.js';
 import {openLens} from './rack/explorer-lens.js';
 import {inspectorPanel} from './rack/inspector.js';
@@ -95,6 +96,7 @@ const PAIRS = {faces: ['Front', 'Rear'], sides: ['Left', 'Right']};
 const SIDES_NOTE = 'Left and Right show the rack from its sides: click to select. Devices are placed and moved, and cables added, in Front / Rear.';
 const CABLES_SIDES = 'Cables are added in Front / Rear. Switch to Front / Rear to add one.';
 const MOVE_SIDES = 'Devices are moved in Front / Rear. Switch to Front / Rear to move it. Esc stops moving.';
+const REPLACE_SIDES = 'Devices are replaced in Front / Rear. Switch to Front / Rear to replace it. Esc goes back to the device.';
 const PICK_SIDES = 'A waypoint is picked in Front / Rear. Switch to Front / Rear to add one.';
 function loadView() {
   try { return localStorage.getItem(VIEW_KEY) === 'sides' ? 'sides' : 'faces'; }
@@ -494,6 +496,31 @@ function place(entry, cfg, face, ru, extra = {}) {
   const res = edit(isNarrow(entry) && extra.side ? {op: 'side.place', ref: entry.name, cfg, face, ru, side: extra.side, label}
     : {op: 'place', ref: entry.name, cfg, face, ru, label});
   if (!res.error) S.sel = {kind: 'item', id: res.created.ids[0]};
+}
+
+// One device out and another in at the same place, as one step. Its label is the
+// new device's name unless the person asks to keep one they gave it. The panel
+// may outlive the rack it was built for: this acts on the device as it is now.
+function replacePanel(it, r) {
+  const n = cablesOf(r, it.id).length;
+  const without = ed.preview({op: 'remove', id: it.id}).rack;
+  const given = it.label !== (chassisOf(it.ref)?.model ?? it.ref);
+  const keep = given ? el('input', {id: 'repKeepLabel', type: 'checkbox'}) : null;
+  const rows = [
+    ...(keep ? [el('label', {class: 'rk-check'}, [keep, ` Keep the label ${it.label}`])] : []),
+    ...(n ? [el('p', {id: 'repCables', class: 'rk-muted', text: `Its ${n} cable${n === 1 ? ' becomes a loose end' : 's become loose ends'}.`})] : []),
+  ];
+  return catalogPanel({entries: S.entries, rack: without, face: it.face, ru: it.ru, chassisOf,
+    pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; }, onlyMount: 'rack',
+    replacing: {title: `Replace ${it.label}`, ruOf: entry => replaceSpot(without, it, entry, chassisOf), rows,
+      onCancel: () => { S.focusNext = 'iReplace'; select({kind: 'item', id: it.id}); }},
+    onPlace: (entry, cfg, {ru}) => {
+      const cur = itemById(it.id);
+      if (S.sel?.kind !== 'replace' || S.sel.id !== it.id || !cur) { render(); return; }
+      const label = keep?.checked ? cur.label : entry.model || entry.name;
+      const res = edit(replaceCommands(cur, {ref: entry.name, cfg, ru, label}), {say: true});
+      if (!res.error) { S.sel = {kind: 'item', id: res.created.ids[0]}; S.focusNext = 'iReplace'; }
+    }});
 }
 
 // A change to a placed item: a move (ru, face) or a patch (the rest). The
@@ -1361,7 +1388,7 @@ async function redraw(keepRoutes = false) {
   const product = r.frame.ref != null ? frameOf(r.frame.ref) : null;
   $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}${product ? ` · ${frameName(product)}` : ''}`;
   if (r.frame.ref != null) $('frameSummary').title = r.frame.ref; else $('frameSummary').removeAttribute('title');
-  const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' || S.sel?.kind === 'remove' ? S.sel.id : null;
+  const selectedId = ['item', 'move', 'remove', 'replace'].includes(S.sel?.kind) ? S.sel.id : null;
   let front, rear, facts, sideCables = null;
   // A SWITCH OF PAIR READS NOTHING AGAIN (#187). Reading the cables' faces and
   // the routes is nearly all of a redraw (over a second on a 48-cable rack),
@@ -1821,6 +1848,14 @@ function renderSide() {
         onCancel: () => { S.focusNext = 'iRemove'; select({kind: 'item', id: it.id}); }});
     }
   }
+  else if (sel.kind === 'replace') {
+    const it = itemById(sel.id);
+    if (!it) { S.sel = null; body = homePanel(); }
+    else if (sidesShown()) body = el('div', {}, [
+      el('h3', {text: `Replace ${it.label}`}),
+      el('p', {id: 'replaceHelp', class: 'rk-muted', text: REPLACE_SIDES})]);
+    else body = replacePanel(it, r);
+  }
   else if (sel.kind === 'move') {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = homePanel(); }
@@ -1858,6 +1893,7 @@ function renderSide() {
       available: availableDepth(r, it, chassisOf),
       onPatch: patch => patchItem(it.id, patch),
       onMove: () => select({kind: 'move', id: it.id}),
+      onReplace: () => select({kind: 'replace', id: it.id}),
       // A device with cables asks in the side panel, where it can offer the
       // choice a dialog cannot (spec §9.3); one without keeps the plain question.
       // Like the remove panel's buttons, this one may outlive the rack it was
@@ -2309,14 +2345,15 @@ async function bootInner() {
       return;
     }
     const id = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
-    // Esc in the move or remove panel goes back to the device, as Cancel does.
-    const back = S.sel?.kind === 'remove' ? S.sel.id : id;
+    // Esc in the move, remove or replace panel goes back to the device, as Cancel does.
+    const back = S.sel?.kind === 'remove' || S.sel?.kind === 'replace' ? S.sel.id : id;
     if (ev.key === 'Escape' && S.sel?.kind === 'remove') S.focusNext = 'iRemove';
+    if (ev.key === 'Escape' && S.sel?.kind === 'replace') S.focusNext = 'iReplace';
     // Escape puts a pinned cable or bundle down altogether: keyboard focus left
     // on its row must not light it again as a hover (focusHover).
     S.focusQuiet = ev.key === 'Escape' && (S.sel?.kind === 'cable' || S.sel?.kind === 'bundle');
     if (S.focusQuiet && S.hover?.from === 'focus') setHover(null);
-    if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(back && (S.sel.kind === 'move' || S.sel.kind === 'remove') ? {kind: 'item', id: back} : null); }
+    if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(back && ['move', 'remove', 'replace'].includes(S.sel.kind) ? {kind: 'item', id: back} : null); }
     // (not from the side: the side pair moves nothing, #187)
     else if (id && !sidesShown() && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
       const cur = itemById(id);
