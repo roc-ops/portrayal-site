@@ -14366,6 +14366,139 @@ def check_rack_place(page, base):
     return bad
 
 
+REPLACE_WARN_FIXTURE = """async () => {
+  const M = await import('/vendor/rack/model.js');
+  let r = M.newRack({name: 'Replace warnings'});
+  ({rack: r} = M.withItem(r, {ref: 'as7726-32x', cfg: 'ac-f2b', ru: 20, face: 'front', turned: true, label: 'tor-1'}));
+  ({rack: r} = M.withItem(r, {ref: '33548-x02', cfg: 'base', ru: 20, face: 'front', on: 'i1', unit: 1, label: 'mgr'}));
+  return r;
+}"""
+
+
+@extra("rack.html: Replace swaps a placed device where it stands, as one step")
+def check_rack_replace(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, "replace")
+    pick(page, "front", 20, "AS7726", "as7726-32x")
+    items = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.map(i => [i.ref, i.ru, i.face, i.label])")
+    page.wait_for_selector("#iLabel", timeout=READY_MS)
+    page.fill("#iLabel", "tor-1"); page.dispatch_event("#iLabel", "change")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0].label === 'tor-1'")
+    start = items()
+    def open_panel():
+        page.wait_for_selector("#iReplace", timeout=READY_MS)
+        page.click("#iReplace")
+        page.wait_for_selector(".rk-side h3:has-text('Replace')", timeout=READY_MS)
+    # Esc from the search it opens on goes back to the device, as Cancel does, and changes nothing.
+    open_panel()
+    page.keyboard.press("Escape")
+    page.wait_for_selector("#iReplace", timeout=READY_MS)
+    if items() != start:
+        bad.append(f"esc: the rack changed: {items()}")
+    open_panel()
+    page.click("#catCancel")
+    page.wait_for_selector("#iReplace", timeout=READY_MS)
+    if items() != start:
+        bad.append(f"cancel: the rack changed: {items()}")
+    # Enter on the search it opens on swaps nothing until the person has searched or chosen.
+    open_panel()
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(200)
+    if items() != start or not page.query_selector("#catPlace"):
+        bad.append(f"enter: Enter on an untouched panel swapped the device: {items()}")
+    # What takes units is offered, as the picker offers it; a rail-face part, one beside the rack and the device itself are not.
+    page.uncheck("#catFitsOnly")
+    offered = page.evaluate("""async () => {
+      const C = await import('/vendor/rack/catalog.js'), cat = (await C.loadCatalog('/assets/dist/')).devices;
+      return [...document.querySelectorAll('#catDevice option')].map(o => [o.value, cat[o.value]?.mount ?? 'rack']);
+    }""")
+    mounts = {m for _, m in offered}
+    if mounts & {"rack-face", "rack-side"} or not {"rack", "desktop"} <= mounts or any(r == "as7726-32x" for r, _ in offered):
+        bad.append(f"offered: the list holds mounts {sorted(mounts)}, the device itself {any(r == 'as7726-32x' for r, _ in offered)}")
+    page.check("#catFitsOnly")
+    # A taller device with room above keeps the bottom U, and says where it will stand. Its label is its own.
+    page.fill("#catQuery", "R740xd")
+    page.select_option("#catDevice", "r740xd")
+    said = page.text_content("#catFit") or ""
+    if "U20" not in said or "U21" not in said:
+        bad.append(f"fit: it says {said!r}, expected the span U20 to U21")
+    if (page.text_content("#catPlace") or "") != "Replace":
+        bad.append("button: the panel's button is not called Replace")
+    page.click("#catPlace")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0]?.ref === 'r740xd'", timeout=READY_MS)
+    got = items()
+    if got != [["r740xd", 20, "front", "PowerEdge R740xd"]]:
+        bad.append(f"replace: items {got}")
+    page.wait_for_selector(".rk-side h3:has-text('PowerEdge R740xd')", timeout=READY_MS)
+    # One Undo takes back both halves: the old device, its label and its place.
+    page.click("#undoShrink")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0]?.ref === 'as7726-32x'", timeout=READY_MS)
+    if items() != start:
+        bad.append(f"undo: items {items()}, expected {start}")
+    # A label the person gave it can be kept. A neighbour above sends a taller device down from its top U.
+    pick(page, "front", 21, "AS7726", "as7726-32x")
+    wait_fn(page, "replace: neighbour placed",
+        "() => window.__rack.doc().racks[0].items.length === 2 && !document.getElementById('catPlace')")
+    tok = render_token(page)
+    page.click('svg[data-pane="front"] [data-item-id="i1"][data-panel="mounted"]')
+    wait_rendered(page, "replace: first device selected", tok)
+    open_panel()
+    if not page.query_selector("#repKeepLabel"):
+        bad.append("label: a device with a given label offers no way to keep it")
+    else:
+        page.check("#repKeepLabel")
+    # A search and Enter is the quick way through.
+    page.fill("#catQuery", "R740xd")
+    page.press("#catQuery", "Enter")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.some(i => i.ref === 'r740xd')", timeout=READY_MS)
+    moved = [i for i in items() if i[0] == "r740xd"]
+    if moved != [["r740xd", 19, "front", "tor-1"]]:
+        bad.append(f"top: items {moved}, expected U19 to U20 with the label kept")
+    # A device with a cable says what happens to it first, and after.
+    open_front_fixture(page, base, HALF_U_FIXTURE, cables=1)
+    tok = render_token(page)
+    page.click('svg[data-pane="front"] [data-item-id="i1"][data-panel="mounted"]')
+    wait_rendered(page, "replace: cabled device selected", tok)
+    open_panel()
+    warned = page.text_content("#repCables") if page.query_selector("#repCables") else ""
+    if "1 cable becomes a loose end" not in (warned or ""):
+        bad.append(f"cables: the panel says {warned!r}")
+    # What will not come across is said first: a bolted cable manager, and a turned device's state.
+    page.click("#catCancel")
+    page.wait_for_selector("#iReplace", timeout=READY_MS)
+    page.evaluate("r => window.__rack.replaceRack(r)", page.evaluate(REPLACE_WARN_FIXTURE))     # (no cables, so no routes to wait for)
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="33548-x02"]', timeout=READY_MS)
+    page.wait_for_timeout(400)
+    tok = render_token(page)
+    page.dispatch_event('svg[data-pane="front"] [data-item-id="i1"][data-panel="mounted"]', "click")
+    wait_rendered(page, "replace: device with a manager selected", tok)
+    open_panel()
+    said = {k: (page.text_content(f"#{k}") if page.query_selector(f"#{k}") else "") for k in ("repManagers", "repLost")}
+    if "mgr" not in said["repManagers"] or "turned" not in said["repLost"]:
+        bad.append(f"warnings: the panel says {said}")
+    # The tick survives a redraw of the panel.
+    page.check("#repKeepLabel")
+    page.click('#mode [data-mode="3d"]')
+    page.click('#mode [data-mode="2d"]')
+    page.wait_for_selector("#repKeepLabel", timeout=READY_MS)
+    if not page.is_checked("#repKeepLabel"):
+        bad.append("label: the tick was lost when the panel was drawn again")
+    # Left / Right is for looking: Replace says where replacing is done, as Move does, and offers no picker.
+    page.click("#catCancel")
+    page.wait_for_selector("#iReplace", timeout=READY_MS)
+    to_sides(page, cables=0)
+    page.wait_for_selector("#iReplace", timeout=READY_MS)
+    page.click("#iReplace")
+    page.wait_for_selector("#replaceHelp", timeout=READY_MS)
+    if "Front / Rear" not in page.inner_text("#replaceHelp") or page.query_selector("#catPlace"):
+        bad.append(f"Left / Right: Replace reads {page.inner_text('#replaceHelp')!r}, with a picker: {bool(page.query_selector('#catPlace'))}")
+    return bad
+
+
 @extra("rack.html: inspect, move with arrows, face refusal, Explorer round trip, remove")
 def check_rack_inspect(page, base):
     bad = []
