@@ -18761,8 +18761,12 @@ def check_rack_agent_frame_products(page, base):
     found = agent_call(page, "find_rack_products", {"text": "ar203a"})["content"][0]["text"]
     if not found.startswith("1 match.\napc/ar203a@1 | APC AR203A | 44U | 4-post-frame"):
         bad.append(f"agent frame: find_rack_products answered {found!r}")
-    if not agent_call(page, "find_rack_products", {"form": "4-post-frame"})["content"][0]["text"].startswith("2 matches."):
-        bad.append("agent frame: the four-post frames are not two")
+    # as many as the catalogue holds: five products when this was written, eleven at kit 0.51.0
+    frames = json.loads((HERE / "assets" / "dist" / "rack.json").read_text())["frames"]
+    four = sum(1 for p in frames.values() if p.get("form") == "4-post-frame")
+    got = agent_call(page, "find_rack_products", {"form": "4-post-frame"})["content"][0]["text"]
+    if four < 2 or not got.startswith(f"{four} matches."):
+        bad.append(f"agent frame: the catalogue's {four} four-post frames are answered {got.splitlines()[0]!r}")
     res = agent_call(page, "edit_rack", {"commands": [{"op": "frame.apply", "ref": "apc/ar203a@1"}]})
     if res.get("isError"):
         bad.append(f"agent frame: frame.apply answered {res}")
