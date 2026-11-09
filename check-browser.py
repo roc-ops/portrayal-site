@@ -2672,11 +2672,8 @@ def check_schema_nos_tab(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"schema: uncaught {e}"))
     tabs = "() => [...document.querySelectorAll('.show-tabs button')].filter(b => !b.hidden).map(b => b.dataset.schema)"
-    have = "listing" if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "listing.schema.json").exists() else "overlay"
-    other = "overlay" if have == "listing" else "listing"
-    # Extract site-owned schemas (those not vendored in assets/schemas/) from site/schema.js
-    schema_js = (HERE / "site" / "schema.js").read_text()
-    site_owned = re.findall(r"^\s*(\w+):\s*\{url:\s*'(?!assets/schemas/)", schema_js, re.M)
+    schemas = pathlib.Path(__file__).resolve().parent / "assets" / "schemas"
+    have = "listing"
     # as vendored - and without asking for a schema the site does not carry
     misses = []
     page.on("response", lambda r: misses.append(r.url) if r.status == 404 else None)
@@ -2684,31 +2681,17 @@ def check_schema_nos_tab(page, base):
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)
     got = page.evaluate(tabs)
-    # the lab schema (Portrayal #852), the rack file's (kit 0.3.0) and the marks
-    # document's (Portrayal #898) are tabs of their own when the snapshot carries them
-    lab = [k for k in ("lab", "rack", "marks")
-           if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / f"{k}.schema.json").exists()]
-    # site-owned schemas (the rack file) are always tabs, since they are not vendored
-    if got != ["device", "component", have] + lab + site_owned:
+    # the lab schema (Portrayal #852), the rack product's, the rack file's (kit 0.3.0),
+    # the site's and the marks document's (Portrayal #898) are tabs of their own when
+    # the snapshot carries them
+    more = [k for k, f in (("lab", "lab"), ("product", "rack-product"), ("rack", "rack"),
+                           ("site", "site"), ("marks", "marks"))
+            if (schemas / f"{f}.schema.json").exists()]
+    if got != ["device", "component", have] + more:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
     if misses: bad.append(f"schema: the page asked for missing files {misses}")
-    # the other side of #677: this snapshot's NOS schema gone, the other one served
-    stub = {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": other, "type": "object",
-            "properties": {"hardware": {"type": "string", "description": "a property to find"}}}
-    page.route(f"**/assets/schemas/{have}.schema.json", lambda r: r.fulfill(status=404, body="the other side of #677"))
-    page.route(f"**/assets/schemas/{other}.schema.json", lambda r: r.fulfill(json=stub))
-    page.route("**/assets/schemas/index.json", lambda r: r.fulfill(json={"schemas": sorted(
-        ["component.schema.json", "device.schema.json", f"{other}.schema.json"])}))
-    page.goto(f"{base}/schema.html?doc={other}", wait_until="load")
-    page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
-    page.wait_for_timeout(500)
-    got = page.evaluate(tabs)
-    order = ["device", "component", "listing"] if other == "listing" else ["device", "component", "overlay"]
-    # site-owned schemas (the rack file) are always tabs, since they are not vendored
-    if got != order + site_owned:
-        bad.append(f"schema: with only {other}.schema.json the tabs are {got}")
-    if not page.query_selector('#schema-body .sc-prop[data-ptr="/properties/hardware"]'):
-        bad.append(f"schema: ?doc={other} did not render the {other} schema")
+    # the overlay schema is retired: no tab, and no request for it
+    if "overlay" in got: bad.append(f"schema: a tab for the retired overlay schema: {got}")
     return bad
 
 # THE SCHEMA PAGE READS A CONDITION THE WAY THE VALIDATOR DOES. Three
