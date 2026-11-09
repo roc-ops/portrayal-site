@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16.0mm" height="16.2mm" viewBox="0 0 16.0 16.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="serial-jack-10p" data-path="serial-jack-10p" data-class="port" data-ref="digi/serial-jack-10p@1:1.0.0" data-depth="18.0" data-wall="#3a3f45" data-cavity="cavity" data-connector="rj45-10p" data-media="rj45-serial" transform="translate(0,0)">
+    <title>serial-jack-10p</title>
+    <path id="serial-jack-10p--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 15.6 a 0.2 0.2 0 0 1 0.2 0.2 v 15.8 a 0.2 0.2 0 0 1 -0.2 0.2 h -15.6 a 0.2 0.2 0 0 1 -0.2 -0.2 v -15.8 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.95 0.9 h 14.1 v 6.83 h -3.9 v 1.69 h -1.12 v 6.78 h -4.06 v -6.78 h -1.12 v -1.69 h -3.9 z" />
+    <path id="serial-jack-10p--cavity" fill="#0a0c0e" d="     M 0.95 0.9 h 14.1 v 6.83 h -3.9 v 1.69 h -1.12 v 6.78 h -4.06 v -6.78 h -1.12 v -1.69 h -3.9 z" />
+    <path id="serial-jack-10p--opening" fill="none" d="M 0.95 0.9 h 14.1 v 15.3 h -14.1 z" data-path="serial-jack-10p/opening" data-class="cutout" />
+    <g id="serial-jack-10p--pins" fill="#a8873c">
+      <rect x="3.41" y="1.5" width="0.46" height="2.0" />
+      <rect x="4.43" y="1.5" width="0.46" height="2.0" />
+      <rect x="5.45" y="1.5" width="0.46" height="2.0" />
+      <rect x="6.47" y="1.5" width="0.46" height="2.0" />
+      <rect x="7.49" y="1.5" width="0.46" height="2.0" />
+      <rect x="8.51" y="1.5" width="0.46" height="2.0" />
+      <rect x="9.53" y="1.5" width="0.46" height="2.0" />
+      <rect x="10.55" y="1.5" width="0.46" height="2.0" />
+      <rect x="11.57" y="1.5" width="0.46" height="2.0" />
+      <rect x="12.59" y="1.5" width="0.46" height="2.0" />
+    </g>
+    <rect id="serial-jack-10p--led-a" x="1.6" y="13.3" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="serial-jack-10p/led-a" data-class="led" data-states="off on" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="serial-jack-10p--led-b" x="12.4" y="13.3" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="serial-jack-10p/led-b" data-class="led" data-states="off on" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="mate" data-cp-at="8 6" data-cp-dir="front" />
+  </g>
+</svg>

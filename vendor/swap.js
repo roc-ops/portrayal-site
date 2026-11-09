@@ -302,7 +302,7 @@ export function seatModule(ownerDoc, bayId, bay, ref, comp, skinText, idBase = b
 // what a projection does not carry: relief, refs, behaviour, connection points
 const projectionDrops = n => n.startsWith('data-z-') || n.startsWith('data-cp')
   || ['data-depth', 'data-body-depth', 'data-ref', 'data-behaviour',
-      'data-vent', 'data-groove'].includes(n);
+      'data-vent', 'data-groove', 'data-wall-depth'].includes(n);
 
 // A GROUP MADE A PROJECTION, as render.py makes one: `data-path` becomes
 // `data-of` (the path is already the part's own), and everything
@@ -706,7 +706,7 @@ export function pyG(v) {
 const INSET_KEYS = ['out', 'lift', 'cyl', 'bar', 'uhandle'];
 const FEATURE_ATTRS = ['top', 'sink', 'out', 'dome', 'vent', 'cyl', 'lift', 'bar', 'uhandle',
                        'dia', 'profile', 'profile-y', 'color', 'hole-color', 'shape', 'knurl',
-                       'thread'].map(k => `data-z-${k}`).concat(['data-depth', 'data-wall']);
+                       'thread'].map(k => `data-z-${k}`).concat(['data-depth', 'data-wall', 'data-wall-depth']);
 
 // EVERY FEATURE BELOW A SEATED OCCUPANT, MOVED AS THE BUILD MOVES IT. The skin
 // the kit copies is the component's STANDALONE drawing, built at back 0; the
@@ -1317,7 +1317,11 @@ export function faceCages(rootEl, deviceCages = [], compByRef, {offered = false}
   const device = deviceCages || [];
   if (!rootEl) return [...device];
   const nested = nestedSlots(rootEl, compByRef, {deviceCages: device, all: true});
-  const every = [...device, ...nested];
+  // A SEAT THE INDEX LISTS AND THE DRAWING YIELDS TOO (a placed part's own seat,
+  // `ground-studs-rear/stud-tr`) IS ONE SLOT, AS THE DRAWING YIELDS IT: that entry
+  // carries the carrier, its group and its depth, which a swap seats through
+  const drawn = new Set(nested.map(e => e.id));
+  const every = [...device.filter(d => !drawn.has(d.id)), ...nested];
   if (!offered) return every;
   const hidden = freeLevel(rootEl, every);
   return every.filter(e => !hidden.has(e.id));
@@ -2238,7 +2242,8 @@ export function slotResolver({bays = [], cages = [], bayRef = (p, b) => b.defaul
     const slot = (Array.isArray(c.cages) ? c.cages : []).find(g => g.id === name);
     if (!slot) return backEntry(path, parent, name, c);
     const host = parent.endsWith('/module') ? null : entryAt(parent);
-    if (host?.isCage && !(host.bores || []).includes(name)) return null;
+    // (a cage's own bores are its slots; so are the cages of a part seated in a cage that presents its own interface)
+    if (host?.isCage && !host.chained && !(host.bores || []).includes(name)) return null;
     return {...slot, id: path, key: slotKey(path), isCage: true};
   }
   // A SLOT ON A MODULE'S BACK (B3 Task 10b): one step under the module in a

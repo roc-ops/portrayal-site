@@ -1,0 +1,923 @@
+{
+ "attrs": {
+  "management": {
+   "metering-scope": "outlet",
+   "outlet-switching": true
+  },
+  "physical": {
+   "construction": "metal",
+   "weight-kg": 7
+  },
+  "power": {
+   "breakers": "two breakers, one for each row of ten outlets (not placed)",
+   "input-cord": "fixed",
+   "input-current-a": 32,
+   "input-plug": "other"
+  }
+ },
+ "chassis": {
+  "airflow": "passive",
+  "color": "#1c1c1e",
+  "depth": 293,
+  "height": 88,
+  "mount": "rack",
+  "ru": 2,
+  "width": 440
+ },
+ "configurations": {
+  "base": {
+   "default": true,
+   "description": "The PDU as it ships. The 3 m cord beyond its gland is not drawn.",
+   "kind": "base",
+   "part-numbers": {
+    "PX3-5469R": {}
+   }
+  }
+ },
+ "datasheet": {
+  "title": "Raritan PX3-5469R technical specification (rev 2025-06-25)"
+ },
+ "description": "Raritan PX3-5469R rack PDU, 2U: a black chassis 440 mm wide, 293 mm deep and 88 mm high. Two rows of ten outlets, eight IEC C13 and two C19 in each, sit left of a controller panel. A rear panel carries the Ethernet, sensor and expansion jacks, and a fixed 3 m cord has an IEC 60309 2P+E 6h 32 A plug.",
+ "format": 1,
+ "gaps": [
+  {
+   "note": "the specification gives two breakers and the drawing's elevation as read places none, so none is drawn and no outlet is linked to one.",
+   "reason": "needs-drawing",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "the drawing's views read for the breakers, or a photograph.",
+   "what": "breakers"
+  },
+  {
+   "note": "the rear panel's jacks are named (Ethernet in green, sensor, expansion, feature) and not placed. They are drawn in a row at estimated places, the expansion and feature jacks as RJ45 serial jacks because their media is not published, and the cord gland at an estimated place. Nothing else is stated on the rear.",
+   "reason": "needs-drawing",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "the drawing's View C and D dimensioned.",
+   "what": "rear-panel"
+  },
+  {
+   "note": "the specification lists the rack kit RACK-KIT-PX-2U. The Raritan Mounting Brackets data sheet gives it an L bracket (250-70-3017-00, 365.23 x 88.1 x 21.3 mm) and a cable management bracket (250-70-3018-00, 447.6 x 12.4 x 8 mm) and no rack depth range or ear position, so no kit contract can be written and no ear position is stated.",
+   "reason": "needs-drawing",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the kit's installation sheet, or a rack depth range from the maker.",
+   "what": "rack-kit"
+  },
+  {
+   "note": "the maker's pages do not say whether the outlets are numbered. They are named 1 to 10 along the top row from the left and 11 to 20 along the bottom row, an assumption; the exported names are these numbers.",
+   "reason": "needs-drawing",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a straight-on photograph of the front.",
+   "what": "numbering"
+  },
+  {
+   "note": "the controller panel's parts are named and placed by estimate, the display and buttons at the PXO's sizes, the USB-B as the PXO's part. The console jack's cyan frame is a colour estimate. The logo is printed as text.",
+   "reason": "needs-drawing",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the drawing's View C dimensioned.",
+   "what": "controller-layout"
+  },
+  {
+   "note": "the specification for this model does not state the rate of its Ethernet jack. The PX3 user guide (connection ports) says the port marked green is 10/100/1000 and the one marked white is 10/100, and the maker's pages give this jack as green, so 1g is stated by that colour rule and not by a printed label on this model.",
+   "reason": "vendor-silent",
+   "scope": [
+    "eth"
+   ],
+   "wanted": "a close photograph of the jack's label, or the specification's port table.",
+   "what": "eth-speed"
+  },
+  {
+   "note": "the maker's pages give no view of the top, bottom or ends, so none is drawn. Their outlines are the printed sizes.",
+   "reason": "needs-drawing",
+   "scope": [
+    "top",
+    "bottom",
+    "left",
+    "right"
+   ],
+   "wanted": "the drawing's plan and end views.",
+   "what": "sides"
+  }
+ ],
+ "groups": {
+  "buttons": {
+   "description": "the four navigation buttons and the reset pinhole",
+   "index-origin": 1,
+   "role": "service",
+   "term": "Button"
+  },
+  "c13-outlets": {
+   "attrs": {
+    "outlet": "iec-60320-c13"
+   },
+   "description": "the 16 IEC C13 outlets, eight in each row",
+   "index-origin": 1,
+   "role": "traffic",
+   "term": "Outlet"
+  },
+  "c19-outlets": {
+   "attrs": {
+    "outlet": "iec-60320-c19"
+   },
+   "description": "the four IEC C19 outlets, two at the right end of each row",
+   "index-origin": 1,
+   "role": "traffic",
+   "term": "Outlet"
+  },
+  "display": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "Display"
+  },
+  "eth": {
+   "attrs": {
+    "media": "rj45",
+    "speed": "1g"
+   },
+   "description": "the Ethernet jack on the rear panel",
+   "index-origin": 1,
+   "role": "management",
+   "term": "Port"
+  },
+  "lamps": {
+   "description": "the two lamps of the controller panel",
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  },
+  "mgmt": {
+   "index-origin": 1,
+   "mixed": "the console jack, the two USB jacks and the sensor, expansion and feature jacks",
+   "role": "management",
+   "term": "Port"
+  },
+  "power-input": {
+   "index-origin": 1,
+   "role": "service",
+   "term": "Input"
+  }
+ },
+ "interfaces": [
+  {
+   "name": "{n}",
+   "physical": "outlet-{n}",
+   "range": "1-20"
+  },
+  {
+   "name": "Ethernet",
+   "physical": "eth"
+  }
+ ],
+ "kind": "device",
+ "manufacturer": "Raritan",
+ "maturity": "modelled",
+ "model": "PX3-5469R",
+ "name": "px3-5469r",
+ "profile": "power",
+ "provenance": {
+  "capability": {
+   "confidence": "datasheet",
+   "note": "datasheet - switched and metered per outlet (the specification), so `outlet-switching: true` and each outlet states on and off."
+  },
+  "chassis": {
+   "confidence": "drawing",
+   "note": "drawing - 440 x 293 x 88 mm (17.3 x 11.5 x 3.5 in), width, depth, height. 2U horizontal; `ru: 2`. Weight 7 kg, shipping 10.6 kg and 560 x 552 x 284 mm."
+  },
+  "colours": {
+   "confidence": "estimated",
+   "note": "THE COLOURS ARE UNCHECKED ESTIMATES. The maker's pages give no colour for this model. The chassis black (#1c1c1e), the panel, the plates, the outlets, the jacks and the lamps are estimates. The maker's PX4 product images show black, and they were not compared with this model. The drawn faces have not been compared with a vendor photograph of the model. THE FRAME COLOURS ARE SOURCED FOR THE JACKS ONLY: the green Ethernet frame, the yellow sensor frame, the grey expansion frame and the red feature frame follow the PX3 user guide's table of connection-port colours (the series, not this model's drawing); the cyan console frame is read from the maker's pages. None was checked against a photograph of this model."
+  },
+  "controller": {
+   "confidence": "estimated",
+   "note": "ESTIMATED BEYOND ITS SPAN. The maker's pages give, on the controller panel, a large colour display at the top, an RJ45 console jack in a cyan frame, a USB-B jack, a USB-A jack, four buttons, a reset pinhole and two lamps, with the logo printed vertically at the extreme right. The display and the buttons are the PXO's measured sizes (the same maker) and every place is an estimate."
+  },
+  "front": {
+   "confidence": "estimated",
+   "note": "drawing - two rows of ten outlets, circuit 1 on the top row and circuit 2 on the bottom, about 43 mm apart. In each row five C13, a small gap, three more C13, then two C19, read at column centres of about 26, 61, 96, 131, 165, 204, 239, 273, 308 and 339 mm (+/- 3). Three centres are moved inside that reading so that no two outlets overlap: 273 to 272.5, 308 to 306 and 339 to 342. The controller panel stands at the right end from about 359 to 440 mm."
+  },
+  "input": {
+   "confidence": "datasheet",
+   "note": "datasheet - IEC 60309 2P+E 6h 32 A (IP44), 3 m cord, rear feed, cord retention no."
+  },
+  "method": {
+   "confidence": "drawing",
+   "note": "FIGURES FROM THE MAKER'S PRINTED SIZES AND A READING OF ITS MECHANICAL DRAWING. The technical specification (rev 2025-06-25) and the mechanical drawing MPX3-5469R (Rev 2A, April 23, 2017) print the unit size and the bracket height. The front elevation is read off the drawing, 440 mm wide, to about 3 mm. The rear is read in less detail: the maker's pages name its jacks and do not place them. The figures are read off the maker's mechanical drawing."
+  },
+  "outlets": {
+   "confidence": "datasheet",
+   "note": "datasheet - the technical specification: (16) C13 and (4) C19, two rows on the front, switched and metered per outlet. std/c13-outlet@1 and std/c19-outlet@1. Their turn is not published, so they are drawn unturned."
+  },
+  "rear": {
+   "confidence": "estimated",
+   "note": "estimated - the maker's pages name, on a rear panel, an Ethernet jack (green), sensor and expansion RJ45 jacks and a feature jack, and says the cord leaves the rear; it places none of them. They stand in a row at the end that is behind the controller panel, and the cord gland at the other end, each an estimate (gaps: rear-panel)."
+  }
+ },
+ "references": [
+  {
+   "title": "Raritan mechanical drawing MPX3-5469R, Rev 2A, April 23, 2017"
+  },
+  {
+   "title": "Raritan Mounting Brackets data sheet"
+  },
+  {
+   "title": "Raritan PX3 rack PDU data sheet"
+  }
+ ],
+ "version": "0.1.0",
+ "views": {
+  "bottom": {
+   "empty": "no source shows the bottom: the maker's pages place nothing on it, so nothing is drawn.",
+   "size": {
+    "h": 293,
+    "w": 440
+   }
+  },
+  "front": {
+   "components": {
+    "placements": [
+     {
+      "at": [
+       10.8,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-1",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 1,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       45.8,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-2",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 2,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       80.8,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-3",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 3,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       115.8,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-4",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 4,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       149.8,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-5",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 5,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       188.8,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-6",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 6,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       223.8,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-7",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 7,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       257.3,
+       11.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-8",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 8,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       288.2,
+       8.65
+      ],
+      "fed-by": "input",
+      "group": "c19-outlets",
+      "id": "outlet-9",
+      "ref": "std/c19-outlet@1",
+      "rel-pos": 1,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       324.2,
+       8.65
+      ],
+      "fed-by": "input",
+      "group": "c19-outlets",
+      "id": "outlet-10",
+      "ref": "std/c19-outlet@1",
+      "rel-pos": 2,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       10.8,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-11",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 9,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       45.8,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-12",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 10,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       80.8,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-13",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 11,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       115.8,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-14",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 12,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       149.8,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-15",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 13,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       188.8,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-16",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 14,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       223.8,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-17",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 15,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       257.3,
+       54.5
+      ],
+      "fed-by": "input",
+      "group": "c13-outlets",
+      "id": "outlet-18",
+      "ref": "std/c13-outlet@1",
+      "rel-pos": 16,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       288.2,
+       51.65
+      ],
+      "fed-by": "input",
+      "group": "c19-outlets",
+      "id": "outlet-19",
+      "ref": "std/c19-outlet@1",
+      "rel-pos": 3,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       324.2,
+       51.65
+      ],
+      "fed-by": "input",
+      "group": "c19-outlets",
+      "id": "outlet-20",
+      "ref": "std/c19-outlet@1",
+      "rel-pos": 4,
+      "states": [
+       "on",
+       "off"
+      ]
+     },
+     {
+      "at": [
+       364.0,
+       6.0
+      ],
+      "for": "chassis",
+      "group": "display",
+      "id": "display",
+      "ref": "raritan/pxo-lcd@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       411.0,
+       10.0
+      ],
+      "description": "upward chevron: previous entry",
+      "for": "display",
+      "group": "buttons",
+      "id": "button-up",
+      "ref": "raritan/pxo-button@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       421.0,
+       10.0
+      ],
+      "description": "downward chevron: next entry",
+      "for": "display",
+      "group": "buttons",
+      "id": "button-down",
+      "ref": "raritan/pxo-button@1",
+      "rel-pos": 2,
+      "skin": "down"
+     },
+     {
+      "at": [
+       411.0,
+       22.0
+      ],
+      "description": "circle: OK",
+      "for": "display",
+      "group": "buttons",
+      "id": "button-ok",
+      "ref": "raritan/pxo-button@1",
+      "rel-pos": 3,
+      "skin": "circle"
+     },
+     {
+      "at": [
+       421.0,
+       22.0
+      ],
+      "description": "cross: cancel",
+      "for": "display",
+      "group": "buttons",
+      "id": "button-back",
+      "ref": "raritan/pxo-button@1",
+      "rel-pos": 4,
+      "skin": "cross"
+     },
+     {
+      "at": [
+       364.0,
+       54.0
+      ],
+      "attrs": {
+       "media": "rj45-serial",
+       "role": "console"
+      },
+      "description": "RJ45 console jack, in a cyan frame",
+      "group": "mgmt",
+      "id": "console",
+      "ref": "std/rj45@2",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       385.0,
+       54.0
+      ],
+      "description": "USB-B",
+      "group": "mgmt",
+      "id": "usb-b",
+      "ref": "raritan/pxo-usb-b@1",
+      "rel-pos": 2
+     },
+     {
+      "at": [
+       400.0,
+       58.0
+      ],
+      "description": "USB-A",
+      "group": "mgmt",
+      "id": "usb-a",
+      "ref": "std/usb-a@1",
+      "rel-pos": 3
+     },
+     {
+      "at": [
+       418.0,
+       62.0
+      ],
+      "for": "console",
+      "group": "buttons",
+      "id": "reset",
+      "ref": "common/reset-button@1",
+      "rel-pos": 5
+     },
+     {
+      "at": [
+       418.0,
+       55.0
+      ],
+      "for": "chassis",
+      "group": "lamps",
+      "id": "lamp-1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       424.0,
+       55.0
+      ],
+      "for": "chassis",
+      "group": "lamps",
+      "id": "lamp-2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 2
+     }
+    ]
+   },
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       360.0,
+       0.0
+      ],
+      "fill": "#18191b",
+      "id": "controller-panel",
+      "kind": "controller-panel",
+      "size": [
+       80.0,
+       88.0
+      ]
+     },
+     {
+      "at": [
+       363.0,
+       53.0
+      ],
+      "fill": "none",
+      "id": "frame-console",
+      "kind": "colour-frame",
+      "size": [
+       17.8,
+       15.2
+      ],
+      "stroke": "#2fb5c6",
+      "stroke-width": 0.5
+     }
+    ]
+   },
+   "regions": [
+    {
+     "at": [
+      433.0,
+      28.0
+     ],
+     "id": "logo-zone",
+     "label": "Raritan logo printed vertically at the extreme right; the mark is not drawn",
+     "size": {
+      "h": 32.0,
+      "w": 5.0
+     }
+    }
+   ],
+   "silkscreen": [
+    {
+     "anchor": "middle",
+     "at": [
+      5.5,
+      22.5
+     ],
+     "fill": "#e8e8e8",
+     "font-size": 2.4,
+     "for": "chassis",
+     "rotate": -90,
+     "text": "CIRCUIT 1"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      5.5,
+      65.5
+     ],
+     "fill": "#e8e8e8",
+     "font-size": 2.4,
+     "for": "chassis",
+     "rotate": -90,
+     "text": "CIRCUIT 2"
+    }
+   ],
+   "size": {
+    "h": 88,
+    "w": 440
+   }
+  },
+  "left": {
+   "empty": "no source shows the left: the maker's pages place nothing on it, so nothing is drawn.",
+   "size": {
+    "h": 88,
+    "w": 293
+   }
+  },
+  "rear": {
+   "components": {
+    "placements": [
+     {
+      "at": [
+       7.0,
+       37.4
+      ],
+      "attrs": {
+       "media": "rj45-serial"
+      },
+      "description": "sensor jack",
+      "group": "mgmt",
+      "id": "sensor",
+      "ref": "std/rj45@2",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       27.0,
+       37.4
+      ],
+      "attrs": {
+       "media": "rj45",
+       "role": "mgmt",
+       "speed": "1g"
+      },
+      "description": "Ethernet jack, in a green frame: 10/100/1000 by the PX3 user guide's colour marking",
+      "group": "eth",
+      "id": "eth",
+      "ref": "common/rj45-eth@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       47.0,
+       37.4
+      ],
+      "attrs": {
+       "media": "rj45-serial"
+      },
+      "description": "expansion jack; media not published, drawn as a serial jack",
+      "group": "mgmt",
+      "id": "expansion",
+      "ref": "std/rj45@2",
+      "rel-pos": 4
+     },
+     {
+      "at": [
+       67.0,
+       37.4
+      ],
+      "attrs": {
+       "media": "rj45-serial"
+      },
+      "description": "feature jack; media not published, drawn as a serial jack",
+      "group": "mgmt",
+      "id": "feature",
+      "ref": "std/rj45@2",
+      "rel-pos": 5
+     },
+     {
+      "at": [
+       390.0,
+       34.0
+      ],
+      "description": "the fixed 3 m input cord, ending in an IEC 60309 2P+E 6h 32 A plug; only its gland is drawn",
+      "group": "power-input",
+      "id": "input",
+      "ref": "raritan/px3-rear-cord-60309@1",
+      "rel-pos": 1
+     }
+    ]
+   },
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       26.0,
+       36.4
+      ],
+      "fill": "none",
+      "id": "frame-eth",
+      "kind": "colour-frame",
+      "size": [
+       17.8,
+       15.2
+      ],
+      "stroke": "#48a163",
+      "stroke-width": 0.5
+     },
+     {
+      "at": [
+       6.0,
+       36.4
+      ],
+      "fill": "none",
+      "id": "frame-sensor",
+      "kind": "colour-frame",
+      "size": [
+       17.8,
+       15.2
+      ],
+      "stroke": "#e6d633",
+      "stroke-width": 0.5
+     },
+     {
+      "at": [
+       46.0,
+       36.4
+      ],
+      "fill": "none",
+      "id": "frame-expansion",
+      "kind": "colour-frame",
+      "size": [
+       17.8,
+       15.2
+      ],
+      "stroke": "#8a8d91",
+      "stroke-width": 0.5
+     },
+     {
+      "at": [
+       66.0,
+       36.4
+      ],
+      "fill": "none",
+      "id": "frame-feature",
+      "kind": "colour-frame",
+      "size": [
+       17.8,
+       15.2
+      ],
+      "stroke": "#d23b3b",
+      "stroke-width": 0.5
+     }
+    ]
+   },
+   "size": {
+    "h": 88,
+    "w": 440
+   }
+  },
+  "right": {
+   "empty": "no source shows the right: the maker's pages place nothing on it, so nothing is drawn.",
+   "size": {
+    "h": 88,
+    "w": 293
+   }
+  },
+  "top": {
+   "empty": "no source shows the top: the maker's pages place nothing on it, so nothing is drawn.",
+   "size": {
+    "h": 293,
+    "w": 440
+   }
+  }
+ }
+}

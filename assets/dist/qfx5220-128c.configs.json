@@ -5378,7 +5378,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      378.1,
@@ -5418,7 +5419,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      378.1,
@@ -5700,7 +5702,46 @@
    }
   ],
   "left": [],
-  "rear": [],
+  "rear": [
+   {
+    "accepts": [
+     "generic/two-hole-lug-5-8@1"
+    ],
+    "at": [
+     17.9995,
+     149.937
+    ],
+    "bores": [
+     "1",
+     "2"
+    ],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-pair",
+    "interface": "stud-pair-5-8",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     28.35,
+     152.35
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (the guide's earthing section (figure 32, callout 3))",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": 0,
+    "turns": [
+     0,
+     180
+    ]
+   }
+  ],
   "right": [],
   "top": []
  },
@@ -5725,6 +5766,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "QFX5220-128C-AFO: four 1600 W AC supplies (JPSU-1600W-AC-AFO) and six front-to-back fan modules (QFX5220-128C-FANAO). All have a Juniper gold handle and the label AIR OUT (guide Tables 3, 16 and 18).",
    "files": {
@@ -10393,6 +10435,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
     "fan-0": "",
     "fan-1": "",
@@ -15006,6 +15049,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
     "psu-0": "juniper/qfx10002-jpsu-1600w-dc-afo@1",
     "psu-1": "juniper/qfx10002-jpsu-1600w-dc-afo@1",
@@ -19772,16 +19816,6 @@
    "what": "qsfp28-lamp-assignment"
   },
   {
-   "because": "needs-drawing",
-   "blocks": [],
-   "kind": "declared",
-   "scope": [
-    "rear"
-   ],
-   "wanted": "A library part for the two tapped holes of the protective earthing terminal. The pair parts in the library compose screw heads, and the guide says the screws are not supplied. The plate and the earth symbol are drawn and the two holes are not.",
-   "what": "earthing-terminal-holes"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "kind": "declared",
@@ -19811,6 +19845,17 @@
    ],
    "wanted": "The rack ears' positions and the rack kit's contract. The guide names QFX5220-4PRMK-4U and gives two different rail spacings. No kit contract exists in the library and none is written here.",
    "what": "ears-and-kits"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   },
   {
    "because": "CAP",
@@ -19865,11 +19910,15 @@
   },
   "earthing-terminal": {
    "confidence": "drawing",
-   "note": "The chassis protective earthing terminal (callout 3 of figure 32) at the lower left of the rear: a plate 27.5 mm by 9.7 mm at 14.6 mm and 147.5 mm down with two tapped holes 15.9 mm apart (the guide's Panduit LCD10-10A-L lug, 5/8 in centres, takes two 10-32 screws that the box does not include) and the earth symbol at 49.5 mm. The plate and the symbol are drawn. The two holes are not, because the library has no part for a bare pair of tapped holes (see gaps)."
+   "note": "The chassis protective earthing terminal (callout 3 of figure 32) at the lower left of the rear: a plate 27.5 mm by 9.7 mm at 14.6 mm and 147.5 mm down with two tapped holes 15.9 mm apart (the guide's Panduit LCD10-10A-L lug, 5/8 in centres, takes two 10-32 screws that the box does not include) and the earth symbol at 49.5 mm. The plate, the symbol and the two bare 10-32 holes are drawn, the holes as one two-hole seat on the lug's 5/8 in. pitch, centred on the plate (`ground-stud-pitch` says how the pitch and the place are read)."
   },
   "gate-1": {
    "confidence": "drawing",
    "note": "Figure 17 (g051150) is a flat line drawing. Its body is 1413.5 px wide and 563 px high, an aspect of 2.511 against the table's 439.9 / 174.8 = 2.517 (0.2 percent out), so it carries geometry. Scale 3.213 px/mm across and 3.222 px/mm down, origin at the left and top edges of the body. Figure 32 (g051151, the rear) is 1415 by 565 px, aspect 2.504 (0.5 percent out), 3.217 px/mm across and 3.233 down. Every position below is read off these two at 4 to 6 times zoom and is estimated to about 0.3 mm. The photographs (figures 12 and 13, 2.66 px/mm) agree with the drawings to 0.7 mm across and 2 mm down. The photograph is foreshortened a little, and the drawings are used for every position."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. The guide names a Panduit LCD10-10A-L lug or equivalent and two 10-32 x 0.25 in. screws with number 10 split-lock washers (not provided) for the earthing terminal, and gives no spacing. Its drawing puts the two tapped holes 15.9 mm apart, which is the 5/8 in. (15.875) of the library's two-hole lug for the same hole-spacing code (Panduit LCD6-10A-L: '.63 hole spacing'). The terminal is `common/ground-hole-pair-5-8-10-32@1`: two bare 10-32 holes on 5/8 in. centres, presenting `stud-pair-5-8`, so one two-hole lug (`generic/two-hole-lug-5-8@1`) lands across them and a ring lug still lands on either hole. The holes were not drawn before; they are drawn bare, as the held photograph of the rear shows them. Figure 32 draws them level and evenly set in the plate to within 0.5 mm, so the pair is centred on the plate; it gives no dimension for their place. The photograph reads them wider (about 17.5 mm across the 27.5 mm plate) and is not used for the pitch."
   },
   "lifecycle": {
    "confidence": "estimated",
@@ -19940,7 +19989,19 @@
    "note": "Hexagonal holes in the sheet: a band above the first row (5.1 to 17.2 mm down), a band between the two blocks (80.7 to 100.2 mm), a band along the bottom (164 to 172.6 mm), a field at each end of the face, and a column of seven round holes in each gutter between pairs of cells, for each row. The photograph (figure 12) shows the hexagonal holes 6.6 mm apart along a row. The tile is set to a 6.5 mm pitch. The gutter holes are 7 a row on a 3.76 mm pitch read at figure 17's scale. All of it is drawn as vent decor and is estimated."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "ground-pair": {
+    "generic/two-hole-lug-5-8@1": 180
+   },
+   "ground-pair/1": {
+    "generic/ring-lug@1": 0
+   },
+   "ground-pair/2": {
+    "generic/ring-lug@1": 0
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="413.5mm" height="29.5mm" viewBox="0 0 413.5 29.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="scbe3-mx" data-path="scbe3-mx" data-class="supervisor" data-behaviour="fills" data-ref="juniper/scbe3-mx@1:1.0.0" data-fabric-bandwidth="up to 1 Tbps per slot (four fabric planes), 1.5 Tbps per slot with all six planes (MPC10E line cards)" data-generation="3rd" data-model="SCBE3-MX" data-power-draw-max-w="425" data-sfp-plus="2" data-states="ok fail absent" transform="translate(0,0)">
+    <title>scbe3-mx</title>
+    <rect id="scbe3-mx--plate" x="8.75" y="0" width="396" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <rect id="scbe3-mx--re-slot" x="62" y="2.0" width="256" height="25.5" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.3" />
+    <g id="scbe3-mx--lever-left" data-path="scbe3-mx/lever-left" data-class="latch">
+      <rect x="0" y="10.25" width="24" height="9" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      <circle cx="12" cy="14.75" r="2.2" fill="#9ba0a6" stroke="#3a3e43" stroke-width="0.3" />
+    </g>
+    <g id="scbe3-mx--lever-right" data-path="scbe3-mx/lever-right" data-class="latch">
+      <rect x="389.5" y="10.25" width="24" height="9" rx="2.6" fill="#55595e" stroke="#3a3e43" stroke-width="0.3" />
+      <circle cx="401.5" cy="14.75" r="2.2" fill="#9ba0a6" stroke="#3a3e43" stroke-width="0.3" />
+    </g>
+    <rect id="scbe3-mx--logo-zone" x="60" y="5" width="24" height="8" fill="none" data-path="scbe3-mx/logo-zone" data-class="label" />
+    <g id="scbe3-mx--lamps">
+      <circle id="scbe3-mx--led-ok-fail" cx="35.2" cy="23.5" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="scbe3-mx--led-fabric-active" cx="48.5" cy="23.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="scbe3-mx--led-fabric-only" cx="48.5" cy="17.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="scbe3-mx--led-link-0" cx="335.9" cy="8.1" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="scbe3-mx--led-link-1" cx="350.1" cy="8.1" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="scbe3-mx--led-gps" cx="364.3" cy="14.9" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+    </g>
+    <g id="scbe3-mx--silkscreen">
+      <text x="10.5" y="27.7" font-family="Arial" font-size="2.2" fill="#3a3e43" text-anchor="start">SCBE3-MX</text>
+      <text x="37.4" y="22.8" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="start" transform="rotate(270 37.4 22.8)">OK/FAIL</text>
+      <text x="50.7" y="24.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="start" transform="rotate(270 50.7 24.4)">ACTIVE</text>
+      <text x="50.7" y="18.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="start" transform="rotate(270 50.7 18.4)">ONLY</text>
+      <text x="48.5" y="13.8" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">FABRIC</text>
+      <text x="328.4" y="20.2" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="start" transform="rotate(270 328.4 20.2)">XGE</text>
+      <text x="336.4" y="6.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start" transform="rotate(270 336.4 6.4)">LINK</text>
+      <text x="350.6" y="6.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start" transform="rotate(270 350.6 6.4)">LINK</text>
+      <text x="364.8" y="13.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start" transform="rotate(270 364.8 13.0)">GPS</text>
+      <text x="368.0" y="3.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="start">EXT CLK</text>
+    </g>
+    <g id="scbe3-mx--panel-screws">
+      <circle cx="48.5" cy="7.5" r="2.6" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      <path d="M 47.0 7.5 L 50.0 7.5 M 48.5 6.0 L 48.5 9.0" stroke="#3a3e43" stroke-width="0.4" />
+      <circle cx="331.2" cy="7.5" r="2.6" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      <path d="M 329.7 7.5 L 332.7 7.5 M 331.2 6.0 L 331.2 9.0" stroke="#3a3e43" stroke-width="0.4" />
+    </g>
+    <g id="scbe3-mx--xge-0" data-path="scbe3-mx/xge-0" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="XGE port 0" data-media="sfp" transform="translate(331.65,12.6)" data-group="xge" data-group-role="management" data-description="the two SFP+ XGE ports, joined to the Ethernet control switch">
+      <title>scbe3-mx--xge-0</title>
+      <rect id="scbe3-mx--xge-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="scbe3-mx/xge-0/opening" data-class="cutout" />
+      <rect id="scbe3-mx--xge-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="scbe3-mx--xge-0--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="scbe3-mx--xge-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="scbe3-mx--xge-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="scbe3-mx--xge-1" data-path="scbe3-mx/xge-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="XGE port 1" data-media="sfp" transform="translate(346.55,12.6)" data-group="xge" data-group-role="management" data-description="the two SFP+ XGE ports, joined to the Ethernet control switch">
+      <title>scbe3-mx--xge-1</title>
+      <rect id="scbe3-mx--xge-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="scbe3-mx/xge-1/opening" data-class="cutout" />
+      <rect id="scbe3-mx--xge-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="scbe3-mx--xge-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="scbe3-mx--xge-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="scbe3-mx--xge-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="scbe3-mx--ext-clk" data-path="scbe3-mx/ext-clk" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="GPS external clock" data-media="rj45-tod" transform="translate(368.0,9.3) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management" data-description="the RJ-45 GPS external clock interface">
+      <title>scbe3-mx--ext-clk</title>
+      <path id="scbe3-mx--ext-clk--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="scbe3-mx--ext-clk--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="scbe3-mx--ext-clk--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="scbe3-mx/ext-clk/opening" data-class="cutout" />
+      <g id="scbe3-mx--ext-clk--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

@@ -47,6 +47,7 @@
    "part-numbers": {
     "EX2300-24T-DC": {}
    },
+   "power": "dc",
    "views": {
     "rear": "rear-dc"
    }
@@ -69,6 +70,15 @@
  "description": "Juniper EX2300-24T is a fixed 1RU Gigabit Ethernet access switch. It has 24 10/100/1000BASE-T ports without PoE and four built-in 10-Gigabit SFP+/SFP uplink ports. The front carries the 24 jacks in two stacked rows numbered 0 to 23, and the upper jack of a column takes the even number. It also carries the four uplinks numbered 0 to 3, three status lamps, three port-mode lamps, a Factory Reset/Mode button and a mini-USB console port. The rear carries the management Ethernet port with a USB port under it, the RJ-45 console port, a two-hole earthing terminal and an ESD point. It also carries one exhaust fan and the AC power cord inlet. The power supply and the fan are built into the chassis, so there are no bays. The -TAA and -VC part numbers are the same chassis. The -DC part number is the same front with a DC terminal block on the rear. The EX2300-24P is the same front with PoE.",
  "format": 1,
  "gaps": [
+  {
+   "note": "The part is the registry's Mini-B receptacle (Molex drawing SD-54819-026, 7.7 x 3.9 mm). The front photographs show the console shell at about 25 x 14 px at 3.27 px per mm, 7.6 x 4.3 mm, and no close-up is held, so the drawn shell and its place are estimates and the maker's own shell may differ by a few tenths.",
+   "reason": "needs-photo",
+   "scope": [
+    "console-usb"
+   ],
+   "wanted": "A straight-on close-up of the console port with a scale, or the maker's dimensioned drawing of it.",
+   "what": "mini-usb-console-shell"
+  },
   {
    "note": "Table 35 lists the supplied two-post mounting brackets and a separately orderable four-post rack-mount kit (EX-4PST-RMK, named in the clearance section); no figure measures a bracket position, so no ear position is stated and no kit is listed.",
    "reason": "needs-drawing",
@@ -113,6 +123,24 @@
    ],
    "wanted": "none beyond the component's own vocabulary.",
    "what": "jack-lamp-meaning"
+  },
+  {
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
+  },
+  {
+   "note": "The guide's Table 16 gives -48 through -60 VDC at 2.8 A maximum and its Figure 81 prints \"2.8A Max per input\", while the legend on the held rear photograph of the DC-powered model reads -44V to -72V and 3.7A Max. The DC input ports of the placed terminal block state no voltage and no current, and `rear-dc` draws the photographed legend.",
+   "reason": "sources-disagree",
+   "scope": [
+    "dc-terminal"
+   ],
+   "wanted": "Juniper's statement of the DC input range and current of the EX2300-24T-DC, and which revision of the rear legend it belongs to.",
+   "what": "dc-input-rating"
   }
  ],
  "groups": {
@@ -131,6 +159,12 @@
    "index-origin": 0,
    "role": "furniture",
    "term": "Item"
+  },
+  "grounding": {
+   "description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (Table 36)",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
   },
   "mgmt": {
    "index-origin": 0,
@@ -211,7 +245,7 @@
   },
   "front-console": {
    "confidence": "estimated",
-   "note": "estimated - the mini-USB console port (guide Figure 3, callout 5, printed CON) is drawn as chassis art, a 7.9 x 4.6 mm shell with its opening, read off the 24P and 48P photographs (25 x 14 px and 24 x 14 px at 3.27 px per mm). It is not a component: the library has no mini-USB receptacle and its DCIM export has no row for one, so a placed part would export nothing. The rear RJ-45 console port is a component and exports."
+   "note": "estimated - the mini-USB console port (guide Figure 3, callout 5, printed CON) is the placed std/mini-usb (`console-usb`), centred on the 7.9 x 4.6 mm shell this device was drawn with, which was read off the 24P and 48P photographs (25 x 14 px and 24 x 14 px at 3.27 px per mm). The part draws the registry's 7.7 x 3.9 mm Mini-B shell, which stands in for the maker's own (gap `mini-usb-console-shell`). The guide names the connector: \"Mini-USB Type-B (5-pin)\" (Console Ports, p4; Mini-USB Port Pinout Specifications, p86)."
   },
   "front-layout": {
    "confidence": "estimated",
@@ -220,6 +254,10 @@
   "gate-1": {
    "confidence": "measured",
    "note": "The 24P front photograph is 1500 x 190 px with the body 1446 px across and 143 down: 10.11 against the stated 441.9 / 44.45 = 9.94, 1.7 percent out, so x is taken at 3.272 px per mm from the width and y at 3.217 px per mm from the height. The ganged jack pitch then reads 45.7 px = 13.96 mm, the 0.550 in pitch the registry records for the ganged RJ-45 cell, on a quantity the scale never saw. The 48P photograph agrees on every feature both show to within 0.7 mm in x and 1.4 mm in y; the y values here are the mean of the two. The DC rear photograph (1455 px across, 3.293 px per mm, 3.217 down) and the 48P rear (3.234 across, 3.09 down) give the rear positions. Every position is estimated and good to about a millimetre."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 36 names two 10-32 x .25 in. screws with #10 split-lock washers and a Panduit LCC10-14AW-L lug or equivalent (not provided) for the EX2300 and EX2300-C, and gives no spacing. The rear photograph puts the two holes 15.9 mm apart: 5/8 in. (15.875) and not 3/4 in. (19.05). The lug's own code is not in the library's registry, so it is the photograph that carries the pitch. The terminal is `common/ground-hole-pair-5-8-10-32@1`: two bare 10-32 holes on 5/8 in. centres, presenting `stud-pair-5-8`, so one two-hole lug (`generic/two-hole-lug-5-8@1`) lands across them and a ring lug still lands on either hole. The holes stay bare, as the photograph shows them; the screws that hold the lug are not part of the switch. The holes were drawn 15.9 apart as decor and the pair stands on their midpoint."
   },
   "lamps": {
    "confidence": "datasheet",
@@ -235,7 +273,7 @@
   },
   "rear-dc": {
    "confidence": "photo-measured",
-   "note": "photo-measured - the EX2300-24T-DC rear from the studio photograph named ex2300-24p-rear-high.jpg at 3.293 px per mm: the same management and console cluster and earthing plate as the AC rear, the ESD symbol and point lower and to the right of the plate (64.4 and 77.5 mm, 21 mm down) instead of beside it, the single fan at 115.7 mm, nine screws along the lower edge, no earth symbol left of the plate, and a four-pole DC terminal block 52.6 mm wide at 377.3 mm in place of the AC inlet. Figure 13 draws the earth symbol beside the plate while the photograph does not, so the two disagree on that one mark and the photograph won; the rest of Figure 13's arrangement matches the photograph. The block is drawn as chassis art (a plate, a dark strip, two mounting screws and four terminals, sized off the photograph) and is not a component, because the DCIM export has no row for a part of that kind and a placed part would export nothing. The legend printed over the block reads DC INPUT : -44V- -72V, a DC symbol, 3.7A Max; the guide's Table 16 gives -48 through -60 VDC at 2.8 A maximum (the printed range is the wider), both are recorded and the printed text is drawn with the DC symbol the photograph and Figure 13 both print. The guide's figure labels the poles INPUT 1 and INPUT 2 under the block; the photograph shows no label there and none is drawn."
+   "note": "photo-measured - the EX2300-24T-DC rear from the studio photograph named ex2300-24p-rear-high.jpg at 3.293 px per mm: the same management and console cluster and earthing plate as the AC rear, the ESD symbol and point lower and to the right of the plate (64.4 and 77.5 mm, 21 mm down) instead of beside it, the single fan at 115.7 mm, nine screws along the lower edge, no earth symbol left of the plate, and a four-pole DC terminal block 52.6 mm wide at 377.3 mm in place of the AC inlet. Figure 13 draws the earth symbol beside the plate while the photograph does not, so the two disagree on that one mark and the photograph won; the rest of Figure 13's arrangement matches the photograph. The block (a plate, a dark strip, two mounting screws and four terminals, sized off the photograph) is the part juniper/ex2300-dc-terminal@1, placed at 377.3 mm, which composes the four terminal screws and states one DC input port for each of the two feeds. The legend printed over the block reads DC INPUT : -44V- -72V, a DC symbol, 3.7A Max; the guide's Table 16 gives -48 through -60 VDC at 2.8 A maximum (the printed range is the wider), both are recorded and the printed text is drawn with the DC symbol the photograph and Figure 13 both print. The guide's figure labels the poles INPUT 1 and INPUT 2 under the block; the photograph shows no label there and none is drawn."
   },
   "rear-layout": {
    "confidence": "estimated",
@@ -256,7 +294,7 @@
    "title": "EX2300 Switch Hardware Guide (Juniper Networks, published 2025-08-12)"
   }
  ],
- "version": "0.2.0",
+ "version": "0.5.0",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source held: neither the guide nor the studio photographs picture the underside (the guide's parts list gives four preinstalled rubber feet).",
@@ -893,6 +931,19 @@
       "id": "btn-mode",
       "ref": "common/reset-button@1",
       "rel-pos": 0
+     },
+     {
+      "at": [
+       425.7,
+       39.35
+      ],
+      "attrs": {
+       "role": "console"
+      },
+      "group": "mgmt",
+      "id": "console-usb",
+      "ref": "std/mini-usb@1",
+      "rel-pos": 0
      }
     ]
    },
@@ -1413,6 +1464,18 @@
        4.0,
        4.0
       ]
+     },
+     {
+      "at": [
+       425.7,
+       39.35
+      ],
+      "id": "console-usb",
+      "shape": "rect",
+      "size": [
+       7.7,
+       3.9
+      ]
      }
     ],
     "decor": [
@@ -1440,47 +1503,6 @@
       "size": [
        18.4,
        42.6
-      ]
-     },
-     {
-      "at": [
-       425.6,
-       39.0
-      ],
-      "fill": "#c9cbcd",
-      "id": "console",
-      "kind": "console-shell",
-      "rx": 0.6,
-      "size": [
-       7.9,
-       4.6
-      ]
-     },
-     {
-      "at": [
-       426.3,
-       39.7
-      ],
-      "fill": "#1c2024",
-      "id": "console-opening",
-      "kind": "console-opening",
-      "rx": 0.5,
-      "size": [
-       6.5,
-       3.2
-      ]
-     },
-     {
-      "at": [
-       427.3,
-       41.2
-      ],
-      "fill": "#3a4046",
-      "id": "console-pins",
-      "kind": "console-pins",
-      "size": [
-       4.5,
-       0.7
       ]
      },
      {
@@ -2016,7 +2038,7 @@
      ],
      "fill": "#e4e6e9",
      "font-size": 1.6,
-     "for": "chassis",
+     "for": "console-usb",
      "text": "CON"
     }
    ],
@@ -2035,6 +2057,16 @@
   "rear": {
    "components": {
     "placements": [
+     {
+      "at": [
+       59.3995,
+       5.387
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-5-8-10-32@1",
+      "rel-pos": 0
+     },
      {
       "at": [
        18.1,
@@ -2332,34 +2364,6 @@
      },
      {
       "at": [
-       58.85,
-       4.85
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-1",
-      "kind": "earth-hole",
-      "rx": 2.95,
-      "size": [
-       5.9,
-       5.9
-      ]
-     },
-     {
-      "at": [
-       74.75,
-       4.85
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-2",
-      "kind": "earth-hole",
-      "rx": 2.95,
-      "size": [
-       5.9,
-       5.9
-      ]
-     },
-     {
-      "at": [
        116.75,
        2.25
       ],
@@ -2418,6 +2422,16 @@
   "rear-dc": {
    "components": {
     "placements": [
+     {
+      "at": [
+       59.3995,
+       5.387
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-5-8-10-32@1",
+      "rel-pos": 0
+     },
      {
       "at": [
        18.1,
@@ -2506,6 +2520,16 @@
       "group": "esd",
       "id": "esd-rear-jack",
       "ref": "common/esd-jack@1",
+      "rel-pos": 0
+     },
+     {
+      "at": [
+       377.3,
+       9.5
+      ],
+      "group": "power-input",
+      "id": "dc-terminal",
+      "ref": "juniper/ex2300-dc-terminal@1",
       "rel-pos": 0
      },
      {
@@ -2683,34 +2707,6 @@
      },
      {
       "at": [
-       58.85,
-       4.85
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-1",
-      "kind": "earth-hole",
-      "rx": 2.95,
-      "size": [
-       5.9,
-       5.9
-      ]
-     },
-     {
-      "at": [
-       74.75,
-       4.85
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-2",
-      "kind": "earth-hole",
-      "rx": 2.95,
-      "size": [
-       5.9,
-       5.9
-      ]
-     },
-     {
-      "at": [
        96.35,
        1.75
       ],
@@ -2723,202 +2719,6 @@
        38.7
       ],
       "vent": 1.0
-     },
-     {
-      "at": [
-       377.3,
-       9.5
-      ],
-      "fill": "#6f7479",
-      "id": "dc-terminal",
-      "kind": "dc-terminal-plate",
-      "rx": 0.6,
-      "size": [
-       52.6,
-       17.5
-      ]
-     },
-     {
-      "at": [
-       378.3,
-       11.7
-      ],
-      "fill": "#1b1d20",
-      "id": "dc-terminal-strip",
-      "kind": "dc-terminal-strip",
-      "rx": 0.4,
-      "size": [
-       50.6,
-       13.0
-      ]
-     },
-     {
-      "at": [
-       380.0,
-       15.0
-      ],
-      "fill": "#2b2e32",
-      "id": "dc-mount-1",
-      "kind": "dc-terminal-screw",
-      "rx": 3.2,
-      "size": [
-       6.4,
-       6.4
-      ]
-     },
-     {
-      "at": [
-       381.3,
-       16.3
-      ],
-      "fill": "#b9bec4",
-      "id": "dc-mount-1-head",
-      "kind": "dc-terminal-screw",
-      "rx": 1.9,
-      "size": [
-       3.8,
-       3.8
-      ]
-     },
-     {
-      "at": [
-       420.8,
-       15.0
-      ],
-      "fill": "#2b2e32",
-      "id": "dc-mount-2",
-      "kind": "dc-terminal-screw",
-      "rx": 3.2,
-      "size": [
-       6.4,
-       6.4
-      ]
-     },
-     {
-      "at": [
-       422.1,
-       16.3
-      ],
-      "fill": "#b9bec4",
-      "id": "dc-mount-2-head",
-      "kind": "dc-terminal-screw",
-      "rx": 1.9,
-      "size": [
-       3.8,
-       3.8
-      ]
-     },
-     {
-      "at": [
-       388.7,
-       13.8
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-1",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.8,
-       8.9
-      ]
-     },
-     {
-      "at": [
-       397.0,
-       13.8
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-2",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.8,
-       8.9
-      ]
-     },
-     {
-      "at": [
-       405.1,
-       13.8
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-3",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.8,
-       8.9
-      ]
-     },
-     {
-      "at": [
-       413.3,
-       13.8
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-4",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.8,
-       8.9
-      ]
-     },
-     {
-      "at": [
-       390.1,
-       16.05
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-1-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
-      ]
-     },
-     {
-      "at": [
-       398.4,
-       16.05
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-2-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
-      ]
-     },
-     {
-      "at": [
-       406.5,
-       16.05
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-3-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
-      ]
-     },
-     {
-      "at": [
-       414.7,
-       16.05
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-4-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
-      ]
      }
     ]
    },

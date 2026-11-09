@@ -138,7 +138,8 @@
    {
     "accepts": [
      "ufispace/psu-202-ac@1",
-     "ufispace/psu-202-dc@1"
+     "ufispace/psu-202-dc@1",
+     "ufispace/psu-202-dc@2"
     ],
     "at": [
      372.1,
@@ -157,7 +158,8 @@
    {
     "accepts": [
      "ufispace/psu-202-ac@1",
-     "ufispace/psu-202-dc@1"
+     "ufispace/psu-202-dc@1",
+     "ufispace/psu-202-dc@2"
     ],
     "at": [
      372.1,
@@ -188,7 +190,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      42.53,
@@ -228,7 +231,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      42.53,
@@ -1485,6 +1489,50 @@
   "airflow": "front-to-back",
   "d": 762,
   "h": 87.7,
+  "kits": [
+   {
+    "accessories": [],
+    "configurations": [
+     {
+      "depth": [
+       558.8,
+       838.2
+      ],
+      "id": "four-post",
+      "parts": [
+       "rail"
+      ],
+      "racks": [
+       "4-post"
+      ]
+     }
+    ],
+    "depth": null,
+    "description": "The adjustable mounting rail kit in the box of the UfiSpace deep routers and switches whose guide lists a 771 mm rail for four-post racks. It is two sets of three-member slide rail. The inner member hangs on five pins on each side of the chassis. The outer member clips to the front and rear post. The chassis slides out on the middle member and is locked with a screw.",
+    "install": null,
+    "motion": "sliding",
+    "parts": [
+     {
+      "body": null,
+      "class": "mount",
+      "count": 2,
+      "id": "rail",
+      "ref": "ufispace/adjustable-rail-771@1",
+      "size": {
+       "d": 771.0,
+       "h": 44.0,
+       "w": 22.0
+      },
+      "version": "1.0.0"
+     }
+    ],
+    "ref": "ufispace/adjustable-rail-771-kit@1",
+    "supply": "in-box",
+    "travel": "full",
+    "variant": null,
+    "version": "1.0.0"
+   }
+  ],
   "mount": "rack",
   "power": null,
   "ru": 2,
@@ -1493,6 +1541,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The chassis as HIG Figure 7's rear elevation and the vendor's rear product photograph both show it - four FAN-803816-HC exhaust fans and two PSU-202-AESR 2000 W AC supplies with portrait appliance inlets and red latches, front-to-back airflow, and the twenty-five traffic and management ports empty. The HIG rates the feed at 200-240 V and notes that on a single 110 VAC source each supply delivers 1000 W and cannot then be swapped while the router is running. No orderable chassis part number appears in any held document; see the chassis-sku gap.",
    "displays": {
@@ -1801,10 +1850,57 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
-    "psu-0": "ufispace/psu-202-dc@1",
-    "psu-1": "ufispace/psu-202-dc@1"
+    "psu-0": "ufispace/psu-202-dc@2",
+    "psu-1": "ufispace/psu-202-dc@2"
    },
+   "dc-ports": [
+    {
+     "awg": [
+      6
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-0/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-0/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-0/module/pole-rtn"
+      }
+     ],
+     "rating-a": 60,
+     "ref": "ufispace/psu-202-dc@2",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": [
+      6
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-1/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-1/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-1/module/pole-rtn"
+      }
+     ],
+     "rating-a": 60,
+     "ref": "ufispace/psu-202-dc@2",
+     "side": null,
+     "voltage": null
+    }
+   ],
    "description": "Dual 2000 W DC supplies (PSU-202-DESR, a two-post screw terminal under a hinged plastic cover, red latch, drawn in HIG Figure 6) with the same FAN-803816-HC exhaust fans. Datasheet input -40 to -72 V at 60 A; the HIG's DC section gives the maximum system consumption as 993 W against the AC build's 987 W, and notes an 80 A fast-acting fuse built into each supply against the AC build's 15 A.",
    "displays": {
     "beacon": {
@@ -2114,6 +2210,17 @@
  "default": "ac",
  "device": "s9700-23d",
  "gaps": [
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The height of the pair of screws of each DC pole off the supply's face is an estimate. The S9600-56DX Hardware Installation Guide draws the block in isometric only (Figures 25 and 26), with no scale and no elevation, and no held document gives the height.",
+   "scope": [
+    "ufispace/psu-202-dc@2"
+   ],
+   "wanted": "a side elevation of the DC supply's terminal block with its height off the face, or a photograph taken square to the block from the side",
+   "what": "dc-terminal-height"
+  },
   {
    "because": "needs-photo",
    "blocks": [],

@@ -3,7 +3,49 @@
   "airflow": "front-to-back",
   "color": "#1b1e21",
   "depth": 500,
+  "ears": {
+   "positions": [
+    {
+     "label": "chassis flush",
+     "name": "flush",
+     "racks": [
+      "4-post"
+     ]
+    },
+    {
+     "label": "transponder flush",
+     "name": "recessed",
+     "racks": [
+      "4-post"
+     ]
+    },
+    {
+     "label": "recessed",
+     "name": "recessed",
+     "racks": [
+      "4-post"
+     ]
+    },
+    {
+     "label": "mid-mount",
+     "name": "mid",
+     "part": {
+      "kit": "smartoptics/dcp-rack-kit@1",
+      "part": "mid-mount"
+     },
+     "racks": [
+      "2-post"
+     ]
+    }
+   ]
+  },
   "height": 45,
+  "kits": [
+   {
+    "ref": "smartoptics/dcp-rack-kit@1",
+    "supply": "in-box"
+   }
+  ],
   "ru": 1,
   "width": 440
  },
@@ -11,7 +53,8 @@
   "ac-f2b": {
    "default": true,
    "description": "The chassis as it is specified before deciding what goes in it: two AC supplies, the fan tray, the management board, and BOTH TRAFFIC SLOTS BLANKED. so-ds-dcp-2-r4.3 orders this as DCP-2-FB/HW. The slots carry the blind plate rather than being drawn as bare holes, which is a deliberate departure from the schema's \"TRAFFIC SLOTS EMPTY\" wording for a `base`. Two reasons: UM s4.1 lists the blind plate in the box, so a chassis as delivered HAS one, and UM s2.5 asks for it in any slot that is not carrying a unit - an empty hole is a configuration the vendor tells you not to run. It also reads far better.",
-   "kind": "base"
+   "kind": "base",
+   "power": "ac"
   },
   "dc-f2b": {
    "bays": {
@@ -19,7 +62,8 @@
     "psu-2": "smartoptics/dcp-2-psu-dc@1"
    },
    "description": "The same chassis with both supplies ordered as DCP-2-PSU-DC-FB, -40 to -72 VDC at 7A max. UM s2.3 is explicit that the bay geometry does not change and that \"Both types can be used simultaneously\", so a mixed AC/DC chassis is legal and this configuration is simply the all-DC case. Named explicitly rather than left implied by the base, so asking for the DC variant does not require knowing which flavour the base happens to carry.",
-   "kind": "orderable"
+   "kind": "orderable",
+   "power": "dc"
   },
   "dcp-1203-x2": {
    "bays": {
@@ -94,13 +138,22 @@
    "what": "mgmt-board-fru"
   },
   {
-   "note": "UM s3.2.8 puts the protective ground on the FRONT RACK BRACKET - \"It is located on the right-side front rack mount(s)\" - with an M5 nut and an unpainted pad around it, and notes the brackets are interchangeable left to right if the terminal is wanted on the other side. common/rack-ear@1 carries no terminal, and a separate lug placed at the bracket's position simply overlaps it, so the DCP-2 draws none. The terminal is real and is on the bracket, not on the chassis body.",
+   "note": "UM s3.2.8 puts the protective ground on the FRONT RACK BRACKET - \"It is located on the right-side front rack mount(s)\" - with an M5 nut and an unpainted pad around it. The stud is now modelled: the kit's front brackets and its mid-mount bracket each compose one (smartoptics/dcp-rack-kit@1), so it is where the bracket is and not on the chassis. What remains is that the generic ear a viewer draws for this chassis has no stud, so no face of the DCP-2 shows the terminal, and that the stud the brackets compose is the library's nominal one, which draws an M4 nut where the manual's is M5.",
    "reason": "needs-drawing",
    "scope": [
-    "furniture"
+    "front"
    ],
-   "wanted": "a common/rack-ear variant, or a skin, carrying the ground stud - the same need any device whose ground is on its bracket will have. Until then this is recorded rather than drawn.",
+   "wanted": "a generic ear that can show the stud a kit part carries, and an M5 nut-on-stud part in the library. Until then the terminal is in the kit's data and not in the drawing.",
    "what": "ground-terminal"
+  },
+  {
+   "reason": "vendor-silent",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "HOW FAR BEHIND THE FACEPLATE THE BRACKET'S FLANGE SITS in each of the three four-post positions. UM s3.2 names the positions (chassis flush, transponder flush, recessed) and prints no dimension for any of them, so no `at` is stated and the generic ear is drawn flush. A dimensioned drawing of the bracket on the chassis side, or a statement of the setbacks, settles it.",
+   "what": "rack-ear-setback"
   },
   {
    "note": "Both jacks of the ETH0/CONSOLE pair show small light features at their corners in fig 2-5. On ETH0 those read as link lamps; on an RS-232 console jack they are more likely shield retention tabs. CONSOLE is drawn as a bare std/rj45-ganged rather than the lamped common/rj45-ganged-eth used for the Ethernet ports.",
@@ -118,11 +171,6 @@
    "index-origin": 1,
    "role": "service",
    "term": "Fan"
-  },
-  "furniture": {
-   "index-origin": 1,
-   "role": "furniture",
-   "term": "Item"
   },
   "mgmt": {
    "index-origin": 1,
@@ -163,7 +211,7 @@
    "note": "datasheet and manual agree - 440mm (W) x 45mm (H) x 500mm (D), ~7kg without traffic units, 1 RU. Note 45, not the 44.45 of a nominal 1RU; both documents say 45."
   },
   "ears": {
-   "note": "UM s3.2 - the rack brackets are a separate kit with seven part numbers and several mounting depths, not integral to the chassis. The front figure (fig 2-4) spans 440 with no ears fitted, which is what confirms the body width. Ears are therefore drawn `optional`, as on dcp-r-9d-cs."
+   "note": "UM s3.2 - the rack brackets are a separate kit with seven part numbers and several mounting depths, not integral to the chassis. The front figure (fig 2-4) spans 440 with no ears fitted, which is what confirms the body width. The device therefore places no ear: it states `chassis.ears` and lists the kit (smartoptics/dcp-rack-kit@1), and a viewer that asks draws the generic ear. The four positions are the manual's own words: chassis flush, transponder flush and recessed in a four-post rack, and mid-mount in a two-post rack, which needs the kit's mid-mount part. No position states a distance, because the manual prints none. Which position ships is not said, so none is the default."
   },
   "eth4-shared": {
    "note": "silkscreen. BOTH ETH4 labels - the electrical jack's and the SFP's - are printed in a box on the real faceplate while no other caption is, so the artwork itself marks the shared pair that UM s2.6 describes in prose. The boxes are reproduced here."
@@ -173,7 +221,7 @@
    "note": "photo-measured - UM fig 2-4, scaled across from the 440 body. Side rails ~7 each, a centre assembly at ~213-226, and slot apertures of ~206.5. The assembly centres on 219.8 against a true centreline of 220, which is UM s2.2's \"extraction mechanism is based in the center of the chassis\". The apertures against a 205 DCP-404 leave 1.5 of clearance - the two numbers were measured independently and confirm each other."
   },
   "ground": {
-   "note": "UM s3.2.8 - \"The front rack mount brackets include a grounding terminal ... located on the right-side front rack mount(s)\", M5 nut, with the surface around it left unpainted. It is on the BRACKET, so it is drawn on the ear and disappears with it. The manual adds that the brackets are interchangeable left to right if the ground is wanted on the other side."
+   "note": "UM s3.2.8 - \"The front rack mount brackets include a grounding terminal ... located on the right-side front rack mount(s)\", M5 nut, with the surface around it left unpainted. It is on the BRACKET, so the kit's front brackets carry it and the chassis draws none. The manual adds that the brackets are interchangeable left to right if the ground is wanted on the other side."
   },
   "method": {
    "note": "FACT SHEET FIRST, THEN THE ARTWORK. The inventory came from DCP-Series_User_Manual_14.0_A and so-ds-dcp-2-r4.3 before any figure was opened (working/intake/factsheets/dcp-2.md), and the residual pass afterwards named everything on both faces the sheet had not predicted. Nine residuals were found and each is either promoted below with a source or written off in that sheet."
@@ -197,6 +245,10 @@
   "power": {
    "note": "UM spec table, \"POWER CONSUMPTION (CHASSI ONLY): DCP-2 chassis with fans and 2 PSU (AC) Min: 14W Max: 17W\". The manual's other rows bundle a traffic unit, which answers for itself. NO AMBIENT TEMPERATURE is quoted against any DCP power figure, so none is asserted."
   },
+  "power-feed": {
+   "confidence": "datasheet",
+   "note": "each build's `power` is the input of the supply it seats. UM s2.3 and the spec table - DCP-2-PSU-AC-FB \"100-127 VAC and 200-240 VAC\", DCP-2-PSU-DC-FB \"-40 to -72 VDC\"; so-ds-dcp-2-r4.3, Power Supply Characteristics, prints the same two inputs. The illustrations that seat traffic units state no feed: no document ties a traffic unit to either supply."
+  },
   "psu-positions": {
    "note": "the PSU sticker reads \"CRPS 460W AC Gold\", which names the form factor; 1U CRPS is 73.5 x 40. The two installed bays measure 81 and 75 for what is demonstrably the same part, so the standard is worth more than either edge read. 73.5 at the measured 352.3 pitch puts the pair at 4.0 and 356.3, matching the right bay to under a millimetre."
   },
@@ -218,7 +270,7 @@
    "title": "Smartoptics DCP-Series User Manual, dcp-release-14.0"
   }
  ],
- "version": "2.1.3",
+ "version": "3.0.1",
  "views": {
   "bottom": {
    "panel": {
@@ -294,32 +346,6 @@
        "h": 44.0,
        "w": 205.0
       }
-     }
-    ],
-    "placements": [
-     {
-      "at": [
-       -14,
-       0.75
-      ],
-      "group": "furniture",
-      "id": "ear-left",
-      "optional": "ears",
-      "ref": "common/rack-ear@1",
-      "rel-pos": 1,
-      "skin": "left"
-     },
-     {
-      "at": [
-       440,
-       0.75
-      ],
-      "group": "furniture",
-      "id": "ear-right",
-      "optional": "ears",
-      "ref": "common/rack-ear@1",
-      "rel-pos": 2,
-      "skin": "right"
      }
     ]
    },
@@ -464,30 +490,6 @@
      }
     ],
     "placements": [
-     {
-      "at": [
-       -14,
-       0.75
-      ],
-      "group": "furniture",
-      "id": "ear-left-r",
-      "optional": "ears",
-      "ref": "common/rack-ear@1",
-      "rel-pos": 4,
-      "skin": "left"
-     },
-     {
-      "at": [
-       440,
-       0.75
-      ],
-      "group": "furniture",
-      "id": "ear-right-r",
-      "optional": "ears",
-      "ref": "common/rack-ear@1",
-      "rel-pos": 5,
-      "skin": "right"
-     },
      {
       "at": [
        281.91,

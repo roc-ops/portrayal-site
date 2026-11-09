@@ -86,7 +86,7 @@
    "what": "photographs"
   },
   {
-   "note": "The four-terminal DC block of the -DC part number is chassis art; no library component has four poles and no document held gives its part, its pole pitch or its legend.",
+   "note": "The four-terminal DC block of the -DC part number is the part juniper/ex2200-dc-terminal@1, drawn at an estimated size and pole pitch; no document held gives its part number, its dimensions or its legend.",
    "reason": "vendor-silent",
    "scope": [
     "rear"
@@ -102,6 +102,23 @@
    ],
    "wanted": "none beyond the component's own vocabulary.",
    "what": "jack-lamp-meaning"
+  },
+  {
+   "reason": "vendor-silent",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "The connector type and pinout of the redundant power system port, and the model of the external power system. The guide labels the port and says nothing else. The part presents the key of the EX3300's port, read from the one RPS cable that the RPS guide pairs with both switches.",
+   "what": "rps-port-connector"
+  },
+  {
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   }
  ],
  "groups": {
@@ -121,9 +138,15 @@
    "role": "furniture",
    "term": "Item"
   },
+  "grounding": {
+   "description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (Table 32)",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
+  },
   "mgmt": {
    "index-origin": 0,
-   "mixed": "how the switch is reached out of band - the management Ethernet port, the USB port and the RJ-45 console port on the rear",
+   "mixed": "the management corner of the rear - how the switch is reached out of band (the management Ethernet port, the USB port and the RJ-45 console port), with the RPS port beside them",
    "role": "management",
    "term": "Port"
   },
@@ -206,6 +229,10 @@
    "confidence": "measured",
    "note": "Figure 2 was rendered at 600 dpi and measured with a pixel ruler, together with Figure 1 whose front face it shares. The 48-port figure's front face is 2430 px across and 237 px down: 5.467 px per mm across from the 445 mm of Table 5 and 5.34 down from 44.45 mm, a 2.4 percent aspect error, so x and y are each taken from their own dimension and every position is estimated and good to about a millimetre. The jack width reads 12.7 mm, the registry's 12.7 for the ganged RJ-45 cell, on a quantity the scale never saw. The figures are perspective views from above and the front face is the near rectangle; Figure 5 (rear) is a flat elevation, 2722 px across and 266 down: 6.124 px per mm across and 5.99 down, a 2.2 percent aspect error. Figure 2's two shells stand where the last two of Figure 1 do (186.8 mm measured, 187.3 drawn)."
   },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 32 (parts for connecting an EX Series switch to earth ground) names two 10-32 x .25 in. screws and a Panduit LCC10-14BWL lug or equivalent (not provided) for the EX2200 and gives no spacing. That lug's holes are .75 in. apart (the library's two-hole lug of that pattern cites Panduit LCC10-14BW-L: '1/4 stud hole, .75 hole spacing'), and the figure reads the two holes 19.8 mm apart, so the terminal is `common/ground-hole-pair-3-4-10-32@1`: two bare 10-32 holes on 3/4 in. (19.05) centres, presenting `stud-pair-3-4`. One two-hole lug (`generic/two-hole-lug-3-4@1`) lands across them and a ring lug still lands on either hole. The holes stay bare, as the figure draws them; the screws that hold the lug are not part of the switch. The holes were drawn 19.8 apart as decor and the pair stands on their midpoint."
+  },
   "lamps": {
    "confidence": "datasheet",
    "note": "Hardware guide, Tables 6 to 10 and Figures 7, 11 and 12. Each RJ-45 port and uplink has two lamps, Link/Activity and Status; Figure 11 puts them on the two tabs of the jack. The Status lamp reads out whichever of speed (SPD), duplex (DX), administrative status (EN) and PoE (POE) the Factory Reset/Mode button has selected, shown by which port-mode lamp is lit; the guide lists four port-mode lamps on every non-compact model, PoE or not. SYS is green and ALM unlit, amber or red. The jack lamps keep the component's link and activity vocabulary because a block cannot override it per lamp. Figure 12 draws the uplink lamps as two circles either side of each numeral; the left is taken as Link/Activity and the right as Status, which no figure confirms, so it is estimated. The SYS and ALM lamps are drawn as the figure draws them, oblong, and their legends tilted in the figure are printed level here."
@@ -220,7 +247,7 @@
   },
   "rear-dc": {
    "confidence": "estimated",
-   "note": "estimated - no flat figure of the DC rear exists in the guide: Figure 48 is a close view of the terminals and Figure 5 is the AC rear, whose inlet the guide says is replaced by \"DC power terminals\" (\"AC power cord inlet or DC power terminals\"). The DC rear is Figure 5's with the inlet replaced by a block of four terminals labelled, left to right, B-, A-, B+ and A+ (Figure 48) under a clear plastic cover, centred on the inlet's centre (419.2 mm) and drawn 36.0 x 18.4 mm; the size has no scale anchor and is estimated. The block is chassis art and not a component: the library has no four-pole DC terminal block (common/dc-terminal-24 has three poles) and the DCIM export has no row for such a part. A and B are two inputs of one supply; the guide says a DC-powered switch provides no PoE."
+   "note": "estimated - no flat figure of the DC rear exists in the guide: Figure 48 is a close view of the terminals and Figure 5 is the AC rear, whose inlet the guide says is replaced by \"DC power terminals\" (\"AC power cord inlet or DC power terminals\"). The DC rear is Figure 5's with the inlet replaced by a block of four terminals labelled, left to right, B-, A-, B+ and A+ (Figure 48) under a clear plastic cover, centred on the inlet's centre (419.2 mm) and drawn 36.0 x 18.4 mm; the size has no scale anchor and is estimated. The block is the part juniper/ex2200-dc-terminal@1, placed at 401.2 mm, which composes the four terminal screws and states one DC input port for each of the two feeds, A (A+ and A-) and B (B+ and B-). A and B are two inputs of one supply; the guide says a DC-powered switch provides no PoE."
   },
   "rear-layout": {
    "confidence": "estimated",
@@ -228,7 +255,7 @@
   },
   "rps-port": {
    "confidence": "estimated",
-   "note": "estimated - the RPS port (Figure 5 callout, guide list of rear panel components) is drawn as chassis art: the plate and its opening at 50.1 to 118.0 mm and four screws. It is not a component: the library has no RPS connector and its DCIM export has no row for one. The guide names no RPS part number and no document of the RPS is held."
+   "note": "estimated - the RPS port (Figure 5 callout, guide list of rear panel components) is the part juniper/ex2200-rps-port@1, placed at 50.1 mm with its four screws placed beside it; the plate and its opening are read off Figure 5 as gate-1 describes. The part presents no interface: the guide names no RPS connector type and the registered key ex3300-rps covers the EX3300 only, so nothing mates the port and it is not usable yet. The guide names no RPS part number and no document of the RPS is held."
   },
   "sources": {
    "confidence": "datasheet",
@@ -245,7 +272,7 @@
    "title": "EX2200 and EX2200-C Switches Hardware Guide (Juniper Networks, published 2022-02-02)"
   }
  ],
- "version": "0.1.0",
+ "version": "0.4.1",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source held: the guide's Figure 21 shows the underside only in perspective, with its four rubber feet.",
@@ -1897,6 +1924,16 @@
     "placements": [
      {
       "at": [
+       44.362,
+       8.287
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-3-4-10-32@1",
+      "rel-pos": 0
+     },
+     {
+      "at": [
        11.2,
        15.7
       ],
@@ -1955,6 +1992,16 @@
      },
      {
       "at": [
+       50.1,
+       25.1
+      ],
+      "group": "mgmt",
+      "id": "rps",
+      "ref": "juniper/ex2200-rps-port@1",
+      "rel-pos": 4
+     },
+     {
+      "at": [
        85.4,
        8.3
       ],
@@ -1990,6 +2037,7 @@
        53.0,
        31.0
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-0",
       "ref": "common/screw-head@1",
@@ -2000,6 +2048,7 @@
        110.7,
        31.0
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-1",
       "ref": "common/screw-head@1",
@@ -2010,6 +2059,7 @@
        55.1,
        38.5
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-2",
       "ref": "common/screw-head@1",
@@ -2020,6 +2070,7 @@
        109.6,
        38.5
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-3",
       "ref": "common/screw-head@1",
@@ -2191,62 +2242,6 @@
      },
      {
       "at": [
-       44.05,
-       8.35
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-1",
-      "kind": "earth-hole",
-      "rx": 2.35,
-      "size": [
-       4.7,
-       4.7
-      ]
-     },
-     {
-      "at": [
-       63.85,
-       8.35
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-2",
-      "kind": "earth-hole",
-      "rx": 2.35,
-      "size": [
-       4.7,
-       4.7
-      ]
-     },
-     {
-      "at": [
-       50.1,
-       25.1
-      ],
-      "fill": "#c9cbcd",
-      "id": "rps-plate",
-      "kind": "rps-plate",
-      "rx": 1.0,
-      "size": [
-       67.9,
-       14.6
-      ]
-     },
-     {
-      "at": [
-       61.8,
-       28.0
-      ],
-      "fill": "#1d2024",
-      "id": "rps-opening",
-      "kind": "rps-opening",
-      "rx": 4.0,
-      "size": [
-       44.5,
-       8.9
-      ]
-     },
-     {
-      "at": [
        122.55,
        3.55
       ],
@@ -2353,6 +2348,16 @@
     "placements": [
      {
       "at": [
+       44.362,
+       8.287
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-3-4-10-32@1",
+      "rel-pos": 0
+     },
+     {
+      "at": [
        11.2,
        15.7
       ],
@@ -2411,6 +2416,16 @@
      },
      {
       "at": [
+       50.1,
+       25.1
+      ],
+      "group": "mgmt",
+      "id": "rps",
+      "ref": "juniper/ex2200-rps-port@1",
+      "rel-pos": 4
+     },
+     {
+      "at": [
        85.4,
        8.3
       ],
@@ -2433,9 +2448,20 @@
      },
      {
       "at": [
+       401.2,
+       11.9
+      ],
+      "group": "power-input",
+      "id": "dc-terminal",
+      "ref": "juniper/ex2200-dc-terminal@1",
+      "rel-pos": 0
+     },
+     {
+      "at": [
        53.0,
        31.0
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-0",
       "ref": "common/screw-head@1",
@@ -2446,6 +2472,7 @@
        110.7,
        31.0
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-1",
       "ref": "common/screw-head@1",
@@ -2456,6 +2483,7 @@
        55.1,
        38.5
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-2",
       "ref": "common/screw-head@1",
@@ -2466,6 +2494,7 @@
        109.6,
        38.5
       ],
+      "for": "rps",
       "group": "furniture",
       "id": "rps-screw-3",
       "ref": "common/screw-head@1",
@@ -2626,62 +2655,6 @@
      },
      {
       "at": [
-       44.05,
-       8.35
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-1",
-      "kind": "earth-hole",
-      "rx": 2.35,
-      "size": [
-       4.7,
-       4.7
-      ]
-     },
-     {
-      "at": [
-       63.85,
-       8.35
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-2",
-      "kind": "earth-hole",
-      "rx": 2.35,
-      "size": [
-       4.7,
-       4.7
-      ]
-     },
-     {
-      "at": [
-       50.1,
-       25.1
-      ],
-      "fill": "#c9cbcd",
-      "id": "rps-plate",
-      "kind": "rps-plate",
-      "rx": 1.0,
-      "size": [
-       67.9,
-       14.6
-      ]
-     },
-     {
-      "at": [
-       61.8,
-       28.0
-      ],
-      "fill": "#1d2024",
-      "id": "rps-opening",
-      "kind": "rps-opening",
-      "rx": 4.0,
-      "size": [
-       44.5,
-       8.9
-      ]
-     },
-     {
-      "at": [
        122.55,
        3.55
       ],
@@ -2750,146 +2723,6 @@
       "size": [
        2.6,
        7.2
-      ]
-     },
-     {
-      "at": [
-       401.2,
-       11.9
-      ],
-      "fill": "#6f7479",
-      "id": "dc-terminal",
-      "kind": "dc-terminal-plate",
-      "rx": 0.6,
-      "size": [
-       36.0,
-       18.4
-      ]
-     },
-     {
-      "at": [
-       402.2,
-       13.0
-      ],
-      "fill": "#1b1d20",
-      "id": "dc-terminal-strip",
-      "kind": "dc-terminal-strip",
-      "rx": 0.4,
-      "size": [
-       34.0,
-       16.2
-      ]
-     },
-     {
-      "at": [
-       404.0,
-       14.6
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-1",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.4,
-       9.4
-      ]
-     },
-     {
-      "at": [
-       412.0,
-       14.6
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-2",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.4,
-       9.4
-      ]
-     },
-     {
-      "at": [
-       420.0,
-       14.6
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-3",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.4,
-       9.4
-      ]
-     },
-     {
-      "at": [
-       428.0,
-       14.6
-      ],
-      "fill": "#d9dcdf",
-      "id": "dc-pole-4",
-      "kind": "dc-terminal-pole",
-      "rx": 0.3,
-      "size": [
-       6.4,
-       9.4
-      ]
-     },
-     {
-      "at": [
-       405.0,
-       17.1
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-1-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
-      ]
-     },
-     {
-      "at": [
-       413.0,
-       17.1
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-2-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
-      ]
-     },
-     {
-      "at": [
-       421.0,
-       17.1
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-3-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
-      ]
-     },
-     {
-      "at": [
-       429.0,
-       17.1
-      ],
-      "fill": "#a7acb2",
-      "id": "dc-pole-4-screw",
-      "kind": "dc-terminal-screw",
-      "rx": 2.2,
-      "size": [
-       4.4,
-       4.4
       ]
      }
     ]

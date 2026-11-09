@@ -241,15 +241,20 @@
    "role": "traffic",
    "term": "Port"
   },
+  "stack-control": {
+   "index-origin": 1,
+   "mixed": "the control and sync links between the units of a stack, never user traffic - the STACK-CTRL RJ-45, which carries the \"1 x 1 GbE from CPU (control signal)\" the datasheet lists beside the QSFP28 data path, and the STACK-SYNC RJ-45, which the datasheet lists as \"1 x RJ-45 for sync signals\". A sync signal is not Ethernet: left in a `traffic` group it typed as a gigabit interface AND as a timing port, and was exported twice under one name. Two jacks, one job. Source: Edgecore CSR310 / AS7315-27X Cell Site Router Data Sheet.",
+   "role": "stack-control",
+   "term": "Port"
+  },
   "stacking": {
    "index-origin": 0,
-   "mixed": "the stacking cluster - two of the three 100G QSFP28 cages carry the data path between a pair of CSR310s, and the STACK-CTRL RJ-45 carries the \"1 x 1 GbE from CPU (control signal)\" the datasheet lists beside them. Two media, one job. The datasheet counts the QSFP28s in its port total and names them separately in callout 11; both are true, and this group is how a consumer finds the ones that are spoken for. STACK-SYNC IS NOT IN HERE. The datasheet lists it separately as \"1 x RJ-45 for sync signals\", and a sync signal is not Ethernet: leaving it in a `traffic` group typed it as a gigabit interface AND as a timing port, and it was exported twice under one name. It sits in `timing` with the BITS and PPS/ToD jacks, which is what it carries.",
    "role": "traffic",
    "term": "Port"
   },
   "timing": {
    "index-origin": 1,
-   "mixed": "the synchronisation cluster - a BITS RJ-45, a PPS/ToD RJ-45, the STACK-SYNC RJ-45 and the SMA antenna input of the integrated GNSS receiver. Two media, one job: disciplining this box's clock from the network, from a stacked peer, or from the sky.",
+   "mixed": "the synchronisation cluster - a BITS RJ-45, a PPS/ToD RJ-45 and the SMA antenna input of the integrated GNSS receiver. Two media, one job: disciplining this box's clock from the network or from the sky. The STACK-SYNC RJ-45, which disciplines it from a stacked peer, is in `stack-control`.",
    "role": "management",
    "term": "Port"
   }
@@ -321,7 +326,7 @@
    "title": "Edgecore AS7315-27X Cell Site Gateway Quick Start Guide E112022-CS-R05"
   }
  ],
- "version": "1.0.6",
+ "version": "2.0.0",
  "views": {
   "bottom": {
    "empty": "Not drawn by any staged source. The quick start fits brackets at two depths, 300 mm and 280 mm, so there are two sets of side holes; the underside is not pictured.",
@@ -1586,10 +1591,10 @@
        "media": "rj45-sync",
        "role": "timing"
       },
-      "group": "timing",
+      "group": "stack-control",
       "id": "stack-sync",
       "ref": "std/rj45-ganged@2",
-      "rel-pos": 3,
+      "rel-pos": 2,
       "rotate": 180
      },
      {
@@ -1635,10 +1640,10 @@
        "role": "stacking",
        "speed": "1g"
       },
-      "group": "stacking",
+      "group": "stack-control",
       "id": "stack-ctrl",
       "ref": "std/rj45-ganged@2",
-      "rel-pos": 2
+      "rel-pos": 1
      },
      {
       "at": [

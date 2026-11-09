@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="443.0mm" height="44.0mm" viewBox="0 0 443.0 44.0" data-device="ccr2116-12g-4s-plus" data-view="rear" data-power-max-w="72" data-power-max-w-page="83" data-power-without-attachments-w="60" data-power-input="100 - 240 V AC, two inputs (page: 47 - 63 Hz)" data-power-adapter-nominal="12 V and 10.8 A, the brochure's &quot;Power adapter nominal voltage&quot; and &quot;nominal current&quot;: the adapter's nominal figures, not the box's input" data-power-rating-label="100-240 V ~2 A MAX, 50/60 Hz (printed under each inlet)" data-cooling="4 fans (page)" data-operating-temp-c="-20 to 60" data-cpu="AL73400, 2 GHz, 16 cores, ARM 64 bit" data-switch-chip="98DX3255" data-ram="16 GB DDR4" data-storage="128 MB NAND" data-os="RouterOS v7, license level 6" data-m2="one M.2 slot (brochure), not on either face" data-optics-sfp-plus="brochure: four 10G SFP+ ports; the brochure prints no list of optics, so none is claimed beyond the cage" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"MikroTik CCR2116-12G-4S+","device-version":"1.0.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"std/c14-inlet@1":"1.4.0"},"source-sha256":"f10dfd8af6b6b46a2135be6524aa53fb7758fa2f8088061e65702c08f7f88746","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CCR2116-12G-4S+" data-sku="CCR2116-12G-4S+" data-part-number="" x="0" y="0" width="443" height="44" rx="1.2" fill="#dddddd" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-motif-be46109fd5" width="10.184" height="5.88" patternUnits="userSpaceOnUse">
+      <path d="M 0 0 L 2.68 0 L 1.34 2.321 L 0 2.321 Z" fill="#17191c" />
+      <path d="M 0 3.559 L 1.34 3.559 L 2.68 5.88 L 0 5.88 Z" fill="#17191c" />
+      <path d="M 2.412 2.94 L 3.752 0.619 L 6.432 0.619 L 7.772 2.94 L 6.432 5.261 L 3.752 5.261 Z" fill="#17191c" />
+      <path d="M 7.504 0 L 10.184 0 L 10.184 2.321 L 8.844 2.321 Z" fill="#17191c" />
+      <path d="M 8.844 3.559 L 10.184 3.559 L 10.184 5.88 L 7.504 5.88 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-be46109fd5-o72_4-20_9" width="10.184" height="5.88" patternUnits="userSpaceOnUse" patternTransform="translate(72.4 20.9)">
+      <path d="M 0 0 L 2.68 0 L 1.34 2.321 L 0 2.321 Z" fill="#17191c" />
+      <path d="M 0 3.559 L 1.34 3.559 L 2.68 5.88 L 0 5.88 Z" fill="#17191c" />
+      <path d="M 2.412 2.94 L 3.752 0.619 L 6.432 0.619 L 7.772 2.94 L 6.432 5.261 L 3.752 5.261 Z" fill="#17191c" />
+      <path d="M 7.504 0 L 10.184 0 L 10.184 2.321 L 8.844 2.321 Z" fill="#17191c" />
+      <path d="M 8.844 3.559 L 10.184 3.559 L 10.184 5.88 L 7.504 5.88 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-be46109fd5-o223_7-21_6" width="10.184" height="5.88" patternUnits="userSpaceOnUse" patternTransform="translate(223.7 21.6)">
+      <path d="M 0 0 L 2.68 0 L 1.34 2.321 L 0 2.321 Z" fill="#17191c" />
+      <path d="M 0 3.559 L 1.34 3.559 L 2.68 5.88 L 0 5.88 Z" fill="#17191c" />
+      <path d="M 2.412 2.94 L 3.752 0.619 L 6.432 0.619 L 7.772 2.94 L 6.432 5.261 L 3.752 5.261 Z" fill="#17191c" />
+      <path d="M 7.504 0 L 10.184 0 L 10.184 2.321 L 8.844 2.321 Z" fill="#17191c" />
+      <path d="M 8.844 3.559 L 10.184 3.559 L 10.184 5.88 L 7.504 5.88 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-be46109fd5-o264_4-21_6" width="10.184" height="5.88" patternUnits="userSpaceOnUse" patternTransform="translate(264.4 21.6)">
+      <path d="M 0 0 L 2.68 0 L 1.34 2.321 L 0 2.321 Z" fill="#17191c" />
+      <path d="M 0 3.559 L 1.34 3.559 L 2.68 5.88 L 0 5.88 Z" fill="#17191c" />
+      <path d="M 2.412 2.94 L 3.752 0.619 L 6.432 0.619 L 7.772 2.94 L 6.432 5.261 L 3.752 5.261 Z" fill="#17191c" />
+      <path d="M 7.504 0 L 10.184 0 L 10.184 2.321 L 8.844 2.321 Z" fill="#17191c" />
+      <path d="M 8.844 3.559 L 10.184 3.559 L 10.184 5.88 L 7.504 5.88 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-be46109fd5-o304_4-21_6" width="10.184" height="5.88" patternUnits="userSpaceOnUse" patternTransform="translate(304.4 21.6)">
+      <path d="M 0 0 L 2.68 0 L 1.34 2.321 L 0 2.321 Z" fill="#17191c" />
+      <path d="M 0 3.559 L 1.34 3.559 L 2.68 5.88 L 0 5.88 Z" fill="#17191c" />
+      <path d="M 2.412 2.94 L 3.752 0.619 L 6.432 0.619 L 7.772 2.94 L 6.432 5.261 L 3.752 5.261 Z" fill="#17191c" />
+      <path d="M 7.504 0 L 10.184 0 L 10.184 2.321 L 8.844 2.321 Z" fill="#17191c" />
+      <path d="M 8.844 3.559 L 10.184 3.559 L 10.184 5.88 L 7.504 5.88 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-be46109fd5-o345-21_6" width="10.184" height="5.88" patternUnits="userSpaceOnUse" patternTransform="translate(345 21.6)">
+      <path d="M 0 0 L 2.68 0 L 1.34 2.321 L 0 2.321 Z" fill="#17191c" />
+      <path d="M 0 3.559 L 1.34 3.559 L 2.68 5.88 L 0 5.88 Z" fill="#17191c" />
+      <path d="M 2.412 2.94 L 3.752 0.619 L 6.432 0.619 L 7.772 2.94 L 6.432 5.261 L 3.752 5.261 Z" fill="#17191c" />
+      <path d="M 7.504 0 L 10.184 0 L 10.184 2.321 L 8.844 2.321 Z" fill="#17191c" />
+      <path d="M 8.844 3.559 L 10.184 3.559 L 10.184 5.88 L 7.504 5.88 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="rear-plate" data-kind="rear-plate" x="0" y="0" width="443" height="44" rx="0.6" fill="#c1c1c0" />
+    <rect id="psu-opening" data-kind="vent-field" data-aperture="air" x="53.9" y="2.4" width="37" height="37" rx="18.5" fill="url(#portrayal-motif-be46109fd5-o72_4-20_9)" data-vent="1" />
+    <rect id="psu-opening-hub" data-kind="fan-hub" x="62.9" y="11.4" width="19" height="19" rx="9.5" fill="#c1c1c0" />
+    <rect id="psu-hole-upper-left" data-kind="rear-hole" x="53.95" y="2.25" width="3.9" height="3.9" rx="1.95" fill="#1b1b1a" />
+    <rect id="psu-hole-lower-right" data-kind="rear-hole" x="86.95" y="35.65" width="3.9" height="3.9" rx="1.95" fill="#1b1b1a" />
+    <rect id="fan-0" data-kind="vent-field" data-aperture="air" x="205.2" y="3.1" width="37" height="37" rx="18.5" fill="url(#portrayal-motif-be46109fd5-o223_7-21_6)" data-vent="1" />
+    <rect id="fan-1" data-kind="vent-field" data-aperture="air" x="245.9" y="3.1" width="37" height="37" rx="18.5" fill="url(#portrayal-motif-be46109fd5-o264_4-21_6)" data-vent="1" />
+    <rect id="fan-2" data-kind="vent-field" data-aperture="air" x="285.9" y="3.1" width="37" height="37" rx="18.5" fill="url(#portrayal-motif-be46109fd5-o304_4-21_6)" data-vent="1" />
+    <rect id="fan-3" data-kind="vent-field" data-aperture="air" x="326.5" y="3.1" width="37" height="37" rx="18.5" fill="url(#portrayal-motif-be46109fd5-o345-21_6)" data-vent="1" />
+    <rect id="fan-hub-0" data-kind="fan-hub" x="214.2" y="12.1" width="19" height="19" rx="9.5" fill="#c1c1c0" />
+    <rect id="fan-hub-1" data-kind="fan-hub" x="254.9" y="12.1" width="19" height="19" rx="9.5" fill="#c1c1c0" />
+    <rect id="fan-hub-2" data-kind="fan-hub" x="294.9" y="12.1" width="19" height="19" rx="9.5" fill="#c1c1c0" />
+    <rect id="fan-hub-3" data-kind="fan-hub" x="335.5" y="12.1" width="19" height="19" rx="9.5" fill="#c1c1c0" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="16.9" y="15.6" width="28" height="20" fill="#101214" id="cutout--ac-inlet-1" data-path="cutout:ac-inlet-1" data-class="cutout" />
+    <rect x="102.3" y="15.6" width="28" height="20" fill="#101214" id="cutout--ac-inlet-2" data-path="cutout:ac-inlet-2" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="30.9" y="38.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2b2b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-1">POWER 1</text>
+    <text x="30.9" y="41.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2b2b" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-1">100-240 V ~2 A MAX, 50/60 Hz</text>
+    <text x="116.3" y="38.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2b2b" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-2">POWER 2</text>
+    <text x="116.3" y="41.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2b2b" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ac-inlet-2">100-240 V ~2 A MAX, 50/60 Hz</text>
+  </g>
+  <g id="ac-inlet-1" data-path="ac-inlet-1" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="1" transform="translate(16.9,15.6)" data-group="inlets" data-group-role="service" data-description="the two AC inlets, POWER 1 and POWER 2, as seen from the rear">
+    <title>ac-inlet-1</title>
+    <rect id="ac-inlet-1--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-1/opening" data-class="cutout" />
+    <path id="ac-inlet-1--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-1--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="ac-inlet-2" data-path="ac-inlet-2" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="2" transform="translate(102.3,15.6)" data-group="inlets" data-group-role="service" data-description="the two AC inlets, POWER 1 and POWER 2, as seen from the rear">
+    <title>ac-inlet-2</title>
+    <rect id="ac-inlet-2--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-2/opening" data-class="cutout" />
+    <path id="ac-inlet-2--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-2--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-2--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-2--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+</svg>

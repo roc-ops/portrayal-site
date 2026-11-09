@@ -106,12 +106,12 @@
    "what": "ac-feed-faceplate"
   },
   {
-   "note": "The two fixed supply feeds are real, distinguishable things - the HIG's PSU lamp table tells PSU1-good-PSU2-bad apart from PSU1-bad-PSU2-good - but they are not addressable in this manifest. A fixed supply seats nothing, so there is no bay; the six screw terminal posts are panel metal and are drawn as decor; and the library has no terminal block component to place over them. The PSU lamp therefore points at the chassis and the PSU 0 / PSU 1 legends are chassis silkscreen, which loses the per-feed link a consumer would want. Recorded rather than papered over with a group nothing joins.",
+   "note": "The two fixed supply feeds are real, distinguishable things - the HIG's PSU lamp table tells PSU1-good-PSU2-bad apart from PSU1-bad-PSU2-good - but they are not addressable in this manifest. A fixed supply seats nothing, so there is no bay, and each feed is now a placement, psu-0 and psu-1, of ufispace/psu-120-dc@1. The PSU lamp and the PSU 0 / PSU 1 legends still point at the chassis: pointing the lamp at the two supplies changes its `for`, which is a major version of this device, and the legends would then stand 1.1 mm off the centre of the supplies they name (L61). The S9502-12SM points its lamp at both.",
    "reason": "needs-hardware",
    "scope": [
     "status-leds"
    ],
-   "wanted": "a terminal-block or power-inlet component that a fixed feed can be placed as",
+   "wanted": "a decision to point the PSU lamp at psu-0 and psu-1, which costs this device a major version",
    "what": "power-feed-not-addressable"
   },
   {
@@ -175,6 +175,12 @@
    "index-origin": 1,
    "role": "indicator",
    "term": "LED"
+  },
+  "psus": {
+   "description": "the two FIXED 1+1 120W supplies. These do not pull out - what the front panel carries is each supply's input block, drawn as a placement for that reason",
+   "index-origin": 0,
+   "role": "service",
+   "term": "PSU"
   },
   "rj45-1g": {
    "attrs": {
@@ -276,7 +282,7 @@
    "note": "measured from a feature that repeats ONCE PER PORT, not from the drawn cells' centres. The guide fills each port cell as a solid block with a numeral on it, and cell-to-cell centres would give the module pitch rather than the port pitch. Here the two agree: the SFP cell edges fall at 304.7, 318.8, 332.9 and 347.2 - a 14.2 mm pitch against the SFF-8433 standard's 14.25 - and four 14.25 mm openings from 304.7 end at 361.7 against a shell measured to 364.06, so the total span checks out as well as the pitch. The SFP+ block reads the same 14.25 from its two cells (366.9 and 381.15). The RJ45 block is the exception: its 34.47 mm shell over two columns gives a 14.94 mm column pitch, wider than std/rj45-ganged's own 12.7 mm width, so those two jacks are centred in their columns rather than abutting and 2.2 mm of shell shows between them."
   },
   "power": {
-   "note": "THE SUPPLY IS FIXED, WHICH CHANGES THE MODEL AND NOT JUST THE PROSE. The datasheet says 'Fixed, 1+1 redundant PSU' and lists '120W DC PSU, fixed dual feed' and '120W AC PSU, fixed dual feed'; the HIG's PSU Overview sections say '1+1, Fixed power supply unit (PSU)' and show no release latch, no handle and no bay. So there are no components.bays on this device at all - the two feeds are panel features, drawn as the six screw terminal posts the DC faceplate carries, and PSU 0 and PSU 1 are silkscreen over them rather than bay ids. Datasheet 'Typical power: 45.1 Watts (no transceiver)' is the vendor's own scope, so power-envelope is bare; no maximum is published in either document, and the per-feed input ratings (AC 100-240 V 2 A, DC -36 to -75 V 4.5 A) are supply-side and are not converted into a draw figure."
+   "note": "THE SUPPLY IS FIXED, WHICH CHANGES THE MODEL AND NOT JUST THE PROSE. The datasheet says 'Fixed, 1+1 redundant PSU' and lists '120W DC PSU, fixed dual feed' and '120W AC PSU, fixed dual feed'; the HIG's PSU Overview sections say '1+1, Fixed power supply unit (PSU)' and show no release latch, no handle and no bay. So there are no components.bays on this device at all - the two feeds are panel features, each a placement of ufispace/psu-120-dc@1, the three-post screw terminal block the DC faceplate carries, and PSU 0 and PSU 1 are silkscreen over them rather than bay ids. Datasheet 'Typical power: 45.1 Watts (no transceiver)' is the vendor's own scope, so power-envelope is bare; no maximum is published in either document, and the per-feed input ratings (AC 100-240 V 2 A, DC -36 to -75 V 4.5 A) are supply-side and are not converted into a draw figure."
   },
   "rear-layout": {
    "confidence": "photo-measured",
@@ -298,7 +304,7 @@
    "note": "drawing - two SMB jacks in one column at x centre 124.6, 6.3 mm across the drawn hex against common/smb-jack's 7.0, on rows at y centres 8.4 and 19.5, labelled 1PPS above and 10MHZ below. The datasheet calls both input/output on one connector each - '1 x 1PPS input/output SMB', '1 x 10MHz input/output SMB' - so unlike the S9500-22XST, which splits each into an IN and an OUT jack, this device has one jack per function and the faceplate agrees. ToD is 'input/output RJ45' on a single jack in the stacked pair."
   },
   "verification": {
-   "note": "Rendered and compared against the front and rear photographs at a matched 8 px/mm. The port band lands within 0.2 mm of the photograph on all three blocks - SFP apertures centred 14.0/29.85 against the photograph's 13.9/29.95, SFP+ 14.0/29.85 against 13.85/29.65, copper 15.65/28.2 against 15.5/27.9 - and the copper block's row-to-row cavity pitch comes out at 12.55 against 12.4 measured, which is the check that its rotations are the right way round rather than mirrored. Horizontally the shells and both optical blocks agree to better than a millimetre. ONE THING DID NOT AGREE: the six DC terminal posts read 4.83 mm wide in the guide figure and 6.1 mm in the photograph, with their centres 1.35 mm apart. The figure resolves 0.11 mm per pixel and the photograph 0.85, and every other feature measured from that same photograph agrees with the figure to 0.3 mm, so the figure's number is carried and the disagreement is written down here rather than split."
+   "note": "Rendered and compared against the front and rear photographs at a matched 8 px/mm. The port band lands within 0.2 mm of the photograph on all three blocks - SFP apertures centred 14.0/29.85 against the photograph's 13.9/29.95, SFP+ 14.0/29.85 against 13.85/29.65, copper 15.65/28.2 against 15.5/27.9 - and the copper block's row-to-row cavity pitch comes out at 12.55 against 12.4 measured, which is the check that its rotations are the right way round rather than mirrored. Horizontally the shells and both optical blocks agree to better than a millimetre. ONE THING DID NOT AGREE: the six DC terminal posts read 4.83 mm wide in the guide figure and 6.1 mm in the photograph, with their centres 1.35 mm apart. The figure resolves 0.11 mm per pixel and the photograph 0.85, and every other feature measured from that same photograph agrees with the figure to 0.3 mm, so the figure's number was carried while the posts were panel art. They are now drawn by ufispace/psu-120-dc@1, whose posts measure 6.4 mm on the S9502-12SM front render, near the photograph's 6.1; the figure's 4.83 stays here as a reading and the disagreement is written down rather than split."
   },
   "views": {
    "note": "Six views. TOP: y = 0 is the REAR, per the house convention and Figure 5, which puts the front terminal covers' 14 mm projection at the BOTTOM of its top view; the two long stadium reliefs and the five bottom-edge screws are measured off that drawing, which passes the aspect gate at 1 percent. BOTTOM mirrors left-right and carries the compliance sticker at an estimated position. LEFT (x = 0 is the REAR) and RIGHT (x = 0 is the FRONT): Figure 5's callout inset shows the grounding lug on the RIGHT side close to the FRONT face, which is where the two-hole lug is drawn and the one asymmetric feature on either side face - so the depth-axis convention is load-bearing here and not merely stated. Screw positions on both side faces are estimated."
@@ -340,7 +346,7 @@
    "reason": "Photo-measured, in provenance.cage-mirroring. This device's own front photograph gives a cavity pitch of 15.4-15.8 mm between the stacked rows, against 15.8 for two cages the same way round and 12.7 or 17.3 for a mirrored pair - the render-against-photograph test that settled the S9500-22XST. The rows share one orientation, so neither is turned. Like that test, it assumes the real cavity sits off-centre as std/sfp-ganged's does; a centred one would read the same either way."
   }
  ],
- "version": "2.0.1",
+ "version": "2.1.0",
  "views": {
   "bottom": {
    "components": {
@@ -365,6 +371,26 @@
   "front": {
    "components": {
     "placements": [
+     {
+      "at": [
+       18.36,
+       17.95
+      ],
+      "group": "psus",
+      "id": "psu-0",
+      "ref": "ufispace/psu-120-dc@1",
+      "rel-pos": 0
+     },
+     {
+      "at": [
+       74.54,
+       17.95
+      ],
+      "group": "psus",
+      "id": "psu-1",
+      "ref": "ufispace/psu-120-dc@1",
+      "rel-pos": 1
+     },
      {
       "at": [
        121.1,
@@ -1021,78 +1047,6 @@
        35.15,
        34.1
       ]
-     },
-     {
-      "at": [
-       21.94,
-       20.5
-      ],
-      "fill": "#b0b5bb",
-      "rx": 0.6,
-      "size": [
-       4.83,
-       11.0
-      ]
-     },
-     {
-      "at": [
-       31.48,
-       20.5
-      ],
-      "fill": "#b0b5bb",
-      "rx": 0.6,
-      "size": [
-       4.83,
-       11.0
-      ]
-     },
-     {
-      "at": [
-       41.01,
-       20.5
-      ],
-      "fill": "#b0b5bb",
-      "rx": 0.6,
-      "size": [
-       4.83,
-       11.0
-      ]
-     },
-     {
-      "at": [
-       78.12,
-       20.5
-      ],
-      "fill": "#b0b5bb",
-      "rx": 0.6,
-      "size": [
-       4.83,
-       11.0
-      ]
-     },
-     {
-      "at": [
-       87.66,
-       20.5
-      ],
-      "fill": "#b0b5bb",
-      "rx": 0.6,
-      "size": [
-       4.83,
-       11.0
-      ]
-     },
-     {
-      "at": [
-       97.19,
-       20.5
-      ],
-      "fill": "#b0b5bb",
-      "rx": 0.6,
-      "size": [
-       4.83,
-       11.0
-      ]
      }
     ]
    },
@@ -1104,7 +1058,10 @@
      ],
      "id": "power-feeds",
      "label": "Fixed dual power feed",
-     "members": [],
+     "members": [
+      "psu-0",
+      "psu-1"
+     ],
      "size": {
       "h": 37,
       "w": 88

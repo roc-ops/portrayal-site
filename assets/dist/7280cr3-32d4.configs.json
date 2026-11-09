@@ -1759,6 +1759,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The chassis with two AC supplies and three fan modules fitted, front-to-rear air, before any part number: the shape every build below starts from.",
    "files": {
@@ -2739,6 +2740,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
     "psu-1": "arista/7280cr3-pwr-1000-dc@1",
     "psu-2": "arista/7280cr3-pwr-1000-dc@1"
@@ -3722,6 +3724,7 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -4708,6 +4711,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The 7280CR3-32D4 with two AC supplies and front-to-rear air: PWR-1011-AC-RED supplies and FAN-7011H-F fan modules, all with red handles. Ordered as DCS-7280CR3-32D4-F.",
    "files": {
@@ -5690,8 +5694,21 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {
+    "features": {
+     "eos-license": "license group G3; minimum EOS 4.27.2"
+    },
+    "platform": {
+     "cpu": "Eight-Core x86",
+     "memory": "64 GB"
+    },
+    "power": {
+     "power-max-w": 865,
+     "power-typical-w": 543
+    }
+   },
    "bays": {},
-   "description": "The 7280CR3K-32D4A, the K build with an eight-core CPU, with front-to-rear air. It draws 543 W typical and 865 W maximum (guide Table 4), against 535 W and 851 W for the other builds. Ordered as DCS-7280CR3K-32D4A-F.",
+   "description": "The 7280CR3K-32D4A, the K build with an eight-core CPU, with front-to-rear air. Ordered as DCS-7280CR3K-32D4A-F.",
    "files": {
     "bottom": "7280cr3-32d4.k-a-f.bottom.svg",
     "front": "7280cr3-32d4.k-a-f.front.svg",
@@ -6672,6 +6689,19 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {
+    "features": {
+     "eos-license": "license group G3; minimum EOS 4.27.2"
+    },
+    "platform": {
+     "cpu": "Eight-Core x86",
+     "memory": "64 GB"
+    },
+    "power": {
+     "power-max-w": 865,
+     "power-typical-w": 543
+    }
+   },
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -6679,7 +6709,7 @@
     "psu-1": "arista/7280cr3-pwr-1000-ac-rev@1",
     "psu-2": "arista/7280cr3-pwr-1000-ac-rev@1"
    },
-   "description": "The 7280CR3K-32D4A with rear-to-front air, drawing 543 W typical and 865 W maximum. Ordered as DCS-7280CR3K-32D4A-R.",
+   "description": "The 7280CR3K-32D4A with rear-to-front air. Ordered as DCS-7280CR3K-32D4A-R.",
    "files": {
     "bottom": "7280cr3-32d4.k-a-r.bottom.svg",
     "front": "7280cr3-32d4.k-a-r.front.svg",
@@ -7660,6 +7690,11 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {
+    "platform": {
+     "memory": "64 GB"
+    }
+   },
    "bays": {},
    "description": "The 7280CR3K-32D4, the same hardware with 64 GB of memory and the large-routes licence, with front-to-rear air. Ordered as DCS-7280CR3K-32D4-F.",
    "files": {
@@ -8642,6 +8677,11 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {
+    "platform": {
+     "memory": "64 GB"
+    }
+   },
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -9630,6 +9670,7 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -10621,18 +10662,6 @@
  "device": "7280cr3-32d4",
  "gaps": [
   {
-   "because": "vendor-silent",
-   "blocks": [],
-   "kind": "declared",
-   "note": "The 7280CR3K-32D4A draws 543 W typical and 865 W maximum (guide Table 4) against 535 W and 851 W for the other two, has an eight-core CPU in place of a quad-core, and the K builds carry 64 GB of memory against 8 GB. No configuration can state a device attribute (the same open gap as cisco/asr-9001). The attrs carry the 7280CR3-32D4's figures and the platform lines name all three.",
-   "scope": [
-    "front",
-    "rear"
-   ],
-   "wanted": "configuration-scoped device attrs.",
-   "what": "config-scoped-device-attrs"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "kind": "declared",
@@ -10835,7 +10864,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "Guide Table 4: typical / maximum 535 W / 851 W for the 7280CR3-32D4 and 7280CR3K-32D4, and 543 W / 865 W for the 7280CR3K-32D4A, each with PWR-1011-AC or PWR-1011-DC. The data sheet states the same figures with typical \"measured at 25C ambient with 50% load on all ports\". A configuration cannot state a device attribute, so the device carries 535 W / 851 W and the -A figure is in the gap config-scoped-device-attrs and in the description of its configurations."
+   "note": "Guide Table 4: typical / maximum 535 W / 851 W for the 7280CR3-32D4 and 7280CR3K-32D4, and 543 W / 865 W for the 7280CR3K-32D4A, each with PWR-1011-AC or PWR-1011-DC. The data sheet states the same figures with typical \"measured at 25C ambient with 50% load on all ports\". The device carries 535 W / 851 W; the configurations k-a-f and k-a-r state the -A figure in their `attrs`, with its CPU and minimum EOS, and the K builds state their memory."
   },
   "rear": {
    "confidence": "estimated",

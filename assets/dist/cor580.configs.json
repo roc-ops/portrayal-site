@@ -59,7 +59,8 @@
   "rear": [
    {
     "accepts": [
-     "common/psu-ac-1300@1"
+     "common/psu-ac-1300@1",
+     "edgecore/fsj033-610g@1"
     ],
     "at": [
      9.0,
@@ -185,7 +186,8 @@
    },
    {
     "accepts": [
-     "common/psu-ac-1300@1"
+     "common/psu-ac-1300@1",
+     "edgecore/fsj033-610g@1"
     ],
     "at": [
      372.4,
@@ -1351,7 +1353,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      369.0,
@@ -1388,7 +1391,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      369.0,
@@ -1610,6 +1614,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "Dual 1300 W AC PSUs (FRU FSH082-610G) and six fan trays (FRU AS9926-24D/24DB-FAN), front-to-back airflow. The AC supply is also rated for 190-310 VDC (quick start input rating), so this build takes high-voltage DC as well as AC. This is a fixed 1RU switch, so the base configuration is the box as it is bought - supplies and fans populated, cages empty. The AS9926-24DB rows are the same hardware with an ASPEED AST2600 BMC on the CPU module, which changes nothing on either face.",
    "files": {
@@ -2198,8 +2203,54 @@
   },
   {
    "airflow": "front-to-back",
-   "bays": {},
-   "description": "Dual -48 VDC PSUs (FRU FSJ033-610G, rated 48 VDC 1300 W, input -40 V to -75 V at 40 A maximum) and the same six fan trays, front-to-back airflow. The DC SKUs ship four ring lugs that the AC SKUs do not (cor580-qsg package contents, item 4). The bay geometry is identical; the supply is drawn as the AC part because the library holds no 1300 W DC module yet, which is registered as a gap.",
+   "attrs": {},
+   "bays": {
+    "psu-1": "edgecore/fsj033-610g@1",
+    "psu-2": "edgecore/fsj033-610g@1"
+   },
+   "dc-ports": [
+    {
+     "awg": null,
+     "direction": "input",
+     "id": "input",
+     "path": "psu-1/module/input",
+     "poles": [
+      {
+       "role": "rtn",
+       "slot": "psu-1/module/pole-rtn"
+      },
+      {
+       "role": "batt",
+       "slot": "psu-1/module/pole-batt"
+      }
+     ],
+     "rating-a": 40,
+     "ref": "edgecore/fsj033-610g@1",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": null,
+     "direction": "input",
+     "id": "input",
+     "path": "psu-2/module/input",
+     "poles": [
+      {
+       "role": "rtn",
+       "slot": "psu-2/module/pole-rtn"
+      },
+      {
+       "role": "batt",
+       "slot": "psu-2/module/pole-batt"
+      }
+     ],
+     "rating-a": 40,
+     "ref": "edgecore/fsj033-610g@1",
+     "side": null,
+     "voltage": null
+    }
+   ],
+   "description": "Dual -48 VDC PSUs (FRU FSJ033-610G, rated 48 VDC 1300 W, input -40 V to -75 V at 40 A maximum) and the same six fan trays, front-to-back airflow. The DC SKUs ship four ring lugs that the AC SKUs do not (cor580-qsg package contents, item 4). The bay geometry is identical, and each bay seats edgecore/fsj033-610g@1, the DC supply's own part with a two-screw terminal block and a ground stud, drawn from the quick start's angled illustration of the supply's terminal end; what remains open is the dc-psu-module gap.",
    "files": {
     "bottom": "cor580.dc48-f2b.bottom.svg",
     "front": "cor580.dc48-f2b.front.svg",
@@ -2666,26 +2717,6 @@
      "off",
      "activity"
     ],
-    "psu-1/module": [
-     "ok",
-     "fail",
-     "absent"
-    ],
-    "psu-1/module/status": [
-     "off",
-     "ok",
-     "fail"
-    ],
-    "psu-2/module": [
-     "ok",
-     "fail",
-     "absent"
-    ],
-    "psu-2/module/status": [
-     "off",
-     "ok",
-     "fail"
-    ],
     "status-display/digit-1": [
      "0",
      "1",
@@ -2756,7 +2787,7 @@
    "scope": [
     "rear"
    ],
-   "wanted": "The dc48-f2b configuration orders FSJ033-610G, a 1300 W -48 VDC supply with a terminal block rather than a C14 inlet. The library has common/psu-dc-650 but no 1300 W DC module, and neither COR580 document photographs the DC PSU's face - both rear elevations show the AC unit. The DC configuration therefore draws the AC part, which is wrong at the connector. A photograph or drawing of FSJ033-610G's face is what it needs.",
+   "wanted": "The dc48-f2b configuration orders FSJ033-610G, a 1300 W -48 VDC supply, and seats edgecore/fsj033-610g@1, which is drawn from the quick start's angled illustration of the supply's terminal end (Connect Power, page 3; no scale). The envelope is borrowed from common/psu-ac-1300@1, every position on the face is read from the illustration and estimated, the colours are sampled from a render, and which way the wires leave the two screws is not stated. The illustration puts the handle at the left and the latch at the lower right where the AC part has its latch at the left; the two are not reconciled, and no photograph or 3D model of FSJ033-610G is held. The quick start gives the supply's input as -40 V to -75 V and the data sheet the system's as -36 to -72 VDC, recorded on the part and not resolved. A photograph or elevation of the DC build's rear is what it needs.",
    "what": "dc-psu-module"
   },
   {
@@ -2858,6 +2889,10 @@
   "cutouts": {
    "note": "every hole RESTATES the aperture its occupant declares: position is the placement's own `at` plus the component's aperture offset, size is the registry entry the component conforms to. The 24 port holes come out of expand.py that way; the USB's is the same aperture turned through the placement's own 90 degrees."
   },
+  "dc-supply-figure": {
+   "confidence": "estimated",
+   "note": "THE DC BUILD SEATS ITS OWN SUPPLY, edgecore/fsj033-610g@1 (the data sheet's FRU FSJ033-610G, EC-DS-0222-R04 page 4), read from the quick start's page 3 illustration of the supply's terminal end (Connect Power; a colour render with no scale) and drawn on common/psu-ac-1300@1's 57.0 x 40.0 envelope. Nothing is measured from the illustration: each position is a fraction of the visible face and estimated. The dc48-f2b configuration used to seat the AC part with a component-attrs override; it seats the new part through its bays and the override is gone."
+  },
   "dip-bank": {
    "confidence": "measured",
    "note": "MEASURED as geometry, UNNAMED as a thing. A strip of ten small switch cells with red caps at both ends sits at x 30.4-49.4, y 32.6-36.0 mm, below the RST button. Callout 8 of cor580-datasheet/fig-0007 has its leader drawn to this strip and its own list names item 8 'Reset button' - which the quick-start contradicts, drawing and labelling RST as the round button above (fig-0008). Both cannot be right. The round button is modelled as the reset; the strip is drawn as panel decor and registered as a gap rather than given a function neither document states. Its printed label is two words at roughly 1 mm cap height and does not resolve at 3.2 px/mm."
@@ -2874,6 +2909,10 @@
   },
   "lifecycle": {
    "note": "searched and found nothing. One web search, 'Edgecore COR580 AS9926-24D end of life end of sale announcement' (2026-08-29), returned Edgecore's 2020 Q4, 2021 May and 2022 July EOL notices - none of which names this model - alongside a live product page and datasheet revision R04. `eol: none-announced` means the vendor has announced nothing, not that nobody looked."
+  },
+  "logo": {
+   "confidence": "photo-measured",
+   "note": "THE VENDOR LOGO IS A RESERVED PLACE AND IS NOT DRAWN. The front prints the maker's boxed logotype, red at both ends, over the model text at the lower left, beside the display digits. Measured on the front picture on page 2 of Edgecore's COR580 data sheet (1181 x 119 px), calibrated on the body outline at 2.685 px/mm across and 2.691 down, which agree to 0.2 percent: the mark runs x 30.2 to 50.9 and y 32.2 to 36.3. The picture is square-on, so the sureness is sure and the position is good to about 1 mm. The `logo-zone` region on the front view reserves the place; nothing is drawn in it."
   },
   "management-cluster": {
    "confidence": "measured",

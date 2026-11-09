@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="439.0mm" height="43.9mm" viewBox="0 0 439.0 43.9" data-device="ex2500-24f" data-view="rear" data-weight-note="6.4 kg (14.1 lb) in the guide's Table 12; 14.9 lb (6.8 kg) in the datasheet" data-depth-note="38.1 cm (15.0 in) (Table 12)" data-throughput="480 Gbps full duplex, non-blocking on all ports (datasheet)" data-latency="about 700 ns (datasheet)" data-vlans-max="1024" data-sfp-plus-speeds="10 GbE or 1 GbE on each SFP+ port (datasheet)" data-power-typical-w="200" data-power-envelope="unstated" data-power-input-ac="100 to 240 VAC, 50 to 60 Hz" data-power-current-max="2.75 A at 100 VAC; 1.15 A at 240 VAC" data-redundancy-note="two internal 275 W supplies in 1+1, load sharing at about half load each" data-thermal-output-btu-h="1100" data-cooling="six internal fans, not customer replaceable; front-to-back in the -FB and back-to-front in the -BF" data-operating-temp="0 to +40 C, +35 C maximum with a fan or supply failed" data-storage-temp="-20 to +70 C" data-humidity="10 to 90 percent noncondensing operating, 10 to 95 percent storage" data-altitude="3,050 m operating, 4,573 m storage" data-acoustic-noise="under 65 dB" data-optics-sfp-plus="SFP+ 10GBASE-SR and 10GBASE-LR transceivers and 1 m and 3 m direct access cables" data-oob="two 10/100/1000BASE-T RJ-45 management ports" data-console="one RS-232 serial console port, a mini-USB connector with an external cable to D9" data-emc="FCC Part 15 Class A, EN 55022 Class A, VCCI Class A, ICES-003, AS/NZS CISPR 22 Class A" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Juniper EX2500-24F","device-version":"0.2.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/ground-symbol@1":"1.0.1","common/screw-head@1":"1.1.1","std/c14-inlet@1":"1.4.0"},"source-sha256":"fa1fa7762ed3971063ba9de3b7a622f6140d354a32bc619de7fe805b42a7e6b0","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="EX2500-24F" data-sku="EX2500-24F-BF" data-part-number="" x="0" y="0" width="439" height="43.9" rx="1.2" fill="#232528" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-plate" data-kind="plate" x="51.5" y="2" width="335.2" height="39.9" rx="1.2" fill="#2c2f33" />
+    <rect id="vent-rear" data-kind="vent-field" data-aperture="air" x="67.6" y="4.4" width="303" height="34.3" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="14" y="6.5" width="20" height="28" fill="#101214" id="cutout--ac-inlet-0" data-path="cutout:ac-inlet-0" data-class="cutout" />
+    <rect x="404.9" y="6.5" width="20" height="28" fill="#101214" id="cutout--ac-inlet-1" data-path="cutout:ac-inlet-1" data-class="cutout" />
+  </g>
+  <g id="ac-inlet-0" data-path="ac-inlet-0" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="0" transform="translate(10.0,10.5) rotate(90 14.0 10.0)" data-group="power-input" data-group-role="service" data-description="The two IEC 320 inlets, one for each internal supply">
+    <title>ac-inlet-0</title>
+    <rect id="ac-inlet-0--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-0/opening" data-class="cutout" />
+    <path id="ac-inlet-0--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-0--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-0--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-0--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="ac-inlet-1" data-path="ac-inlet-1" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="1" transform="translate(400.9,10.5) rotate(90 14.0 10.0)" data-group="power-input" data-group-role="service" data-description="The two IEC 320 inlets, one for each internal supply">
+    <title>ac-inlet-1</title>
+    <rect id="ac-inlet-1--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-1/opening" data-class="cutout" />
+    <path id="ac-inlet-1--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-1--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="earth-mark" data-path="earth-mark" data-class="ground" data-ref="common/ground-symbol@1:1.0.1" data-rel-pos="2" transform="translate(3.5,20.3)" data-group="furniture" data-group-role="furniture" data-description="the two screws on the rear panel and the earth symbol at its left end" data-for="chassis">
+    <title>earth-mark</title>
+    <g id="earth-mark--symbol" stroke="#c7ccd1" fill="none" data-path="earth-mark/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="rear-screw-0" data-path="rear-screw-0" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.1" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="0" transform="translate(378.4,8.5)" data-group="furniture" data-group-role="furniture" data-description="the two screws on the rear panel and the earth symbol at its left end">
+    <title>rear-screw-0</title>
+    <circle id="rear-screw-0--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-0--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-0--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="rear-screw-1" data-path="rear-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.1" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(378.4,34.6)" data-group="furniture" data-group-role="furniture" data-description="the two screws on the rear panel and the earth symbol at its left end">
+    <title>rear-screw-1</title>
+    <circle id="rear-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="rear-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="rear-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

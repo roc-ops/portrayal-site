@@ -464,7 +464,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      140.8,
@@ -504,7 +505,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      174.7,
@@ -628,10 +630,79 @@
     "rel-pos": 2,
     "rotate": null,
     "turns": null
+   },
+   {
+    "accepts": [
+     "generic/mini-usb-b-plug@1"
+    ],
+    "at": [
+     233.95,
+     29.55
+    ],
+    "bores": [],
+    "default": null,
+    "group": "mgmt",
+    "group-states": false,
+    "id": "console-usb",
+    "interface": "mini-usb-b",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     237.8,
+     31.5
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "mgmt",
+     "data-group-role": "management"
+    },
+    "rel-pos": 3,
+    "rotate": null,
+    "turns": null
    }
   ],
   "left": [],
   "rear": [
+   {
+    "accepts": [
+     "generic/two-hole-lug-5-8@1"
+    ],
+    "at": [
+     23.5995,
+     30.987
+    ],
+    "bores": [
+     "1",
+     "2"
+    ],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-pair",
+    "interface": "stud-pair-5-8",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     33.95,
+     33.4
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (Table 36)",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": 0,
+    "turns": [
+     0,
+     180
+    ]
+   },
    {
     "accepts": [
      "generic/c13-plug@1"
@@ -688,6 +759,7 @@
  "configs": [
   {
    "airflow": "passive",
+   "attrs": {},
    "bays": {},
    "description": "EX2300-C-12P - 12 PoE+ ports and two SFP+/SFP uplinks, built-in AC supply, fanless. Table 1, no Virtual Chassis licence.",
    "files": {
@@ -918,6 +990,7 @@
   },
   {
    "airflow": "passive",
+   "attrs": {},
    "bays": {},
    "description": "EX2300-C-12P-TAA - the same chassis sold as Trade Agreements Act compliant (Table 1); the front panel and rear are those of the EX2300-C-12P.",
    "files": {
@@ -1148,6 +1221,7 @@
   },
   {
    "airflow": "passive",
+   "attrs": {},
    "bays": {},
    "description": "EX2300-C-12P-VC - the same chassis with the Virtual Chassis licence (Table 1). The packing list adds a paper licence. The front panel and rear are those of the EX2300-C-12P.",
    "files": {
@@ -1381,6 +1455,17 @@
  "device": "ex2300-c-12p",
  "gaps": [
   {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The part is the registry's Mini-B receptacle (Molex drawing SD-54819-026, 7.7 x 3.9 mm). The 12P front photograph shows the console shell at about 8 mm across and 4.5 mm high, and no close-up is held, so the drawn shell and its place are estimates and the maker's own shell may differ by a few tenths.",
+   "scope": [
+    "console-usb"
+   ],
+   "wanted": "A straight-on close-up of the console port with a scale, or the maker's dimensioned drawing of it.",
+   "what": "mini-usb-console-shell"
+  },
+  {
    "because": "needs-drawing",
    "blocks": [],
    "kind": "declared",
@@ -1426,6 +1511,17 @@
    ],
    "wanted": "A flat drawing of the top and of the right panel.",
    "what": "top-and-sides"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   },
   {
    "because": "CAP",
@@ -1479,7 +1575,7 @@
   },
   "front-console": {
    "confidence": "estimated",
-   "note": "estimated - the mini-USB console port (guide Figure 1, callout 7) is drawn as chassis art, a 7.9 x 4.6 mm shell with its opening, the size the other EX2300 devices carry and the 12P photograph agrees with (about 8 mm across, 4.5 mm high). It is not a component: the library has no mini-USB receptacle and its DCIM export has no row for one."
+   "note": "estimated - the mini-USB console port (guide Figure 1, callout 7) is the placed std/mini-usb (`console-usb`), centred on the 7.9 x 4.6 mm shell this device was drawn with, the size the other EX2300 devices carry and the 12P photograph agrees with (about 8 mm across, 4.5 mm high). The part draws the registry's 7.7 x 3.9 mm Mini-B shell, which stands in for the maker's own (gap `mini-usb-console-shell`). The guide names the connector: \"Mini-USB Type-B (5-pin)\" (Console Ports, p4; Mini-USB Port Pinout Specifications, p86)."
   },
   "front-layout": {
    "confidence": "estimated",
@@ -1488,6 +1584,10 @@
   "gate-1": {
    "confidence": "measured",
    "note": "The front photograph is 1500 x 300 px with the body (bumper to bumper) 1462 px across: 5.240 px per mm against the 279 mm of Table 3. The ganged jack pitch then reads 73.4 px = 14.0 mm, the 13.97 the registry records for the ganged RJ-45 cell, on a quantity the scale never saw. The photograph is 6.11 across to down (bumpers included) against the table's 279 / 43.6 = 6.40, so y is taken at the same 5.240 px per mm with the body centred on the bumper extent (the face top at 35.5 px); the guide's Figure 1 (1500 x 463 px, body 1244 px across) shows the same aspect, 6.07, so it does not pass the aspect check either and is used for what is on the face and for confirming order, not for absolute y. Every position is therefore estimated and good to about a millimetre."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 36 names two 10-32 x .25 in. screws with #10 split-lock washers and a Panduit LCC10-14AW-L lug or equivalent (not provided) for the EX2300 and EX2300-C, and gives no spacing. The rear photograph puts the two holes 15.9 mm apart: 5/8 in. (15.875) and not 3/4 in. (19.05). The lug's own code is not in the library's registry, so it is the photograph that carries the pitch. The terminal is `common/ground-hole-pair-5-8-10-32@1`: two bare 10-32 holes on 5/8 in. centres, presenting `stud-pair-5-8`, so one two-hole lug (`generic/two-hole-lug-5-8@1`) lands across them and a ring lug still lands on either hole. The holes stay bare, as the photograph shows them; the screws that hold the lug are not part of the switch. The holes were drawn 15.9 apart as decor and the pair stands on their midpoint."
   },
   "heatsink": {
    "confidence": "photo-measured",
@@ -1522,7 +1622,19 @@
    "note": "photo-measured - two SFP+/SFP cages numbered 0 and 1, each with LINK over ST beside it; the guide gives 2x10G SFP/SFP+ and says the ports can be Virtual Chassis ports with SFP+ transceivers but not with SFP."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "ground-pair": {
+    "generic/two-hole-lug-5-8@1": 180
+   },
+   "ground-pair/1": {
+    "generic/ring-lug@1": 0
+   },
+   "ground-pair/2": {
+    "generic/ring-lug@1": 0
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

@@ -58,6 +58,12 @@
   "color": "#3c3f42",
   "depth": 762,
   "height": 87.7,
+  "kits": [
+   {
+    "ref": "ufispace/adjustable-rail-771-kit@1",
+    "supply": "in-box"
+   }
+  ],
   "ru": 2,
   "weight-kg": 20.62,
   "width": 436
@@ -83,9 +89,14 @@
    "power": "ac"
   },
   "dc": {
+   "attrs": {
+    "power": {
+     "power-max-w": "1276"
+    }
+   },
    "bays": {
-    "psu-0": "ufispace/psu-162-dc@1",
-    "psu-1": "ufispace/psu-162-dc@1"
+    "psu-0": "ufispace/psu-162-dc@2",
+    "psu-1": "ufispace/psu-162-dc@2"
    },
    "component-attrs": {
     "fan-803816": {
@@ -107,6 +118,15 @@
  "description": "UfiSpace S9600-30DX open ZR aggregation router - 2RU disaggregated white box on Broadcom Jericho2 with an external OP2 TCAM, 4.8 Tbps and 8 GB of deep buffer, carrying 16x QSFP28 40/100G, 8x QSFP-DD 40/100G with OpenZR+ and 6x QSFP-DD 100/400G with 400G ZR/ZR+ for metro and regional coherent aggregation, plus a full timing block (GNSS on SMA, 1PPS and 10MHz on SMB, ToD on RJ45, BITS on RJ48, Stratum 3E OCXO, SyncE, 1588v2 Class C and TSN); four hot-swap fans (3+1) and dual 1600W supplies (1+1) at the rear",
  "format": 1,
  "gaps": [
+  {
+   "note": "The height of the pair of screws of each DC pole off the supply's face is an estimate. The S9600-30DX Hardware Installation Guide draws the block in isometric only (Figures 25 and 26), with no scale and no elevation, and no held document gives the height.",
+   "reason": "needs-drawing",
+   "scope": [
+    "ufispace/psu-162-dc@2"
+   ],
+   "wanted": "a side elevation of the DC supply's terminal block with its height off the face, or a photograph taken square to the block from the side",
+   "what": "dc-terminal-height"
+  },
   {
    "note": "The S9600-30DX HIG has no LED table at all - not for the port lamps, not for the five front-panel system lamps, not for the PSU or fan FRUs. That is a stronger silence than the sibling guides', which table the system and FRU lamps and only omit the ports. Every lamp on this device therefore keeps its component's off/on default. The two lamps beside each QSFP28 pair and the one on each QSFP-DD light-pipe strip are drawn because the photograph and Figure 8 both show them; what they mean is not stated anywhere.",
    "reason": "vendor-silent",
@@ -323,7 +343,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "datasheet 'Typical power: 464 Watts (no transceiver)' - the vendor's own scope, so power-envelope is bare. The HIG states the maximum twice, once per build: 'The maximum system power consumption is 1300 watts' in the AC section and '1276 watts' in the DC section, neither qualified as to optics or ambient. 1300 is carried as power-max-w because max means the highest, and the 24-watt difference is recorded here rather than as a conflict - they are two builds, not two readings. The 1600 W that appears beside them is a provisioning instruction ('a reserve of at least 1600 watts on each power circuit') and is the supply's rating, not a draw. On a single 110 VAC feed the HIG derates both supplies to 1000 W each. These are the vendor's figures as the vendor states them and are NOT reconciled against the module set; the fans publish no draw, so any total built from the modelled modules is a floor."
+   "note": "datasheet 'Typical power: 464 Watts (no transceiver)' - the vendor's own scope, so power-envelope is bare. The HIG states the maximum twice, once per build: 'The maximum system power consumption is 1300 watts' in the AC section and '1276 watts' in the DC section, neither qualified as to optics or ambient. 1300 is carried as power-max-w because max means the highest, and the 24-watt difference is recorded here rather than as a conflict - they are two builds, not two readings; the dc configuration states its own 1276. The 1600 W that appears beside them is a provisioning instruction ('a reserve of at least 1600 watts on each power circuit') and is the supply's rating, not a draw. On a single 110 VAC feed the HIG derates both supplies to 1000 W each. These are the vendor's figures as the vendor states them and are NOT reconciled against the module set; the fans publish no draw, so any total built from the modelled modules is a floor."
   },
   "qsfp28-layout": {
    "confidence": "drawing",
@@ -367,7 +387,7 @@
    "title": "UfiSpace S9600-30DX Hardware Installation Guide"
   }
  ],
- "version": "4.0.6",
+ "version": "4.1.2",
  "views": {
   "bottom": {
    "components": {
@@ -2628,7 +2648,8 @@
      {
       "accepts": [
        "ufispace/psu-162-ac@1",
-       "ufispace/psu-162-dc@1"
+       "ufispace/psu-162-dc@1",
+       "ufispace/psu-162-dc@2"
       ],
       "at": [
        375.0,
@@ -2646,7 +2667,8 @@
      {
       "accepts": [
        "ufispace/psu-162-ac@1",
-       "ufispace/psu-162-dc@1"
+       "ufispace/psu-162-dc@1",
+       "ufispace/psu-162-dc@2"
       ],
       "at": [
        375.0,

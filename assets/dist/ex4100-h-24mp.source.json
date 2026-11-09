@@ -117,15 +117,6 @@
    "what": "cld-lamp-states"
   },
   {
-   "note": "The earthing terminal is two threaded holes for M5 screws on a 5/8 in pitch. The library has no pair part for M5 holes, so they are drawn as holes on the plate and no lug seat is offered.",
-   "reason": "needs-drawing",
-   "scope": [
-    "rear"
-   ],
-   "wanted": "a two-hole M5 earth terminal part",
-   "what": "ground-hole-seat"
-  },
-  {
    "note": "The claim code label (front) and the serial number label (rear) are stickers with no content in any figure; they are named regions and are not drawn.",
    "reason": "needs-drawing",
    "scope": [
@@ -145,6 +136,15 @@
    ],
    "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
    "what": "four-faces"
+  },
+  {
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   }
  ],
  "groups": {
@@ -161,6 +161,12 @@
    "term": "LED"
   },
   "esd": {
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
+  },
+  "grounding": {
+   "description": "the earthing terminal, two bare M5 holes for a two-hole lug (Table 68)",
    "index-origin": 0,
    "role": "furniture",
    "term": "Point"
@@ -293,7 +299,11 @@
   },
   "earthing": {
    "confidence": "photo-measured",
-   "note": "Table 68 and Figure 99 - a two-hole protective earthing terminal on the rear panel for a Panduit LCD6-14A-L lug on two M5 by 10 mm screws with washers (the grounding kit is JNP-GL-2H6-M5-RA, separately orderable). The figure shows two holes 16.0 mm apart (the 5/8 in lug pitch) on a lighter plate at 32.3 mm across. They are drawn as holes on the plate; the library has no pair part for M5 holes on that pitch, so no lug seat is offered."
+   "note": "Table 68 and Figure 99 - a two-hole protective earthing terminal on the rear panel for a Panduit LCD6-14A-L lug on two M5 by 10 mm screws with washers (the grounding kit is JNP-GL-2H6-M5-RA, separately orderable). The figure shows two holes 16.0 mm apart (the 5/8 in lug pitch) on a lighter plate at 32.3 mm across. They are drawn as bare holes on the plate, now parts: one two-hole seat on that pitch (`ground-stud-pitch` says how the pitch is read)."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 68 names two M5 x 10 mm stainless steel screws with washer (separately orderable; the grounding kit JNP-GL-2H6-M5-RA holds the lug and screws) and a Panduit LCD6-14A-L lug or equivalent (not provided), and gives no spacing. The figure puts the two holes 16.0 mm apart, which is the 5/8 in. (15.875) of the library's two-hole lug for the same hole-spacing code (Panduit LCD6-10A-L: '.63 hole spacing'). The terminal is `common/ground-hole-pair-5-8-m5@1`: two bare M5 holes on 5/8 in. centres, presenting `stud-pair-5-8`, so one two-hole lug (`generic/two-hole-lug-5-8@1`) lands across them and a ring lug still lands on either hole. The holes stay bare, as the photograph shows them; the screws are fitted with the lug. The holes were drawn 16.0 apart as decor and the pair stands on their midpoint."
   },
   "management": {
    "confidence": "photo-measured",
@@ -347,7 +357,7 @@
    "url": "https://www.juniper.net/documentation/us/en/hardware/ex4100-h/ex4100-h.pdf"
   }
  ],
- "version": "0.1.1",
+ "version": "0.2.2",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source held: the guide does not picture the underside.",
@@ -3535,6 +3545,17 @@
     "placements": [
      {
       "at": [
+       21.8625,
+       12.9
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-5-8-m5@1",
+      "rel-pos": 0,
+      "rotate": 90
+     },
+     {
+      "at": [
        13.0,
        3.9
       ],
@@ -3574,34 +3595,6 @@
       "size": [
        14.9,
        36.8
-      ]
-     },
-     {
-      "at": [
-       29.75,
-       4.85
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-1",
-      "kind": "earth-hole",
-      "rx": 2.55,
-      "size": [
-       5.1,
-       5.1
-      ]
-     },
-     {
-      "at": [
-       29.75,
-       20.85
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-2",
-      "kind": "earth-hole",
-      "rx": 2.55,
-      "size": [
-       5.1,
-       5.1
       ]
      },
      {

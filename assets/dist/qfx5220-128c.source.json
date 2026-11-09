@@ -182,14 +182,6 @@
    "what": "qsfp28-lamp-assignment"
   },
   {
-   "reason": "needs-drawing",
-   "scope": [
-    "rear"
-   ],
-   "wanted": "A library part for the two tapped holes of the protective earthing terminal. The pair parts in the library compose screw heads, and the guide says the screws are not supplied. The plate and the earth symbol are drawn and the two holes are not.",
-   "what": "earthing-terminal-holes"
-  },
-  {
    "reason": "sources-disagree",
    "scope": [
     "front"
@@ -213,6 +205,15 @@
    ],
    "wanted": "The rack ears' positions and the rack kit's contract. The guide names QFX5220-4PRMK-4U and gives two different rail spacings. No kit contract exists in the library and none is written here.",
    "what": "ears-and-kits"
+  },
+  {
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   }
  ],
  "groups": {
@@ -236,6 +237,12 @@
    "index-origin": 0,
    "role": "service",
    "term": "Fan"
+  },
+  "grounding": {
+   "description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (the guide's earthing section (figure 32, callout 3))",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
   },
   "mgmt": {
    "index-origin": 0,
@@ -381,11 +388,15 @@
   },
   "earthing-terminal": {
    "confidence": "drawing",
-   "note": "The chassis protective earthing terminal (callout 3 of figure 32) at the lower left of the rear: a plate 27.5 mm by 9.7 mm at 14.6 mm and 147.5 mm down with two tapped holes 15.9 mm apart (the guide's Panduit LCD10-10A-L lug, 5/8 in centres, takes two 10-32 screws that the box does not include) and the earth symbol at 49.5 mm. The plate and the symbol are drawn. The two holes are not, because the library has no part for a bare pair of tapped holes (see gaps)."
+   "note": "The chassis protective earthing terminal (callout 3 of figure 32) at the lower left of the rear: a plate 27.5 mm by 9.7 mm at 14.6 mm and 147.5 mm down with two tapped holes 15.9 mm apart (the guide's Panduit LCD10-10A-L lug, 5/8 in centres, takes two 10-32 screws that the box does not include) and the earth symbol at 49.5 mm. The plate, the symbol and the two bare 10-32 holes are drawn, the holes as one two-hole seat on the lug's 5/8 in. pitch, centred on the plate (`ground-stud-pitch` says how the pitch and the place are read)."
   },
   "gate-1": {
    "confidence": "drawing",
    "note": "Figure 17 (g051150) is a flat line drawing. Its body is 1413.5 px wide and 563 px high, an aspect of 2.511 against the table's 439.9 / 174.8 = 2.517 (0.2 percent out), so it carries geometry. Scale 3.213 px/mm across and 3.222 px/mm down, origin at the left and top edges of the body. Figure 32 (g051151, the rear) is 1415 by 565 px, aspect 2.504 (0.5 percent out), 3.217 px/mm across and 3.233 down. Every position below is read off these two at 4 to 6 times zoom and is estimated to about 0.3 mm. The photographs (figures 12 and 13, 2.66 px/mm) agree with the drawings to 0.7 mm across and 2 mm down. The photograph is foreshortened a little, and the drawings are used for every position."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. The guide names a Panduit LCD10-10A-L lug or equivalent and two 10-32 x 0.25 in. screws with number 10 split-lock washers (not provided) for the earthing terminal, and gives no spacing. Its drawing puts the two tapped holes 15.9 mm apart, which is the 5/8 in. (15.875) of the library's two-hole lug for the same hole-spacing code (Panduit LCD6-10A-L: '.63 hole spacing'). The terminal is `common/ground-hole-pair-5-8-10-32@1`: two bare 10-32 holes on 5/8 in. centres, presenting `stud-pair-5-8`, so one two-hole lug (`generic/two-hole-lug-5-8@1`) lands across them and a ring lug still lands on either hole. The holes were not drawn before; they are drawn bare, as the held photograph of the rear shows them. Figure 32 draws them level and evenly set in the plate to within 0.5 mm, so the pair is centred on the plate; it gives no dimension for their place. The photograph reads them wider (about 17.5 mm across the 27.5 mm plate) and is not used for the pitch."
   },
   "lifecycle": {
    "confidence": "estimated",
@@ -730,7 +741,7 @@
    "reason": "Read from the guide's flat drawing, figure 17 (g051150), at 6 times zoom: both ports of every cell draw their latch tab at the top of the opening, and a stacked cell with a light pipe between its ports is one moulding, so both ports are the same way up. The 128C's photograph (figure 12) shows the same tabs at its own small scale. No close photograph of a cell is held, so the reading comes from a drawing and is estimated; see provenance.stack-orientation."
   }
  ],
- "version": "0.1.0",
+ "version": "0.2.1",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source held. The guide's figures show no underside, and the photographs and drawings are of the front and rear only.",
@@ -8881,6 +8892,16 @@
     "placements": [
      {
       "at": [
+       17.9995,
+       149.937
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-5-8-10-32@1",
+      "rel-pos": 0
+     },
+     {
+      "at": [
        174.4,
        74.6
       ],
@@ -9030,7 +9051,7 @@
       ],
       "fill": "#9da1a6",
       "id": "pad-earth",
-      "kind": "earthing-terminal",
+      "kind": "earth-plate",
       "size": [
        27.5,
        9.7

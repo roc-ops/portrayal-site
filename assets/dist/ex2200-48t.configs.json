@@ -1674,7 +1674,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      366.1,
@@ -1713,7 +1714,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      380.35,
@@ -1752,7 +1754,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      394.6,
@@ -1791,7 +1794,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      408.85,
@@ -1826,6 +1830,44 @@
   ],
   "left": [],
   "rear": [
+   {
+    "accepts": [
+     "generic/two-hole-lug-3-4@1"
+    ],
+    "at": [
+     44.362,
+     8.287
+    ],
+    "bores": [
+     "1",
+     "2"
+    ],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-pair",
+    "interface": "stud-pair-3-4",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     56.3,
+     10.7
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (Table 32)",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": 0,
+    "turns": [
+     0,
+     180
+    ]
+   },
    {
     "accepts": [
      "generic/rj45-plug@1"
@@ -1921,6 +1963,37 @@
    },
    {
     "accepts": [
+     "juniper/ex3300-rps-plug@1"
+    ],
+    "at": [
+     50.1,
+     25.1
+    ],
+    "bores": [],
+    "default": null,
+    "group": "mgmt",
+    "group-states": false,
+    "id": "rps",
+    "interface": "ex3300-rps",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     84.05,
+     32.45
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "mgmt",
+     "data-group-role": "management"
+    },
+    "rel-pos": 4,
+    "rotate": null,
+    "turns": null
+   },
+   {
+    "accepts": [
      "generic/c13-plug@1"
     ],
     "at": [
@@ -1975,6 +2048,7 @@
  "configs": [
   {
    "airflow": "side",
+   "attrs": {},
    "bays": {},
    "description": "EX2200-48T-4G - 48 10/100/1000 ports without PoE and four SFP uplinks, built-in AC supply and two built-in fans, side-to-rear airflow (Table 3).",
    "files": {
@@ -2559,6 +2633,27 @@
    "what": "jack-lamp-meaning"
   },
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "The connector type and pinout of the redundant power system port, and the model of the external power system. The guide labels the port and says nothing else. The part presents the key of the EX3300's port, read from the one RPS cable that the RPS guide pairs with both switches.",
+   "what": "rps-port-connector"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
+  },
+  {
    "because": "CAP",
    "blocks": [
     "specified"
@@ -2612,6 +2707,10 @@
    "confidence": "measured",
    "note": "Figure 1 was rendered at 600 dpi and measured with a pixel ruler. Its front face is 2430 px across and 237 px down: 5.467 px per mm across from the 445 mm of Table 5 and 5.34 down from 44.45 mm, a 2.4 percent aspect error, so x and y are each taken from their own dimension and every position is estimated and good to about a millimetre. The jack width reads 12.7 mm, the registry's 12.7 for the ganged RJ-45 cell, on a quantity the scale never saw. The figure is a perspective view from above and its front face is the near rectangle; Figure 5 (rear) is a flat elevation, 2722 px across and 266 down: 6.124 px per mm across and 5.99 down, a 2.2 percent aspect error."
   },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 32 (parts for connecting an EX Series switch to earth ground) names two 10-32 x .25 in. screws and a Panduit LCC10-14BWL lug or equivalent (not provided) for the EX2200 and gives no spacing. That lug's holes are .75 in. apart (the library's two-hole lug of that pattern cites Panduit LCC10-14BW-L: '1/4 stud hole, .75 hole spacing'), and the figure reads the two holes 19.8 mm apart, so the terminal is `common/ground-hole-pair-3-4-10-32@1`: two bare 10-32 holes on 3/4 in. (19.05) centres, presenting `stud-pair-3-4`. One two-hole lug (`generic/two-hole-lug-3-4@1`) lands across them and a ring lug still lands on either hole. The holes stay bare, as the figure draws them; the screws that hold the lug are not part of the switch. The holes were drawn 19.8 apart as decor and the pair stands on their midpoint."
+  },
   "lamps": {
    "confidence": "datasheet",
    "note": "Hardware guide, Tables 6 to 10 and Figures 7, 11 and 12. Each RJ-45 port and uplink has two lamps, Link/Activity and Status; Figure 11 puts them on the two tabs of the jack. The Status lamp reads out whichever of speed (SPD), duplex (DX), administrative status (EN) and PoE (POE) the Factory Reset/Mode button has selected, shown by which port-mode lamp is lit; the guide lists four port-mode lamps on every non-compact model, PoE or not. SYS is green and ALM unlit, amber or red. The jack lamps keep the component's link and activity vocabulary because a block cannot override it per lamp. Figure 12 draws the uplink lamps as two circles either side of each numeral; the left is taken as Link/Activity and the right as Status, which no figure confirms, so it is estimated. The SYS and ALM lamps are drawn as the figure draws them, oblong, and their legends tilted in the figure are printed level here."
@@ -2630,7 +2729,7 @@
   },
   "rps-port": {
    "confidence": "estimated",
-   "note": "estimated - the RPS port (Figure 5 callout, guide list of rear panel components) is drawn as chassis art: the plate and its opening at 50.1 to 118.0 mm and four screws. It is not a component: the library has no RPS connector and its DCIM export has no row for one. The guide names no RPS part number and no document of the RPS is held."
+   "note": "estimated - the RPS port (Figure 5 callout, guide list of rear panel components) is the part juniper/ex2200-rps-port@1, placed at 50.1 mm with its four screws placed beside it; the plate and its opening are read off Figure 5 as gate-1 describes. The part presents no interface: the guide names no RPS connector type and the registered key ex3300-rps covers the EX3300 only, so nothing mates the port and it is not usable yet. The guide names no RPS part number and no document of the RPS is held."
   },
   "sources": {
    "confidence": "datasheet",
@@ -2641,7 +2740,19 @@
    "note": "drawing - one row of four built-in SFP cages numbered 0 to 3 (Figure 1); the guide gives 1-gigabit SFP transceivers for fibre and copper and says an SFP uplink can be configured as a Virtual Chassis port."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "ground-pair": {
+    "generic/two-hole-lug-3-4@1": 0
+   },
+   "ground-pair/1": {
+    "generic/ring-lug@1": 180
+   },
+   "ground-pair/2": {
+    "generic/ring-lug@1": 180
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="104.7mm" height="40.6mm" viewBox="0 0 104.7 40.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/pwr-4p4kw-dc-v3@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="pwr-4p4kw-dc-v3" data-path="pwr-4p4kw-dc-v3" data-class="psu" data-behaviour="fills" data-ref="cisco/pwr-4p4kw-dc-v3@1:1.0.1" data-wall="#4a4f55" data-eol="none-announced" data-fans="2" data-generation="3" data-inlet="none" data-input="dc" data-model="PWR-4.4KW-DC-V3" data-power-output-w="4400" data-role="power-module" transform="translate(0,0)">
+    <title>pwr-4p4kw-dc-v3</title>
+    <rect id="pwr-4p4kw-dc-v3--plate" x="0" y="0" width="100.8" height="40.6" rx="1.2" fill="#bfbfbf" stroke="#8c8c8c" stroke-width="0.4" />
+    <g id="pwr-4p4kw-dc-v3--fan-1">
+      <circle cx="26.4" cy="20.3" r="15.2" fill="none" stroke="#404040" stroke-width="5.2" stroke-dasharray="20.4 3.48" />
+      <circle cx="26.4" cy="20.3" r="11.2" fill="#d9d9d9" stroke="#404040" stroke-width="0.5" />
+      <circle cx="26.4" cy="20.3" r="8.6" fill="#4a4a4a" />
+      <circle cx="26.4" cy="20.3" r="5.0" fill="#8c8c8c" stroke="#262626" stroke-width="0.4" />
+      <circle cx="26.4" cy="20.3" r="3.0" fill="#ffb900" />
+      <circle cx="26.4" cy="20.3" r="1.0" fill="#e6e6e6" />
+      <g fill="#9a9a9a" stroke="#5a5a5a" stroke-width="0.3">
+        <circle cx="10.4" cy="4.3" r="2.0" />
+        <circle cx="42.4" cy="4.3" r="2.0" />
+        <circle cx="10.4" cy="36.3" r="2.0" />
+        <circle cx="42.4" cy="36.3" r="2.0" />
+      </g>
+    </g>
+    <g id="pwr-4p4kw-dc-v3--fan-2">
+      <circle cx="75.9" cy="20.3" r="15.2" fill="none" stroke="#404040" stroke-width="5.2" stroke-dasharray="20.4 3.48" />
+      <circle cx="75.9" cy="20.3" r="11.2" fill="#d9d9d9" stroke="#404040" stroke-width="0.5" />
+      <circle cx="75.9" cy="20.3" r="8.6" fill="#4a4a4a" />
+      <circle cx="75.9" cy="20.3" r="5.0" fill="#8c8c8c" stroke="#262626" stroke-width="0.4" />
+      <circle cx="75.9" cy="20.3" r="3.0" fill="#ffb900" />
+      <circle cx="75.9" cy="20.3" r="1.0" fill="#e6e6e6" />
+      <g fill="#9a9a9a" stroke="#5a5a5a" stroke-width="0.3">
+        <circle cx="59.9" cy="4.3" r="2.0" />
+        <circle cx="91.9" cy="4.3" r="2.0" />
+        <circle cx="59.9" cy="36.3" r="2.0" />
+        <circle cx="91.9" cy="36.3" r="2.0" />
+      </g>
+    </g>
+    <rect id="pwr-4p4kw-dc-v3--handle" x="44" y="0.3" width="24" height="5.2" rx="1.0" fill="#a6a6a6" stroke="#7a7a7a" stroke-width="0.3" data-z-uhandle="8.0" />
+    <circle id="pwr-4p4kw-dc-v3--input" cx="3.6" cy="6.6" r="1.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="pwr-4p4kw-dc-v3/input" data-class="led" data-states="off on blinking" data-description="Input LED. ON continuously when the input voltage is present and within the correct range; BLINKING when the input voltage is out of acceptable range; OFF when no input voltage is present. Cisco states no colour for it." data-z-dome="0.3" />
+    <circle id="pwr-4p4kw-dc-v3--output" cx="3.6" cy="13.0" r="1.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="pwr-4p4kw-dc-v3/output" data-class="led" data-states="off on blinking" data-description="Output LED. ON when the power module output voltage is present; BLINKING when the power module is in a power limit or overcurrent condition. Cisco states no colour for it." data-z-dome="0.3" />
+    <circle id="pwr-4p4kw-dc-v3--fault" cx="3.6" cy="19.4" r="1.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="pwr-4p4kw-dc-v3/fault" data-class="led" data-states="off on" data-description="Fault LED. ON indicates that a power module failure has occurred. Cisco states no colour for it, and gives no off-state sentence." data-z-dome="0.3" />
+  </g>
+</svg>

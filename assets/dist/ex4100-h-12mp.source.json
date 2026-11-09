@@ -75,15 +75,6 @@
    "what": "mounting-kits"
   },
   {
-   "note": "The earthing terminal is two threaded holes for M5 screws on a 5/8 in pitch. The library has no pair part for M5 holes, so they are drawn as rings and holes and no lug seat is offered.",
-   "reason": "needs-drawing",
-   "scope": [
-    "front"
-   ],
-   "wanted": "a two-hole M5 earth terminal part",
-   "what": "ground-hole-seat"
-  },
-  {
    "note": "The Status lamp changes meaning with the Mode button (Table 20), so the jack lamps keep the component's link and activity vocabulary and the mode lamps carry the meaning.",
    "reason": "vendor-silent",
    "scope": [
@@ -134,6 +125,15 @@
    ],
    "wanted": "a flat drawing or photograph of the top, the underside and the sides",
    "what": "studio-photograph-sides"
+  },
+  {
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   }
  ],
  "groups": {
@@ -150,6 +150,12 @@
    "term": "LED"
   },
   "esd": {
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
+  },
+  "grounding": {
+   "description": "the earthing terminal, two bare M5 holes for a two-hole lug (Table 68)",
    "index-origin": 0,
    "role": "furniture",
    "term": "Point"
@@ -268,7 +274,11 @@
   },
   "earthing": {
    "confidence": "photo-measured",
-   "note": "Table 68 and Figure 98 - a two-hole protective earthing terminal on the front panel for a Panduit LCD6-14A-L lug on two M5 by 10 mm screws with washers (the grounding kit is JNP-GL-2H6-M5-RA, separately orderable). The figure shows two round threaded bosses 15.8 mm apart (the 5/8 in lug pitch) in rings 11.2 mm across, at 100.5 mm across, under the earth symbol and above the ESD point. They are drawn as rings and holes; the library has no pair part for M5 holes on that pitch, so no lug seat is offered."
+   "note": "Table 68 and Figure 98 - a two-hole protective earthing terminal on the front panel for a Panduit LCD6-14A-L lug on two M5 by 10 mm screws with washers (the grounding kit is JNP-GL-2H6-M5-RA, separately orderable). The figure shows two round threaded bosses 15.8 mm apart (the 5/8 in lug pitch) in rings 11.2 mm across, at 100.5 mm across, under the earth symbol and above the ESD point. They are drawn as bare holes in rings, the holes now parts: one two-hole seat on that pitch (`ground-stud-pitch` says how the pitch is read)."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 68 names two M5 x 10 mm stainless steel screws with washer (separately orderable; the grounding kit JNP-GL-2H6-M5-RA holds the lug and screws) and a Panduit LCD6-14A-L lug or equivalent (not provided), and gives no spacing. The figure puts the two holes 15.8 mm apart, which is the 5/8 in. (15.875) of the library's two-hole lug for the same hole-spacing code (Panduit LCD6-10A-L: '.63 hole spacing'). The terminal is `common/ground-hole-pair-5-8-m5@1`: two bare M5 holes on 5/8 in. centres, presenting `stud-pair-5-8`, so one two-hole lug (`generic/two-hole-lug-5-8@1`) lands across them and a ring lug still lands on either hole. The holes stay bare, as the photograph shows them; the screws are fitted with the lug. The holes were drawn 15.8 apart as decor and the pair stands on their midpoint."
   },
   "management": {
    "confidence": "photo-measured",
@@ -322,7 +332,7 @@
    "url": "https://www.juniper.net/documentation/us/en/hardware/ex4100-h/ex4100-h.pdf"
   }
  ],
- "version": "0.1.1",
+ "version": "0.2.1",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source held. The guide lists the footpads (callout 12 of Figure 1) and shows the underside only in the mounting figures, in perspective, with no position for them.",
@@ -334,6 +344,17 @@
   "front": {
    "components": {
     "placements": [
+     {
+      "at": [
+       90.0625,
+       110.3
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-5-8-m5@1",
+      "rel-pos": 0,
+      "rotate": 90
+     },
      {
       "at": [
        17.5,
@@ -1697,25 +1718,11 @@
       ],
       "fill": "#c9cbcd",
       "id": "earth-ring-1",
-      "kind": "earth-ring",
+      "kind": "earth-boss",
       "rx": 5.6,
       "size": [
        11.2,
        11.2
-      ]
-     },
-     {
-      "at": [
-       97.5,
-       101.9
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-1",
-      "kind": "earth-hole",
-      "rx": 3.0,
-      "size": [
-       6.0,
-       6.0
       ]
      },
      {
@@ -1725,25 +1732,11 @@
       ],
       "fill": "#c9cbcd",
       "id": "earth-ring-2",
-      "kind": "earth-ring",
+      "kind": "earth-boss",
       "rx": 5.6,
       "size": [
        11.2,
        11.2
-      ]
-     },
-     {
-      "at": [
-       97.5,
-       117.7
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-2",
-      "kind": "earth-hole",
-      "rx": 3.0,
-      "size": [
-       6.0,
-       6.0
       ]
      }
     ]

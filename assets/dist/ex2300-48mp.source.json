@@ -82,6 +82,15 @@
    ],
    "wanted": "A flat drawing of both side panels.",
    "what": "side-elevations"
+  },
+  {
+   "note": "The figure calls the ring at the right of the rear the ESD point and prints the earth symbol under it; Table 36 lists an earthing terminal on the rear panel, one M4 screw. The screw is placed on that ring.",
+   "reason": "needs-photo",
+   "scope": [
+    "earth-screw"
+   ],
+   "wanted": "a photograph of the rear that shows which feature is the earthing terminal",
+   "what": "earthing-terminal-position"
   }
  ],
  "groups": {
@@ -95,6 +104,12 @@
    "index-origin": 0,
    "role": "furniture",
    "term": "Item"
+  },
+  "grounding": {
+   "description": "the earthing terminal, one M4 screw for a lug (Table 36)",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
   },
   "mgmt": {
    "index-origin": 0,
@@ -210,6 +225,10 @@
    "confidence": "measured",
    "note": "The guide's Figure 6 is 1501 x 413 px; the photograph is 1500 x 230 px with the body 1440 px across (x 30 to 1470): 3.266 px per mm across against the 440.9 mm of Table 3. The photograph's jack pitch reads 46.4 px = 14.2 mm and the shells 117.6 mm apart (a 3.8 mm gutter after eight columns). The photograph is 1440 px across and 163 down including the reflection; its body (face top at 43 px) is read at the same px per mm, the body 43.3 mm high being 141 px. The rear Figure 15 passes the aspect check in x (1449 px, 3.286 px per mm) and is 147 px (44.5 mm) down against 43.3, 2.8 percent out, so its y is taken from the body's centre line. Every position is estimated and good to about a millimetre."
   },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "Table 36 lists, for the EX2300-24MP and EX2300-48MP, a Panduit LCA10-10L lug or equivalent (not provided) on one Pan Phillips M4 x 6 mm nickel plated screw (provided). The figure calls the ring at the right of the rear the ESD point and prints the earth symbol under it, and the `rear-layout` note draws it as the earthing terminal; it was drawn as a plain light disc, which is how a nickel plated screw head looks. `common/ground-screw-m4@1` is placed on that ring, at the centre the ring was drawn at: the one M4 screw that the guide says is provided, which a ring lug lands on. It is a screw and not a bare hole because the guide says the screw ships with the switch."
+  },
   "lamps": {
    "confidence": "datasheet",
    "note": "Hardware guide, Tables 5, 8, 9 and 13 and Figures 19, 23, 29 and 31. The system lamps are MGT, FAN and PW (Table 5); each RJ-45 port and each uplink has one Link/Activity lamp (Table 13), and the management jack has a Link lamp and an Activity lamp (Figure 23, Tables 8 and 9), printed LINK and ACT on the photograph. Speed, duplex, administrative status and PoE are read with show commands (the guide's note under Table 13), so there are no mode lamps and no mode button."
@@ -249,7 +268,7 @@
    "title": "EX2300 Switch Hardware Guide (Juniper Networks, published 2025-08-12)"
   }
  ],
- "version": "0.1.0",
+ "version": "0.2.0",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source held: neither the guide nor the studio photographs picture the underside (the guide's parts list gives four preinstalled rubber feet).",
@@ -3946,7 +3965,7 @@
       ],
       "fill": "#b9bcc0",
       "id": "usb-shell",
-      "kind": "usb-shell",
+      "kind": "port-shell",
       "rx": 0.5,
       "size": [
        6.3,
@@ -4645,6 +4664,16 @@
     "placements": [
      {
       "at": [
+       419.6,
+       16.3
+      ],
+      "group": "grounding",
+      "id": "earth-screw",
+      "ref": "common/ground-screw-m4@1",
+      "rel-pos": 0
+     },
+     {
+      "at": [
        420.6,
        26.9
       ],
@@ -4718,20 +4747,6 @@
    },
    "panel": {
     "decor": [
-     {
-      "at": [
-       420.35,
-       17.05
-      ],
-      "fill": "#c9cbcd",
-      "id": "earth-terminal",
-      "kind": "earth-stud",
-      "rx": 3.25,
-      "size": [
-       6.5,
-       6.5
-      ]
-     },
      {
       "at": [
        329.2,
