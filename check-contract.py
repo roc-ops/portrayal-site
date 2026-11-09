@@ -874,8 +874,8 @@ keys = set(re.findall(r"^\s*(\w+):\s*\{url:", SJS, re.M))
 tabs = set(re.findall(r'data-schema="([^"]+)"', SHTML))
 check(keys == tabs, "schema.html has one tab per SOURCES entry",
       f"tabs {sorted(tabs)}, SOURCES {sorted(keys)}")
-WORDS = {2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six"}
-n_word = re.search(r"\b(Two|Three|Four|Five|Six) documents:", SHTML)
+WORDS = {2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight"}
+n_word = re.search(r"\b(Two|Three|Four|Five|Six|Seven|Eight) documents:", SHTML)
 check(bool(n_word) and n_word.group(1) == WORDS.get(len(alldocs)),
       f"schema.html's intro counts {len(alldocs)} documents",
       f"it says {n_word.group(1) if n_word else 'nothing'}")
@@ -1194,6 +1194,14 @@ KIT_NOT_DOCUMENTED_YET = {
     "redirects": "a part the library replaced (kit 0.32.0): the Explorer lens hands it on so a saved rack keeps a replaced holder; the page has no recipe for it yet",
     "rack/ports": "the ports of what is seated in a bay, read from the catalogue (kit 0.23.0); the rack modules use it, and no page here calls it yet",
     "rack/frames": "rack products applied to a frame (Portrayal #1131): frame.apply and frame.customise run it; the Rack Builder uses it, and no recipe on this page calls it yet",
+    "housing": "what a viewer needs to show a box that opens (a base and a lid), with no three.js and no DOM; viewer3d uses it, and no recipe calls it on its own",
+    "rack/view/view": "the kit's rack view modules (rack/view/*) are exported by the kit but refresh-assets.sh copies only rack/*.js, so they are not vendored here and no page imports them; no recipe yet",
+    "rack/view/elevation": "a rack view module, exported by the kit and not vendored here (see rack/view/view); no recipe yet",
+    "rack/view/dom": "a rack view module, exported by the kit and not vendored here (see rack/view/view); no recipe yet",
+    "rack/view/face": "a rack view module, exported by the kit and not vendored here (see rack/view/view); no recipe yet",
+    "rack/view/faces": "a rack view module, exported by the kit and not vendored here (see rack/view/view); no recipe yet",
+    "rack/view/ear-holes": "a rack view module, exported by the kit and not vendored here (see rack/view/view); no recipe yet",
+    "rack/view/settable": "a rack view module, exported by the kit and not vendored here (see rack/view/view); no recipe yet",
 }
 _kpkg_f = VENDOR / "kit-package.json"
 try:
