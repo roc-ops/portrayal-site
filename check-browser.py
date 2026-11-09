@@ -1323,7 +1323,7 @@ def check_stages(page, base):
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         slot2 = next(b for b in slot_bays() if b["id"] == "slot-2")
         other = next(r for r in slot2["accepts"]
-                     if r not in ("cisco/a9k-16x100ge-tr@1", "cisco/a9k-slot-cover@1"))
+                     if r not in ("cisco/a9k-16x100ge-se@1", "cisco/a9k-slot-cover@1"))
         page.select_option('#sidePanel select[data-bay="slot-2"]', other, timeout=READY_MS)
         page.wait_for_function("() => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — slot-2')", timeout=READY_MS)
         page.click('.stage-rail button[data-stage="cable"]')
@@ -1404,7 +1404,7 @@ def check_stages(page, base):
         # Put the plan's card back, for the rest of the walk.
         page.click('.stage-rail button[data-stage="populate"]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
-        page.select_option('#sidePanel select[data-bay="slot-2"]', "cisco/a9k-16x100ge-tr@1", timeout=READY_MS)
+        page.select_option('#sidePanel select[data-bay="slot-2"]', "cisco/a9k-16x100ge-se@1", timeout=READY_MS)
         page.wait_for_function("() => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — slot-2')", timeout=READY_MS)
         # Back on stage 4 the plan refills slot-2's cages: the count is the
         # first visit's again, not inflated by the re-seat.
@@ -1553,8 +1553,8 @@ def check_stages(page, base):
         seated["first"] = seated_count()
         # The plan's card is in slot-2, and its connectors are what the cables start on.
         if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '
-                                   '[data-path="slot-2/module"][data-ref^="cisco/a9k-16x100ge-tr@1"]'):
-            bad.append("stage cable: slot-2 does not hold the plan's A9K-16X100GE-TR")
+                                   '[data-path="slot-2/module"][data-ref^="cisco/a9k-16x100ge-se@1"]'):
+            bad.append("stage cable: slot-2 does not hold the plan's A9K-16X100GE-SE")
         # Front/Rear: the server tag flips to the rear, where that cable lands on the NIC.
         page.click('#stageRack svg [data-tag^="r740xd:ndc/module/port-1"]')
         page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
