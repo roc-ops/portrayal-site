@@ -14043,13 +14043,15 @@ def check_rack_frame_focus(page, base):
 # THE FRAME PICKER (Portrayal #935 step 2, #1131): the rack products of rack.json's `frames`, offered beside the
 # generic frame. The kit decides everything (frameProducts, frame.apply, frame.customise, editRefusal); these
 # checks look at what the page does with its answers.
-FRAME_REFS = ["apc/ar201@1", "apc/ar203a@1", "generic/2-post-frame@1", "generic/4-post-cabinet@1", "generic/4-post-frame@1"]
+# The products are the catalogue's own: five when these checks were written, eleven at kit 0.51.0.
+FRAME_ROWS = json.loads((HERE / "assets" / "dist" / "rack.json").read_text())["frames"]
+FRAME_REFS = sorted(FRAME_ROWS)
 RANGED_REF = "test/ranged@1"
 
 
 def with_ranged_product(page):
-    # None of the five products states a rail depth range (AR203A fixes one, the generic frames state none), so the
-    # range is tried on a sixth row added to the catalogue the page loads: the generic four-post frame with a
+    # None of the five products there were when this was written states a rail depth range (AR203A fixes one, the
+    # generic frames state none), so the range is tried on a row of its own added to the catalogue the page loads: the generic four-post frame with a
     # rear rail that takes 700 to 900 mm in steps of 50, factory 750.
     def patch(route):
         resp = route.fetch()
@@ -14081,7 +14083,7 @@ def product_refs(page):
     return page.evaluate("() => [...document.querySelectorAll('#fProducts [data-product-ref]')].map(b => b.dataset.productRef)")
 
 
-@extra("rack.html: the frame form lists the five rack products, and a search finds AR203A by its part number and the form narrows the list")
+@extra("rack.html: the frame form lists the catalogue's rack products, and a search finds AR203A by its part number and the form narrows the list")
 def check_rack_frame_picker_lists(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -14089,7 +14091,7 @@ def check_rack_frame_picker_lists(page, base):
     wait_sel(page, "picker: the product list", "#fProducts [data-product-ref]")
     got = product_refs(page)
     if sorted(got) != FRAME_REFS:
-        bad.append(f"picker: the list holds {got}, expected the five products {FRAME_REFS}")
+        bad.append(f"picker: the list holds {got}, expected the catalogue's {len(FRAME_REFS)} products {FRAME_REFS}")
     page.fill("#fProdSearch", "AR203A")
     wait_fn(page, "picker: search by part number", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
     if product_refs(page) != ["apc/ar203a@1"]:
@@ -14099,10 +14101,11 @@ def check_rack_frame_picker_lists(page, base):
     wait_fn(page, "picker: the cabinet form", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
     if product_refs(page) != ["generic/4-post-cabinet@1"]:
         bad.append(f"picker: the form cabinet lists {product_refs(page)}")
+    two = sorted(r for r, p in FRAME_ROWS.items() if p.get("form") == "2-post-frame")
     page.select_option("#fProdForm", "2-post-frame")
-    wait_fn(page, "picker: the two-post form", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 2")
-    if sorted(product_refs(page)) != ["apc/ar201@1", "generic/2-post-frame@1"]:
-        bad.append(f"picker: the form two-post lists {product_refs(page)}")
+    wait_fn(page, "picker: the two-post form", f"() => document.querySelectorAll('#fProducts [data-product-ref]').length === {len(two)}")
+    if sorted(product_refs(page)) != two or len(two) < 2:
+        bad.append(f"picker: the form two-post lists {product_refs(page)}, the catalogue has {two}")
     page.select_option("#fProdForm", "")
     page.fill("#fProdSearch", "no such rack zzz")
     wait_fn(page, "picker: nothing found", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 0")
