@@ -2684,9 +2684,8 @@ def check_schema_nos_tab(page, base):
     # the lab schema (Portrayal #852), the rack product's, the rack file's (kit 0.3.0),
     # the site's and the marks document's (Portrayal #898) are tabs of their own when
     # the snapshot carries them
-    more = [k for k, f in (("lab", "lab"), ("product", "rack-product"), ("rack", "rack"),
-                           ("site", "site"), ("marks", "marks"))
-            if (schemas / f"{f}.schema.json").exists()]
+    more = [k for k in ("lab", "rack-product", "rack", "site", "marks")
+            if (schemas / f"{k}.schema.json").exists()]
     if got != ["device", "component", have] + more:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
     if misses: bad.append(f"schema: the page asked for missing files {misses}")

@@ -30,7 +30,8 @@ const SOURCES = {
   // A LAB: placements in a rack, rack-face parts on a host (Portrayal #852, lab.schema.json).
   lab:       {url: 'assets/schemas/lab.schema.json',       label: 'a lab of devices placed in a rack'},
   // A RACK AS A MAKER SELLS IT: the frame or cabinet the library models, not the rack someone built.
-  product:   {url: 'assets/schemas/rack-product.schema.json', label: 'a rack or cabinet as a maker sells it'},
+  // Keyed by its file's name, as every tab is, so ?doc= names the file.
+  'rack-product': {url: 'assets/schemas/rack-product.schema.json', label: 'a rack or cabinet as a maker sells it'},
   // A SITE: buildings, floors and spaces, the racks in them, and the cables between racks.
   site:      {url: 'assets/schemas/site.schema.json',      label: 'a site of buildings, spaces, racks and cables'},
   // The Rack Builder's file. Portrayal's since the rack core moved into the kit
