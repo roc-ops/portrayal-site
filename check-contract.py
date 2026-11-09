@@ -870,7 +870,8 @@ check(bool(docs) and set(docs) <= sources and sources - set(docs) <= _nos_pair
       f"schema.js renders every vendored schema ({len(docs)})",
       f"vendored {sorted(docs)}, SOURCES names {sorted(sources)} - a schema "
       "added upstream needs an entry in SOURCES and a tab in schema.html")
-keys = set(re.findall(r"^\s*(\w+):\s*\{url:", SJS, re.M))
+# a key is a bare name or, for a file whose name has a hyphen (rack-product), quoted
+keys = set(re.findall(r"^\s*'?([\w-]+)'?:\s*\{url:", SJS, re.M))
 tabs = set(re.findall(r'data-schema="([^"]+)"', SHTML))
 check(keys == tabs, "schema.html has one tab per SOURCES entry",
       f"tabs {sorted(tabs)}, SOURCES {sorted(keys)}")
