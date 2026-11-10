@@ -93,10 +93,20 @@ test('over the whole catalogue the control takes the cover plates of cable manag
   assert.ok(!TOUCHED.some(d => LEFT.includes(d)), 'no device is both');
 });
 
-test('the kind a side view marks a cover by is only ever on a device whose cover plate is taken', () => {
+// These cabinets mark their door on the left and right views by kind and have no cover group on the front,
+// so the control reaches their side views only.
+const SIDE_ONLY = ['13902-701', '13902-703', '13902-715'];
+
+test('the kind a side view marks a cover by is only ever on a device whose cover plate is taken, or on a side-only cabinet', () => {
   // data-kind="cover" is what the side panes hide (rack.css): on the left and right views it must not reach another part
   const kinds = new Set();
   for (const {f, text} of drawings) if (/\.(left|right)\.svg$/.test(f) && /\sdata-kind="cover"/.test(text)) kinds.add(deviceOf(text));
   assert.ok(kinds.size >= 20);
-  assert.deepEqual([...kinds].filter(d => !TOUCHED.includes(d)), []);
+  assert.deepEqual([...kinds].filter(d => !TOUCHED.includes(d) && !SIDE_ONLY.includes(d)), []);
+  // a stale entry fails: each side-only cabinet really carries the side-view kind
+  assert.deepEqual(SIDE_ONLY.filter(d => !kinds.has(d)), []);
+  // the two lists cannot overlap: no side-only cabinet is touched, nor holds a taken cover plate in any drawing
+  assert.deepEqual(SIDE_ONLY.filter(d => TOUCHED.includes(d)), []);
+  for (const {f, text} of drawings)
+    if (SIDE_ONLY.includes(deviceOf(text))) assert.deepEqual(inCover(text).filter(p => p.cls === 'mechanical'), [], `${f}: a side-only cabinet holds a cover plate`);
 });
