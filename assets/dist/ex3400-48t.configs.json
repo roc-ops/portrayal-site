@@ -1772,7 +1772,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      363.7,
@@ -1812,7 +1813,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      377.95,
@@ -1852,7 +1854,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      392.2,
@@ -1892,7 +1895,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      406.45,
@@ -1921,6 +1925,37 @@
      "data-speed": "10g"
     },
     "rel-pos": 3,
+    "rotate": null,
+    "turns": null
+   },
+   {
+    "accepts": [
+     "generic/mini-usb-b-plug@1"
+    ],
+    "at": [
+     424.55,
+     38.05
+    ],
+    "bores": [],
+    "default": null,
+    "group": "mgmt",
+    "group-states": false,
+    "id": "console-usb",
+    "interface": "mini-usb-b",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     428.4,
+     40.0
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "mgmt",
+     "data-group-role": "management"
+    },
+    "rel-pos": 2,
     "rotate": null,
     "turns": null
    }
@@ -2176,6 +2211,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The switch as shipped: one 150 W AC supply in slot 0, a blank panel over slot 1 and two fan modules. Airflow is front to back.",
    "files": {
@@ -2802,6 +2838,7 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
     "fan-0": "juniper/ex3400-fan-afi@1",
     "fan-1": "juniper/ex3400-fan-afi@1",
@@ -3432,6 +3469,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
     "psu-0": "juniper/ex3400-jpsu-150-dc-afo@1"
    },
@@ -4063,14 +4101,15 @@
  "device": "ex3400-48t",
  "gaps": [
   {
-   "because": "needs-drawing",
+   "because": "needs-photo",
    "blocks": [],
    "kind": "declared",
+   "note": "The part is the registry's Mini-B receptacle (Molex drawing SD-54819-026, 7.7 x 3.9 mm). The EX3400-48T front photograph shows the console at 3.3 px per mm, too small to give the maker's shell to better than a few tenths of a millimetre, and no close-up is held, so the drawn shell and its place are estimates.",
    "scope": [
-    "front"
+    "console-usb"
    ],
-   "wanted": "The front Mini-USB Type-B console, labelled CON, is drawn as decor and not placed as a port. The DCIM exporter has no route for a Mini-USB console part, and the guard test that holds every port part to the exporter fails until it has one. A change to dcim_export.py that exports a Mini-B console as a usb-mini-b console port would let the port be placed.",
-   "what": "mini-usb-console-port"
+   "wanted": "A straight-on close-up of the console port with a scale, or the maker's dimensioned drawing of it.",
+   "what": "mini-usb-console-shell"
   },
   {
    "because": "sources-disagree",
@@ -4227,6 +4266,10 @@
   "earthing": {
    "confidence": "datasheet",
    "note": "Table 41 - the EX3400 earthing terminal is on the rear panel, with two 10-32 screws and a two-hole lug. Figure 3 callout 4. The hole spacing is not stated in the guide; the photograph puts the two holes 16.0 mm apart. They are juniper/ex3400-ground-pair@1, two 10-32 screws on the 5/8 in. (15.875 mm) pitch of a two-hole lug, on the lighter plate that the photograph shows."
+  },
+  "front-console": {
+   "confidence": "photo-measured",
+   "note": "Figures 1 and 2, callout 5, and Console Ports (p4): the front-panel Mini-USB Type-B console, printed CON, which accepts a Mini-B plug (5-pin). It is the placed std/mini-usb (`console-usb`), centred on the 7.6 x 3.0 mm shell this device was drawn with from the EX3400-48T front photograph (ex3400-48t-front-high). The part draws the registry's 7.7 x 3.9 mm Mini-B shell, which stands in for the maker's own (gap `mini-usb-console-shell`)."
   },
   "fru-bays": {
    "confidence": "datasheet",

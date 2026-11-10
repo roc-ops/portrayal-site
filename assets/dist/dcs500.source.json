@@ -124,6 +124,39 @@
    "default": true,
    "description": "The chassis as it ships: two 850 W AC supplies and four fan trays in, every cage empty. THE AIRFLOW IS WHAT THE ORDERING CODES VARY, so the two orderable builds below carry it - ten OZ codes, five front-to-back and five back-to-front across five power cord regions - and nothing else in the table differs.",
    "kind": "base"
+  },
+  "dc-b2f": {
+   "airflow": "back-to-front",
+   "bays": {
+    "psu-0": "edgecore/dcs500-psu-dc@1",
+    "psu-1": "edgecore/dcs500-psu-dc@1"
+   },
+   "description": "Dual 850 W -36 to -72 VDC supplies, back-to-front airflow - the O-series 48 V DC build, 7816-64X-O-48V-B-R. BOTH faces' airflow regions swap, as ac-b2f's do. Drawn on this device's OZ silkscreen like dc-f2b; the back-to-front supply's latch colour is not shown by any held document and stays red.",
+   "kind": "orderable",
+   "part-numbers": {
+    "7816-64X-O-48V-B-R": {
+     "part": "FP3ZZ7664026A"
+    }
+   },
+   "power": "dc",
+   "region-context": {
+    "exhaust": "Intake",
+    "intake": "Exhaust"
+   }
+  },
+  "dc-f2b": {
+   "bays": {
+    "psu-0": "edgecore/dcs500-psu-dc@1",
+    "psu-1": "edgecore/dcs500-psu-dc@1"
+   },
+   "description": "Dual 850 W -36 to -72 VDC supplies, front-to-back airflow - the O-series 48 V DC build, 7816-64X-O-48V-F-R. The DC supply is sold only in the O series. It is drawn on this device's OZ silkscreen (PSU 1 and PSU 0, fans 3 to 0); see the o-series-numbering gap.",
+   "kind": "orderable",
+   "part-numbers": {
+    "7816-64X-O-48V-F-R": {
+     "part": "FP3ZZ7664024A"
+    }
+   },
+   "power": "dc"
   }
  },
  "datasheet": {
@@ -151,7 +184,7 @@
     "front",
     "rear"
    ],
-   "wanted": "THE ONE-BASED AS7816-64X-O SERIES IS NOT MODELLED, and the documents disagree about which numbering they draw. The ordering table sells two base models whose only stated difference is that the O prints ports, fans and supplies from one and the OZ from zero; it also offers the 48 V DC supply only in the O series. The datasheet's elevations are the O, the guide's front enlargement is the OZ, and the guide's rear prints fans 4..1 beside a front that says PSU 0. This device is the OZ and prints fans 3..0 on the datasheet's word. A second device, or a silkscreen that can vary by configuration, would carry the O; a photograph of a real OZ rear settles its fan legend.",
+   "wanted": "THE ONE-BASED AS7816-64X-O SERIES IS NOT MODELLED, and the documents disagree about which numbering they draw. The ordering table sells two base models whose only stated difference is that the O prints ports, fans and supplies from one and the OZ from zero; it also offers the 48 V DC supply only in the O series. The datasheet's elevations are the O, the guide's front enlargement is the OZ, and the guide's rear prints fans 4..1 beside a front that says PSU 0. This device is the OZ and prints fans 3..0 on the datasheet's word. THE DC BUILDS EXIST ONLY IN THE O SERIES (dc-f2b and dc-b2f, 7816-64X-O-48V-F-R and -B-R), so the DC builds wear the OZ labels as a declared stand-in, not a second device. The O series prints ports 1 to 64, fans 4 to 1 and, read on the data sheet's rear photograph (page 2), PSU 2 at the left supply and PSU 1 at the right; this device prints PSU 1 at the left, PSU 0 at the right and fans 3 to 0. Views per configuration (front-o and rear-o, as arista/7010tx-48's rear-dc does) would draw the O labels, and the AC O-series SKUs would then want configurations too; that is the owner's decision. A photograph of a real OZ rear settles its fan legend.",
    "what": "o-series-numbering"
   },
   {
@@ -319,7 +352,7 @@
    "title": "Edgecore AS7816-64X 64-Port 100G Top-of-Rack Switch Quick Start Guide"
   }
  ],
- "version": "4.0.0",
+ "version": "4.2.1",
  "views": {
   "bottom": {
    "components": {
@@ -3996,7 +4029,8 @@
     "bays": [
      {
       "accepts": [
-       "edgecore/dcs500-psu-ac@1"
+       "edgecore/dcs500-psu-ac@1",
+       "edgecore/dcs500-psu-dc@1"
       ],
       "at": [
        18.87,
@@ -4081,7 +4115,8 @@
      },
      {
       "accepts": [
-       "edgecore/dcs500-psu-ac@1"
+       "edgecore/dcs500-psu-ac@1",
+       "edgecore/dcs500-psu-dc@1"
       ],
       "at": [
        367.7,

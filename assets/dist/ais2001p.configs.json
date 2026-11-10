@@ -199,7 +199,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      22.85,
@@ -237,7 +238,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      37.95,
@@ -365,6 +367,42 @@
     "rel-pos": 1,
     "rotate": null,
     "turns": null
+   },
+   {
+    "accepts": [
+     "generic/ring-lug@1"
+    ],
+    "at": [
+     48.0,
+     80.0
+    ],
+    "bores": [],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-screw",
+    "interface": "terminal-stud",
+    "kind": "connector",
+    "lift": 3.4000000000000004,
+    "mate": [
+     53.5,
+     85.5
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 1,
+    "rotate": null,
+    "turns": [
+     0,
+     90,
+     180,
+     270
+    ]
    }
   ]
  },
@@ -824,7 +862,50 @@
  "configs": [
   {
    "airflow": "passive",
+   "attrs": {},
    "bays": {},
+   "dc-ports": [
+    {
+     "awg": null,
+     "direction": "input",
+     "id": "feed-a",
+     "path": "power/feed-a",
+     "poles": [
+      {
+       "role": "pos",
+       "slot": "power/pin-1"
+      },
+      {
+       "role": "neg",
+       "slot": "power/pin-2"
+      }
+     ],
+     "rating-a": null,
+     "ref": "common/terminal-header-508-5f@2",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": null,
+     "direction": "input",
+     "id": "feed-b",
+     "path": "power/feed-b",
+     "poles": [
+      {
+       "role": "pos",
+       "slot": "power/pin-4"
+      },
+      {
+       "role": "neg",
+       "slot": "power/pin-5"
+      }
+     ],
+     "rating-a": null,
+     "ref": "common/terminal-header-508-5f@2",
+     "side": null,
+     "voltage": null
+    }
+   ],
    "description": "AIS2001P industrial switch, 4x GbE PoE+ and 2x GbE SFP, L2+, dual 48-57 V DC",
    "files": {
     "bottom": "ais2001p.base.bottom.svg",
@@ -1012,7 +1093,7 @@
   },
   "silkscreen": {
    "confidence": "photo-measured",
-   "note": "photo-measured - legends transcribed from the AIS2001P front image: Reset, PWR, SYS, 5, 6; Fast Ring and SCP with leaders to switches 1 and 2; LINK/ACT and PoE under their colour keys; the port numbers, odd on the left; the SFP numbers on their gold strips; the summary line '4 x GE | 2 x GE SFP | PoE+' up the left. The AURCORE wordmark is printed as text: its A is drawn as a chevron mark, which is not reproduced (no logo marks)."
+   "note": "photo-measured - legends transcribed from the AIS2001P front image: Reset, PWR, SYS, 5, 6; Fast Ring and SCP with leaders to switches 1 and 2; LINK/ACT and PoE under their colour keys; the port numbers, odd on the left; the SFP numbers on their gold strips; the summary line '4 x GE | 2 x GE SFP | PoE+' up the left. The AURCORE wordmark is printed as text: its A is drawn as a chevron mark, which is not reproduced (no logo marks). The printed logotype's place on the front is reserved as a logo-zone region. It was measured on the square-on AIS2001P product image 1, scaled on the face's own width and height (sure, about 0.5 mm). The mark is not drawn. The plain text AURCORE the library draws stays. The finned right side also prints the logotype, but it is shown only in a three-quarter photograph with no scale, so no place is reserved there."
   },
   "sources": {
    "confidence": "datasheet",
@@ -1023,7 +1104,13 @@
    "note": "estimated - no straight-on top view exists. Positions are fractions of the top face in the back render (image 3), corrected with the parts' own sizes: the five-way power header runs front to back (its 35.56 mm reading 35 on the render) with its pole legend '1 + - earth + - 2' on one side and POWER:48-57V DC on the other, pole 1 at the rear; the RELAY header behind it; the CONSOLE jack behind that, a bare RJ45 with its keyway toward the front - the console is on the top face of the small housing, where the large one has it on the front; the ground screw and its earth symbol at the front edge. Good to a few millimetres."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "top": {
+   "ground-screw": {
+    "generic/ring-lug@1": 0
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

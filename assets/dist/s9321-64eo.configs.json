@@ -133,7 +133,8 @@
    {
     "accepts": [
      "ufispace/psu-302-ac@1",
-     "ufispace/psu-302-dc@1"
+     "ufispace/psu-302-dc@1",
+     "ufispace/psu-302-dc@2"
     ],
     "at": [
      358.0,
@@ -152,7 +153,8 @@
    {
     "accepts": [
      "ufispace/psu-302-ac@1",
-     "ufispace/psu-302-dc@1"
+     "ufispace/psu-302-dc@1",
+     "ufispace/psu-302-dc@2"
     ],
     "at": [
      358.0,
@@ -371,7 +373,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      24.73,
@@ -411,7 +414,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      24.73,
@@ -2639,6 +2643,50 @@
   "airflow": "front-to-back",
   "d": 762,
   "h": 87.7,
+  "kits": [
+   {
+    "accessories": [],
+    "configurations": [
+     {
+      "depth": [
+       558.8,
+       838.2
+      ],
+      "id": "four-post",
+      "parts": [
+       "rail"
+      ],
+      "racks": [
+       "4-post"
+      ]
+     }
+    ],
+    "depth": null,
+    "description": "The adjustable mounting rail kit in the box of the UfiSpace deep routers and switches whose guide lists a 771 mm rail for four-post racks. It is two sets of three-member slide rail. The inner member hangs on five pins on each side of the chassis. The outer member clips to the front and rear post. The chassis slides out on the middle member and is locked with a screw.",
+    "install": null,
+    "motion": "sliding",
+    "parts": [
+     {
+      "body": null,
+      "class": "mount",
+      "count": 2,
+      "id": "rail",
+      "ref": "ufispace/adjustable-rail-771@1",
+      "size": {
+       "d": 771.0,
+       "h": 44.0,
+       "w": 22.0
+      },
+      "version": "1.0.0"
+     }
+    ],
+    "ref": "ufispace/adjustable-rail-771-kit@1",
+    "supply": "in-box",
+    "travel": "full",
+    "variant": null,
+    "version": "1.0.0"
+   }
+  ],
   "mount": "rack",
   "power": null,
   "ru": 2,
@@ -2647,6 +2695,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "Dual 3000W AC PSUs (PSU-302-AESR, IEC 60320 C20 inlet, 200-240 V) with the single offered fan type (FAN-808012-HCE). At 110 V each supply delivers only 1500 W and 1+1 redundancy is lost (HIG note). No chassis SKU appears in any held document (see the chassis-sku gap)",
    "files": {
@@ -3045,6 +3094,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "",
    "files": {
@@ -3443,10 +3493,69 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
-    "psu-0": "ufispace/psu-302-dc@1",
-    "psu-1": "ufispace/psu-302-dc@1"
+    "psu-0": "ufispace/psu-302-dc@2",
+    "psu-1": "ufispace/psu-302-dc@2"
    },
+   "dc-ports": [
+    {
+     "awg": [
+      4
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-0/module/input",
+     "poles": [
+      {
+       "role": "unstated",
+       "slot": "psu-0/module/pole-1",
+       "stand-in": {
+        "order": "left-to-right"
+       }
+      },
+      {
+       "role": "unstated",
+       "slot": "psu-0/module/pole-2",
+       "stand-in": {
+        "order": "left-to-right"
+       }
+      }
+     ],
+     "rating-a": 80,
+     "ref": "ufispace/psu-302-dc@2",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": [
+      4
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-1/module/input",
+     "poles": [
+      {
+       "role": "unstated",
+       "slot": "psu-1/module/pole-1",
+       "stand-in": {
+        "order": "left-to-right"
+       }
+      },
+      {
+       "role": "unstated",
+       "slot": "psu-1/module/pole-2",
+       "stand-in": {
+        "order": "left-to-right"
+       }
+      }
+     ],
+     "rating-a": 80,
+     "ref": "ufispace/psu-302-dc@2",
+     "side": null,
+     "voltage": null
+    }
+   ],
    "description": "Dual 3000W DC PSUs (PSU-302-DESR, two-hole lug terminal block, -40 to -72 V, 150 A fast-acting internal fuse per the HIG DC procedure) with FAN-808012-HCE fans",
    "files": {
     "bottom": "s9321-64eo.dc.bottom.svg",
@@ -3846,6 +3955,17 @@
  "default": "base",
  "device": "s9321-64eo",
  "gaps": [
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "No figure of the seven UfiSpace guides that show the DC supply's terminal block names a conductor at either pole: the guides' connecting-power figure marks the two lugs' cables by colour only (red on the left pole, blue on the right) and the supply's own face prints no legend that a held figure shows. The two poles are stated `unstated`, and a feed is not called crossed on them.",
+   "scope": [
+    "ufispace/psu-302-dc@2"
+   ],
+   "wanted": "a straight-on photograph or drawing of the PSU-302-DESR's terminal block with the legend printed at its poles",
+   "what": "dc-polarity"
+  },
   {
    "because": "needs-drawing",
    "blocks": [],

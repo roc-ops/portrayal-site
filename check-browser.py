@@ -1323,7 +1323,7 @@ def check_stages(page, base):
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         slot2 = next(b for b in slot_bays() if b["id"] == "slot-2")
         other = next(r for r in slot2["accepts"]
-                     if r not in ("cisco/a9k-16x100ge-tr@1", "cisco/a9k-slot-cover@1"))
+                     if r not in ("cisco/a9k-16x100ge-se@1", "cisco/a9k-slot-cover@1"))
         page.select_option('#sidePanel select[data-bay="slot-2"]', other, timeout=READY_MS)
         page.wait_for_function("() => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — slot-2')", timeout=READY_MS)
         page.click('.stage-rail button[data-stage="cable"]')
@@ -1404,7 +1404,7 @@ def check_stages(page, base):
         # Put the plan's card back, for the rest of the walk.
         page.click('.stage-rail button[data-stage="populate"]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
-        page.select_option('#sidePanel select[data-bay="slot-2"]', "cisco/a9k-16x100ge-tr@1", timeout=READY_MS)
+        page.select_option('#sidePanel select[data-bay="slot-2"]', "cisco/a9k-16x100ge-se@1", timeout=READY_MS)
         page.wait_for_function("() => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — slot-2')", timeout=READY_MS)
         # Back on stage 4 the plan refills slot-2's cages: the count is the
         # first visit's again, not inflated by the re-seat.
@@ -1553,8 +1553,8 @@ def check_stages(page, base):
         seated["first"] = seated_count()
         # The plan's card is in slot-2, and its connectors are what the cables start on.
         if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '
-                                   '[data-path="slot-2/module"][data-ref^="cisco/a9k-16x100ge-tr@1"]'):
-            bad.append("stage cable: slot-2 does not hold the plan's A9K-16X100GE-TR")
+                                   '[data-path="slot-2/module"][data-ref^="cisco/a9k-16x100ge-se@1"]'):
+            bad.append("stage cable: slot-2 does not hold the plan's A9K-16X100GE-SE")
         # Front/Rear: the server tag flips to the rear, where that cable lands on the NIC.
         page.click('#stageRack svg [data-tag^="r740xd:ndc/module/port-1"]')
         page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
@@ -2672,11 +2672,8 @@ def check_schema_nos_tab(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"schema: uncaught {e}"))
     tabs = "() => [...document.querySelectorAll('.show-tabs button')].filter(b => !b.hidden).map(b => b.dataset.schema)"
-    have = "listing" if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "listing.schema.json").exists() else "overlay"
-    other = "overlay" if have == "listing" else "listing"
-    # Extract site-owned schemas (those not vendored in assets/schemas/) from site/schema.js
-    schema_js = (HERE / "site" / "schema.js").read_text()
-    site_owned = re.findall(r"^\s*(\w+):\s*\{url:\s*'(?!assets/schemas/)", schema_js, re.M)
+    schemas = pathlib.Path(__file__).resolve().parent / "assets" / "schemas"
+    have = "listing"
     # as vendored - and without asking for a schema the site does not carry
     misses = []
     page.on("response", lambda r: misses.append(r.url) if r.status == 404 else None)
@@ -2684,31 +2681,16 @@ def check_schema_nos_tab(page, base):
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)
     got = page.evaluate(tabs)
-    # the lab schema (Portrayal #852), the rack file's (kit 0.3.0) and the marks
-    # document's (Portrayal #898) are tabs of their own when the snapshot carries them
-    lab = [k for k in ("lab", "rack", "marks")
-           if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / f"{k}.schema.json").exists()]
-    # site-owned schemas (the rack file) are always tabs, since they are not vendored
-    if got != ["device", "component", have] + lab + site_owned:
+    # the lab schema (Portrayal #852), the rack product's, the rack file's (kit 0.3.0),
+    # the site's and the marks document's (Portrayal #898) are tabs of their own when
+    # the snapshot carries them
+    more = [k for k in ("lab", "rack-product", "rack", "site", "marks")
+            if (schemas / f"{k}.schema.json").exists()]
+    if got != ["device", "component", have] + more:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
     if misses: bad.append(f"schema: the page asked for missing files {misses}")
-    # the other side of #677: this snapshot's NOS schema gone, the other one served
-    stub = {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": other, "type": "object",
-            "properties": {"hardware": {"type": "string", "description": "a property to find"}}}
-    page.route(f"**/assets/schemas/{have}.schema.json", lambda r: r.fulfill(status=404, body="the other side of #677"))
-    page.route(f"**/assets/schemas/{other}.schema.json", lambda r: r.fulfill(json=stub))
-    page.route("**/assets/schemas/index.json", lambda r: r.fulfill(json={"schemas": sorted(
-        ["component.schema.json", "device.schema.json", f"{other}.schema.json"])}))
-    page.goto(f"{base}/schema.html?doc={other}", wait_until="load")
-    page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
-    page.wait_for_timeout(500)
-    got = page.evaluate(tabs)
-    order = ["device", "component", "listing"] if other == "listing" else ["device", "component", "overlay"]
-    # site-owned schemas (the rack file) are always tabs, since they are not vendored
-    if got != order + site_owned:
-        bad.append(f"schema: with only {other}.schema.json the tabs are {got}")
-    if not page.query_selector('#schema-body .sc-prop[data-ptr="/properties/hardware"]'):
-        bad.append(f"schema: ?doc={other} did not render the {other} schema")
+    # the overlay schema is retired: no tab, and no request for it
+    if "overlay" in got: bad.append(f"schema: a tab for the retired overlay schema: {got}")
     return bad
 
 # THE SCHEMA PAGE READS A CONDITION THE WAY THE VALIDATOR DOES. Three
@@ -14061,13 +14043,15 @@ def check_rack_frame_focus(page, base):
 # THE FRAME PICKER (Portrayal #935 step 2, #1131): the rack products of rack.json's `frames`, offered beside the
 # generic frame. The kit decides everything (frameProducts, frame.apply, frame.customise, editRefusal); these
 # checks look at what the page does with its answers.
-FRAME_REFS = ["apc/ar201@1", "apc/ar203a@1", "generic/2-post-frame@1", "generic/4-post-cabinet@1", "generic/4-post-frame@1"]
+# The products are the catalogue's own: five when these checks were written, eleven at kit 0.51.0.
+FRAME_ROWS = json.loads((HERE / "assets" / "dist" / "rack.json").read_text())["frames"]
+FRAME_REFS = sorted(FRAME_ROWS)
 RANGED_REF = "test/ranged@1"
 
 
 def with_ranged_product(page):
-    # None of the five products states a rail depth range (AR203A fixes one, the generic frames state none), so the
-    # range is tried on a sixth row added to the catalogue the page loads: the generic four-post frame with a
+    # None of the five products there were when this was written states a rail depth range (AR203A fixes one, the
+    # generic frames state none), so the range is tried on a row of its own added to the catalogue the page loads: the generic four-post frame with a
     # rear rail that takes 700 to 900 mm in steps of 50, factory 750.
     def patch(route):
         resp = route.fetch()
@@ -14099,7 +14083,7 @@ def product_refs(page):
     return page.evaluate("() => [...document.querySelectorAll('#fProducts [data-product-ref]')].map(b => b.dataset.productRef)")
 
 
-@extra("rack.html: the frame form lists the five rack products, and a search finds AR203A by its part number and the form narrows the list")
+@extra("rack.html: the frame form lists the catalogue's rack products, and a search finds AR203A by its part number and the form narrows the list")
 def check_rack_frame_picker_lists(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -14107,7 +14091,7 @@ def check_rack_frame_picker_lists(page, base):
     wait_sel(page, "picker: the product list", "#fProducts [data-product-ref]")
     got = product_refs(page)
     if sorted(got) != FRAME_REFS:
-        bad.append(f"picker: the list holds {got}, expected the five products {FRAME_REFS}")
+        bad.append(f"picker: the list holds {got}, expected the catalogue's {len(FRAME_REFS)} products {FRAME_REFS}")
     page.fill("#fProdSearch", "AR203A")
     wait_fn(page, "picker: search by part number", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
     if product_refs(page) != ["apc/ar203a@1"]:
@@ -14117,10 +14101,11 @@ def check_rack_frame_picker_lists(page, base):
     wait_fn(page, "picker: the cabinet form", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
     if product_refs(page) != ["generic/4-post-cabinet@1"]:
         bad.append(f"picker: the form cabinet lists {product_refs(page)}")
+    two = sorted(r for r, p in FRAME_ROWS.items() if p.get("form") == "2-post-frame")
     page.select_option("#fProdForm", "2-post-frame")
-    wait_fn(page, "picker: the two-post form", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 2")
-    if sorted(product_refs(page)) != ["apc/ar201@1", "generic/2-post-frame@1"]:
-        bad.append(f"picker: the form two-post lists {product_refs(page)}")
+    wait_fn(page, "picker: the two-post form", f"() => document.querySelectorAll('#fProducts [data-product-ref]').length === {len(two)}")
+    if sorted(product_refs(page)) != two or len(two) < 2:
+        bad.append(f"picker: the form two-post lists {product_refs(page)}, the catalogue has {two}")
     page.select_option("#fProdForm", "")
     page.fill("#fProdSearch", "no such rack zzz")
     wait_fn(page, "picker: nothing found", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 0")
@@ -17738,7 +17723,7 @@ FORM_JS = """async (opts) => {
 }"""
 
 
-@extra("rack.html: the cable form offers the ten media (power and ground too), warns on a mismatch without blocking, and checks the length")
+@extra("rack.html: the cable form offers the kit's thirteen media (power, ground, stack, USB and console too), warns on a mismatch without blocking, and checks the length")
 def check_rack_cable_form(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -17761,7 +17746,7 @@ def check_rack_cable_form(page, base):
     if (page.text_content("#cEndA"), page.text_content("#cEndB")) != ("A: leaf-1 (U14) port-3", "B: demarc (U20) port-2-2"):
         bad.append("cable form: the two ends are not named")
     values = page.eval_on_selector_all("#cMedia option", "os => os.map(o => o.value)")
-    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc", "power", "ground"]:
+    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc", "power", "ground", "stack", "usb", "console"]:
         bad.append(f"cable form: the media offered are {values}")
     if page.input_value("#cMedia") != "os2" or (page.text_content("#cSave") or "") != "Add cable":
         bad.append("cable form: a new cable does not open on its proposed media with an Add cable button")
@@ -18779,8 +18764,12 @@ def check_rack_agent_frame_products(page, base):
     found = agent_call(page, "find_rack_products", {"text": "ar203a"})["content"][0]["text"]
     if not found.startswith("1 match.\napc/ar203a@1 | APC AR203A | 44U | 4-post-frame"):
         bad.append(f"agent frame: find_rack_products answered {found!r}")
-    if not agent_call(page, "find_rack_products", {"form": "4-post-frame"})["content"][0]["text"].startswith("2 matches."):
-        bad.append("agent frame: the four-post frames are not two")
+    # as many as the catalogue holds: five products when this was written, eleven at kit 0.51.0
+    frames = json.loads((HERE / "assets" / "dist" / "rack.json").read_text())["frames"]
+    four = sum(1 for p in frames.values() if p.get("form") == "4-post-frame")
+    got = agent_call(page, "find_rack_products", {"form": "4-post-frame"})["content"][0]["text"]
+    if four < 2 or not got.startswith(f"{four} matches."):
+        bad.append(f"agent frame: the catalogue's {four} four-post frames are answered {got.splitlines()[0]!r}")
     res = agent_call(page, "edit_rack", {"commands": [{"op": "frame.apply", "ref": "apc/ar203a@1"}]})
     if res.get("isError"):
         bad.append(f"agent frame: frame.apply answered {res}")

@@ -48,6 +48,15 @@
  "format": 1,
  "gaps": [
   {
+   "note": "The part is the registry's Mini-B receptacle (Molex drawing SD-54819-026, 7.7 x 3.9 mm). Figure 4 draws the console shell 8.6 x 5.1 mm and no photograph or close-up is held, so the drawn shell and its place are estimates and the maker's own shell may differ.",
+   "reason": "needs-photo",
+   "scope": [
+    "console-usb"
+   ],
+   "wanted": "A straight-on close-up of the console port with a scale, or the maker's dimensioned drawing of it.",
+   "what": "mini-usb-console-shell"
+  },
+  {
    "note": "Tables 30 and 31 say the two-post mounting brackets and their screws are separately orderable for the EX2200-C and name no part number, and list a separately orderable four-post rack-mount kit, a wall-mount kit, a magnet sheet and a cable guard, none with a part number; no figure measures a bracket position, so no ear position is stated and no kit is listed.",
    "reason": "needs-drawing",
    "scope": [
@@ -95,6 +104,15 @@
    ],
    "wanted": "A flat drawing of the top and of the side panels.",
    "what": "top-and-sides"
+  },
+  {
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "reason": "vendor-silent",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   }
  ],
  "groups": {
@@ -114,9 +132,15 @@
    "role": "furniture",
    "term": "Item"
   },
+  "grounding": {
+   "description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (Table 32)",
+   "index-origin": 0,
+   "role": "furniture",
+   "term": "Point"
+  },
   "mgmt": {
    "index-origin": 0,
-   "mixed": "how the switch is reached out of band - the management Ethernet port, the RJ-45 console port and the USB port (the mini-USB console port is chassis art)",
+   "mixed": "how the switch is reached out of band - the management Ethernet port, the RJ-45 console port, the mini-USB console port and the USB port",
    "role": "management",
    "term": "Port"
   },
@@ -209,7 +233,7 @@
   },
   "front-console": {
    "confidence": "estimated",
-   "note": "estimated - the mini-USB console port (Figure 4, callout Mini USB port, printed CON) is drawn as chassis art, an 8.6 x 5.1 mm shell with its opening, read off the figure. It is not a component: the library has no mini-USB receptacle and its DCIM export has no row for one. The RJ-45 console port is a component and exports. The guide says one console port is active at a time, the RJ-45 by default."
+   "note": "estimated - the mini-USB console port (Figure 4, callout Mini USB port, printed CON) is the placed std/mini-usb (`console-usb`), centred on the 8.6 x 5.1 mm shell this device was drawn with, read off the figure. The part draws the registry's 7.7 x 3.9 mm Mini-B shell, which stands in for the maker's own (gap `mini-usb-console-shell`). The guide names the connector: \"Mini-USB Type-B console port\" that accepts a Mini-B plug (5-pin) (EX2200 guide, p20, and Mini-USB Port Pinout Specifications, p62). The RJ-45 console port is a component and exports. The guide says one console port is active at a time, the RJ-45 by default."
   },
   "front-layout": {
    "confidence": "estimated",
@@ -218,6 +242,10 @@
   "gate-1": {
    "confidence": "measured",
    "note": "Figure 3 (the PoE+ front, the same face as Figure 4 without the PoE+ legend) was rendered at 600 dpi and measured with a pixel ruler. Its front face is 2801 px across and 445 px down: 10.41 px per mm across from the 269.2 mm of Table 5 and 10.01 down from 44.45 mm, a 4 percent aspect error, so x and y are each taken from their own dimension and every position is estimated and good to about a millimetre. The jack width reads 12.7 mm, the registry's 12.7 for the ganged RJ-45 cell, on a quantity the scale never saw. The figure is a perspective view from slightly above and its front face is the near rectangle. Figure 4 draws the same arrangement to the eye; the two were not measured against each other beyond that."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 32 (parts for connecting an EX Series switch to earth ground) has a row for the EX2200 (two 10-32 x .25 in. screws, a Panduit LCC10-14BWL lug or equivalent, not provided) and none for the EX2200-C; its `EX2300-C` row names a Panduit LCC10-14AW-L. No spacing is given. The compact rear's own figure reads the two holes 20.0 mm apart, which is the .75 in. (19.05) of the LCC10-14BW-L pattern the library registers and not the 5/8 in. (15.875), so the EX2200 row is taken for it. The terminal is `common/ground-hole-pair-3-4-10-32@1`: two bare 10-32 holes on 3/4 in. centres, presenting `stud-pair-3-4`, so one two-hole lug (`generic/two-hole-lug-3-4@1`) lands across them and a ring lug still lands on either hole. The holes were drawn 20.0 apart as decor and the pair stands on their midpoint."
   },
   "lamps": {
    "confidence": "datasheet",
@@ -254,7 +282,7 @@
    "title": "EX2200 and EX2200-C Switches Hardware Guide (Juniper Networks, published 2022-02-02)"
   }
  ],
- "version": "0.1.0",
+ "version": "0.3.0",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source held: the guide shows the underside only in perspective, with its four rubber feet and the screw slots used to fix the switch under a desk.",
@@ -869,6 +897,19 @@
       "id": "btn-mode",
       "ref": "common/reset-button@1",
       "rel-pos": 0
+     },
+     {
+      "at": [
+       228.65,
+       34.35
+      ],
+      "attrs": {
+       "role": "console"
+      },
+      "group": "mgmt",
+      "id": "console-usb",
+      "ref": "std/mini-usb@1",
+      "rel-pos": 3
      }
     ]
    },
@@ -1293,6 +1334,18 @@
        4.0,
        4.0
       ]
+     },
+     {
+      "at": [
+       228.65,
+       34.35
+      ],
+      "id": "console-usb",
+      "shape": "rect",
+      "size": [
+       7.7,
+       3.9
+      ]
      }
     ],
     "decor": [
@@ -1373,7 +1426,7 @@
       ],
       "fill": "#b9bcc0",
       "id": "usb-shell",
-      "kind": "usb-shell",
+      "kind": "port-shell",
       "rx": 0.8,
       "size": [
        6.0,
@@ -1392,34 +1445,6 @@
       "size": [
        18.6,
        27.85
-      ]
-     },
-     {
-      "at": [
-       228.2,
-       33.75
-      ],
-      "fill": "#c9cbcd",
-      "id": "console",
-      "kind": "console-shell",
-      "rx": 0.8,
-      "size": [
-       8.6,
-       5.1
-      ]
-     },
-     {
-      "at": [
-       229.4,
-       35.2
-      ],
-      "fill": "#1c2024",
-      "id": "console-opening",
-      "kind": "console-opening",
-      "rx": 1.0,
-      "size": [
-       6.2,
-       2.2
       ]
      },
      {
@@ -1848,7 +1873,7 @@
      ],
      "fill": "#e4e6e9",
      "font-size": 2.3,
-     "for": "chassis",
+     "for": "console-usb",
      "text": "CON"
     },
     {
@@ -1922,6 +1947,16 @@
   "rear": {
    "components": {
     "placements": [
+     {
+      "at": [
+       16.262,
+       29.487
+      ],
+      "group": "grounding",
+      "id": "ground-pair",
+      "ref": "common/ground-hole-pair-3-4-10-32@1",
+      "rel-pos": 0
+     },
      {
       "at": [
        35.4,
@@ -2007,34 +2042,6 @@
       "size": [
        22.2,
        6.2
-      ]
-     },
-     {
-      "at": [
-       16.25,
-       29.95
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-1",
-      "kind": "earth-hole",
-      "rx": 1.95,
-      "size": [
-       3.9,
-       3.9
-      ]
-     },
-     {
-      "at": [
-       36.25,
-       29.95
-      ],
-      "fill": "#2a2d31",
-      "id": "earth-hole-2",
-      "kind": "earth-hole",
-      "rx": 1.95,
-      "size": [
-       3.9,
-       3.9
       ]
      }
     ]

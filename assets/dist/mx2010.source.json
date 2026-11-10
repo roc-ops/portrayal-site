@@ -44,8 +44,8 @@
     "fpc0/mpc/mic1": "juniper/mic-3d-4xge-xfp@4",
     "fpc1": "juniper/mx2000-lc-adapter@1",
     "fpc1/mpc": "juniper/mpc2e-3d@3",
-    "fpc1/mpc/mic0": "juniper/mx-mic-blank@2",
-    "fpc1/mpc/mic1": "juniper/mx-mic-blank@2",
+    "fpc1/mpc/mic0": "juniper/mic-3d-40ge-tx@2",
+    "fpc1/mpc/mic1": "",
     "fpc2": "juniper/mx2000-lc-adapter@1",
     "fpc2/mpc": "juniper/mpc4e-3d-32xge-sfpp@2",
     "fpc3": "juniper/mx2000-lc-adapter@1",
@@ -73,7 +73,7 @@
    },
    "description": "The MX2010 as the vendor photographed its front, as far as the photograph identifies the cards. LC7 and LC8 are UNCERTAIN at about 1 px/mm: LC7 may be an MPC-3D-16XGE-SFPP rather than an MPC2E, and LC8's lower MIC a 20GE SFP MIC; they are drawn as an MPC2E with blank MIC windows and a blank lower window rather than as a guess.",
    "kind": "example",
-   "source": "photo - the Juniper image-library MX2010 front (#261): every lower slot holds an adapter and an MX240-form MPC. LC0 an MPC with two 4-port XFP MICs; LC2 to LC5 the 32x10GE MPC4E (dense SFP+ columns); LC6 a 4-port XFP MIC over a 2-port one; LC8 a 2-port XFP MIC over an 8-SFP MIC; LC9 two 2-port XFP MICs. The carrier of the XFP MICs is drawn as the MPC2E, the base carrier that takes both. LC1 holds a dual-wide 40-port RJ45 MIC, which no bay can seat yet, and LC7 and LC8's 8-SFP MICs are not identifiable at about 1 px/mm, so those windows carry blanks."
+   "source": "photo - the Juniper image-library MX2010 front (#261): every lower slot holds an adapter and an MX240-form MPC. LC0 an MPC with two 4-port XFP MICs; LC2 to LC5 the 32x10GE MPC4E (dense SFP+ columns); LC6 a 4-port XFP MIC over a 2-port one; LC8 a 2-port XFP MIC over an 8-SFP MIC; LC9 two 2-port XFP MICs. The carrier of the XFP MICs is drawn as the MPC2E, the base carrier that takes both. LC1 holds a dual-wide 40-port RJ45 MIC: 20 rows of two jacks are counted on the photograph, and it sits in mic0 and covers mic1. LC7 and LC8's 8-SFP MICs are not identifiable at about 1 px/mm, so those windows carry blanks."
   }
  },
  "datasheet": {
@@ -84,11 +84,20 @@
  "format": 1,
  "gaps": [
   {
+   "note": "That the SFB, SFB2 and SFB3 cannot be mixed in one chassis is NOT ENFORCED: no bay restricts what sits beside it. The MX2010 Hardware Guide says switch fabric board models (SFB, SFB2, SFB3) cannot be mixed in a single MX2000 series chassis, except for the duration of an upgrade, and that all fabric boards must be MX2000-SFB3 when the SFB3 is used (MX2000-SFB3 description).",
+   "reason": "needs-hardware",
+   "scope": [
+    "sfbs"
+   ],
+   "wanted": "a rule that holds one fabric board generation per chassis.",
+   "what": "sfb-generation-mixing"
+  },
+  {
    "reason": "needs-photo",
    "scope": [
     "fpcs"
    ],
-   "wanted": "the MICs in the photographed unit's LC7 and LC8 (eight SFP cages each) are not identifiable at about 1 px/mm, and LC1's dual-wide 40-port RJ45 MIC cannot be seated until a module can fill two bays. Since roc-ops/Portrayal#261 the MX240-form MPCs seat here through the adapter card (juniper/mx2000-lc-adapter@1), so the range is the MX960's.",
+   "wanted": "the MICs in the photographed unit's LC7 and LC8 (eight SFP cages each) are not identifiable at about 1 px/mm. Since roc-ops/Portrayal#261 the MX240-form MPCs seat here through the adapter card (juniper/mx2000-lc-adapter@1), so the range is the MX960's.",
    "what": "mpc-catalogue"
   },
   {
@@ -214,7 +223,7 @@
    "title": "Juniper MX2010 Universal Routing Platform Hardware Guide"
   }
  ],
- "version": "3.0.2",
+ "version": "3.1.6",
  "views": {
   "bottom": {
    "panel": {
@@ -294,7 +303,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        47.28,
@@ -311,7 +322,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        90.46,
@@ -328,7 +341,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        133.64,
@@ -345,7 +360,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        176.82,
@@ -362,7 +379,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        220.0,
@@ -379,7 +398,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        263.18,
@@ -396,7 +417,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        306.36,
@@ -413,7 +436,9 @@
      },
      {
       "accepts": [
-       "juniper/mx2000-sfb-v@2"
+       "juniper/mx2000-sfb-v@2",
+       "juniper/mx2000-sfb2-v@1",
+       "juniper/mx2000-sfb3-v@1"
       ],
       "at": [
        349.54,

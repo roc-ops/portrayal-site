@@ -18,7 +18,8 @@
    "optics-sfp-plus": "the datasheet lists the management pair only as '2 x 10G SFP+ management ports' and publishes no module list for them",
    "optics-sfp28": "the HIG's Port Overview lists ports 36-37 as SFP28 1/10/25G with up to 40 km reach; the datasheet's Compatible Transceiver Types block covers only the QSFP-DD field, so no module list is published for them and none is inferred",
    "redundancy": "1+1 hot-swappable active-active PSUs and 3+1 hot-swappable fan modules (datasheet Redundancy row and HIG Installation Environment Requirements)",
-   "timing": "Stratum 3E OCXO; SyncE; IEEE 1588v2 (Default, G.8265.1, G.8275.1, G.8275.2, SMPTE ST 2059-2), T-BC/OC, T-TC; timing synchronization over fabric. The datasheet footnotes the whole row 'NOS integration is necessary to activate the specific feature' and marks SMPTE ST 2059-2 'Additional license is required'"
+   "timing": "Stratum 3E OCXO; SyncE; IEEE 1588v2 (Default, G.8265.1, G.8275.1, G.8275.2, SMPTE ST 2059-2), T-BC/OC, T-TC; timing synchronization over fabric. The datasheet footnotes the whole row 'NOS integration is necessary to activate the specific feature' and marks SMPTE ST 2059-2 'Additional license is required'",
+   "zr-ports": "OpenZR+ and ZR run at 800G and 400G on the ports HIG Figure 9 highlights in blue - 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 20, 22, 24, 26, 28, 30, 32 and 34, the 18 that state 800G. The list is read off the figure against the numbering, which is the only place it appears: the datasheet says only 'with ZR/ZR+ support' without naming which"
   },
   "lifecycle": {
    "eol": "none-announced"
@@ -33,6 +34,7 @@
   "performance": {
    "cluster-capacity": "up to 921.6 Tbps as a DDC cluster of S9720-56ED line-card elements with an S9705-48D or S9725-64E fabric",
    "packet-buffer": "16 GB deep buffer",
+   "port-modes-qsfp-dd": "the 36 service cages are 18 pairs (0-1, 2-3 to 34-35), each pair one 800G port or two ports at 100, 200 or 400G, and the 20 fabric cages (00-19) are 800G only (datasheet page 2, HIG page 12). Which cage of a pair runs the 800G port is read from the guide's Figure 9 - the blue-highlighted cage, its partner joined by a red line - and is not stated in its text",
    "switching-capacity": "14.4 Tbps"
   },
   "platform": {
@@ -59,12 +61,23 @@
   "color": "#373737",
   "depth": 762,
   "height": 87.7,
+  "kits": [
+   {
+    "ref": "ufispace/adjustable-rail-771-kit@1",
+    "supply": "in-box"
+   }
+  ],
   "ru": 2,
   "weight-kg": 25.8,
   "width": 436
  },
  "configurations": {
   "ac": {
+   "attrs": {
+    "power": {
+     "power-max-w": 2280
+    }
+   },
    "default": true,
    "description": "Dual 3000W AC PSUs (PSU-302-AESR) 1+1 hot-swap with IEC 60320 C20 inlets, four FAN-808012-HCE fan modules 3+1, front-to-back airflow - the build HIG Figure 7's rear elevation and the vendor rear render both show. Maximum system power 2035 W with MSA optics and 2280 W with Open ZR+",
    "kind": "base",
@@ -72,8 +85,8 @@
   },
   "dc": {
    "bays": {
-    "psu-0": "ufispace/psu-302-dc@1",
-    "psu-1": "ufispace/psu-302-dc@1"
+    "psu-0": "ufispace/psu-302-dc@2",
+    "psu-1": "ufispace/psu-302-dc@2"
    },
    "description": "Dual 3000W DC PSUs (PSU-302-DESR) 1+1 hot-swap with two-stud screw-terminal blocks under a plastic cover, four FAN-808012-HCE fan modules 3+1, front-to-back airflow. Maximum system power 2088 W with MSA optics and 2339 W with Open ZR+; each supply carries a 150 A fast-acting fuse",
    "kind": "orderable",
@@ -87,6 +100,15 @@
  "description": "UfiSpace S9720-56ED - 2RU 800G disaggregated core and edge router with 56 QSFP-DD cages in two bands: 36 service ports numbered 00-35, configurable in pairs as 18 x 800G or 36 x 100/200/400G with ZR/ZR+ support, and 20 x 800G fabric ports numbered 00-19 that make the box a line-card element of a distributed disaggregated chassis scaling to 921.6 Tbps. Two 1/10/25G SFP28 uplinks (36-37) and two 10G SFP+ management uplinks sit in one 2 x 2 shell beside the console cluster. Broadcom Jericho 3 BCM88860 at 14.4 Tbps with a 16 GB deep buffer, Intel Ice Lake-D 8-core at 2.1 GHz with an AST2620 BMC, Stratum 3E OCXO with SyncE and 1588v2, 1+1 hot-swap 3000 W AC or DC PSUs, 3+1 hot-swap fans, front-to-back airflow.",
  "format": 1,
  "gaps": [
+  {
+   "note": "No figure of the seven UfiSpace guides that show the DC supply's terminal block names a conductor at either pole: the guides' connecting-power figure marks the two lugs' cables by colour only (red on the left pole, blue on the right) and the supply's own face prints no legend that a held figure shows. The two poles are stated `unstated`, and a feed is not called crossed on them.",
+   "reason": "needs-drawing",
+   "scope": [
+    "ufispace/psu-302-dc@2"
+   ],
+   "wanted": "a straight-on photograph or drawing of the PSU-302-DESR's terminal block with the legend printed at its poles",
+   "what": "dc-polarity"
+  },
   {
    "note": "none of the 60 port lamps has a documented meaning. The HIG's section 10 tables the five front-panel system lamps (SYNC, SYS, FAN, PS0, PS1), the PSU FRU Input and Output lamps, the fan FRU lamp and the RJ45 management jack's Left/Right pair, and stops. The 56 QSFP-DD lamps and the four above the SFP shell are drawn in every figure and named in none, so they carry positions and no states. Copying a state vocabulary across from a sibling SKU would assert this platform's behaviour from another platform's document.",
    "reason": "vendor-silent",
@@ -163,13 +185,66 @@
    "what": "bottom-face-unseen"
   },
   {
-   "note": "neither front figure is a clean panel. Figure 8 lays translucent grey boxes with large numerals over every cage; Figure 9 paints a blue highlight over one cage row per band and a red dot-and-line overlay on every service column, and both are baked into the embedded raster rather than drawn as PDF vector over it. The consequence recorded here is specific: the SERVICE port label patches could not be colour-sampled anywhere, because a red dot sits on every one of them. Their fill is taken as the vendor blue the S9620-32E's unobstructed patches sample, and their GEOMETRY - which the overlay does not move - is taken from the fabric patches, which nothing covers.",
+   "note": "neither front figure is a clean panel. Figure 8 lays translucent grey boxes with large numerals over every cage; Figure 9 paints a blue highlight over one cage row per band and a red dot-and-line overlay on every service column, and both are baked into the embedded raster rather than drawn as PDF vector over it. The highlight and the red dots are the vendor's annotation, not paint, and are read for which cages are paired and which carry a patch, never for colour. The patch blue is sampled from the paint: the unobstructed interior pixels of the 18 patches in the vendor front render (164 core pixels, median RGB 43, 79, 132), of the patches visible beside the cages in Figure 8's raster (712 pixels, median 45, 78, 128) and of the S9620-32E's front render (159 pixels, median 42, 75, 142). The three agree within 14 per channel, so the 18 kept patches keep the library's vendor blue #2e54ac, ESTIMATED: all three samples are darker than that value, by about 40 on the blue channel, so it is the nearest held value rather than a match. The GEOMETRY - which the overlay does not move - is taken from the fabric patches, which nothing covers.",
    "reason": "needs-drawing",
    "scope": [
     "front"
    ],
    "wanted": "an unannotated front elevation, or a straight-on photograph of a real faceplate.",
    "what": "front-figures-carry-baked-in-annotation"
+  },
+  {
+   "note": "the guide says the service ports 'can be configured in pairs' to run as one 800G port or as two 400G ports, so the NOS chooses per pair. Portrayal's format has no field that says a port at 800G disables its partner or that a pair is selectable, so it is carried in attrs.performance.port-modes-qsfp-dd and in these placements' speeds: the 18 cages marked in blue state up to 800G and their 18 partners up to 400G, which counts the ports of the 36 x 400G mode and the 18 x 800G mode but not that the two are exclusive. No NOS document is held that tabulates the modes.",
+   "reason": "nos-dependent",
+   "scope": [
+    "qsfpdd-800g-service"
+   ],
+   "wanted": "the NOS's own per-pair port-mode table, or UfiSpace's statement of which port modes a pair allows.",
+   "what": "port-pair-exclusion-not-statable"
+  },
+  {
+   "note": "the guide's text does not say which cage of a pair carries the 800G port, nor which port number the network OS calls the 800G member. It is read from Figure 9, where the cage with the blue highlight and the red line to its column neighbour is taken as the 800G port (1, 3 ... 19 and 20, 22 ... 34) and its neighbour as the second 400G port. The highlight and the lines are the vendor's annotation, and the vendor's front render agrees on which 18 cages carry a blue label patch. That is a reading of a figure, not a statement, so it is estimated.",
+   "reason": "vendor-silent",
+   "scope": [
+    "port-0",
+    "port-1",
+    "port-2",
+    "port-3",
+    "port-4",
+    "port-5",
+    "port-6",
+    "port-7",
+    "port-8",
+    "port-9",
+    "port-10",
+    "port-11",
+    "port-12",
+    "port-13",
+    "port-14",
+    "port-15",
+    "port-16",
+    "port-17",
+    "port-18",
+    "port-19",
+    "port-20",
+    "port-21",
+    "port-22",
+    "port-23",
+    "port-24",
+    "port-25",
+    "port-26",
+    "port-27",
+    "port-28",
+    "port-29",
+    "port-30",
+    "port-31",
+    "port-32",
+    "port-33",
+    "port-34",
+    "port-35"
+   ],
+   "wanted": "UfiSpace's statement of which port of each pair is the 800G member, or the NOS's per-pair table.",
+   "what": "which-cage-of-a-pair-runs-800g"
   }
  ],
  "groups": {
@@ -231,11 +306,11 @@
   },
   "qsfpdd-800g-service": {
    "attrs": {
-    "media": "qsfp-dd",
-    "speed": "800g"
+    "media": "qsfp-dd"
    },
-   "description": "the 36 service QSFP-DD cages, numbered 00-35 on blue label patches, in ten columns of two rows across the upper band and eight columns of two rows across the lower one; the even port of each column is the upper one. The vendor pairs them in the NOS - each pair runs as one 800G port or as two 400G ports - which is why the datasheet says '18 x 800G or 36 x 400G' for the same 36 cages",
+   "description": "the 36 service QSFP-DD cages, numbered 00-35, in ten columns of two rows across the upper band and eight columns of two rows across the lower one; the even port of each column is the upper one. They are 18 pairs, one column each, and a pair runs as one 800G port or as two ports at 100, 200 or 400G, which is why the datasheet says '18 x 800G or 36 x 400G' for the same 36 cages. The group holds 36 cages, 18 stating up to 800G (1, 3 ... 19 and 20, 22 ... 34, the cages the vendor marks with a blue label patch) and 18 stating up to 400G, so it declares no speed of its own; which cage of a pair runs the 800G port is read from the guide's Figure 9 and is not stated in its text",
    "index-origin": 0,
+   "mixed": "the 36 service cages - 18 pairs, each run as one 800G port or as two ports at 400G or lower (installation guide page 12)",
    "role": "traffic",
    "term": "Port"
   },
@@ -314,7 +389,7 @@
    "note": "measured at 22x, and one of the four marks is UNEXPLAINED. The row above the ganged stack prints, left to right at y 42.5-45.5: an Ethernet icon centred x 21.0, a solid up-triangle at 26.0, a solid down-triangle at 29.2, and the USB SuperSpeed trident SS at 34.5. The Ethernet icon and the SS mark are unambiguous and are attached to the OOB jack and the USB port. THE TRIANGLE PAIR IS NOT EXPLAINED ANYWHERE IN THE GUIDE: Figure 4's callout list names the ports and not the printing, and section 10 tables no such indicator. The reading carried here - that it is this vendor's stacked-pair up/down convention saying the Ethernet jack is the upper opening and the USB the one below, the same convention the SFP shell's own legends use two centimetres to the right - is a JUDGEMENT and is filed as a gap rather than asserted as the vendor's. The triangles are drawn as path marks; U+25B2 and U+25BC rasterise as empty boxes."
   },
   "port-count": {
-   "note": "HIG Port Overview table plus the elevation, and the two agree. The table gives '00 ~ 35 (Blue) QSFP-DD, 100/200/400/800G', '36 ~ 37 SFP28, 1/10/25G' and '00 ~ 19 (Red) QSFP-DD, 800G', with the sentence 'The ports labelled in blue function as service ports. The ports labelled in red function as fabric ports.' Counting cages on Figure 9 gives exactly that: 36 blue and 20 red QSFP-DD, which is the 56 in the model name, plus the two SFP28. The datasheet's '18 x 100/200/400/800G or 36 x 100/200/400G QSFP-DD service ports' is the same 36 cages counted as pairs - HIG Figure 9: 'each blue-labeled port represents an 800G port, which can be individually reconfigured into two 400G ports'. THIRTY-SIX CAGES ARE MODELLED, not eighteen; the pairing is a configuration of the same metal and is recorded in the group description rather than drawn."
+   "note": "HIG Port Overview table plus the elevation, and the two agree. The table gives '00 ~ 35 (Blue) QSFP-DD, 100/200/400/800G', '36 ~ 37 SFP28, 1/10/25G' and '00 ~ 19 (Red) QSFP-DD, 800G', with the sentence 'The ports labelled in blue function as service ports. The ports labelled in red function as fabric ports.' Counting cages on Figure 8 gives exactly that: 36 service and 20 fabric QSFP-DD, which is the 56 in the model name, plus the two SFP28. The datasheet's '18 x 100/200/400/800G or 36 x 100/200/400G QSFP-DD service ports' (page 2) is the same 36 cages counted as pairs - HIG page 12: the service ports 'can be configured in pairs to operate either as a single 800G port or as two separate 400G ports' and, in Figure 9, 'each blue-labeled port represents an 800G port, which can be individually reconfigured into two 400G ports, as indicated by the red lines'. THIRTY-SIX CAGES ARE MODELLED, not eighteen; the pairing is a configuration of the same metal and is stated, not drawn, on each service placement's speed and speeds (800G, up to 800G, on the 18 cages Figure 9 highlights in blue; 400G, up to 400G, on the 18 it does not), in the group description and in attrs.performance.port-modes-qsfp-dd. Figure 9's highlight (ports 1, 3 ... 19 and 20, 22 ... 34) and its red lines (0-1, 2-3 ... 18-19 and 20-21 ... 34-35, 18 pairs) are read off the raster against the numbering, and the guide's text does not say which cage of a pair runs the 800G port, so that reading is estimated."
   },
   "port-grid": {
    "confidence": "measured",
@@ -326,7 +401,7 @@
   },
   "port-numbering": {
    "confidence": "measured",
-   "note": "measured off Figure 9 at 22x, and it agrees with the HIG's Port Overview ranges. Each cage carries a narrow coloured label patch on its left - blue for service, magenta for fabric - printing the port numeral above a single lamp. The even numeral is always in the upper row of its band, so a service column j of the upper band is ports 2j and 2j+1 (0-19) and the lower band continues 20-35 across its eight columns; the fabric columns run 0-9 in the upper band and 10-19 in the lower. The fabric ports restart at 00 in their own namespace, which is why they are modelled as fabric-N rather than folded into the service range. The patch measures 3.3 x 9.9 and its right edge abuts the cage; its left edge is 13.1 mm inboard of the column centre."
+   "note": "measured off Figure 9 at 22x, and it agrees with the HIG's Port Overview ranges. Each cage carries a narrow coloured label patch on its left - blue for service, magenta for fabric - printing the port numeral above a single lamp. The even numeral is always in the upper row of its band, so a service column j of the upper band is ports 2j and 2j+1 (0-19) and the lower band continues 20-35 across its eight columns; the fabric columns run 0-9 in the upper band and 10-19 in the lower. The fabric ports restart at 00 in their own namespace, which is why they are modelled as fabric-N rather than folded into the service range. The vendor's front render (s9720-56ed-2-front, the paint) shows the blue patch on the 18 service cages Figure 9 highlights, the second row of the upper band (1, 3 ... 19) and the first row of the lower band (20, 22 ... 34), and none on the other 18, which have only a numeral beside a lamp; all 20 fabric cages carry a magenta patch. The 20 fabric and 18 service patches measure 3.3 x 9.9 and each right edge abuts its cage; its left edge is 13.1 mm inboard of the column centre. The 18 blank cages are not drawn with a patch."
   },
   "port-rows": {
    "confidence": "measured",
@@ -334,7 +409,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "datasheet for the typical, HIG for the maxima, and the vendor states its own test conditions. Datasheet ENVIRONMENTAL: 'Typical power: 887 Watts (no transceiver)', and the scope is the vendor's own parenthesis. HIG section 9 gives FOUR maxima, two per input type: DC 'maximum system power consumption is 2088 watts under MSA standards. With Open ZR+ transceivers ... 2339 watts'; AC 2035 W under MSA and 2280 W with Open ZR+. The note beside them states the criteria - '45 C, Optics: full populated, Traffic: 100% load' - so these are fully-configured maxima and power-envelope says so. power-max-w carries 2339, the highest of the four, which is what max means; the other three are recorded beside it because the spread between them is 304 W and a budget built from the wrong one is wrong by that much. The feed figures 'AC input: 200 to 240V, 16A' and 'DC input: -40 to -72V, 80A' are the INPUT to provision per supply and are recorded as input, not as draw. Nothing here adds the two 3000 W supply nameplates or the fan modules to any of these numbers."
+   "note": "datasheet for the typical, HIG for the maxima, and the vendor states its own test conditions. Datasheet ENVIRONMENTAL: 'Typical power: 887 Watts (no transceiver)', and the scope is the vendor's own parenthesis. HIG section 9 gives FOUR maxima, two per input type: DC 'maximum system power consumption is 2088 watts under MSA standards. With Open ZR+ transceivers ... 2339 watts'; AC 2035 W under MSA and 2280 W with Open ZR+. The note beside them states the criteria - '45 C, Optics: full populated, Traffic: 100% load' - so these are fully-configured maxima and power-envelope says so. power-max-w carries 2339, the highest of the four, which is what max means; the other three are recorded beside it because the spread between them is 304 W and a budget built from the wrong one is wrong by that much. The ac configuration states its own highest, 2280. The feed figures 'AC input: 200 to 240V, 16A' and 'DC input: -40 to -72V, 80A' are the INPUT to provision per supply and are recorded as input, not as draw. Nothing here adds the two 3000 W supply nameplates or the fan modules to any of these numbers."
   },
   "rear-fans": {
    "confidence": "measured",
@@ -360,7 +435,7 @@
    "note": "COUNT from the guide, SPACING estimated, and the two are different confidences. HIG section 5 step 2.1 states it outright: 'The chassis has 5 attachment pins on each side, for a total of 10 pins', and Figure 11 numbers them 1-5 running front to rear along the upper part of the side wall with a single M4 rail screw at the front ('Make sure the locking screw of the inner rail is positioned at the front of the chassis'). So the count, the ordering and the screw's end are the vendor's; the PITCH and the height up the wall are mine, laid out evenly over the 762 mm depth, and are estimated. AXIS CONVENTION, recorded because it is the error this class of face hides: on a RIGHT view x = 0 is the FRONT and on a LEFT view x = 0 is the REAR, so the left face's pins are placed at 762 - d - w and are not a copy of the right face's coordinates."
   },
   "sources": {
-   "note": "two vendor documents and three vendor product renders. (1) the S9720-56ED datasheet, which carries the spec table, the ordering lines and the typical power; (2) the S9720-56ED Hardware Installation Guide, which carries the Component Physical Information table, the Port Overview table, the front-panel and FRU LED tables, the rack-mount pin count, the grounding section and the maximum system power with its test conditions - 41 kept figures across 35 pages; (3) the three photos staged as s9720-56ed-1-view / -2-front / -3-rear, which are the vendor's own 520 x 150 renders of the same artwork the guide embeds, so they are NOT an independent second reading of the front and are used here only as a coarse check. Unlike the S9620 family this platform HAS a hardware installation guide, and almost every number below rests on it rather than on inference."
+   "note": "two vendor documents and three vendor product renders. (1) the S9720-56ED datasheet, which carries the spec table, the ordering lines and the typical power; (2) the S9720-56ED Hardware Installation Guide, which carries the Component Physical Information table, the Port Overview table, the front-panel and FRU LED tables, the rack-mount pin count, the grounding section and the maximum system power with its test conditions - 41 kept figures across 35 pages; (3) the three photos staged as s9720-56ed-1-view / -2-front / -3-rear, which are the vendor's own 520 x 150 renders of the same artwork the guide embeds, so they are NOT an independent second reading of the front. They are the paint, where the guide's figures carry annotation: the front render is the source of which service cages carry a blue label patch (18 of 36, agreeing with Figure 9's 18 highlights) and of the patch blue, which is estimated (see front-figures-carry-baked-in-annotation). Unlike the S9620 family this platform HAS a hardware installation guide, and almost every number below rests on it rather than on inference."
   },
   "stack-orientation": {
    "confidence": "estimated",
@@ -383,7 +458,7 @@
    "url": "https://www.ufispace.com/files/5B/UfiSpace-S9720-56ED-Hardware-Installation-Guide.pdf"
   }
  ],
- "version": "3.0.4",
+ "version": "3.1.3",
  "views": {
   "bottom": {
    "empty": "Searched and not documented: no drawing or photograph of the underside exists in this device's intake. The account of which figures and renders were checked is in provenance `bottom`, which is where to look before drawing anything here.",
@@ -724,6 +799,14 @@
        24.53,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-0",
       "ref": "std/qsfp-dd@1",
@@ -745,6 +828,15 @@
        24.53,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-1",
       "ref": "std/qsfp-dd@1",
@@ -767,6 +859,14 @@
        51.35,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-2",
       "ref": "std/qsfp-dd@1",
@@ -788,6 +888,15 @@
        51.35,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-3",
       "ref": "std/qsfp-dd@1",
@@ -810,6 +919,14 @@
        78.17,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-4",
       "ref": "std/qsfp-dd@1",
@@ -831,6 +948,15 @@
        78.17,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-5",
       "ref": "std/qsfp-dd@1",
@@ -853,6 +979,14 @@
        104.99,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-6",
       "ref": "std/qsfp-dd@1",
@@ -874,6 +1008,15 @@
        104.99,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-7",
       "ref": "std/qsfp-dd@1",
@@ -896,6 +1039,14 @@
        131.81,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-8",
       "ref": "std/qsfp-dd@1",
@@ -917,6 +1068,15 @@
        131.81,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-9",
       "ref": "std/qsfp-dd@1",
@@ -939,6 +1099,14 @@
        158.62,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-10",
       "ref": "std/qsfp-dd@1",
@@ -960,6 +1128,15 @@
        158.62,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-11",
       "ref": "std/qsfp-dd@1",
@@ -982,6 +1159,14 @@
        185.44,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-12",
       "ref": "std/qsfp-dd@1",
@@ -1003,6 +1188,15 @@
        185.44,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-13",
       "ref": "std/qsfp-dd@1",
@@ -1025,6 +1219,14 @@
        212.26,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-14",
       "ref": "std/qsfp-dd@1",
@@ -1046,6 +1248,15 @@
        212.26,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-15",
       "ref": "std/qsfp-dd@1",
@@ -1068,6 +1279,14 @@
        239.08,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-16",
       "ref": "std/qsfp-dd@1",
@@ -1089,6 +1308,15 @@
        239.08,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-17",
       "ref": "std/qsfp-dd@1",
@@ -1111,6 +1339,14 @@
        265.9,
        9.51
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-18",
       "ref": "std/qsfp-dd@1",
@@ -1132,6 +1368,15 @@
        265.9,
        22.37
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-19",
       "ref": "std/qsfp-dd@1",
@@ -1369,6 +1614,15 @@
        78.17,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-20",
       "ref": "std/qsfp-dd@1",
@@ -1390,6 +1644,14 @@
        78.17,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-21",
       "ref": "std/qsfp-dd@1",
@@ -1412,6 +1674,15 @@
        104.99,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-22",
       "ref": "std/qsfp-dd@1",
@@ -1433,6 +1704,14 @@
        104.99,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-23",
       "ref": "std/qsfp-dd@1",
@@ -1455,6 +1734,15 @@
        131.81,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-24",
       "ref": "std/qsfp-dd@1",
@@ -1476,6 +1764,14 @@
        131.81,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-25",
       "ref": "std/qsfp-dd@1",
@@ -1498,6 +1794,15 @@
        158.62,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-26",
       "ref": "std/qsfp-dd@1",
@@ -1519,6 +1824,14 @@
        158.62,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-27",
       "ref": "std/qsfp-dd@1",
@@ -1541,6 +1854,15 @@
        185.44,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-28",
       "ref": "std/qsfp-dd@1",
@@ -1562,6 +1884,14 @@
        185.44,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-29",
       "ref": "std/qsfp-dd@1",
@@ -1584,6 +1914,15 @@
        212.26,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-30",
       "ref": "std/qsfp-dd@1",
@@ -1605,6 +1944,14 @@
        212.26,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-31",
       "ref": "std/qsfp-dd@1",
@@ -1627,6 +1974,15 @@
        239.08,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-32",
       "ref": "std/qsfp-dd@1",
@@ -1648,6 +2004,14 @@
        239.08,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-33",
       "ref": "std/qsfp-dd@1",
@@ -1670,6 +2034,15 @@
        265.9,
        51.38
       ],
+      "attrs": {
+       "speed": "800g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g",
+        "800g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-34",
       "ref": "std/qsfp-dd@1",
@@ -1691,6 +2064,14 @@
        265.9,
        66.22
       ],
+      "attrs": {
+       "speed": "400g",
+       "speeds": [
+        "100g",
+        "200g",
+        "400g"
+       ]
+      },
       "group": "qsfpdd-800g-service",
       "id": "port-35",
       "ref": "std/qsfp-dd@1",
@@ -3744,31 +4125,7 @@
      {
       "at": [
        20.93,
-       9.4
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       20.93,
        22.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       47.75,
-       9.4
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -3792,31 +4149,7 @@
      {
       "at": [
        74.57,
-       9.4
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       74.57,
        22.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       101.39,
-       9.4
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -3840,31 +4173,7 @@
      {
       "at": [
        128.21,
-       9.4
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       128.21,
        22.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       155.03,
-       9.4
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -3888,31 +4197,7 @@
      {
       "at": [
        181.84,
-       9.4
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       181.84,
        22.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       208.66,
-       9.4
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -3936,31 +4221,7 @@
      {
       "at": [
        235.48,
-       9.4
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       235.48,
        22.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       262.3,
-       9.4
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -4115,32 +4376,8 @@
      },
      {
       "at": [
-       74.57,
-       66.1
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
        101.39,
        51.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       101.39,
-       66.1
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -4163,32 +4400,8 @@
      },
      {
       "at": [
-       128.21,
-       66.1
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
        155.03,
        51.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       155.03,
-       66.1
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -4211,32 +4424,8 @@
      },
      {
       "at": [
-       181.84,
-       66.1
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
        208.66,
        51.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       208.66,
-       66.1
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -4259,32 +4448,8 @@
      },
      {
       "at": [
-       235.48,
-       66.1
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
        262.3,
        51.3
-      ],
-      "fill": "#2e54ac",
-      "rx": 0.3,
-      "size": [
-       3.3,
-       9.9
-      ]
-     },
-     {
-      "at": [
-       262.3,
-       66.1
       ],
       "fill": "#2e54ac",
       "rx": 0.3,
@@ -5479,7 +5644,8 @@
      {
       "accepts": [
        "ufispace/psu-302-ac@1",
-       "ufispace/psu-302-dc@1"
+       "ufispace/psu-302-dc@1",
+       "ufispace/psu-302-dc@2"
       ],
       "at": [
        360.0,
@@ -5497,7 +5663,8 @@
      {
       "accepts": [
        "ufispace/psu-302-ac@1",
-       "ufispace/psu-302-dc@1"
+       "ufispace/psu-302-dc@1",
+       "ufispace/psu-302-dc@2"
       ],
       "at": [
        360.0,

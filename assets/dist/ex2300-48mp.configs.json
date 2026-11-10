@@ -1786,7 +1786,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      388.1,
@@ -1826,7 +1827,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      388.1,
@@ -1866,7 +1868,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      402.8,
@@ -1906,7 +1909,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      402.8,
@@ -1946,7 +1950,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      420.3,
@@ -1986,7 +1991,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      420.3,
@@ -2054,6 +2060,43 @@
   "rear": [
    {
     "accepts": [
+     "generic/ring-lug@1"
+    ],
+    "at": [
+     419.6,
+     16.3
+    ],
+    "bores": [],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "earth-screw",
+    "interface": "terminal-stud",
+    "kind": "connector",
+    "lift": 3.1,
+    "mate": [
+     423.6,
+     20.3
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the earthing terminal, one M4 screw for a lug (Table 36)",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": null,
+    "turns": [
+     0,
+     90,
+     180,
+     270
+    ]
+   },
+   {
+    "accepts": [
      "generic/c13-plug@1"
     ],
     "at": [
@@ -2108,6 +2151,7 @@
  "configs": [
   {
    "airflow": "side",
+   "attrs": {},
    "bays": {},
    "description": "EX2300-48MP - 48 PoE+ ports (sixteen Multigigabit) and six SFP+/SFP uplinks, built-in AC supply and four built-in fans, side-to-side airflow. Table 1, no Virtual Chassis licence.",
    "files": {
@@ -2770,6 +2814,17 @@
    "what": "side-elevations"
   },
   {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The figure calls the ring at the right of the rear the ESD point and prints the earth symbol under it; Table 36 lists an earthing terminal on the rear panel, one M4 screw. The screw is placed on that ring.",
+   "scope": [
+    "earth-screw"
+   ],
+   "wanted": "a photograph of the rear that shows which feature is the earthing terminal",
+   "what": "earthing-terminal-position"
+  },
+  {
    "because": "CAP",
    "blocks": [
     "specified"
@@ -2823,6 +2878,10 @@
    "confidence": "measured",
    "note": "The guide's Figure 6 is 1501 x 413 px; the photograph is 1500 x 230 px with the body 1440 px across (x 30 to 1470): 3.266 px per mm across against the 440.9 mm of Table 3. The photograph's jack pitch reads 46.4 px = 14.2 mm and the shells 117.6 mm apart (a 3.8 mm gutter after eight columns). The photograph is 1440 px across and 163 down including the reflection; its body (face top at 43 px) is read at the same px per mm, the body 43.3 mm high being 141 px. The rear Figure 15 passes the aspect check in x (1449 px, 3.286 px per mm) and is 147 px (44.5 mm) down against 43.3, 2.8 percent out, so its y is taken from the body's centre line. Every position is estimated and good to about a millimetre."
   },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "Table 36 lists, for the EX2300-24MP and EX2300-48MP, a Panduit LCA10-10L lug or equivalent (not provided) on one Pan Phillips M4 x 6 mm nickel plated screw (provided). The figure calls the ring at the right of the rear the ESD point and prints the earth symbol under it, and the `rear-layout` note draws it as the earthing terminal; it was drawn as a plain light disc, which is how a nickel plated screw head looks. `common/ground-screw-m4@1` is placed on that ring, at the centre the ring was drawn at: the one M4 screw that the guide says is provided, which a ring lug lands on. It is a screw and not a bare hole because the guide says the screw ships with the switch."
+  },
   "lamps": {
    "confidence": "datasheet",
    "note": "Hardware guide, Tables 5, 8, 9 and 13 and Figures 19, 23, 29 and 31. The system lamps are MGT, FAN and PW (Table 5); each RJ-45 port and each uplink has one Link/Activity lamp (Table 13), and the management jack has a Link lamp and an Activity lamp (Figure 23, Tables 8 and 9), printed LINK and ACT on the photograph. Speed, duplex, administrative status and PoE are read with show commands (the guide's note under Table 13), so there are no mode lamps and no mode button."
@@ -2856,7 +2915,13 @@
    "note": "EX2300 Switch Hardware Guide, Juniper Networks, published 2025-08-12 (314 pages; https://www.juniper.net/documentation/us/en/hardware/ex2300/ex2300.pdf): Figure 6 (front panel), Figure 15 (rear panel), Figures 19, 23, 29 and 31 (LEDs), Table 1 (models), Table 3 (chassis size and weight), Tables 5, 8, 9 and 13 (LED states), the cooling system section with Figures 36 and 37, Tables 14 and 15 (power), Table 34 (parts list), Table 35 (mounting methods) and Table 36 (earthing). Juniper's own straight-on studio photograph of the EX2300-48MP front (ex2300m-poe48-front-high.jpg) from the maker's image library (https://www.juniper.net/us/en/company/images/image-library-logos-and-product-photos/products/ex2300-48mp.html), which holds no rear or side photograph of this model. The English datasheet addresses tried (the EX2300 line datasheet under datasheets/us/en/switches) did not answer, so no datasheet is cited."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "earth-screw": {
+    "generic/ring-lug@1": 270
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

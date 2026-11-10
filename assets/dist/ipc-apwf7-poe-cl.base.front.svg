@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="245.0mm" height="245.0mm" viewBox="0 0 245.0 245.0" data-device="ipc-apwf7-poe-cl" data-view="front" data-weight-kg="2.0" data-overall-dimensions="245 x 245 x 67 mm (datasheet)" data-wifi-rates="802.11be 24.436 Gbps, 802.11ax 20.363 Gbps, 802.11ac 10.401 Gbps, 802.11n 2.4 Gbps" data-power-self-max-w="60" data-power-input="54 V DC / 1.25 A over a 2.5 mm / 5.5 mm centre-positive connector, or PoE+/PoE++ 802.3at/bt over WAN 1 (50-57 V). DC is preferred when both are present" data-poe-pd-standard="802.3bt" data-poe-pd-standard-min="802.3at" data-poe-pd-max-w="72.95" data-poe-budget-w="12.95" data-poe-budget-scope="LAN 1, 48 V" data-operating-temp-c="0 to 40" data-operating-humidity="5 to 95 percent noncondensing" data-wifi="802.11n/ac/ax/be (WiFi 7), radios 2.4 GHz 4x4, 5 GHz 4x4 twice, 6 GHz 4x4 and an AI radio 2x2" data-bluetooth="5.3" data-optics-sfp-plus="datasheet: the SFP+ cage is compatible with 10GE, 2.5GE and 1GE modules; the sheet lists no vendor optics" data-interfaces="ReadyView cloud; Ethernet/Fiber in-band; Ethernet/Fiber out-of-band" data-button-functions="factory reset" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"ReadyLinks IPC-APWF7-POE-CL","device-version":"1.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"readylinks/apwf7-ridges@1":"1.0.0","readylinks/led-slant@1":"1.0.0","readylinks/wifi-mark@1":"1.0.0"},"source-sha256":"ca6c7fc3d252c37dd5323369e0cc81e276cd563695b0737e7f8b89c68acf606b","view":"front"}</metadata>
+  <path id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="IPC-APWF7-POE-CL" data-sku="IPC-APWF7-POE-CL" data-part-number="" fill="#f9f9f8" stroke="#d3d6d9" stroke-width="0.5" d="M0.000,43.000 L0.826,34.611 L3.273,26.545 L7.247,19.110 L12.594,12.594 L19.110,7.247 L26.545,3.273 L34.611,0.826 L43.000,0.000 L202.000,0.000 L210.389,0.826 L218.455,3.273 L225.890,7.247 L232.406,12.594 L237.753,19.110 L241.727,26.545 L244.174,34.611 L245.000,43.000 L245.000,202.000 L244.174,210.389 L241.727,218.455 L237.753,225.890 L232.406,232.406 L225.890,237.753 L218.455,241.727 L210.389,244.174 L202.000,245.000 L43.000,245.000 L34.611,244.174 L26.545,241.727 L19.110,237.753 L12.594,232.406 L7.247,225.890 L3.273,218.455 L0.826,210.389 L0.000,202.000 Z" />
+  <g id="chassis-bevels" data-path="chassis/bevels">
+    <polygon data-edge="taper-1" points="245.000,43.000 240.000,43.246 240.000,201.754 245.000,202.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-10" points="218.455,3.273 216.533,7.915 223.098,11.424 225.890,7.247" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-11" points="210.389,0.826 209.409,5.754 216.533,7.915 218.455,3.273" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-12" points="202.000,0.000 201.754,5.000 209.409,5.754 210.389,0.826" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-13" points="0.000,43.000 5.000,43.246 5.754,35.591 0.826,34.611" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-14" points="0.826,34.611 5.754,35.591 7.915,28.467 3.273,26.545" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-15" points="3.273,26.545 7.915,28.467 11.424,21.902 7.247,19.110" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-16" points="7.247,19.110 11.424,21.902 16.147,16.147 12.594,12.594" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-17" points="12.594,12.594 16.147,16.147 21.902,11.424 19.110,7.247" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-18" points="19.110,7.247 21.902,11.424 28.467,7.915 26.545,3.273" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-19" points="26.545,3.273 28.467,7.915 35.591,5.754 34.611,0.826" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-2" points="0.000,202.000 5.000,201.754 5.000,43.246 0.000,43.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-20" points="34.611,0.826 35.591,5.754 43.246,5.000 43.000,0.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-21" points="0.826,210.389 5.754,209.409 5.000,201.754 0.000,202.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-22" points="3.273,218.455 7.915,216.533 5.754,209.409 0.826,210.389" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-23" points="7.247,225.890 11.424,223.098 7.915,216.533 3.273,218.455" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-24" points="12.594,232.406 16.147,228.853 11.424,223.098 7.247,225.890" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-25" points="19.110,237.753 21.902,233.576 16.147,228.853 12.594,232.406" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-26" points="28.467,237.085 21.902,233.576 19.110,237.753 26.545,241.727" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-27" points="35.591,239.246 28.467,237.085 26.545,241.727 34.611,244.174" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-28" points="43.246,240.000 35.591,239.246 34.611,244.174 43.000,245.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-29" points="245.000,202.000 240.000,201.754 239.246,209.409 244.174,210.389" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-3" points="202.000,0.000 43.000,0.000 43.246,5.000 201.754,5.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-30" points="244.174,210.389 239.246,209.409 237.085,216.533 241.727,218.455" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-31" points="241.727,218.455 237.085,216.533 233.576,223.098 237.753,225.890" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-32" points="237.753,225.890 233.576,223.098 228.853,228.853 232.406,232.406" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-33" points="232.406,232.406 228.853,228.853 223.098,233.576 225.890,237.753" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-34" points="225.890,237.753 223.098,233.576 216.533,237.085 218.455,241.727" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-35" points="218.455,241.727 216.533,237.085 209.409,239.246 210.389,244.174" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-36" points="210.389,244.174 209.409,239.246 201.754,240.000 202.000,245.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-4" points="43.000,245.000 202.000,245.000 201.754,240.000 43.246,240.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-5" points="244.174,34.611 239.246,35.591 240.000,43.246 245.000,43.000" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-6" points="241.727,26.545 237.085,28.467 239.246,35.591 244.174,34.611" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-7" points="237.753,19.110 233.576,21.902 237.085,28.467 241.727,26.545" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-8" points="232.406,12.594 228.853,16.147 233.576,21.902 237.753,19.110" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+    <polygon data-edge="taper-9" points="232.406,12.594 225.890,7.247 223.098,11.424 228.853,16.147" fill="#ffffff" fill-opacity="0.08" stroke="#d3d6d9" stroke-width="0.25" />
+  </g>
+  <g id="--decor" data-class="decor" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="196.1" y="35.5" font-family="sans-serif" font-size="10.5" text-anchor="middle" fill="#4a4f55" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ReadyLinks</text>
+  </g>
+  <g id="led-status" data-path="led-status" data-class="led" data-ref="readylinks/led-slant@1:1.0.0" data-rel-pos="1" transform="translate(30.4,205.5) rotate(45 7.5 1.7)" data-group="status-leds" data-group-role="indicator" data-for="chassis">
+    <title>led-status</title>
+    <rect id="led-status--bezel" x="0" y="0" width="15" height="3.4" rx="1.7" fill="#17191c" />
+    <rect id="led-status--lamp" x="0.2" y="0.2" width="14.6" height="3.0" rx="1.5" fill="var(--led-color, #3a3f44)" data-path="led-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="ridges" data-path="ridges" data-class="sticker" data-behaviour="mounts" data-ref="readylinks/apwf7-ridges@1:1.0.0" data-rel-pos="1" transform="translate(33.0,38.0)" data-group="marks" data-group-role="furniture" data-description="the ridges across the face and the Wi-Fi mark beside the wordmark, which carry no connection" data-for="chassis">
+    <title>ridges</title>
+    <g id="ridges--ridges" fill="#e9e9e8" stroke="#dcdcdb" stroke-width="0.3" stroke-linejoin="round" data-path="ridges/ridges" data-class="sticker">
+      <polygon points="126.5,8.5 178.0,60.0 167.0,71.0 115.5,19.5" />
+      <polygon points="91.0,4.0 177.5,90.5 166.5,101.5 80.0,15.0" />
+      <polygon points="60.5,4.5 177.0,121.0 166.0,132.0 49.5,15.5" />
+      <polygon points="35.0,10.0 161.5,136.5 150.5,147.5 24.0,21.0" />
+      <polygon points="14.5,20.5 119.5,125.5 108.5,136.5 3.5,31.5" />
+    </g>
+  </g>
+  <g id="wifi-mark" data-path="wifi-mark" data-class="sticker" data-behaviour="mounts" data-ref="readylinks/wifi-mark@1:1.0.0" data-rel-pos="2" transform="translate(199.5,20.5)" data-group="marks" data-group-role="furniture" data-description="the ridges across the face and the Wi-Fi mark beside the wordmark, which carry no connection" data-for="chassis">
+    <title>wifi-mark</title>
+    <g id="wifi-mark--mark" fill="none" stroke="#5b5f63" stroke-width="0.45" stroke-linecap="round" data-path="wifi-mark/mark" data-class="sticker">
+      <path d="M 2.2 1.6 A 4.2 4.2 0 0 1 7.8 1.6" />
+      <path d="M 3.2 2.7 A 2.8 2.8 0 0 1 6.8 2.7" />
+      <path d="M 4.2 3.7 A 1.4 1.4 0 0 1 5.8 3.7" />
+    </g>
+    <circle cx="5" cy="4.5" r="0.45" fill="#5b5f63" />
+  </g>
+</svg>

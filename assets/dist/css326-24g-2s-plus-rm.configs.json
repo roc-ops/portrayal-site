@@ -860,7 +860,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      231.25,
@@ -900,7 +901,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      252.95,
@@ -965,6 +967,42 @@
     "rel-pos": 1,
     "rotate": null,
     "turns": null
+   },
+   {
+    "accepts": [
+     "generic/ring-lug@1"
+    ],
+    "at": [
+     429.5,
+     34.6
+    ],
+    "bores": [],
+    "default": null,
+    "group": "furniture",
+    "group-states": false,
+    "id": "earth-stud",
+    "interface": "terminal-stud",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     433.5,
+     38.6
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "furniture",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 4,
+    "rotate": null,
+    "turns": [
+     0,
+     90,
+     180,
+     270
+    ]
    }
   ],
   "right": [],
@@ -1000,6 +1038,7 @@
  "configs": [
   {
    "airflow": null,
+   "attrs": {},
    "bays": {},
    "description": "CSS326-24G-2S+RM - 24 10/100/1000 ports and two SFP+ cages, SwOS only. The box holds a 24 V 1.2 A adapter, rack ears and a screw set.",
    "files": {
@@ -1304,11 +1343,11 @@
    "because": "needs-drawing",
    "blocks": [],
    "kind": "declared",
-   "note": "The earthing stud has a wing nut (photograph 1268; the drawing's 11 mm). common/ground-stud draws a hex nut and a lug seat, so the stud is chassis art and exports no earth. The reason is the nearest the schema has: the part itself is what is missing, and the library has no `needs-part` reason.",
+   "note": "The earthing stud has a wing nut (photograph 1268; the drawing's 11 mm). The stud is placed as mikrotik/earth-stud-disc, a plain disc that stands in for the wing nut. The reason is the nearest the schema has: the part itself is what is missing, and the library has no `needs-part` reason.",
    "scope": [
     "rear"
    ],
-   "wanted": "A wing-nut earth stud part, so the stud is placed and not drawn as chassis art.",
+   "wanted": "A wing-nut earth stud part, so the drawn disc can be replaced by the wing nut.",
    "what": "earth-stud-part"
   },
   {
@@ -1429,7 +1468,7 @@
   },
   "rear-layout": {
    "confidence": "estimated",
-   "note": "estimated - positions off the rear photograph 1268, 6.46 px per mm across the 443 mm body. It looks slightly down on the rear, so y is estimated: the vertical scale is 8 percent shorter than the horizontal, and the y values use it. Good to about 1 mm in x and 2 mm in y. The earthing stud has a wing nut (the drawing's 11 mm); it is drawn as chassis art at the stud's position from the photograph, because the library's common/ground-stud draws a hex nut and a lug seat the stud does not have; the gap `earth-stud-part` asks for a wing-nut stud part. The CSS prints no earth symbol. Its cable slot is the short one (31 mm) and the DC jack sits to its right, which is the CRS's jack inside a longer slot. The DC jack is the placed common/dc-barrel (`dc-in`), its bore centred on the photograph's."
+   "note": "estimated - positions off the rear photograph 1268, 6.46 px per mm across the 443 mm body. It looks slightly down on the rear, so y is estimated: the vertical scale is 8 percent shorter than the horizontal, and the y values use it. Good to about 1 mm in x and 2 mm in y. The earthing stud has a wing nut (the drawing's 11 mm); it is the placed mikrotik/earth-stud-disc (`earth-stud`) at the stud's position from the photograph, a plain disc that stands in for the wing nut; the gap `earth-stud-part` asks for a wing-nut stud part. The CSS prints no earth symbol. Its cable slot is the short one (31 mm) and the DC jack sits to its right, which is the CRS's jack inside a longer slot. The DC jack is the placed common/dc-barrel (`dc-in`), its bore centred on the photograph's."
   },
   "reset": {
    "confidence": "photo-measured",
@@ -1444,7 +1483,13 @@
    "note": "Dimensions drawing \"CRS/CSS326-24G-2S+ dimensions\", MikroTik, printed 19.09.2023 (file CRS_CSS326-24G-2S_dimensions_230943.pdf, rendered at 200 dpi; the title block reads CRS/CSS326-24G-2S+ dimensions): front, side, top plan and isometric. Its front view prints Cloud Smart Switch and CSS326-24G-2S+RM, so it is this device's own front. CSS326-24G-2S+RM brochure, MikroTik (file CSS326-24G-2SRM_220222.pdf; no date is printed, the file name carries a revision stamp): specification table, features, included parts. CloudSmartSwitch 326 quick guide, MikroTik (file CSS326_230404.pdf; every page prints \"Document #49066 Modified on: 26.APR.2019\"): powering, extension ports, reset button. CSS326-24G-2S+RM product page, MikroTik (saved 2026-10-26): dimensions, powering, cooling type, included parts (rack ears). The product-page studio photographs 1267 (front, straight on) and 1268 (rear). No figure numbers: MikroTik prints none. The device name spells MikroTik's + as -plus because a directory name cannot carry +; model: keeps the + as printed, and every MikroTik device name in the library does the same. The port numbers are printed inside the lamp boxes on the metal; silkscreen is painted under a placed lamp, so they are drawn just under each lamp instead, 4.5 mm below its centre."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "earth-stud": {
+    "generic/ring-lug@1": 0
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

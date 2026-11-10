@@ -519,7 +519,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      130.0,
@@ -558,7 +559,8 @@
      "generic/sfp-lc@1",
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
-     "generic/sfp-sc@1"
+     "generic/sfp-sc@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      173.3,
@@ -682,10 +684,79 @@
     "rel-pos": 2,
     "rotate": null,
     "turns": null
+   },
+   {
+    "accepts": [
+     "generic/mini-usb-b-plug@1"
+    ],
+    "at": [
+     228.65,
+     34.35
+    ],
+    "bores": [],
+    "default": null,
+    "group": "mgmt",
+    "group-states": false,
+    "id": "console-usb",
+    "interface": "mini-usb-b",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     232.5,
+     36.3
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "mgmt",
+     "data-group-role": "management"
+    },
+    "rel-pos": 3,
+    "rotate": null,
+    "turns": null
    }
   ],
   "left": [],
   "rear": [
+   {
+    "accepts": [
+     "generic/two-hole-lug-3-4@1"
+    ],
+    "at": [
+     16.262,
+     29.487
+    ],
+    "bores": [
+     "1",
+     "2"
+    ],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-pair",
+    "interface": "stud-pair-3-4",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     28.2,
+     31.9
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the earthing terminal, two bare 10-32 holes for a two-hole lug (Table 32)",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": 0,
+    "turns": [
+     0,
+     180
+    ]
+   },
    {
     "accepts": [
      "generic/c13-plug@1"
@@ -742,6 +813,7 @@
  "configs": [
   {
    "airflow": "passive",
+   "attrs": {},
    "bays": {},
    "description": "EX2200-C-12T-2G - 12 10/100/1000 ports without PoE and two dual-purpose uplinks, built-in AC supply, fanless (Table 3).",
    "files": {
@@ -993,6 +1065,17 @@
  "device": "ex2200-c-12t",
  "gaps": [
   {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The part is the registry's Mini-B receptacle (Molex drawing SD-54819-026, 7.7 x 3.9 mm). Figure 4 draws the console shell 8.6 x 5.1 mm and no photograph or close-up is held, so the drawn shell and its place are estimates and the maker's own shell may differ.",
+   "scope": [
+    "console-usb"
+   ],
+   "wanted": "A straight-on close-up of the console port with a scale, or the maker's dimensioned drawing of it.",
+   "what": "mini-usb-console-shell"
+  },
+  {
    "because": "needs-drawing",
    "blocks": [],
    "kind": "declared",
@@ -1052,6 +1135,17 @@
    "what": "top-and-sides"
   },
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
+  },
+  {
    "because": "CAP",
    "blocks": [
     "specified"
@@ -1099,7 +1193,7 @@
   },
   "front-console": {
    "confidence": "estimated",
-   "note": "estimated - the mini-USB console port (Figure 4, callout Mini USB port, printed CON) is drawn as chassis art, an 8.6 x 5.1 mm shell with its opening, read off the figure. It is not a component: the library has no mini-USB receptacle and its DCIM export has no row for one. The RJ-45 console port is a component and exports. The guide says one console port is active at a time, the RJ-45 by default."
+   "note": "estimated - the mini-USB console port (Figure 4, callout Mini USB port, printed CON) is the placed std/mini-usb (`console-usb`), centred on the 8.6 x 5.1 mm shell this device was drawn with, read off the figure. The part draws the registry's 7.7 x 3.9 mm Mini-B shell, which stands in for the maker's own (gap `mini-usb-console-shell`). The guide names the connector: \"Mini-USB Type-B console port\" that accepts a Mini-B plug (5-pin) (EX2200 guide, p20, and Mini-USB Port Pinout Specifications, p62). The RJ-45 console port is a component and exports. The guide says one console port is active at a time, the RJ-45 by default."
   },
   "front-layout": {
    "confidence": "estimated",
@@ -1108,6 +1202,10 @@
   "gate-1": {
    "confidence": "measured",
    "note": "Figure 3 (the PoE+ front, the same face as Figure 4 without the PoE+ legend) was rendered at 600 dpi and measured with a pixel ruler. Its front face is 2801 px across and 445 px down: 10.41 px per mm across from the 269.2 mm of Table 5 and 10.01 down from 44.45 mm, a 4 percent aspect error, so x and y are each taken from their own dimension and every position is estimated and good to about a millimetre. The jack width reads 12.7 mm, the registry's 12.7 for the ganged RJ-45 cell, on a quantity the scale never saw. The figure is a perspective view from slightly above and its front face is the near rectangle. Figure 4 draws the same arrangement to the eye; the two were not measured against each other beyond that."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 32 (parts for connecting an EX Series switch to earth ground) has a row for the EX2200 (two 10-32 x .25 in. screws, a Panduit LCC10-14BWL lug or equivalent, not provided) and none for the EX2200-C; its `EX2300-C` row names a Panduit LCC10-14AW-L. No spacing is given. The compact rear's own figure reads the two holes 20.0 mm apart, which is the .75 in. (19.05) of the LCC10-14BW-L pattern the library registers and not the 5/8 in. (15.875), so the EX2200 row is taken for it. The terminal is `common/ground-hole-pair-3-4-10-32@1`: two bare 10-32 holes on 3/4 in. centres, presenting `stud-pair-3-4`, so one two-hole lug (`generic/two-hole-lug-3-4@1`) lands across them and a ring lug still lands on either hole. The holes were drawn 20.0 apart as decor and the pair stands on their midpoint."
   },
   "lamps": {
    "confidence": "datasheet",
@@ -1138,7 +1236,19 @@
    "note": "drawing - two dual-purpose uplink ports numbered 0 and 1, each an RJ-45 port and an SFP port of which only one can be active at a time (Uplink Ports; Table 4 gives 2x 10/100/1000BASE-T or GE SFP). The RJ-45 port is a placement in the uplink-rj45 group and the SFP port one in the uplink-sfp group, so each exports as its own interface. Figure 4 draws the SFP port as a rectangular opening with a stepped lower edge, taken as an SFP cage."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "ground-pair": {
+    "generic/two-hole-lug-3-4@1": 180
+   },
+   "ground-pair/1": {
+    "generic/ring-lug@1": 0
+   },
+   "ground-pair/2": {
+    "generic/ring-lug@1": 0
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

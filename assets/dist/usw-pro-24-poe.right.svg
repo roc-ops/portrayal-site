@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="285.4mm" height="43.7mm" viewBox="0 0 285.4 43.7" data-device="usw-pro-24-poe" data-view="right" data-weight-note="without mounting brackets 4.3 kg (9.5 lb); with mounting brackets 4.4 kg (9.7 lb), data sheet Mechanical" data-enclosure-material="SGCC steel" data-rack-depth-mm="400 to 1200" data-switching-capacity-gbps="88" data-non-blocking-throughput-gbps="44" data-forwarding-rate-mpps="65.472" data-power-max-w="50" data-power-envelope="bare" data-poe-budget-w="400" data-power-supply="AC/DC, internal, 450 W" data-power-input="100 to 240 VAC, 50/60 Hz" data-power-rps-input="52 V DC at 7.69 A; 11.5 V DC at 2.61 A" data-poe-per-port="PoE+ 32 W, PoE++ 64 W by the sheet's PSE column (the page says 30 W and 60 W at the device)" data-poe-voltage="PoE 44 to 57 V, PoE+ 50 to 57 V" data-operating-temp-c="-5 to 40" data-humidity="10 to 90 percent noncondensing" data-esd="air ±16 kV, contact ±12 kV" data-shock-vibration="ETSI 300-019-1.4" data-interface="Ethernet in-band" data-certifications="CE, FCC, IC" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Ubiquiti USW-Pro-24-PoE","device-version":"0.1.2","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"65613aae77f1eb9b3035a212c8967e124945eec026a66a303cfb8f32a41d1031","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="USW-Pro-24-PoE" data-sku="USW-Pro-24-PoE" data-part-number="" x="0" y="0" width="285.4" height="43.7" rx="1.2" fill="#c8cacc" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

@@ -85,12 +85,13 @@
  "format": 1,
  "gaps": [
   {
-   "reason": "needs-drawing",
+   "note": "The part is the registry's Mini-B receptacle (Molex drawing SD-54819-026, 7.7 x 3.9 mm). The EX3400-48P front photograph shows the console at 3.3 px per mm, too small to give the maker's shell to better than a few tenths of a millimetre, and no close-up is held, so the drawn shell and its place are estimates.",
+   "reason": "needs-photo",
    "scope": [
-    "front"
+    "console-usb"
    ],
-   "wanted": "The front Mini-USB Type-B console, labelled CON, is drawn as decor and not placed as a port. The DCIM exporter has no route for a Mini-USB console part, and the guard test that holds every port part to the exporter fails until it has one. A change to dcim_export.py that exports a Mini-B console as a usb-mini-b console port would let the port be placed.",
-   "what": "mini-usb-console-port"
+   "wanted": "A straight-on close-up of the console port with a scale, or the maker's dimensioned drawing of it.",
+   "what": "mini-usb-console-shell"
   },
   {
    "reason": "vendor-silent",
@@ -161,7 +162,7 @@
   },
   "mgmt": {
    "index-origin": 0,
-   "mixed": "the management corner - the out-of-band RJ-45, the RJ-45 console, the USB port and the Factory Reset/Mode button",
+   "mixed": "the management corner - the out-of-band RJ-45, the RJ-45 console, the Mini-USB console, the USB port and the Factory Reset/Mode button",
    "role": "management",
    "term": "Port"
   },
@@ -285,6 +286,10 @@
    "confidence": "datasheet",
    "note": "Table 41 - the EX3400 earthing terminal is on the rear panel, with two 10-32 screws and a two-hole lug. Figure 3 callout 4. The hole spacing is not stated in the guide; the photograph puts the two holes 16.0 mm apart. They are juniper/ex3400-ground-pair@1, two 10-32 screws on the 5/8 in. (15.875 mm) pitch of a two-hole lug, on the lighter plate that the photograph shows."
   },
+  "front-console": {
+   "confidence": "photo-measured",
+   "note": "Figures 1 and 2, callout 5, and Console Ports (p4): the front-panel Mini-USB Type-B console, printed CON, which accepts a Mini-B plug (5-pin). It is the placed std/mini-usb (`console-usb`), centred on the 7.6 x 3.0 mm shell this device was drawn with from the EX3400-48P front photograph (ex3400-48p-front-high), whose right-hand block the 24-port models share. The part draws the registry's 7.7 x 3.9 mm Mini-B shell, which stands in for the maker's own (gap `mini-usb-console-shell`)."
+  },
   "fru-bays": {
    "confidence": "datasheet",
    "note": "Table 2 and the guide's field-replaceable units topic - power supplies and fan modules are hot-removable and hot-insertable FRUs seated in bays, as are transceivers. The switch ships with one power supply and two fan modules (Table 36). With one supply the switch must be powered off before the supply is removed. Both fan modules must be installed for normal cooling. A supply and the fans must have the same airflow direction."
@@ -333,7 +338,7 @@
    "url": "https://www.juniper.net/documentation/us/en/hardware/ex3400/ex3400.pdf"
   }
  ],
- "version": "0.1.1",
+ "version": "0.2.0",
  "views": {
   "bottom": {
    "empty": "Not drawn by any source. The guide shows the underside only in the rubber feet figure 26, which gives no dimension.",
@@ -998,6 +1003,19 @@
       "id": "mode-btn",
       "ref": "common/reset-button@1",
       "rel-pos": 4
+     },
+     {
+      "at": [
+       424.55,
+       38.05
+      ],
+      "attrs": {
+       "role": "console"
+      },
+      "group": "mgmt",
+      "id": "console-usb",
+      "ref": "std/mini-usb@1",
+      "rel-pos": 2
      },
      {
       "at": [
@@ -1788,6 +1806,18 @@
      },
      {
       "at": [
+       424.55,
+       38.05
+      ],
+      "id": "console-usb",
+      "shape": "rect",
+      "size": [
+       7.7,
+       3.9
+      ]
+     },
+     {
+      "at": [
        425.1,
        5.0
       ],
@@ -2003,30 +2033,6 @@
        8.2
       ],
       "vent": 1
-     },
-     {
-      "at": [
-       424.6,
-       38.5
-      ],
-      "fill": "#8d949c",
-      "rx": 0.5,
-      "size": [
-       7.6,
-       3.0
-      ]
-     },
-     {
-      "at": [
-       425.05,
-       38.9
-      ],
-      "fill": "#15171a",
-      "rx": 0.3,
-      "size": [
-       6.7,
-       2.15
-      ]
      }
     ]
    },

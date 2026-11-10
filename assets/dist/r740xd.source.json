@@ -4,6 +4,21 @@
   "depth": 737.5,
   "edge": "#1d2125",
   "height": 86.8,
+  "kits": [
+   {
+    "ref": "dell/b6-sliding-rail-kit@1",
+    "supply": "optional"
+   },
+   {
+    "ref": "dell/b13-sliding-rail-kit@1",
+    "supply": "optional"
+   },
+   {
+    "ref": "dell/b4-static-rail-kit@1",
+    "supply": "optional"
+   }
+  ],
+  "power": "ac",
   "ru": 2,
   "silk": "#c9ced3",
   "width": 434.0
@@ -772,11 +787,12 @@
    "role": "furniture",
    "term": "Latch"
   },
-  "leds": {
-   "description": "indicators that are not part of a control panel module. Only one on this face: the iDRAC Direct lamp under its port.",
+  "local-access": {
+   "description": "the front I/O: two USB 2.0, the iDRAC Direct micro USB and the VGA. Three families in one block DELIBERATELY - Dell's own table calls them one thing, the right control panel, and they do one job: they are what you plug a keyboard, a screen and a laptop into when you are standing at the rack. Splitting them by media would draw three groups where the faceplate has one. None of them is traffic; this chassis carries no network port on its front face.",
    "index-origin": 1,
-   "role": "indicator",
-   "term": "LED"
+   "mixed": "local console and service access",
+   "role": "management",
+   "term": "Port"
   },
   "marks": {
    "description": "printed and moulded marks that say what the opening beside them is for. They are `furniture` because nothing plugs into them and nothing lights - a mark that lit would be a lamp, and this panel has one of those and it is the power button.",
@@ -821,12 +837,11 @@
    "role": "service",
    "term": "Panel"
   },
-  "ports": {
-   "description": "the front I/O: two USB 2.0, the iDRAC Direct micro USB and the VGA. Three families in one block DELIBERATELY - Dell's own table calls them one thing, the right control panel, and they do one job: they are what you plug a keyboard, a screen and a laptop into when you are standing at the rack. Splitting them by media would draw three groups where the faceplate has one. None of them is traffic; this chassis carries no network port on its front face.",
+  "port-leds": {
+   "description": "the lamp that belongs to one port and is not part of a control panel module: the iDRAC Direct lamp under its port.",
    "index-origin": 1,
-   "mixed": "local console and service access",
-   "role": "management",
-   "term": "Port"
+   "role": "indicator",
+   "term": "LED"
   },
   "processors": {
    "description": "the two processor positions, each under a 1U heatsink. CPU1 is on the right as seen from the front and CPU2 on the left, which is the ISM's board figure; the heatsink is what the view shows and what lifts off.",
@@ -848,6 +863,12 @@
    "index-origin": 1,
    "role": "service",
    "term": "Riser"
+  },
+  "system-leds": {
+   "description": "the lamps that report the whole chassis: the system identification lamp on the rear panel.",
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
   }
  },
  "kind": "device",
@@ -899,6 +920,9 @@
   "power": {
    "note": "NOT STATED HERE. The Information Update tech sheet (Rev 2, Nov 2022) lists thirteen orderable PSUs from 495 W to 2600 W across AC, DC, HVDC and Mixed Mode, so there is no single chassis figure to record; the draw belongs to whichever PSU is fitted, and that is a rear-face question this draft does not reach."
   },
+  "power-feed": {
+   "note": "AC. Every configuration seats the default supply of both bays, dell/psu-1100w-ac-14g, and none overrides a supply bay, so the builds are fed from AC. The Dell PowerEdge R740XD Information Update tech sheet, Table 2, prints that supply as 100-240 V AC. The bays also accept the 1100 W DC supply, -(48 V to -60 V) DC in the same table, and Dell sells HVDC mixed-mode supplies the library does not model; no configuration seats either, so no configuration states `dc` or `hvdc`."
+  },
   "rack-latches": {
    "note": "BOTH EARS CARRY ONE. The r750 master draws the same 12.16 x 37.99 section at x 2.80 and x 469.04, both starting at y 46.91 - 54% down an 86.8 face - and the operator describes the hardware the same way, \"a little bit lower than midway down, and from there to the bottom\". A drawing of the successor and a machine in a rack agreeing on where a feature starts is what fixed it. THE LEFT ONE IS CENTRED ON ITS EAR AND NOT ON THE MASTER'S x. The r750 draws it at x 2.80 in an ear of its own width; this chassis's left ear is 13.41 wide, so 2.80 put a 12.16 part 2.2 mm off centre and 1.55 mm past the ear's edge. A position read from another machine's drawing has to be re-seated against the metal it lands on - the master gives the part's SIZE, and the ear it sits in gives its PLACE. The right-hand one needed no such move: its ear runs 468.54..482.6 and the master's 469.04 already centres it there. An earlier reading took the right-hand one for the information tag. It is not: the ISM puts the information tag's callout in the middle of the drive row at the bottom, where it slides out from between the bays, and the tag is still not drawn."
   },
@@ -921,7 +945,7 @@
    "title": "Dell EMC PowerEdge R740xd Installation and Service Manual"
   }
  ],
- "version": "29.0.2",
+ "version": "30.0.2",
  "views": {
   "bottom": {
    "panel": {
@@ -1486,7 +1510,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-1",
       "ref": "std/usb-a@1",
       "rel-pos": 1,
@@ -1501,7 +1525,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-2",
       "ref": "std/usb-a@1",
       "rel-pos": 2,
@@ -1513,7 +1537,7 @@
        459.75,
        65.81
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "idrac-direct",
       "ref": "std/micro-usb@1",
       "rel-pos": 3,
@@ -1524,7 +1548,7 @@
        464.9,
        21.2
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "vga",
       "inset": 5.23,
       "ref": "std/vga@1",
@@ -1593,7 +1617,7 @@
       ],
       "description": "ISM table 8 entire. `connected` is \"solid green for two seconds\" - a laptop or tablet has been plugged in, and the two seconds is how long that indication lasts before the next one rather than a blink, so it is modelled solid and the duration recorded here instead of being invented as a rate. `recognised` is \"flashing green (on for two seconds and off for two seconds)\", which is 0.25 Hz exactly. `off` is the device unplugged.",
       "for": "idrac-direct",
-      "group": "leds",
+      "group": "port-leds",
       "id": "idrac-direct-led",
       "ref": "common/led-dot@1",
       "rel-pos": 1,
@@ -2059,7 +2083,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-1",
       "ref": "std/usb-a@1",
       "rel-pos": 1,
@@ -2074,7 +2098,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-2",
       "ref": "std/usb-a@1",
       "rel-pos": 2,
@@ -2086,7 +2110,7 @@
        459.75,
        65.81
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "idrac-direct",
       "ref": "std/micro-usb@1",
       "rel-pos": 3,
@@ -2097,7 +2121,7 @@
        464.9,
        21.2
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "vga",
       "inset": 5.23,
       "ref": "std/vga@1",
@@ -2166,7 +2190,7 @@
       ],
       "description": "ISM table 8 entire. `connected` is \"solid green for two seconds\" - a laptop or tablet has been plugged in, and the two seconds is how long that indication lasts before the next one rather than a blink, so it is modelled solid and the duration recorded here instead of being invented as a rate. `recognised` is \"flashing green (on for two seconds and off for two seconds)\", which is 0.25 Hz exactly. `off` is the device unplugged.",
       "for": "idrac-direct",
-      "group": "leds",
+      "group": "port-leds",
       "id": "idrac-direct-led",
       "ref": "common/led-dot@1",
       "rel-pos": 1,
@@ -3064,10 +3088,10 @@
        73.73
       ],
       "for": "chassis",
-      "group": "leds",
+      "group": "system-leds",
       "id": "sys-status",
       "ref": "common/led-indicator@1",
-      "rel-pos": 2,
+      "rel-pos": 1,
       "states": [
        "off",
        {
@@ -3269,7 +3293,7 @@
       "group": "furniture",
       "id": "rear-bay-screw-tab",
       "ref": "dell/rear-bay-screw-tab-14g@1",
-      "rel-pos": 20
+      "rel-pos": 32
      },
      {
       "at": [
@@ -3279,7 +3303,7 @@
       "group": "furniture",
       "id": "cage-screw-right",
       "ref": "dell/thumbscrew-blue-14g@1",
-      "rel-pos": 22
+      "rel-pos": 33
      },
      {
       "at": [
@@ -3332,7 +3356,7 @@
        "lff12-mlff4-rlff2-rc2-1b2c"
       ],
       "ref": "dell/rear-drive-label-lff-14g@1",
-      "rel-pos": 19
+      "rel-pos": 21
      },
      {
       "at": [
@@ -3350,7 +3374,7 @@
        "sff24-msff4-rsff4-rc2-1b2c"
       ],
       "ref": "dell/rear-drive-plate-14g@1",
-      "rel-pos": 19,
+      "rel-pos": 28,
       "skin": "n24-25"
      },
      {
@@ -3369,7 +3393,7 @@
        "lff12-mlff4-rsff4-rc2-1b2c"
       ],
       "ref": "dell/rear-drive-plate-14g@1",
-      "rel-pos": 19,
+      "rel-pos": 29,
       "skin": "n12-13"
      },
      {
@@ -3388,7 +3412,7 @@
        "sff24-msff4-rsff4-rc2-1b2c"
       ],
       "ref": "dell/rear-drive-plate-14g@1",
-      "rel-pos": 19,
+      "rel-pos": 30,
       "skin": "n26-27"
      },
      {
@@ -3407,7 +3431,7 @@
        "lff12-mlff4-rsff4-rc2-1b2c"
       ],
       "ref": "dell/rear-drive-plate-14g@1",
-      "rel-pos": 19,
+      "rel-pos": 31,
       "skin": "n14-15"
      }
     ]

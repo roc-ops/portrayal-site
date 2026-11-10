@@ -51,12 +51,14 @@
    "airflow": "back-to-front",
    "component-attrs": {
     "fan-module": {
+     "airflow": "back-to-front",
      "airflow-legend": "B2F",
      "handle-finish": "#3d7bd6",
      "model": "FAN-1U-1x1C-B2",
      "part-number": "F0TZZ7632000A"
     },
     "psu-ac-650": {
+     "airflow": "back-to-front",
      "alt-model": "PSU-AC-650C-B (F0TZZ7656003A)",
      "latch-edge": "#234b8c",
      "latch-finish": "#3d7bd6",
@@ -153,22 +155,16 @@
   "dc-b2f": {
    "airflow": "back-to-front",
    "bays": {
-    "psu-1": "common/psu-dc-650@2",
-    "psu-2": "common/psu-dc-650@2"
+    "psu-1": "edgecore/psu-48v-650-b@1",
+    "psu-2": "edgecore/psu-48v-650-b@1"
    },
    "component-attrs": {
     "fan-module": {
+     "airflow": "back-to-front",
      "airflow-legend": "B2F",
      "handle-finish": "#3d7bd6",
      "model": "FAN-1U-1x1C-B2",
      "part-number": "F0TZZ7632000A"
-    },
-    "psu-dc-650": {
-     "cover-edge": "#2a5aa8",
-     "latch-edge": "#234b8c",
-     "latch-finish": "#3d7bd6",
-     "model": "PSU-48V-650-B",
-     "part-number": "F0TZZ7632003A"
     }
    },
    "description": "Dual -48V DC PSUs, back-to-front airflow (7726-32X-O-48V-B)",
@@ -188,17 +184,13 @@
   "dc-f2b": {
    "airflow": "front-to-back",
    "bays": {
-    "psu-1": "common/psu-dc-650@2",
-    "psu-2": "common/psu-dc-650@2"
+    "psu-1": "edgecore/psu-48v-650-f@1",
+    "psu-2": "edgecore/psu-48v-650-f@1"
    },
    "component-attrs": {
     "fan-module": {
      "model": "FAN-1U-1x1C-F",
      "part-number": "F0TAO6632000A"
-    },
-    "psu-dc-650": {
-     "model": "PSU-48V-650-F",
-     "part-number": "F0TZZ7632004A"
     }
    },
    "description": "Dual -48V DC PSUs, front-to-back airflow (7726-32X-O-48V-F)",
@@ -236,11 +228,6 @@
    "role": "furniture",
    "term": "Point"
   },
-  "leds": {
-   "index-origin": 1,
-   "role": "indicator",
-   "term": "LED"
-  },
   "mgmt": {
    "index-origin": 1,
    "mixed": "the management cluster at the right-hand end of the faceplate - the out-of-band RJ45, the RS-232 console, two SFP+ management uplinks and a USB-A service port. Four media, one job; the unit draws them as one block and so do we. Three of them carried no group at all and each drew its own one-row heading beside QSFP28, as though a console socket ranked with 32 line ports. Six other devices in the library already name this cluster `mgmt` - asr-9001, as5912-54x, as7326-56x, as7946-30xb, as7946-74xksb and both DCP-R units - and every one folds its management SFPs in rather than leaving them in a media group. `media` and `speed` move to the two placements, where devices_index.py indexes them for search exactly as it does group attrs, so nothing is lost by not having a group to hang them on",
@@ -264,6 +251,16 @@
    "index-origin": 1,
    "role": "traffic",
    "term": "Port"
+  },
+  "sfp-mgmt-leds": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  },
+  "system-leds": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
   }
  },
  "kind": "device",
@@ -326,7 +323,7 @@
    "title": "Edgecore DCS204 (AS7726-32X) Quick Start Guide R03"
   }
  ],
- "version": "2.0.5",
+ "version": "3.0.0",
  "views": {
   "bottom": {
    "components": {
@@ -730,7 +727,7 @@
        7
       ],
       "for": "chassis",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-loc",
       "ref": "common/led-indicator@1",
       "rel-pos": 2
@@ -741,7 +738,7 @@
        15
       ],
       "for": "rear/psu-1",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-psu1",
       "ref": "common/led-indicator@1",
       "rel-pos": 4
@@ -752,7 +749,7 @@
        15
       ],
       "for": "chassis",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-diag",
       "ref": "common/led-indicator@1",
       "rel-pos": 1
@@ -763,7 +760,7 @@
        23
       ],
       "for": "rear/psu-2",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-psu2",
       "ref": "common/led-indicator@1",
       "rel-pos": 5
@@ -781,7 +778,7 @@
        "rear/fan-5",
        "rear/fan-6"
       ],
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-fan",
       "ref": "common/led-indicator@1",
       "rel-pos": 3
@@ -835,10 +832,10 @@
        "mgmt-sfp-1",
        "mgmt-sfp-2"
       ],
-      "group": "leds",
+      "group": "sfp-mgmt-leds",
       "id": "sfp-leds",
       "ref": "common/sfp-led-pair@1",
-      "rel-pos": 6
+      "rel-pos": 1
      },
      {
       "at": [
@@ -2185,7 +2182,9 @@
      {
       "accepts": [
        "common/psu-ac-650@3",
-       "common/psu-dc-650@2"
+       "common/psu-dc-650@2",
+       "edgecore/psu-48v-650-f@1",
+       "edgecore/psu-48v-650-b@1"
       ],
       "at": [
        10,
@@ -2305,7 +2304,9 @@
      {
       "accepts": [
        "common/psu-ac-650@3",
-       "common/psu-dc-650@2"
+       "common/psu-dc-650@2",
+       "edgecore/psu-48v-650-f@1",
+       "edgecore/psu-48v-650-b@1"
       ],
       "at": [
        366.6,

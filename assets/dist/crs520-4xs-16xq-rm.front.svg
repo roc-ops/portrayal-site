@@ -1,0 +1,875 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="443.0mm" height="44.0mm" viewBox="0 0 443.0 44.0" data-device="crs520-4xs-16xq-rm" data-view="front" data-power-max-w="150" data-power-envelope="fully-configured" data-power-without-attachments-w="123" data-power-input="100 - 240 V AC, 47 - 63 Hz, two inputs, two hot-swap supplies; nominal current 10.25 A, maximum current 12.5 A; 150 W maximum (220 W with both supplies)" data-power-rating-label="100-240 V ~2,5 A MAX, 50/60Hz (printed between the supplies and the fans)" data-operating-temp-c="-20 to 50" data-cpu="Quad-Core AL52400, 2 GHz, ARM 64 bit" data-switch-chip="98CX8410" data-ram="4 GB DDR4" data-storage="128 MB NAND" data-os="RouterOS v7, level 5" data-optics-sfp28="brochure: four 25 Gigabit SFP28 ports supporting 1G, 2.5G, 10G and 25G, depending on the module" data-optics-qsfp28="brochure: sixteen 100 Gigabit QSFP28 ports supporting 4x 1G, 4x 2.5G, 4x 10G, 4x 25G, 1x 40G, 2x 50G and 1x 100G, depending on the module; no module is included" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"MikroTik CRS520-4XS-16XQ-RM","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","std/qsfp28@1":"1.4.1","std/rj45@2":"2.1.0","std/sfp-ganged@1":"1.1.1"},"source-sha256":"be5dd27f0fc95d946b047606031b5727cf51f5e19e2fe6b935f2a5a21191c523","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CRS520-4XS-16XQ-RM" data-sku="CRS520-4XS-16XQ-RM" data-part-number="" x="0" y="0" width="443" height="44" rx="1.2" fill="#e0dcd5" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-motif-b3d0847263" width="5.09" height="1.5" patternUnits="userSpaceOnUse">
+      <path d="M 0.7 0 L 4.4 0 L 4.55 0.15 L 4.55 1.35 L 4.4 1.5 L 0.7 1.5 L 0.55 1.35 L 0.55 0.15 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-b3d0847263-o4_1-0_9" width="5.09" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(4.1 0.9)">
+      <path d="M 0.7 0 L 4.4 0 L 4.55 0.15 L 4.55 1.35 L 4.4 1.5 L 0.7 1.5 L 0.55 1.35 L 0.55 0.15 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-b3d0847263-o4_1-3_9" width="5.09" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(4.1 3.9)">
+      <path d="M 0.7 0 L 4.4 0 L 4.55 0.15 L 4.55 1.35 L 4.4 1.5 L 0.7 1.5 L 0.55 1.35 L 0.55 0.15 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-b3d0847263-o110_99-3_9" width="5.09" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(110.99 3.9)">
+      <path d="M 0.7 0 L 4.4 0 L 4.55 0.15 L 4.55 1.35 L 4.4 1.5 L 0.7 1.5 L 0.55 1.35 L 0.55 0.15 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-b3d0847263-o233_15-3_9" width="5.09" height="1.5" patternUnits="userSpaceOnUse" patternTransform="translate(233.15 3.9)">
+      <path d="M 0.7 0 L 4.4 0 L 4.55 0.15 L 4.55 1.35 L 4.4 1.5 L 0.7 1.5 L 0.55 1.35 L 0.55 0.15 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="top-vent-row-1" data-kind="vent-field" data-aperture="air" x="4.1" y="0.9" width="434" height="1.5" rx="0" fill="url(#portrayal-motif-b3d0847263-o4_1-0_9)" data-vent="1" />
+    <rect id="top-vent-row-2-a" data-kind="vent-field" data-aperture="air" x="4.1" y="3.9" width="91.62" height="1.5" rx="0" fill="url(#portrayal-motif-b3d0847263-o4_1-3_9)" data-vent="1" />
+    <rect id="top-vent-row-2-b" data-kind="vent-field" data-aperture="air" x="110.99" y="3.9" width="101.8" height="1.5" rx="0" fill="url(#portrayal-motif-b3d0847263-o110_99-3_9)" data-vent="1" />
+    <rect id="top-vent-row-2-c" data-kind="vent-field" data-aperture="air" x="233.15" y="3.9" width="204.95" height="1.5" rx="0" fill="url(#portrayal-motif-b3d0847263-o233_15-3_9)" data-vent="1" />
+    <rect id="bottom-notch-1" data-kind="notch" x="4.65" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-2" data-kind="notch" x="9.74" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-3" data-kind="notch" x="14.83" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-4" data-kind="notch" x="19.92" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-5" data-kind="notch" x="25.01" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-6" data-kind="notch" x="30.1" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-7" data-kind="notch" x="35.19" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-8" data-kind="notch" x="40.28" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-9" data-kind="notch" x="45.37" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-10" data-kind="notch" x="50.46" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-11" data-kind="notch" x="55.55" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-12" data-kind="notch" x="60.64" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-13" data-kind="notch" x="65.73" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-14" data-kind="notch" x="70.82" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-15" data-kind="notch" x="75.91" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-16" data-kind="notch" x="81" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-17" data-kind="notch" x="86.09" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-18" data-kind="notch" x="91.18" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-19" data-kind="notch" x="96.27" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-20" data-kind="notch" x="101.36" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-21" data-kind="notch" x="106.45" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-22" data-kind="notch" x="111.54" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-23" data-kind="notch" x="116.63" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-24" data-kind="notch" x="121.72" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-25" data-kind="notch" x="126.81" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-26" data-kind="notch" x="131.9" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-27" data-kind="notch" x="136.99" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-28" data-kind="notch" x="142.08" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-29" data-kind="notch" x="147.17" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-30" data-kind="notch" x="152.26" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-31" data-kind="notch" x="157.35" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-32" data-kind="notch" x="162.44" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-33" data-kind="notch" x="167.53" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-34" data-kind="notch" x="172.62" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-35" data-kind="notch" x="177.71" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-36" data-kind="notch" x="182.8" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-37" data-kind="notch" x="187.89" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-38" data-kind="notch" x="192.98" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-39" data-kind="notch" x="198.07" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-40" data-kind="notch" x="203.16" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-41" data-kind="notch" x="208.25" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-42" data-kind="notch" x="213.34" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-43" data-kind="notch" x="218.43" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-44" data-kind="notch" x="223.52" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-45" data-kind="notch" x="228.61" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-46" data-kind="notch" x="233.7" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-47" data-kind="notch" x="238.79" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-48" data-kind="notch" x="243.88" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-49" data-kind="notch" x="248.97" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-50" data-kind="notch" x="254.06" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-51" data-kind="notch" x="259.15" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-52" data-kind="notch" x="264.24" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-53" data-kind="notch" x="269.33" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="bottom-notch-54" data-kind="notch" x="274.42" y="42.5" width="4" height="1.5" rx="0.15" fill="#d3cac3" />
+    <rect id="console-block" data-kind="jack-plate" x="247.4" y="9.4" width="17.8" height="14.3" rx="0.6" fill="#e6e3df" />
+    <rect id="mgmt-block" data-kind="jack-plate" x="247.4" y="25.6" width="33.8" height="15.1" rx="0.6" fill="#e6e3df" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="408" y="10" width="31" height="6" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="8.6" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-1" data-path="cutout:qsfp-1" data-class="cutout" />
+    <ellipse cx="12.6" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-1" data-path="cutout:led-qsfp-1-1" data-class="cutout" />
+    <ellipse cx="16.6" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-2" data-path="cutout:led-qsfp-1-2" data-class="cutout" />
+    <ellipse cx="20.6" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-3" data-path="cutout:led-qsfp-1-3" data-class="cutout" />
+    <ellipse cx="24.6" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-1-4" data-path="cutout:led-qsfp-1-4" data-class="cutout" />
+    <rect x="8.6" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-2" data-path="cutout:qsfp-2" data-class="cutout" />
+    <ellipse cx="12.6" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-2-1" data-path="cutout:led-qsfp-2-1" data-class="cutout" />
+    <ellipse cx="16.6" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-2-2" data-path="cutout:led-qsfp-2-2" data-class="cutout" />
+    <ellipse cx="20.6" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-2-3" data-path="cutout:led-qsfp-2-3" data-class="cutout" />
+    <ellipse cx="24.6" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-2-4" data-path="cutout:led-qsfp-2-4" data-class="cutout" />
+    <rect x="32.67" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-3" data-path="cutout:qsfp-3" data-class="cutout" />
+    <ellipse cx="36.67" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-3-1" data-path="cutout:led-qsfp-3-1" data-class="cutout" />
+    <ellipse cx="40.67" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-3-2" data-path="cutout:led-qsfp-3-2" data-class="cutout" />
+    <ellipse cx="44.67" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-3-3" data-path="cutout:led-qsfp-3-3" data-class="cutout" />
+    <ellipse cx="48.67" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-3-4" data-path="cutout:led-qsfp-3-4" data-class="cutout" />
+    <rect x="32.67" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-4" data-path="cutout:qsfp-4" data-class="cutout" />
+    <ellipse cx="36.67" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-4-1" data-path="cutout:led-qsfp-4-1" data-class="cutout" />
+    <ellipse cx="40.67" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-4-2" data-path="cutout:led-qsfp-4-2" data-class="cutout" />
+    <ellipse cx="44.67" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-4-3" data-path="cutout:led-qsfp-4-3" data-class="cutout" />
+    <ellipse cx="48.67" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-4-4" data-path="cutout:led-qsfp-4-4" data-class="cutout" />
+    <rect x="56.74" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-5" data-path="cutout:qsfp-5" data-class="cutout" />
+    <ellipse cx="60.74" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-5-1" data-path="cutout:led-qsfp-5-1" data-class="cutout" />
+    <ellipse cx="64.74" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-5-2" data-path="cutout:led-qsfp-5-2" data-class="cutout" />
+    <ellipse cx="68.74" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-5-3" data-path="cutout:led-qsfp-5-3" data-class="cutout" />
+    <ellipse cx="72.74" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-5-4" data-path="cutout:led-qsfp-5-4" data-class="cutout" />
+    <rect x="56.74" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-6" data-path="cutout:qsfp-6" data-class="cutout" />
+    <ellipse cx="60.74" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-6-1" data-path="cutout:led-qsfp-6-1" data-class="cutout" />
+    <ellipse cx="64.74" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-6-2" data-path="cutout:led-qsfp-6-2" data-class="cutout" />
+    <ellipse cx="68.74" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-6-3" data-path="cutout:led-qsfp-6-3" data-class="cutout" />
+    <ellipse cx="72.74" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-6-4" data-path="cutout:led-qsfp-6-4" data-class="cutout" />
+    <rect x="80.81" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-7" data-path="cutout:qsfp-7" data-class="cutout" />
+    <ellipse cx="84.81" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-7-1" data-path="cutout:led-qsfp-7-1" data-class="cutout" />
+    <ellipse cx="88.81" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-7-2" data-path="cutout:led-qsfp-7-2" data-class="cutout" />
+    <ellipse cx="92.81" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-7-3" data-path="cutout:led-qsfp-7-3" data-class="cutout" />
+    <ellipse cx="96.81" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-7-4" data-path="cutout:led-qsfp-7-4" data-class="cutout" />
+    <rect x="80.81" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-8" data-path="cutout:qsfp-8" data-class="cutout" />
+    <ellipse cx="84.81" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-8-1" data-path="cutout:led-qsfp-8-1" data-class="cutout" />
+    <ellipse cx="88.81" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-8-2" data-path="cutout:led-qsfp-8-2" data-class="cutout" />
+    <ellipse cx="92.81" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-8-3" data-path="cutout:led-qsfp-8-3" data-class="cutout" />
+    <ellipse cx="96.81" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-8-4" data-path="cutout:led-qsfp-8-4" data-class="cutout" />
+    <rect x="104.88" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-9" data-path="cutout:qsfp-9" data-class="cutout" />
+    <ellipse cx="108.88" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-9-1" data-path="cutout:led-qsfp-9-1" data-class="cutout" />
+    <ellipse cx="112.88" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-9-2" data-path="cutout:led-qsfp-9-2" data-class="cutout" />
+    <ellipse cx="116.88" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-9-3" data-path="cutout:led-qsfp-9-3" data-class="cutout" />
+    <ellipse cx="120.88" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-9-4" data-path="cutout:led-qsfp-9-4" data-class="cutout" />
+    <rect x="104.88" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-10" data-path="cutout:qsfp-10" data-class="cutout" />
+    <ellipse cx="108.88" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-10-1" data-path="cutout:led-qsfp-10-1" data-class="cutout" />
+    <ellipse cx="112.88" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-10-2" data-path="cutout:led-qsfp-10-2" data-class="cutout" />
+    <ellipse cx="116.88" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-10-3" data-path="cutout:led-qsfp-10-3" data-class="cutout" />
+    <ellipse cx="120.88" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-10-4" data-path="cutout:led-qsfp-10-4" data-class="cutout" />
+    <rect x="128.95" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-11" data-path="cutout:qsfp-11" data-class="cutout" />
+    <ellipse cx="132.95" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-11-1" data-path="cutout:led-qsfp-11-1" data-class="cutout" />
+    <ellipse cx="136.95" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-11-2" data-path="cutout:led-qsfp-11-2" data-class="cutout" />
+    <ellipse cx="140.95" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-11-3" data-path="cutout:led-qsfp-11-3" data-class="cutout" />
+    <ellipse cx="144.95" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-11-4" data-path="cutout:led-qsfp-11-4" data-class="cutout" />
+    <rect x="128.95" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-12" data-path="cutout:qsfp-12" data-class="cutout" />
+    <ellipse cx="132.95" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-12-1" data-path="cutout:led-qsfp-12-1" data-class="cutout" />
+    <ellipse cx="136.95" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-12-2" data-path="cutout:led-qsfp-12-2" data-class="cutout" />
+    <ellipse cx="140.95" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-12-3" data-path="cutout:led-qsfp-12-3" data-class="cutout" />
+    <ellipse cx="144.95" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-12-4" data-path="cutout:led-qsfp-12-4" data-class="cutout" />
+    <rect x="153.02" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-13" data-path="cutout:qsfp-13" data-class="cutout" />
+    <ellipse cx="157.02" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-13-1" data-path="cutout:led-qsfp-13-1" data-class="cutout" />
+    <ellipse cx="161.02" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-13-2" data-path="cutout:led-qsfp-13-2" data-class="cutout" />
+    <ellipse cx="165.02" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-13-3" data-path="cutout:led-qsfp-13-3" data-class="cutout" />
+    <ellipse cx="169.02" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-13-4" data-path="cutout:led-qsfp-13-4" data-class="cutout" />
+    <rect x="153.02" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-14" data-path="cutout:qsfp-14" data-class="cutout" />
+    <ellipse cx="157.02" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-14-1" data-path="cutout:led-qsfp-14-1" data-class="cutout" />
+    <ellipse cx="161.02" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-14-2" data-path="cutout:led-qsfp-14-2" data-class="cutout" />
+    <ellipse cx="165.02" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-14-3" data-path="cutout:led-qsfp-14-3" data-class="cutout" />
+    <ellipse cx="169.02" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-14-4" data-path="cutout:led-qsfp-14-4" data-class="cutout" />
+    <rect x="177.09" y="26.5" width="20" height="10.15" fill="#101214" id="cutout--qsfp-15" data-path="cutout:qsfp-15" data-class="cutout" />
+    <ellipse cx="181.09" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-15-1" data-path="cutout:led-qsfp-15-1" data-class="cutout" />
+    <ellipse cx="185.09" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-15-2" data-path="cutout:led-qsfp-15-2" data-class="cutout" />
+    <ellipse cx="189.09" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-15-3" data-path="cutout:led-qsfp-15-3" data-class="cutout" />
+    <ellipse cx="193.09" cy="39.4" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-15-4" data-path="cutout:led-qsfp-15-4" data-class="cutout" />
+    <rect x="177.09" y="13" width="20" height="10.15" fill="#101214" id="cutout--qsfp-16" data-path="cutout:qsfp-16" data-class="cutout" />
+    <ellipse cx="181.09" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-16-1" data-path="cutout:led-qsfp-16-1" data-class="cutout" />
+    <ellipse cx="185.09" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-16-2" data-path="cutout:led-qsfp-16-2" data-class="cutout" />
+    <ellipse cx="189.09" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-16-3" data-path="cutout:led-qsfp-16-3" data-class="cutout" />
+    <ellipse cx="193.09" cy="10.45" rx="1" ry="1" fill="#101214" id="cutout--led-qsfp-16-4" data-path="cutout:led-qsfp-16-4" data-class="cutout" />
+    <rect x="205.8" y="26.25" width="14.25" height="10.4" fill="#101214" id="cutout--cage-1" data-path="cutout:cage-1" data-class="cutout" />
+    <ellipse cx="209.93" cy="40.6" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-1-1" data-path="cutout:led-sfp-1-1" data-class="cutout" />
+    <ellipse cx="215.93" cy="40.6" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-1-2" data-path="cutout:led-sfp-1-2" data-class="cutout" />
+    <rect x="205.8" y="12.9" width="14.25" height="10.4" fill="#101214" id="cutout--cage-2" data-path="cutout:cage-2" data-class="cutout" />
+    <ellipse cx="209.93" cy="9.4" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-2-1" data-path="cutout:led-sfp-2-1" data-class="cutout" />
+    <ellipse cx="215.93" cy="9.4" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-2-2" data-path="cutout:led-sfp-2-2" data-class="cutout" />
+    <rect x="225.1" y="26.25" width="14.25" height="10.4" fill="#101214" id="cutout--cage-3" data-path="cutout:cage-3" data-class="cutout" />
+    <ellipse cx="229.22" cy="40.6" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-3-1" data-path="cutout:led-sfp-3-1" data-class="cutout" />
+    <ellipse cx="235.22" cy="40.6" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-3-2" data-path="cutout:led-sfp-3-2" data-class="cutout" />
+    <rect x="225.1" y="12.9" width="14.25" height="10.4" fill="#101214" id="cutout--cage-4" data-path="cutout:cage-4" data-class="cutout" />
+    <ellipse cx="229.22" cy="9.4" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-4-1" data-path="cutout:led-sfp-4-1" data-class="cutout" />
+    <ellipse cx="235.22" cy="9.4" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-4-2" data-path="cutout:led-sfp-4-2" data-class="cutout" />
+    <rect x="248.4" y="10" width="15.8" height="13.2" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <rect x="248.4" y="26.55" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt-1" data-path="cutout:mgmt-1" data-class="cutout" />
+    <rect x="265.3" y="26.55" width="15.8" height="13.2" fill="#101214" id="cutout--mgmt-2" data-path="cutout:mgmt-2" data-class="cutout" />
+    <ellipse cx="271.4" cy="19.1" rx="2" ry="2" fill="#101214" id="cutout--btn-reset" data-path="cutout:btn-reset" data-class="cutout" />
+    <ellipse cx="279.6" cy="13.3" rx="1" ry="1" fill="#101214" id="cutout--led-user" data-path="cutout:led-user" data-class="cutout" />
+    <ellipse cx="284" cy="13.3" rx="1" ry="1" fill="#101214" id="cutout--led-power-2" data-path="cutout:led-power-2" data-class="cutout" />
+    <ellipse cx="284" cy="17.8" rx="1" ry="1" fill="#101214" id="cutout--led-power-1" data-path="cutout:led-power-1" data-class="cutout" />
+    <ellipse cx="279.6" cy="17.8" rx="1" ry="1" fill="#101214" id="cutout--led-fault" data-path="cutout:led-fault" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="9.6" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-1">1</text>
+    <text x="9.6" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-2">2</text>
+    <text x="33.67" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-3">3</text>
+    <text x="33.67" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-4">4</text>
+    <text x="57.74" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-5">5</text>
+    <text x="57.74" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-6">6</text>
+    <text x="81.81" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-7">7</text>
+    <text x="81.81" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-8">8</text>
+    <text x="105.88" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-9">9</text>
+    <text x="105.88" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-10">10</text>
+    <text x="129.95" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-11">11</text>
+    <text x="129.95" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-12">12</text>
+    <text x="154.02" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-13">13</text>
+    <text x="154.02" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-14">14</text>
+    <text x="178.09" y="40.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-15">15</text>
+    <text x="178.09" y="11.25" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="qsfp-16">16</text>
+    <text x="206.7" y="41.4" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-1">1</text>
+    <text x="206.7" y="10.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-2">2</text>
+    <text x="226" y="41.4" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-3">3</text>
+    <text x="226" y="10.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="cage-4">4</text>
+    <text x="103" y="5.2" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#2b2b2b" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">100G QSFP28</text>
+    <text x="223" y="5.2" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#2b2b2b" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">25G SFP28</text>
+    <path d="M 7.6 9.3 L 7.6 6.7 Q 7.6 6.3 8.0 6.3 L 197.7 6.3 Q 198.1 6.3 198.1 6.7 L 198.1 9.3" fill="none" stroke="#2b2b2b" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" id="bracket-100g" data-path="silk:bracket-100g" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 205.5 8.3 L 205.5 6.7 Q 205.5 6.3 205.9 6.3 L 240.0 6.3 Q 240.4 6.3 240.4 6.7 L 240.4 8.3" fill="none" stroke="#2b2b2b" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" id="bracket-25g" data-path="silk:bracket-25g" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 279.6 10.9 L 279.6 9.2 Q 279.6 8.8 280.0 8.8 L 286.6 8.8" fill="none" stroke="#2b2b2b" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" id="bracket-user" data-path="silk:bracket-user" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 279.6 20.3 L 279.6 22.0 Q 279.6 22.4 280.0 22.4 L 286.6 22.4" fill="none" stroke="#2b2b2b" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" id="bracket-fault" data-path="silk:bracket-fault" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="256.3" y="9" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">CONSOLE</text>
+    <text x="249.1" y="42.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-1">1</text>
+    <text x="264.3" y="42.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">10G MGMT / BOOT</text>
+    <text x="279.5" y="42.2" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-2">2</text>
+    <text x="271.4" y="23.8" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-reset">RESET</text>
+    <text x="287.5" y="9.6" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#2b2b2b" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-user">USER</text>
+    <text x="288.9" y="13.77" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#2b2b2b" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-power-2">POWER 2</text>
+    <text x="288.9" y="18.26" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#2b2b2b" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-power-1">POWER 1</text>
+    <text x="287.5" y="23.1" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#2b2b2b" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-fault">FAULT</text>
+    <text x="423.7" y="23.3" font-family="sans-serif" font-size="2.9" text-anchor="middle" fill="#2b2b2b" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">CRS520-4XS-16XQ</text>
+  </g>
+  <g id="qsfp-1" data-path="qsfp-1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="1" transform="translate(8.6,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-1</title>
+    <rect id="qsfp-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-1/opening" data-class="cutout" />
+    <rect id="qsfp-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-2" data-path="qsfp-2" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="2" transform="translate(8.6,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-2</title>
+    <rect id="qsfp-2--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-2/opening" data-class="cutout" />
+    <rect id="qsfp-2--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-2--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-3" data-path="qsfp-3" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="3" transform="translate(32.67,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-3</title>
+    <rect id="qsfp-3--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-3/opening" data-class="cutout" />
+    <rect id="qsfp-3--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-3--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-4" data-path="qsfp-4" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="4" transform="translate(32.67,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-4</title>
+    <rect id="qsfp-4--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-4/opening" data-class="cutout" />
+    <rect id="qsfp-4--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-4--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-5" data-path="qsfp-5" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="5" transform="translate(56.74,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-5</title>
+    <rect id="qsfp-5--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-5/opening" data-class="cutout" />
+    <rect id="qsfp-5--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-5--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-6" data-path="qsfp-6" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="6" transform="translate(56.74,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-6</title>
+    <rect id="qsfp-6--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-6/opening" data-class="cutout" />
+    <rect id="qsfp-6--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-6--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-7" data-path="qsfp-7" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="7" transform="translate(80.81,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-7</title>
+    <rect id="qsfp-7--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-7/opening" data-class="cutout" />
+    <rect id="qsfp-7--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-7--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-8" data-path="qsfp-8" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="8" transform="translate(80.81,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-8</title>
+    <rect id="qsfp-8--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-8/opening" data-class="cutout" />
+    <rect id="qsfp-8--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-8--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-9" data-path="qsfp-9" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="9" transform="translate(104.88,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-9</title>
+    <rect id="qsfp-9--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-9/opening" data-class="cutout" />
+    <rect id="qsfp-9--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-9--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-10" data-path="qsfp-10" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="10" transform="translate(104.88,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-10</title>
+    <rect id="qsfp-10--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-10/opening" data-class="cutout" />
+    <rect id="qsfp-10--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-10--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-11" data-path="qsfp-11" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="11" transform="translate(128.95,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-11</title>
+    <rect id="qsfp-11--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-11/opening" data-class="cutout" />
+    <rect id="qsfp-11--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-11--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-12" data-path="qsfp-12" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="12" transform="translate(128.95,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-12</title>
+    <rect id="qsfp-12--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-12/opening" data-class="cutout" />
+    <rect id="qsfp-12--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-12--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-13" data-path="qsfp-13" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="13" transform="translate(153.02,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-13</title>
+    <rect id="qsfp-13--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-13/opening" data-class="cutout" />
+    <rect id="qsfp-13--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-13--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-14" data-path="qsfp-14" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="14" transform="translate(153.02,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-14</title>
+    <rect id="qsfp-14--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-14/opening" data-class="cutout" />
+    <rect id="qsfp-14--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-14--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-15" data-path="qsfp-15" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="15" transform="translate(177.09,26.5) rotate(180 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-15</title>
+    <rect id="qsfp-15--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-15/opening" data-class="cutout" />
+    <rect id="qsfp-15--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-15--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="qsfp-16" data-path="qsfp-16" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" data-rel-pos="16" transform="translate(177.09,13.0)" data-group="qsfp28" data-group-role="traffic" data-description="the sixteen QSFP28 cages in eight stacked pairs, printed 1 to 16, the lower cage of a pair odd">
+    <title>qsfp-16</title>
+    <rect id="qsfp-16--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="qsfp-16/opening" data-class="cutout" />
+    <rect id="qsfp-16--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="qsfp-16--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+    <path id="qsfp-16--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+  </g>
+  <g id="led-qsfp-1-1" data-path="led-qsfp-1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(11.6,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-1">
+    <title>led-qsfp-1-1</title>
+    <circle id="led-qsfp-1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-1-2" data-path="led-qsfp-1-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(15.6,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-1">
+    <title>led-qsfp-1-2</title>
+    <circle id="led-qsfp-1-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-1-3" data-path="led-qsfp-1-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(19.6,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-1">
+    <title>led-qsfp-1-3</title>
+    <circle id="led-qsfp-1-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-1-4" data-path="led-qsfp-1-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(23.6,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-1">
+    <title>led-qsfp-1-4</title>
+    <circle id="led-qsfp-1-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-1-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-1-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-2-1" data-path="led-qsfp-2-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(11.6,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-2">
+    <title>led-qsfp-2-1</title>
+    <circle id="led-qsfp-2-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-2-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-2-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-2-2" data-path="led-qsfp-2-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(15.6,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-2">
+    <title>led-qsfp-2-2</title>
+    <circle id="led-qsfp-2-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-2-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-2-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-2-3" data-path="led-qsfp-2-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(19.6,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-2">
+    <title>led-qsfp-2-3</title>
+    <circle id="led-qsfp-2-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-2-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-2-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-2-4" data-path="led-qsfp-2-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="8" transform="translate(23.6,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-2">
+    <title>led-qsfp-2-4</title>
+    <circle id="led-qsfp-2-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-2-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-2-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-3-1" data-path="led-qsfp-3-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="9" transform="translate(35.67,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-3">
+    <title>led-qsfp-3-1</title>
+    <circle id="led-qsfp-3-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-3-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-3-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-3-2" data-path="led-qsfp-3-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="10" transform="translate(39.67,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-3">
+    <title>led-qsfp-3-2</title>
+    <circle id="led-qsfp-3-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-3-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-3-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-3-3" data-path="led-qsfp-3-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="11" transform="translate(43.67,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-3">
+    <title>led-qsfp-3-3</title>
+    <circle id="led-qsfp-3-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-3-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-3-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-3-4" data-path="led-qsfp-3-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="12" transform="translate(47.67,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-3">
+    <title>led-qsfp-3-4</title>
+    <circle id="led-qsfp-3-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-3-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-3-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-4-1" data-path="led-qsfp-4-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="13" transform="translate(35.67,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-4">
+    <title>led-qsfp-4-1</title>
+    <circle id="led-qsfp-4-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-4-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-4-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-4-2" data-path="led-qsfp-4-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="14" transform="translate(39.67,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-4">
+    <title>led-qsfp-4-2</title>
+    <circle id="led-qsfp-4-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-4-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-4-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-4-3" data-path="led-qsfp-4-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="15" transform="translate(43.67,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-4">
+    <title>led-qsfp-4-3</title>
+    <circle id="led-qsfp-4-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-4-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-4-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-4-4" data-path="led-qsfp-4-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="16" transform="translate(47.67,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-4">
+    <title>led-qsfp-4-4</title>
+    <circle id="led-qsfp-4-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-4-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-4-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-5-1" data-path="led-qsfp-5-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="17" transform="translate(59.74,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-5">
+    <title>led-qsfp-5-1</title>
+    <circle id="led-qsfp-5-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-5-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-5-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-5-2" data-path="led-qsfp-5-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="18" transform="translate(63.74,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-5">
+    <title>led-qsfp-5-2</title>
+    <circle id="led-qsfp-5-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-5-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-5-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-5-3" data-path="led-qsfp-5-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="19" transform="translate(67.74,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-5">
+    <title>led-qsfp-5-3</title>
+    <circle id="led-qsfp-5-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-5-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-5-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-5-4" data-path="led-qsfp-5-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="20" transform="translate(71.74,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-5">
+    <title>led-qsfp-5-4</title>
+    <circle id="led-qsfp-5-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-5-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-5-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-6-1" data-path="led-qsfp-6-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="21" transform="translate(59.74,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-6">
+    <title>led-qsfp-6-1</title>
+    <circle id="led-qsfp-6-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-6-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-6-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-6-2" data-path="led-qsfp-6-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="22" transform="translate(63.74,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-6">
+    <title>led-qsfp-6-2</title>
+    <circle id="led-qsfp-6-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-6-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-6-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-6-3" data-path="led-qsfp-6-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="23" transform="translate(67.74,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-6">
+    <title>led-qsfp-6-3</title>
+    <circle id="led-qsfp-6-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-6-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-6-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-6-4" data-path="led-qsfp-6-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="24" transform="translate(71.74,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-6">
+    <title>led-qsfp-6-4</title>
+    <circle id="led-qsfp-6-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-6-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-6-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-7-1" data-path="led-qsfp-7-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="25" transform="translate(83.81,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-7">
+    <title>led-qsfp-7-1</title>
+    <circle id="led-qsfp-7-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-7-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-7-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-7-2" data-path="led-qsfp-7-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="26" transform="translate(87.81,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-7">
+    <title>led-qsfp-7-2</title>
+    <circle id="led-qsfp-7-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-7-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-7-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-7-3" data-path="led-qsfp-7-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="27" transform="translate(91.81,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-7">
+    <title>led-qsfp-7-3</title>
+    <circle id="led-qsfp-7-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-7-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-7-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-7-4" data-path="led-qsfp-7-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="28" transform="translate(95.81,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-7">
+    <title>led-qsfp-7-4</title>
+    <circle id="led-qsfp-7-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-7-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-7-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-8-1" data-path="led-qsfp-8-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="29" transform="translate(83.81,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-8">
+    <title>led-qsfp-8-1</title>
+    <circle id="led-qsfp-8-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-8-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-8-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-8-2" data-path="led-qsfp-8-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="30" transform="translate(87.81,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-8">
+    <title>led-qsfp-8-2</title>
+    <circle id="led-qsfp-8-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-8-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-8-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-8-3" data-path="led-qsfp-8-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="31" transform="translate(91.81,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-8">
+    <title>led-qsfp-8-3</title>
+    <circle id="led-qsfp-8-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-8-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-8-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-8-4" data-path="led-qsfp-8-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="32" transform="translate(95.81,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-8">
+    <title>led-qsfp-8-4</title>
+    <circle id="led-qsfp-8-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-8-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-8-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-9-1" data-path="led-qsfp-9-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="33" transform="translate(107.88,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-9">
+    <title>led-qsfp-9-1</title>
+    <circle id="led-qsfp-9-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-9-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-9-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-9-2" data-path="led-qsfp-9-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="34" transform="translate(111.88,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-9">
+    <title>led-qsfp-9-2</title>
+    <circle id="led-qsfp-9-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-9-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-9-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-9-3" data-path="led-qsfp-9-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="35" transform="translate(115.88,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-9">
+    <title>led-qsfp-9-3</title>
+    <circle id="led-qsfp-9-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-9-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-9-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-9-4" data-path="led-qsfp-9-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="36" transform="translate(119.88,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-9">
+    <title>led-qsfp-9-4</title>
+    <circle id="led-qsfp-9-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-9-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-9-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-10-1" data-path="led-qsfp-10-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="37" transform="translate(107.88,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-10">
+    <title>led-qsfp-10-1</title>
+    <circle id="led-qsfp-10-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-10-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-10-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-10-2" data-path="led-qsfp-10-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="38" transform="translate(111.88,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-10">
+    <title>led-qsfp-10-2</title>
+    <circle id="led-qsfp-10-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-10-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-10-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-10-3" data-path="led-qsfp-10-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="39" transform="translate(115.88,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-10">
+    <title>led-qsfp-10-3</title>
+    <circle id="led-qsfp-10-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-10-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-10-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-10-4" data-path="led-qsfp-10-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="40" transform="translate(119.88,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-10">
+    <title>led-qsfp-10-4</title>
+    <circle id="led-qsfp-10-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-10-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-10-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-11-1" data-path="led-qsfp-11-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="41" transform="translate(131.95,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-11">
+    <title>led-qsfp-11-1</title>
+    <circle id="led-qsfp-11-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-11-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-11-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-11-2" data-path="led-qsfp-11-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="42" transform="translate(135.95,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-11">
+    <title>led-qsfp-11-2</title>
+    <circle id="led-qsfp-11-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-11-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-11-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-11-3" data-path="led-qsfp-11-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="43" transform="translate(139.95,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-11">
+    <title>led-qsfp-11-3</title>
+    <circle id="led-qsfp-11-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-11-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-11-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-11-4" data-path="led-qsfp-11-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="44" transform="translate(143.95,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-11">
+    <title>led-qsfp-11-4</title>
+    <circle id="led-qsfp-11-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-11-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-11-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-12-1" data-path="led-qsfp-12-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="45" transform="translate(131.95,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-12">
+    <title>led-qsfp-12-1</title>
+    <circle id="led-qsfp-12-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-12-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-12-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-12-2" data-path="led-qsfp-12-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="46" transform="translate(135.95,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-12">
+    <title>led-qsfp-12-2</title>
+    <circle id="led-qsfp-12-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-12-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-12-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-12-3" data-path="led-qsfp-12-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="47" transform="translate(139.95,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-12">
+    <title>led-qsfp-12-3</title>
+    <circle id="led-qsfp-12-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-12-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-12-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-12-4" data-path="led-qsfp-12-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="48" transform="translate(143.95,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-12">
+    <title>led-qsfp-12-4</title>
+    <circle id="led-qsfp-12-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-12-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-12-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-13-1" data-path="led-qsfp-13-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="49" transform="translate(156.02,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-13">
+    <title>led-qsfp-13-1</title>
+    <circle id="led-qsfp-13-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-13-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-13-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-13-2" data-path="led-qsfp-13-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="50" transform="translate(160.02,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-13">
+    <title>led-qsfp-13-2</title>
+    <circle id="led-qsfp-13-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-13-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-13-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-13-3" data-path="led-qsfp-13-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="51" transform="translate(164.02,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-13">
+    <title>led-qsfp-13-3</title>
+    <circle id="led-qsfp-13-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-13-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-13-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-13-4" data-path="led-qsfp-13-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="52" transform="translate(168.02,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-13">
+    <title>led-qsfp-13-4</title>
+    <circle id="led-qsfp-13-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-13-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-13-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-14-1" data-path="led-qsfp-14-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="53" transform="translate(156.02,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-14">
+    <title>led-qsfp-14-1</title>
+    <circle id="led-qsfp-14-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-14-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-14-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-14-2" data-path="led-qsfp-14-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="54" transform="translate(160.02,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-14">
+    <title>led-qsfp-14-2</title>
+    <circle id="led-qsfp-14-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-14-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-14-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-14-3" data-path="led-qsfp-14-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="55" transform="translate(164.02,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-14">
+    <title>led-qsfp-14-3</title>
+    <circle id="led-qsfp-14-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-14-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-14-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-14-4" data-path="led-qsfp-14-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="56" transform="translate(168.02,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-14">
+    <title>led-qsfp-14-4</title>
+    <circle id="led-qsfp-14-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-14-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-14-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-15-1" data-path="led-qsfp-15-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="57" transform="translate(180.09,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-15">
+    <title>led-qsfp-15-1</title>
+    <circle id="led-qsfp-15-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-15-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-15-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-15-2" data-path="led-qsfp-15-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="58" transform="translate(184.09,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-15">
+    <title>led-qsfp-15-2</title>
+    <circle id="led-qsfp-15-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-15-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-15-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-15-3" data-path="led-qsfp-15-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="59" transform="translate(188.09,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-15">
+    <title>led-qsfp-15-3</title>
+    <circle id="led-qsfp-15-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-15-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-15-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-15-4" data-path="led-qsfp-15-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="60" transform="translate(192.09,38.4)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-15">
+    <title>led-qsfp-15-4</title>
+    <circle id="led-qsfp-15-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-15-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-15-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-16-1" data-path="led-qsfp-16-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="61" transform="translate(180.09,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-16">
+    <title>led-qsfp-16-1</title>
+    <circle id="led-qsfp-16-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-16-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-16-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-16-2" data-path="led-qsfp-16-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="62" transform="translate(184.09,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-16">
+    <title>led-qsfp-16-2</title>
+    <circle id="led-qsfp-16-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-16-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-16-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-16-3" data-path="led-qsfp-16-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="63" transform="translate(188.09,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-16">
+    <title>led-qsfp-16-3</title>
+    <circle id="led-qsfp-16-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-16-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-16-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-16-4" data-path="led-qsfp-16-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="64" transform="translate(192.09,9.45)" data-group="qsfp-leds" data-group-role="indicator" data-description="the four lamps over or under each QSFP28 cage" data-for="qsfp-16">
+    <title>led-qsfp-16-4</title>
+    <circle id="led-qsfp-16-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-16-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-16-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="cage-1" data-path="cage-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-rel-pos="1" transform="translate(205.8,26.25) rotate(180 7.125 5.2)" data-group="sfp28" data-group-role="traffic" data-description="the four SFP28 cages in two stacked pairs, printed 1 to 4, the lower cage of a pair odd">
+    <title>cage-1</title>
+    <rect id="cage-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="cage-1/opening" data-class="cutout" />
+    <rect id="cage-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="cage-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="cage-2" data-path="cage-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-rel-pos="2" transform="translate(205.8,12.9)" data-group="sfp28" data-group-role="traffic" data-description="the four SFP28 cages in two stacked pairs, printed 1 to 4, the lower cage of a pair odd">
+    <title>cage-2</title>
+    <rect id="cage-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="cage-2/opening" data-class="cutout" />
+    <rect id="cage-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="cage-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="cage-3" data-path="cage-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-rel-pos="3" transform="translate(225.1,26.25) rotate(180 7.125 5.2)" data-group="sfp28" data-group-role="traffic" data-description="the four SFP28 cages in two stacked pairs, printed 1 to 4, the lower cage of a pair odd">
+    <title>cage-3</title>
+    <rect id="cage-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="cage-3/opening" data-class="cutout" />
+    <rect id="cage-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="cage-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="cage-4" data-path="cage-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-rel-pos="4" transform="translate(225.1,12.9)" data-group="sfp28" data-group-role="traffic" data-description="the four SFP28 cages in two stacked pairs, printed 1 to 4, the lower cage of a pair odd">
+    <title>cage-4</title>
+    <rect id="cage-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="cage-4/opening" data-class="cutout" />
+    <rect id="cage-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="cage-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="cage-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-sfp-1-1" data-path="led-sfp-1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(208.93,39.6)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-1">
+    <title>led-sfp-1-1</title>
+    <circle id="led-sfp-1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-1-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-1-2" data-path="led-sfp-1-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(214.93,39.6)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-1">
+    <title>led-sfp-1-2</title>
+    <circle id="led-sfp-1-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-1-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-1-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-2-1" data-path="led-sfp-2-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(208.93,8.4)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-2">
+    <title>led-sfp-2-1</title>
+    <circle id="led-sfp-2-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-2-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-2-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-2-2" data-path="led-sfp-2-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(214.93,8.4)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-2">
+    <title>led-sfp-2-2</title>
+    <circle id="led-sfp-2-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-2-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-2-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-3-1" data-path="led-sfp-3-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(228.22,39.6)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-3">
+    <title>led-sfp-3-1</title>
+    <circle id="led-sfp-3-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-3-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-3-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-3-2" data-path="led-sfp-3-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(234.22,39.6)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-3">
+    <title>led-sfp-3-2</title>
+    <circle id="led-sfp-3-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-3-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-3-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-4-1" data-path="led-sfp-4-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(228.22,8.4)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-4">
+    <title>led-sfp-4-1</title>
+    <circle id="led-sfp-4-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-4-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-4-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-4-2" data-path="led-sfp-4-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="8" transform="translate(234.22,8.4)" data-group="sfp-leds" data-group-role="indicator" data-description="the two lamps over or under each SFP28 cage" data-for="cage-4">
+    <title>led-sfp-4-2</title>
+    <circle id="led-sfp-4-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-4-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-4-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(248.4,10.0) rotate(180 7.9 6.6)" data-group="console" data-group-role="management" data-description="the RJ45 serial console">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-1" data-path="mgmt-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="1" transform="translate(248.4,26.55)" data-group="mgmt" data-group-role="management" data-description="the two 10 Gigabit Ethernet ports printed 10G MGMT / BOOT, 1 and 2">
+    <title>mgmt-1</title>
+    <g id="mgmt-1--jack" data-path="mgmt-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt-1--jack</title>
+      <path id="mgmt-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt-1/jack/opening" data-class="cutout" />
+      <g id="mgmt-1--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-2" data-path="mgmt-2" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="2" transform="translate(265.3,26.55)" data-group="mgmt" data-group-role="management" data-description="the two 10 Gigabit Ethernet ports printed 10G MGMT / BOOT, 1 and 2">
+    <title>mgmt-2</title>
+    <g id="mgmt-2--jack" data-path="mgmt-2/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt-2--jack</title>
+      <path id="mgmt-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-2--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-2--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt-2/jack/opening" data-class="cutout" />
+      <g id="mgmt-2--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="mgmt-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt-2--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt-2--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="btn-reset" data-path="btn-reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" data-rel-pos="1" transform="translate(269.4,17.1)" data-group="controls" data-group-role="management" data-description="the RESET button" data-for="chassis">
+    <title>btn-reset</title>
+    <circle id="btn-reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="btn-reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="btn-reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="led-user" data-path="led-user" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(278.6,12.3)" data-group="status-leds" data-group-role="indicator" data-description="the USER, POWER 2, POWER 1 and FAULT lamps" data-for="chassis">
+    <title>led-user</title>
+    <circle id="led-user--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-user--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-user/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-power-2" data-path="led-power-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(283.0,12.3)" data-group="status-leds" data-group-role="indicator" data-description="the USER, POWER 2, POWER 1 and FAULT lamps" data-for="chassis">
+    <title>led-power-2</title>
+    <circle id="led-power-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-power-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-power-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-power-1" data-path="led-power-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(283.0,16.8)" data-group="status-leds" data-group-role="indicator" data-description="the USER, POWER 2, POWER 1 and FAULT lamps" data-for="chassis">
+    <title>led-power-1</title>
+    <circle id="led-power-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-power-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-power-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-fault" data-path="led-fault" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(278.6,16.8)" data-group="status-leds" data-group-role="indicator" data-description="the USER, POWER 2, POWER 1 and FAULT lamps" data-for="chassis">
+    <title>led-fault</title>
+    <circle id="led-fault--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fault--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fault/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+</svg>

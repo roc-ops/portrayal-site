@@ -58,12 +58,14 @@
    },
    "component-attrs": {
     "fan-module": {
+     "airflow": "back-to-front",
      "airflow-legend": "B2F",
      "handle-finish": "#3d7bd6",
      "model": "FAN-1U-1x1I-B",
      "part-number": "F0TZZ7656001A"
     },
     "psu-ac-650": {
+     "airflow": "back-to-front",
      "latch-edge": "#234b8c",
      "latch-finish": "#3d7bd6",
      "model": "YM-2651Y, C01R",
@@ -137,20 +139,21 @@
   "dc-b2f": {
    "airflow": "back-to-front",
    "bays": {
-    "psu-1": "common/psu-dc-650@2",
-    "psu-2": "common/psu-dc-650@2"
+    "psu-1": "edgecore/as7326-56x-psu-dc@1",
+    "psu-2": "edgecore/as7326-56x-psu-dc@1"
    },
    "component-attrs": {
+    "as7326-56x-psu-dc": {
+     "airflow": "back-to-front",
+     "latch-edge": "#234b8c",
+     "latch-finish": "#3d7bd6"
+    },
     "fan-module": {
+     "airflow": "back-to-front",
      "airflow-legend": "B2F",
      "handle-finish": "#3d7bd6",
      "model": "FAN-1U-1x1I-B",
      "part-number": "F0TZZ7656001A"
-    },
-    "psu-dc-650": {
-     "cover-edge": "#2a5aa8",
-     "latch-edge": "#234b8c",
-     "latch-finish": "#3d7bd6"
     }
    },
    "description": "Dual -48V DC PSUs, back-to-front airflow (7326-56X-O-48V-B)",
@@ -170,8 +173,8 @@
   "dc-f2b": {
    "airflow": "front-to-back",
    "bays": {
-    "psu-1": "common/psu-dc-650@2",
-    "psu-2": "common/psu-dc-650@2"
+    "psu-1": "edgecore/as7326-56x-psu-dc@1",
+    "psu-2": "edgecore/as7326-56x-psu-dc@1"
    },
    "component-attrs": {
     "fan-module": {
@@ -214,11 +217,6 @@
    "role": "furniture",
    "term": "Point"
   },
-  "leds": {
-   "index-origin": 1,
-   "role": "indicator",
-   "term": "LED"
-  },
   "mgmt": {
    "index-origin": 1,
    "mixed": "the management cluster at the right-hand end of the faceplate - two SFP+ management uplinks (57/58), a USB-A service port, the out-of-band RJ45, the RS-232 console and a USB-C console. Five media, one job; the unit draws them as one block and so do we",
@@ -258,6 +256,11 @@
    "term": "Port"
   },
   "sfp28-leds": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  },
+  "system-leds": {
    "index-origin": 1,
    "role": "indicator",
    "term": "LED"
@@ -335,7 +338,7 @@
    "note": "extrapolated from the AS7726-32X, which shares this chassis line and its width and height, restretched to the 536mm depth. Top grooves and the centre access plate are from IMG_2129; the bottom labels from IMG_2130. Side screw and vent positions are NOT measured - reshoot on a bench to confirm"
   }
  },
- "version": "3.0.6",
+ "version": "4.1.0",
  "views": {
   "bottom": {
    "components": {
@@ -1126,7 +1129,7 @@
        "entity": "led0"
       },
       "for": "chassis",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-diag",
       "ref": "common/led-indicator@1",
       "rel-pos": 1
@@ -1140,7 +1143,7 @@
        "entity": "led1"
       },
       "for": "chassis",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-loc",
       "ref": "common/led-indicator@1",
       "rel-pos": 2
@@ -1154,7 +1157,7 @@
        "entity": "led3"
       },
       "for": "rear/psu-1",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-psu1",
       "ref": "common/led-indicator@1",
       "rel-pos": 3
@@ -1168,7 +1171,7 @@
        "entity": "led4"
       },
       "for": "rear/psu-2",
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-psu2",
       "ref": "common/led-indicator@1",
       "rel-pos": 4
@@ -1189,7 +1192,7 @@
        "rear/fan-5",
        "rear/fan-6"
       ],
-      "group": "leds",
+      "group": "system-leds",
       "id": "led-fan",
       "ref": "common/led-indicator@1",
       "rel-pos": 5
@@ -5170,7 +5173,8 @@
      {
       "accepts": [
        "common/psu-ac-650@3",
-       "common/psu-dc-650@2"
+       "common/psu-dc-650@2",
+       "edgecore/as7326-56x-psu-dc@1"
       ],
       "at": [
        10,
@@ -5290,7 +5294,8 @@
      {
       "accepts": [
        "common/psu-ac-650@3",
-       "common/psu-dc-650@2"
+       "common/psu-dc-650@2",
+       "edgecore/as7326-56x-psu-dc@1"
       ],
       "at": [
        366.6,

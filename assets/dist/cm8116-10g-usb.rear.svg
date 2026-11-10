@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="44.0mm" viewBox="0 0 440.0 44.0" data-device="cm8116-10g-usb" data-view="rear" data-power-input="two IEC C14 inlets, 100-240 V AC 50/60 Hz; two C14 power cables in the box" data-cooling="passive; forward or reverse mounted" data-operating-temp-c="5 to 50" data-humidity-pct="5 to 90 non-condensing" data-cpu="1.6 GHz dual-core ARM Cortex-A9" data-memory="2 GB DDR4" data-storage="32 GB eMMC" data-tpm="TPM 2.0" data-optics-sfp="10G SFP+ in the NET1 and NET2 cages; no document held names an optic type or reach" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Opengear CM8116-10G-USB","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"std/c14-inlet@1":"1.4.0","std/usb-c@1":"1.2.0"},"source-sha256":"7aefa550a5e951168cdd24c2a27987eb72ff0905b74ce7080371a97fa55b96e2","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CM8116-10G-USB" x="0" y="0" width="440" height="44" rx="1.2" fill="#3a3a3d" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-motif-cf1b11a6c0" width="6" height="4" patternUnits="userSpaceOnUse">
+      <path d="M 1.9 0.1 L 3.7 0.1 L 3.3 3.9 L 1.5 3.9 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-97c066c1e4" width="79.1" height="35.6" patternUnits="userSpaceOnUse">
+      <path d="M 0 0 L 79.1 0 L 79.1 35.6 L 27.1 35.6 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-a314541e0c" width="34" height="35.6" patternUnits="userSpaceOnUse">
+      <path d="M 0 0 L 0.6 0 L 27.7 35.6 L 27.1 35.6 Z" fill="#17191c" />
+      <path d="M 6.2 0 L 6.8 0 L 33.8 35.6 L 33.2 35.6 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-cf1b11a6c0-o4_9-1_2" width="6" height="4" patternUnits="userSpaceOnUse" patternTransform="translate(4.9 1.2)">
+      <path d="M 1.9 0.1 L 3.7 0.1 L 3.3 3.9 L 1.5 3.9 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-97c066c1e4-o303_7-7_5" width="79.1" height="35.6" patternUnits="userSpaceOnUse" patternTransform="translate(303.7 7.5)">
+      <path d="M 0 0 L 79.1 0 L 79.1 35.6 L 27.1 35.6 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-a314541e0c-o288_8-7_5" width="34" height="35.6" patternUnits="userSpaceOnUse" patternTransform="translate(288.8 7.5)">
+      <path d="M 0 0 L 0.6 0 L 27.7 35.6 L 27.1 35.6 Z" fill="#17191c" />
+      <path d="M 6.2 0 L 6.8 0 L 33.8 35.6 L 33.2 35.6 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="face" data-kind="livery" x="1.6" y="7.7" width="381.2" height="35.6" rx="0.6" fill="#a80d27" />
+    <rect id="vents" data-kind="vent-field" data-aperture="air" x="4.9" y="1.2" width="366" height="4" rx="0.6" fill="url(#portrayal-motif-cf1b11a6c0-o4_9-1_2)" data-vent="1" />
+    <rect id="livery-dark" data-kind="motif-field" x="303.7" y="7.5" width="79.1" height="35.6" rx="0.6" fill="url(#portrayal-motif-97c066c1e4-o303_7-7_5)" />
+    <rect id="livery-stripes" data-kind="motif-field" x="288.8" y="7.5" width="34" height="35.6" rx="0.6" fill="url(#portrayal-motif-a314541e0c-o288_8-7_5)" />
+    <rect id="inlet-shroud-1" data-kind="label-tab" x="388.8" y="9.4" width="24.1" height="32.3" rx="1" fill="#2c2c2e" />
+    <rect id="inlet-shroud-2" data-kind="label-tab" x="413.4" y="9.4" width="23.2" height="32.3" rx="1" fill="#2c2c2e" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M -6.5 -6.0 L 1.0 -8.5 L 6.5 3.0 L 1.0 8.5 Z" fill="#e8e8e8" stroke="none" stroke-linejoin="round" transform="translate(325 14)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="380.8" y="20.4" font-family="sans-serif" font-size="9" text-anchor="end" fill="#e4e4e6" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">opengear</text>
+    <text x="380.3" y="29.6" font-family="sans-serif" font-size="5.6" text-anchor="end" fill="#e4e4e6" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">CM8100</text>
+    <text x="370.5" y="35.2" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#f0f0f0" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">1</text>
+    <text x="378" y="35.2" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#f0f0f0" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">2</text>
+    <path d="M -2.6 0 H 2.4 M -0.2 0 L 0.8 -1.0 M -0.2 0 L 0.8 1.0 M -2.6 -0.5 A 0.5 0.5 0 1 0 -2.6 0.5 A 0.5 0.5 0 1 0 -2.6 -0.5 Z" fill="none" stroke="#f0f0f0" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(155.7 21.7)" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-a" />
+    <text x="164.8" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-a">A</text>
+    <text x="180.85" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-b">B</text>
+    <text x="196.9" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-c">C</text>
+    <text x="212.95" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-d">D</text>
+    <text x="229" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-e">E</text>
+    <text x="245.05" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-f">F</text>
+    <text x="261.1" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-g">G</text>
+    <text x="277.15" y="25.7" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f0f0f0" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-c-h">H</text>
+  </g>
+  <g id="usb-c-a" data-path="usb-c-a" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="1" transform="translate(160.63,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-a</title>
+    <rect id="usb-c-a--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-a/opening" data-class="cutout" />
+    <rect id="usb-c-a--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="usb-c-b" data-path="usb-c-b" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="2" transform="translate(176.68,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-b</title>
+    <rect id="usb-c-b--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-b/opening" data-class="cutout" />
+    <rect id="usb-c-b--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="usb-c-c" data-path="usb-c-c" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="3" transform="translate(192.73,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-c</title>
+    <rect id="usb-c-c--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-c/opening" data-class="cutout" />
+    <rect id="usb-c-c--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="usb-c-d" data-path="usb-c-d" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="4" transform="translate(208.78,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-d</title>
+    <rect id="usb-c-d--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-d/opening" data-class="cutout" />
+    <rect id="usb-c-d--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="usb-c-e" data-path="usb-c-e" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="5" transform="translate(224.83,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-e</title>
+    <rect id="usb-c-e--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-e/opening" data-class="cutout" />
+    <rect id="usb-c-e--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="usb-c-f" data-path="usb-c-f" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="6" transform="translate(240.88,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-f</title>
+    <rect id="usb-c-f--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-f/opening" data-class="cutout" />
+    <rect id="usb-c-f--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="usb-c-g" data-path="usb-c-g" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="7" transform="translate(256.93,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-g</title>
+    <rect id="usb-c-g--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-g/opening" data-class="cutout" />
+    <rect id="usb-c-g--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="usb-c-h" data-path="usb-c-h" data-class="port" data-ref="std/usb-c@1:1.2.0" data-depth="6.5" data-wall="#a7adb4" data-media="usb-c" data-rel-pos="8" transform="translate(272.98,20.42)" data-group="usb-serial" data-group-role="management" data-description="eight USB-C 2.0 serial ports, A to H, on the rear.">
+    <title>usb-c-h</title>
+    <rect id="usb-c-h--opening" x="0" y="0" width="8.34" height="2.56" rx="1.28" fill="#17191c" data-path="usb-c-h/opening" data-class="cutout" />
+    <rect id="usb-c-h--tongue" x="1.3" y="1.03" width="5.74" height="0.5" rx="0.25" fill="#3c4046" data-z-top="5.4" data-z-color="#3c4046" />
+    <g data-cp="mate" data-cp-at="4.17 1.28" data-cp-dir="front" />
+  </g>
+  <g id="ac-inlet-1" data-path="ac-inlet-1" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-input-voltage="100-240 V AC" data-media="ac" data-rel-pos="1" transform="translate(386.5,15.7) rotate(-90 14.0 10.0)" data-group="inlets" data-group-role="service" data-description="the two IEC C14 power inlets.">
+    <title>ac-inlet-1</title>
+    <rect id="ac-inlet-1--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-1/opening" data-class="cutout" />
+    <path id="ac-inlet-1--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-1--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-1--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="ac-inlet-2" data-path="ac-inlet-2" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-input-voltage="100-240 V AC" data-media="ac" data-rel-pos="2" transform="translate(410.3,15.7) rotate(-90 14.0 10.0)" data-group="inlets" data-group-role="service" data-description="the two IEC C14 power inlets.">
+    <title>ac-inlet-2</title>
+    <rect id="ac-inlet-2--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="ac-inlet-2/opening" data-class="cutout" />
+    <path id="ac-inlet-2--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="ac-inlet-2--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-2--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="ac-inlet-2--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+</svg>

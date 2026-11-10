@@ -1912,6 +1912,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The chassis with two AC supplies and three fan modules fitted, front-to-rear air, before any part number: the shape every build below starts from.",
    "files": {
@@ -2748,6 +2749,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
     "psu-1": "arista/7280r3-pwr-1500-dc@1",
     "psu-2": "arista/7280r3-pwr-1500-dc@1"
@@ -3587,6 +3589,7 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -4429,6 +4432,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The 7280CR3A-24D12 with two AC supplies and front-to-rear air: PWR-1511-AC-RED supplies and FAN-7011H-F fan modules, all with red handles. Ordered as DCS-7280CR3A-24D12-F.",
    "files": {
@@ -5267,6 +5271,11 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {
+    "features": {
+     "encryption": "all ports (MACsec, IPsec and VXLANsec, as TunnelSec)"
+    }
+   },
    "bays": {},
    "description": "The 7280CR3AK-24D12 with large routes and TunnelSec, the same face, supplies and fans as the base switch, front-to-rear air. Ordered as DCS-7280CR3AK-24D12-F.",
    "files": {
@@ -6105,6 +6114,11 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {
+    "features": {
+     "encryption": "all ports (MACsec, IPsec and VXLANsec, as TunnelSec)"
+    }
+   },
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -6949,6 +6963,11 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {
+    "features": {
+     "encryption": "all ports (MACsec, IPsec and VXLANsec, as TunnelSec)"
+    }
+   },
    "bays": {},
    "description": "The 7280CR3AK-24D12 with secure boot enabled, front-to-rear air. Ordered as DCS-7280CR3AK-24D12-S-F.",
    "files": {
@@ -7787,6 +7806,11 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {
+    "features": {
+     "encryption": "all ports (MACsec, IPsec and VXLANsec, as TunnelSec)"
+    }
+   },
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -8631,6 +8655,11 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {
+    "features": {
+     "encryption": "all ports (MACsec, IPsec and VXLANsec, as TunnelSec)"
+    }
+   },
    "bays": {},
    "description": "The 7280CR3AM-24D12 with TunnelSec encryption, the same face, supplies and fans as the base switch, front-to-rear air. Ordered as DCS-7280CR3AM-24D12-F.",
    "files": {
@@ -9469,6 +9498,11 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {
+    "features": {
+     "encryption": "all ports (MACsec, IPsec and VXLANsec, as TunnelSec)"
+    }
+   },
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -10313,6 +10347,7 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -11160,18 +11195,6 @@
  "device": "7280cr3a-24d12",
  "gaps": [
   {
-   "because": "vendor-silent",
-   "blocks": [],
-   "kind": "declared",
-   "note": "The 7280CR3AM-24D12 and 7280CR3AK-24D12 carry TunnelSec encryption on all ports, the K builds the large-routes licence (over 5M routes), and the -S builds secure boot, where the 7280CR3A-24D12 has none of them. No configuration can state a device attribute (open gap #1237, accepted for now, decided 2026-10-23), so the device carries the base switch's features line and its encryption line names all three. The data sheet gives the builds one set of hardware figures.",
-   "scope": [
-    "front",
-    "rear"
-   ],
-   "wanted": "configuration-scoped device attrs.",
-   "what": "config-scoped-device-attrs"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "kind": "declared",
@@ -11364,7 +11387,7 @@
   },
   "configurations": {
    "confidence": "datasheet",
-   "note": "Data sheet ordering information: DCS-7280CR3A-24D12-F and -R, DCS-7280CR3AM-24D12-F and -R, DCS-7280CR3AK-24D12-F and -R, DCS-7280CR3AK-24D12-S-F and -S-R (\"secure boot enabled\"), each \"2 x AC\", F for front to rear and R for rear to front air. The \"#\" orders (\"configurable fans and psu\") are orders of parts and are not listed. The A, M, K and K-S builds share the face, size, weight and supplies and differ in encryption, routes and secure boot, which a configuration cannot state: see the gap config-scoped-device-attrs. The data sheet lists no DC part number for the switch (the PWR-1511-DC-RED and -BLUE supplies are spares), so the DC builds are examples. The suffix -S in this family is secure boot, not an empty-bay build, and the guide draws no blank for a bay, so no configuration shows an open bay."
+   "note": "Data sheet ordering information: DCS-7280CR3A-24D12-F and -R, DCS-7280CR3AM-24D12-F and -R, DCS-7280CR3AK-24D12-F and -R, DCS-7280CR3AK-24D12-S-F and -S-R (\"secure boot enabled\"), each \"2 x AC\", F for front to rear and R for rear to front air. The \"#\" orders (\"configurable fans and psu\") are orders of parts and are not listed. The A, M, K and K-S builds share the face, size, weight and supplies and differ in encryption, routes and secure boot, which each M, K and K-S configuration states in its own attrs and description (the data sheet's \"Encryption\" row, its overview of the 7280R3AK and its \"secure boot enabled\" ordering lines; its power, memory, CPU, SSD, minimum EOS and licence group are one value for the three builds, so the device's stand). The data sheet lists no DC part number for the switch (the PWR-1511-DC-RED and -BLUE supplies are spares), so the DC builds are examples. The suffix -S in this family is secure boot, not an empty-bay build, and the guide draws no blank for a bay, so no configuration shows an open bay."
   },
   "ears": {
    "confidence": "datasheet",

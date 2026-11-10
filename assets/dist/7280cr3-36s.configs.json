@@ -1730,6 +1730,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The chassis with two AC supplies and two fan modules fitted, front-to-rear air, before any part number: the shape every build below starts from.",
    "files": {
@@ -1838,6 +1839,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
     "psu-1": "arista/7280cr3-pwr-1000-dc@1",
     "psu-2": "arista/7280cr3-pwr-1000-dc@1"
@@ -1949,6 +1951,7 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -2062,6 +2065,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The 7280CR3-36S with two AC supplies and front-to-rear air: PWR-1011-AC-RED supplies and FAN-7011M-F fan modules, all with red handles. Ordered as DCS-7280CR3-36S-F.",
    "files": {
@@ -2172,8 +2176,21 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {
+    "features": {
+     "eos-license": "license group G3; minimum EOS 4.27.2"
+    },
+    "platform": {
+     "cpu": "Eight-Core x86",
+     "storage": "120 GB SSD (no flash storage)"
+    },
+    "power": {
+     "power-max-w": 437,
+     "power-typical-w": 262
+    }
+   },
    "bays": {},
-   "description": "The 7280CR3K-36A, the K build with an eight-core CPU and a 120 GB SSD, with front-to-rear air. It draws 262 W typical and 437 W maximum (guide Table 4), against 254 W and 423 W for the other builds. Ordered as DCS-7280CR3K-36A-F.",
+   "description": "The 7280CR3K-36A, the K build with an eight-core CPU and a 120 GB SSD, with front-to-rear air. Ordered as DCS-7280CR3K-36A-F.",
    "files": {
     "bottom": "7280cr3-36s.k-a-f.bottom.svg",
     "front": "7280cr3-36s.k-a-f.front.svg",
@@ -2282,13 +2299,26 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {
+    "features": {
+     "eos-license": "license group G3; minimum EOS 4.27.2; rear-to-front air needs EOS 4.29.1"
+    },
+    "platform": {
+     "cpu": "Eight-Core x86",
+     "storage": "120 GB SSD (no flash storage)"
+    },
+    "power": {
+     "power-max-w": 437,
+     "power-typical-w": 262
+    }
+   },
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
     "psu-1": "arista/7280cr3-pwr-1000-ac-rev@1",
     "psu-2": "arista/7280cr3-pwr-1000-ac-rev@1"
    },
-   "description": "The 7280CR3K-36A with rear-to-front air, drawing 262 W typical and 437 W maximum. Ordered as DCS-7280CR3K-36A-R.",
+   "description": "The 7280CR3K-36A with rear-to-front air. Ordered as DCS-7280CR3K-36A-R.",
    "files": {
     "bottom": "7280cr3-36s.k-a-r.bottom.svg",
     "front": "7280cr3-36s.k-a-r.front.svg",
@@ -2397,6 +2427,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "The 7280CR3K-36S, the same hardware with the large-routes licence, with front-to-rear air. Ordered as DCS-7280CR3K-36S-F. The data sheet lists no rear-to-front K-36S.",
    "files": {
@@ -2507,6 +2538,7 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
     "fan-1": "arista/7280cr3-fan-rev@1",
     "fan-2": "arista/7280cr3-fan-rev@1",
@@ -2624,18 +2656,6 @@
  "default": "base",
  "device": "7280cr3-36s",
  "gaps": [
-  {
-   "because": "vendor-silent",
-   "blocks": [],
-   "kind": "declared",
-   "note": "The 7280CR3K-36A draws 262 W typical and 437 W maximum (guide Table 4) against 254 W and 423 W for the other two, has an eight-core CPU in place of a quad-core and carries a 120 GB SSD where the others carry none. No configuration can state a device attribute (the same open gap as cisco/asr-9001). The attrs carry the 7280CR3-36S's figures and the platform lines name all three.",
-   "scope": [
-    "front",
-    "rear"
-   ],
-   "wanted": "configuration-scoped device attrs.",
-   "what": "config-scoped-device-attrs"
-  },
   {
    "because": "sources-disagree",
    "blocks": [],
@@ -2787,7 +2807,7 @@
   },
   "configurations": {
    "confidence": "datasheet",
-   "note": "Data sheet ordering information: DCS-7280CR3-36S-F and -R, DCS-7280CR3K-36S-F (no -R is listed for the K-36S) and DCS-7280CR3K-36A-F and -R (\"front to rear air, 2 x AC\" and \"rear to front air, 2 x AC\"). The \"#\" SKUs (\"configurable fans and psu\") are orders of parts, not part numbers a DCIM can hold, and are not listed. The data sheet lists no DC build of the switch: the PWR-1011-DC-RED and -BLUE supplies are spares, so the DC configurations are examples with no part number. The K and K-A builds share the base model's size, weight, figure and supplies and differ in memory, CPU, SSD and routes (and, for the 36A, power draw), which a configuration cannot state; each is a configuration with its own part numbers. There is no empty-bay (-S) configuration: the \"S\" of the model name is not a suffix of this kind and the guide draws no blank for a power supply or fan module."
+   "note": "Data sheet ordering information: DCS-7280CR3-36S-F and -R, DCS-7280CR3K-36S-F (no -R is listed for the K-36S) and DCS-7280CR3K-36A-F and -R (\"front to rear air, 2 x AC\" and \"rear to front air, 2 x AC\"). The \"#\" SKUs (\"configurable fans and psu\") are orders of parts, not part numbers a DCIM can hold, and are not listed. The data sheet lists no DC build of the switch: the PWR-1011-DC-RED and -BLUE supplies are spares, so the DC configurations are examples with no part number. The K and K-A builds share the base model's size, weight, figure and supplies and differ in memory, CPU, SSD and routes (and, for the 36A, power draw); each is a configuration with its own part numbers, and the two 36A configurations state their own power, CPU, SSD and minimum EOS in attrs (data sheet, model comparison of the 7280CR3-36S, CR3K-36S and CR3K-36A). There is no empty-bay (-S) configuration: the \"S\" of the model name is not a suffix of this kind and the guide draws no blank for a power supply or fan module."
   },
   "ears": {
    "confidence": "datasheet",
@@ -2843,7 +2863,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "Guide Table 4: typical / maximum 254 W / 423 W for the 7280CR3-36S and 7280CR3K-36S, and 262 W / 437 W for the 7280CR3K-36A, each with PWR-1011-AC or PWR-1011-DC. The data sheet states the same figures with typical \"measured at 25C ambient with 50% load on all ports\". A configuration cannot state a device attribute, so the device carries 254 W / 423 W and the -36A figure is in the gap config-scoped-device-attrs and in the description of its configurations."
+   "note": "Guide Table 4: typical / maximum 254 W / 423 W for the 7280CR3-36S and 7280CR3K-36S, and 262 W / 437 W for the 7280CR3K-36A, each with PWR-1011-AC or PWR-1011-DC. The data sheet states the same figures with typical \"measured at 25C ambient with 50% load on all ports\". The device carries 254 W / 423 W, the figure of the 7280CR3-36S and the 7280CR3K-36S, and the two 7280CR3K-36A configurations state 262 W / 437 W in their own attrs."
   },
   "rear": {
    "confidence": "estimated",

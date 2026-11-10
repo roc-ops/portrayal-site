@@ -883,7 +883,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      400.8,
@@ -923,7 +924,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      400.8,
@@ -963,7 +965,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      419.2,
@@ -1003,7 +1006,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      419.2,
@@ -1133,6 +1137,43 @@
   "rear": [
    {
     "accepts": [
+     "generic/ring-lug@1"
+    ],
+    "at": [
+     216.3,
+     12.4
+    ],
+    "bores": [],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "earth-screw",
+    "interface": "terminal-stud",
+    "kind": "connector",
+    "lift": 3.1,
+    "mate": [
+     220.3,
+     16.4
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the earthing terminal, one M4 screw for a lug (Table 36)",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": null,
+    "turns": [
+     0,
+     90,
+     180,
+     270
+    ]
+   },
+   {
+    "accepts": [
      "generic/c13-plug@1"
     ],
     "at": [
@@ -1187,6 +1228,7 @@
  "configs": [
   {
    "airflow": "side",
+   "attrs": {},
    "bays": {},
    "description": "EX2300-24MP - 24 PoE+ ports (eight Multigigabit) and four SFP+/SFP uplinks, built-in AC supply and three built-in fans, side-to-side airflow. Table 1, no Virtual Chassis licence.",
    "files": {
@@ -1581,6 +1623,17 @@
    "what": "side-elevations"
   },
   {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The figure calls the ring at the right of the rear the ESD point and prints the earth symbol under it; Table 36 lists an earthing terminal on the rear panel, one M4 screw. The screw is placed on that ring.",
+   "scope": [
+    "earth-screw"
+   ],
+   "wanted": "a photograph of the rear that shows which feature is the earthing terminal",
+   "what": "earthing-terminal-position"
+  },
+  {
    "because": "CAP",
    "blocks": [
     "specified"
@@ -1634,6 +1687,10 @@
    "confidence": "measured",
    "note": "The guide's Figure 5 is 1501 x 453 px and its body outline 1449 px across (x 13 to 1462) and 143 down (y 142 to 285): 3.286 px per mm across against the 440.9 mm of Table 3 and 3.30 down against the 43.3 mm, an aspect of 10.13 against the table's 10.18, half a percent out, so the figure is orthographic and carries geometry. The photograph (1500 x 230 px, body 1447 px across) gives 3.282 px per mm across; its jack pitch reads 51.5 to 51.7 px = 15.7 to 15.8 mm in both, and the shells are 69.4 mm apart in both. The figure's jack rows read 13.4 mm apart (the openings) and the photograph's 14.6 mm (the whole cells, latch tab included); cell tops are taken from the photograph and the figure is used for x. Every position is estimated and good to about a millimetre."
   },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "Table 36 lists, for the EX2300-24MP and EX2300-48MP, a Panduit LCA10-10L lug or equivalent (not provided) on one Pan Phillips M4 x 6 mm nickel plated screw (provided). The figure calls the ring at the right of the rear the ESD point and prints the earth symbol under it, and the `rear-layout` note draws it as the earthing terminal; it was drawn as a plain light disc, which is how a nickel plated screw head looks. `common/ground-screw-m4@1` is placed on that ring, at the centre the ring was drawn at: the one M4 screw that the guide says is provided, which a ring lug lands on. It is a screw and not a bare hole because the guide says the screw ships with the switch."
+  },
   "lamps": {
    "confidence": "datasheet",
    "note": "Hardware guide, Tables 5, 8, 9 and 13 and Figures 18, 22, 28 and 30. The system lamps are MGT, FAN and PW (Table 5; the SYS, ALM and MST lamps of the other EX2300 models are not on this one); each RJ-45 port and each uplink has one Link/Activity lamp (Table 13), and the management jack has a Link lamp and an Activity lamp (Figure 22, Tables 8 and 9), printed LINK and ACT on the photograph. Speed, duplex, administrative status and PoE are read with show commands (the guide's note under Table 13), so there are no mode lamps and no mode button."
@@ -1667,7 +1724,13 @@
    "note": "EX2300 Switch Hardware Guide, Juniper Networks, published 2025-08-12 (314 pages; https://www.juniper.net/documentation/us/en/hardware/ex2300/ex2300.pdf): Figure 5 (front panel), Figure 14 (rear panel), Figures 18, 22, 28 and 30 (LEDs), Table 1 (models), Table 3 (chassis size and weight), Tables 5, 8, 9 and 13 (LED states), the cooling system section with Figures 33 and 34, Tables 14 and 15 (power), Table 34 (parts list), Table 35 (mounting methods) and Table 36 (earthing). Juniper's own straight-on studio photograph of the EX2300-24MP front (ex2300m-poe24-front-high.jpg) and its view with the top (ex2300m-poe24-frontwtop-high.jpg), from the maker's image library (https://www.juniper.net/us/en/company/images/image-library-logos-and-product-photos/products/ex2300-24mp.html), which holds no rear or side photograph of this model. The English datasheet addresses tried (the EX2300 line datasheet under datasheets/us/en/switches) did not answer, so no datasheet is cited."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "earth-screw": {
+    "generic/ring-lug@1": 90
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

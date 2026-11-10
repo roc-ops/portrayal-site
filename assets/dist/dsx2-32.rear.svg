@@ -1,0 +1,823 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440mm" height="44mm" viewBox="0 0 440 44" data-device="dsx2-32" data-view="rear" data-weight-note="9.08 lb (4.12 kg) in the user guide, as one figure for the whole SX II family" data-power-max-w="23" data-power-input="100 to 240 VAC auto-switching, 50 to 60 Hz, 0.35 A, two C14 inlets (data sheet and user guide)" data-operating-temp-c="0 to 50" data-non-operating-temp-c="0 to 55" data-operating-humidity="20% to 85%" data-serial-pinout="DTE or DCE detected by the port; RJ45 pins in user guide Appendix A, printed pp. 54 and 55" data-video="DVI-D local video jack (data sheet)" data-usb-admin="USB 2.0 mini-B Admin port for a laptop (data sheet and features sheet)" data-modem="none on this model; the M models add an internal telephone modem" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Raritan DSX2-32","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","common/rocker-switch@1":"1.2.0","std/c14-inlet@1":"1.4.0","std/mini-usb@1":"1.0.0","std/rj45-ganged@2":"2.1.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"e3b0e34039c608a68104ad93123039d4f585e5c794b6f0539b63c97e7dec0bc3","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DSX2-32" data-sku="DSX2-32" data-part-number="" x="0" y="0" width="440" height="44" rx="1.2" fill="#1a1b20" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="fan-vent" data-kind="vent" x="79.2" y="8.2" width="26" height="26" rx="13" fill="#0b0c0f" />
+    <rect id="terminal-plate" data-kind="jack-plate" x="118.9" y="4.4" width="17.2" height="15.6" rx="0.6" fill="#625e5d" />
+    <rect id="modem-blank" data-kind="blank" x="150.8" y="4.6" width="10.2" height="14.6" rx="0.6" fill="#0e0f12" />
+    <rect id="dvi-screw-left" data-kind="screw" x="121.8" y="29.6" width="4" height="4" rx="2" fill="#b9b9b6" />
+    <rect id="dvi-screw-right" data-kind="screw" x="155.3" y="29.6" width="4" height="4" rx="2" fill="#b9b9b6" />
+    <rect id="lan-plate" data-kind="jack-plate" x="177.4" y="7.4" width="18.2" height="29.4" rx="0.6" fill="#6d6b6b" />
+    <rect id="bank-1" data-kind="jack-plate" x="196.1" y="10.7" width="113.9" height="25.8" rx="0.6" fill="#7f7e7e" />
+    <rect id="bank-2" data-kind="jack-plate" x="315.6" y="10.7" width="115.3" height="25.8" rx="0.6" fill="#7f7e7e" />
+  </g>
+  <rect id="region--dvi-d" data-path="region:dvi-d" data-class="region" x="128.7" y="28.3" width="23.7" height="6.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="32" y="6" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#f0f0f0" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="inlet-1">1</text>
+    <text x="64.5" y="6" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#f0f0f0" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="inlet-2">2</text>
+    <text x="127.6" y="23.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">TERMINAL</text>
+    <text x="144.25" y="11.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="admin-usb">ADMIN</text>
+    <text x="155.9" y="23.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">MODEM</text>
+    <text x="141.7" y="39.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">DVI</text>
+    <text x="161.2" y="38.98" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset">RESET</text>
+    <text x="169.2" y="8.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-rear-1">USB</text>
+    <text x="186.5" y="5.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan-2">LAN 2</text>
+    <text x="186.5" y="40.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f0f0f0" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan-1">LAN 1</text>
+    <text x="203.6" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-1">1</text>
+    <text x="217.57" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-2">2</text>
+    <text x="231.54" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-3">3</text>
+    <text x="245.51" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-4">4</text>
+    <text x="259.48" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-5">5</text>
+    <text x="273.45" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-6">6</text>
+    <text x="287.42" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-7">7</text>
+    <text x="301.39" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-8">8</text>
+    <text x="203.6" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-9">9</text>
+    <text x="217.57" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-10">10</text>
+    <text x="231.54" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-11">11</text>
+    <text x="245.51" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-12">12</text>
+    <text x="259.48" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-13">13</text>
+    <text x="273.45" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-14">14</text>
+    <text x="287.42" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-15">15</text>
+    <text x="301.39" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-16">16</text>
+    <text x="323.8" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-17">17</text>
+    <text x="337.77" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-18">18</text>
+    <text x="351.74" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-19">19</text>
+    <text x="365.71" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-20">20</text>
+    <text x="379.68" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-21">21</text>
+    <text x="393.65" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-22">22</text>
+    <text x="407.62" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-23">23</text>
+    <text x="421.59" y="39.9" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-24">24</text>
+    <text x="323.8" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-25">25</text>
+    <text x="337.77" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-26">26</text>
+    <text x="351.74" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:36" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-27">27</text>
+    <text x="365.71" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:37" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-28">28</text>
+    <text x="379.68" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:38" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-29">29</text>
+    <text x="393.65" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:39" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-30">30</text>
+    <text x="407.62" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:40" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-31">31</text>
+    <text x="421.59" y="8.5" font-family="sans-serif" font-size="2.8" text-anchor="middle" fill="#f0f0f0" data-path="silk:41" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial-32">32</text>
+  </g>
+  <g id="power-switch-1" data-path="power-switch-1" data-class="button" data-ref="common/rocker-switch@1:1.2.0" data-rel-pos="1" transform="translate(9.4,4.2)" data-group="power-switches" data-group-role="service" data-description="the rocker switch above each inlet" data-for="inlet-1">
+    <title>power-switch-1</title>
+    <defs>
+      <linearGradient id="power-switch-1--rise-left" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#3b4045" />
+        <stop offset="1" stop-color="#1c1f22" />
+      </linearGradient>
+      <linearGradient id="power-switch-1--rise-right" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#1c1f22" />
+        <stop offset="1" stop-color="#3b4045" />
+      </linearGradient>
+    </defs>
+    <g id="power-switch-1--bezel" data-z-out="1.5" data-z-color="#1d2023">
+      <rect x="0.1" y="0.1" width="20.8" height="14.8" rx="0.8" fill="#1d2023" stroke="#55595e" stroke-width="0.2" />
+    </g>
+    <g id="power-switch-1--rocker" data-path="power-switch-1/rocker" data-class="button">
+      <g id="power-switch-1--rocker-off" data-show-from="state" data-show="off" data-z-out="4.9" data-z-profile="0:4.9,17.5:2.2">
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="url(#power-switch-1--rise-left)" stroke="#44484d" stroke-width="0.2" />
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="none" fill-opacity="0.85" data-fill-from="rocker-color" />
+        <line x1="4.4" y1="7.5" x2="7.2" y2="7.5" stroke="#e9ecef" stroke-width="0.6" />
+        <circle cx="15.2" cy="7.5" r="1.35" fill="none" stroke="#e9ecef" stroke-width="0.5" />
+      </g>
+      <g id="power-switch-1--rocker-on" data-show-from="state" data-show="on" display="none" data-z-out="4.9" data-z-profile="0:2.2,17.5:4.9">
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="url(#power-switch-1--rise-right)" stroke="#44484d" stroke-width="0.2" />
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="none" fill-opacity="0.85" data-fill-from="rocker-color" />
+        <line x1="4.4" y1="7.5" x2="7.2" y2="7.5" stroke="#e9ecef" stroke-width="0.6" />
+        <circle cx="15.2" cy="7.5" r="1.35" fill="none" stroke="#e9ecef" stroke-width="0.5" />
+      </g>
+    </g>
+  </g>
+  <g id="power-switch-2" data-path="power-switch-2" data-class="button" data-ref="common/rocker-switch@1:1.2.0" data-rel-pos="2" transform="translate(41.9,4.2)" data-group="power-switches" data-group-role="service" data-description="the rocker switch above each inlet" data-for="inlet-2">
+    <title>power-switch-2</title>
+    <defs>
+      <linearGradient id="power-switch-2--rise-left" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#3b4045" />
+        <stop offset="1" stop-color="#1c1f22" />
+      </linearGradient>
+      <linearGradient id="power-switch-2--rise-right" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#1c1f22" />
+        <stop offset="1" stop-color="#3b4045" />
+      </linearGradient>
+    </defs>
+    <g id="power-switch-2--bezel" data-z-out="1.5" data-z-color="#1d2023">
+      <rect x="0.1" y="0.1" width="20.8" height="14.8" rx="0.8" fill="#1d2023" stroke="#55595e" stroke-width="0.2" />
+    </g>
+    <g id="power-switch-2--rocker" data-path="power-switch-2/rocker" data-class="button">
+      <g id="power-switch-2--rocker-off" data-show-from="state" data-show="off" data-z-out="4.9" data-z-profile="0:4.9,17.5:2.2">
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="url(#power-switch-2--rise-left)" stroke="#44484d" stroke-width="0.2" />
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="none" fill-opacity="0.85" data-fill-from="rocker-color" />
+        <line x1="4.4" y1="7.5" x2="7.2" y2="7.5" stroke="#e9ecef" stroke-width="0.6" />
+        <circle cx="15.2" cy="7.5" r="1.35" fill="none" stroke="#e9ecef" stroke-width="0.5" />
+      </g>
+      <g id="power-switch-2--rocker-on" data-show-from="state" data-show="on" display="none" data-z-out="4.9" data-z-profile="0:2.2,17.5:4.9">
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="url(#power-switch-2--rise-right)" stroke="#44484d" stroke-width="0.2" />
+        <rect x="1.75" y="1.75" width="17.5" height="11.5" rx="0.5" fill="none" fill-opacity="0.85" data-fill-from="rocker-color" />
+        <line x1="4.4" y1="7.5" x2="7.2" y2="7.5" stroke="#e9ecef" stroke-width="0.6" />
+        <circle cx="15.2" cy="7.5" r="1.35" fill="none" stroke="#e9ecef" stroke-width="0.5" />
+      </g>
+    </g>
+  </g>
+  <g id="inlet-1" data-path="inlet-1" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="1" transform="translate(5.9,19.2) rotate(180 14.0 10.0)" data-group="inlets" data-group-role="service" data-description="the two AC inlets, numbered 1 and 2 as printed">
+    <title>inlet-1</title>
+    <rect id="inlet-1--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="inlet-1/opening" data-class="cutout" />
+    <path id="inlet-1--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="inlet-1--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-1--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-1--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="inlet-2" data-path="inlet-2" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="2" transform="translate(38.4,19.2) rotate(180 14.0 10.0)" data-group="inlets" data-group-role="service" data-description="the two AC inlets, numbered 1 and 2 as printed">
+    <title>inlet-2</title>
+    <rect id="inlet-2--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="inlet-2/opening" data-class="cutout" />
+    <path id="inlet-2--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="inlet-2--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-2--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-2--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#9a9594" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(119.7,5.2) rotate(180 7.9 6.6)" data-group="console" data-group-role="management" data-description="the RJ45 serial Admin jack printed TERMINAL">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#9a9594" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="admin-usb" data-path="admin-usb" data-class="port" data-ref="std/mini-usb@1:1.0.0" data-depth="9.0" data-wall="#8d949c" data-media="mini-usb-b" data-role="console" data-rel-pos="1" transform="translate(140.4,14.5)" data-group="admin-usb" data-group-role="management" data-description="the USB mini-B Admin jack: a laptop on it reaches the command line (quick setup guide, page 2), so it is a console">
+    <title>admin-usb</title>
+    <path id="admin-usb--shell" d="M 0 0 H 7.7 V 2.7 L 6.9 3.9 H 0.8 L 0 2.7 Z" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+    <path id="admin-usb--opening" d="M 0.4 0.4 H 7.3 V 2.3 L 6.5 3.5 H 1.2 L 0.4 2.3 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="admin-usb/opening" data-class="cutout" />
+    <g id="admin-usb--contacts" fill="#7a8087">
+      <rect x="2.05" y="0.75" width="0.4" height="1.0" />
+      <rect x="2.85" y="0.75" width="0.4" height="1.0" />
+      <rect x="3.65" y="0.75" width="0.4" height="1.0" />
+      <rect x="4.45" y="0.75" width="0.4" height="1.0" />
+      <rect x="5.25" y="0.75" width="0.4" height="1.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="3.85 1.95" data-cp-dir="front" />
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-rel-pos="1" transform="translate(166.9,36.3)" data-group="buttons" data-group-role="service" data-description="the recessed RESET hole" data-for="chassis">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="usb-rear-1" data-path="usb-rear-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="1" transform="translate(163.2,13.05)" data-group="usb-rear" data-group-role="management" data-description="the three USB 2.0 Type A ports on the rear, for a keyboard, a mouse or a cell modem">
+    <title>usb-rear-1</title>
+    <rect id="usb-rear-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-rear-1/opening" data-class="cutout" />
+    <rect id="usb-rear-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-rear-2" data-path="usb-rear-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="2" transform="translate(163.2,21.65)" data-group="usb-rear" data-group-role="management" data-description="the three USB 2.0 Type A ports on the rear, for a keyboard, a mouse or a cell modem">
+    <title>usb-rear-2</title>
+    <rect id="usb-rear-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-rear-2/opening" data-class="cutout" />
+    <rect id="usb-rear-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-rear-3" data-path="usb-rear-3" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="3" transform="translate(163.2,30.35)" data-group="usb-rear" data-group-role="management" data-description="the three USB 2.0 Type A ports on the rear, for a keyboard, a mouse or a cell modem">
+    <title>usb-rear-3</title>
+    <rect id="usb-rear-3--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-rear-3/opening" data-class="cutout" />
+    <rect id="usb-rear-3--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="lan-2" data-path="lan-2" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-finish="#b0b5bb" data-media="rj45" data-speed="1g" data-rel-pos="2" transform="translate(178.6,8.9) rotate(180 7.9 6.6)" data-group="lan" data-group-role="management" data-description="the two 10/100/1000 RJ45 LAN ports, printed LAN 1 and LAN 2">
+    <title>lan-2</title>
+    <g id="lan-2--jack" data-path="lan-2/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#b0b5bb" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>lan-2--jack</title>
+      <path id="lan-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan-2--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan-2--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lan-2/jack/opening" data-class="cutout" />
+      <g id="lan-2--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="lan-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="lan-2--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan-2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="lan-2--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan-2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="lan-1" data-path="lan-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-finish="#b0b5bb" data-media="rj45" data-speed="1g" data-rel-pos="1" transform="translate(178.6,23.4)" data-group="lan" data-group-role="management" data-description="the two 10/100/1000 RJ45 LAN ports, printed LAN 1 and LAN 2">
+    <title>lan-1</title>
+    <g id="lan-1--jack" data-path="lan-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#b0b5bb" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>lan-1--jack</title>
+      <path id="lan-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lan-1/jack/opening" data-class="cutout" />
+      <g id="lan-1--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="lan-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="lan-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="lan-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="serial-1" data-path="serial-1" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="1" transform="translate(197.25,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-1</title>
+    <path id="serial-1--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-1--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-1--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-1/opening" data-class="cutout" />
+    <g id="serial-1--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-2" data-path="serial-2" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="2" transform="translate(211.22,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-2</title>
+    <path id="serial-2--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-2--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-2--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-2/opening" data-class="cutout" />
+    <g id="serial-2--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-3" data-path="serial-3" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="3" transform="translate(225.19,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-3</title>
+    <path id="serial-3--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-3--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-3--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-3/opening" data-class="cutout" />
+    <g id="serial-3--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-4" data-path="serial-4" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="4" transform="translate(239.16,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-4</title>
+    <path id="serial-4--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-4--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-4--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-4/opening" data-class="cutout" />
+    <g id="serial-4--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-5" data-path="serial-5" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="5" transform="translate(253.13,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-5</title>
+    <path id="serial-5--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-5--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-5--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-5/opening" data-class="cutout" />
+    <g id="serial-5--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-6" data-path="serial-6" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="6" transform="translate(267.1,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-6</title>
+    <path id="serial-6--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-6--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-6--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-6/opening" data-class="cutout" />
+    <g id="serial-6--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-7" data-path="serial-7" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="7" transform="translate(281.07,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-7</title>
+    <path id="serial-7--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-7--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-7--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-7/opening" data-class="cutout" />
+    <g id="serial-7--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-8" data-path="serial-8" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="8" transform="translate(295.04,25.5)" data-group="serial-1-8" data-group-role="management" data-description="serial ports 1 to 8, the lower row of the left bank">
+    <title>serial-8</title>
+    <path id="serial-8--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-8--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-8--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-8/opening" data-class="cutout" />
+    <g id="serial-8--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-9" data-path="serial-9" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="9" transform="translate(197.25,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-9</title>
+    <path id="serial-9--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-9--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-9--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-9/opening" data-class="cutout" />
+    <g id="serial-9--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-10" data-path="serial-10" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="10" transform="translate(211.22,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-10</title>
+    <path id="serial-10--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-10--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-10--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-10/opening" data-class="cutout" />
+    <g id="serial-10--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-11" data-path="serial-11" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="11" transform="translate(225.19,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-11</title>
+    <path id="serial-11--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-11--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-11--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-11/opening" data-class="cutout" />
+    <g id="serial-11--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-12" data-path="serial-12" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="12" transform="translate(239.16,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-12</title>
+    <path id="serial-12--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-12--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-12--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-12/opening" data-class="cutout" />
+    <g id="serial-12--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-13" data-path="serial-13" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="13" transform="translate(253.13,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-13</title>
+    <path id="serial-13--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-13--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-13--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-13/opening" data-class="cutout" />
+    <g id="serial-13--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-14" data-path="serial-14" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="14" transform="translate(267.1,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-14</title>
+    <path id="serial-14--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-14--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-14--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-14/opening" data-class="cutout" />
+    <g id="serial-14--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-15" data-path="serial-15" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="15" transform="translate(281.07,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-15</title>
+    <path id="serial-15--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-15--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-15--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-15/opening" data-class="cutout" />
+    <g id="serial-15--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-16" data-path="serial-16" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="16" transform="translate(295.04,10.7) rotate(180 6.35 5.5)" data-group="serial-9-16" data-group-role="management" data-description="serial ports 9 to 16, the upper row of the left bank">
+    <title>serial-16</title>
+    <path id="serial-16--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-16--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-16--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-16/opening" data-class="cutout" />
+    <g id="serial-16--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-17" data-path="serial-17" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="17" transform="translate(317.45,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-17</title>
+    <path id="serial-17--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-17--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-17--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-17/opening" data-class="cutout" />
+    <g id="serial-17--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-18" data-path="serial-18" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="18" transform="translate(331.42,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-18</title>
+    <path id="serial-18--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-18--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-18--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-18/opening" data-class="cutout" />
+    <g id="serial-18--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-19" data-path="serial-19" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="19" transform="translate(345.39,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-19</title>
+    <path id="serial-19--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-19--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-19--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-19/opening" data-class="cutout" />
+    <g id="serial-19--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-20" data-path="serial-20" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="20" transform="translate(359.36,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-20</title>
+    <path id="serial-20--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-20--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-20--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-20/opening" data-class="cutout" />
+    <g id="serial-20--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-21" data-path="serial-21" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="21" transform="translate(373.33,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-21</title>
+    <path id="serial-21--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-21--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-21--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-21/opening" data-class="cutout" />
+    <g id="serial-21--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-22" data-path="serial-22" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="22" transform="translate(387.3,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-22</title>
+    <path id="serial-22--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-22--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-22--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-22/opening" data-class="cutout" />
+    <g id="serial-22--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-23" data-path="serial-23" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="23" transform="translate(401.27,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-23</title>
+    <path id="serial-23--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-23--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-23--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-23/opening" data-class="cutout" />
+    <g id="serial-23--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-24" data-path="serial-24" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="24" transform="translate(415.24,25.5)" data-group="serial-17-24" data-group-role="management" data-description="serial ports 17 to 24, the lower row of the right bank">
+    <title>serial-24</title>
+    <path id="serial-24--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-24--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-24--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-24/opening" data-class="cutout" />
+    <g id="serial-24--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-25" data-path="serial-25" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="25" transform="translate(317.45,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-25</title>
+    <path id="serial-25--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-25--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-25--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-25/opening" data-class="cutout" />
+    <g id="serial-25--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-26" data-path="serial-26" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="26" transform="translate(331.42,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-26</title>
+    <path id="serial-26--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-26--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-26--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-26/opening" data-class="cutout" />
+    <g id="serial-26--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-27" data-path="serial-27" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="27" transform="translate(345.39,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-27</title>
+    <path id="serial-27--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-27--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-27--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-27/opening" data-class="cutout" />
+    <g id="serial-27--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-28" data-path="serial-28" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="28" transform="translate(359.36,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-28</title>
+    <path id="serial-28--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-28--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-28--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-28/opening" data-class="cutout" />
+    <g id="serial-28--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-29" data-path="serial-29" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="29" transform="translate(373.33,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-29</title>
+    <path id="serial-29--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-29--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-29--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-29/opening" data-class="cutout" />
+    <g id="serial-29--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-30" data-path="serial-30" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="30" transform="translate(387.3,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-30</title>
+    <path id="serial-30--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-30--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-30--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-30/opening" data-class="cutout" />
+    <g id="serial-30--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-31" data-path="serial-31" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="31" transform="translate(401.27,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-31</title>
+    <path id="serial-31--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-31--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-31--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-31/opening" data-class="cutout" />
+    <g id="serial-31--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="serial-32" data-path="serial-32" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console-server" data-rel-pos="32" transform="translate(415.24,10.7) rotate(180 6.35 5.5)" data-group="serial-25-32" data-group-role="management" data-description="serial ports 25 to 32, the upper row of the right bank">
+    <title>serial-32</title>
+    <path id="serial-32--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-32--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="serial-32--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="serial-32/opening" data-class="cutout" />
+    <g id="serial-32--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+</svg>

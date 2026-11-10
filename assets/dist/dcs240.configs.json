@@ -27,7 +27,8 @@
    {
     "accepts": [
      "edgecore/dcs240-psu-ac@1",
-     "edgecore/dcs240-psu-dc@1"
+     "edgecore/dcs240-psu-dc@1",
+     "edgecore/dcs240-psu-dc@2"
     ],
     "at": [
      12.0,
@@ -154,7 +155,8 @@
    {
     "accepts": [
      "edgecore/dcs240-psu-ac@1",
-     "edgecore/dcs240-psu-dc@1"
+     "edgecore/dcs240-psu-dc@1",
+     "edgecore/dcs240-psu-dc@2"
     ],
     "at": [
      371.73,
@@ -341,7 +343,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      389.6,
@@ -380,7 +383,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      389.6,
@@ -1910,6 +1914,7 @@
  "configs": [
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {},
    "description": "Dual AC PSUs, back-to-front airflow. The guide states the colour: \"Install back-to-front (B2F) airflow fan trays (blue handles) and PSUs (blue release latches).\"",
    "files": {
@@ -2494,6 +2499,7 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "Dual AC PSUs, front-to-back airflow - red handles and red release latches",
    "files": {
@@ -3078,10 +3084,57 @@
   },
   {
    "airflow": "back-to-front",
+   "attrs": {},
    "bays": {
-    "psu-1": "edgecore/dcs240-psu-dc@1",
-    "psu-2": "edgecore/dcs240-psu-dc@1"
+    "psu-1": "edgecore/dcs240-psu-dc@2",
+    "psu-2": "edgecore/dcs240-psu-dc@2"
    },
+   "dc-ports": [
+    {
+     "awg": [
+      8
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-1/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-1/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-1/module/pole-rtn"
+      }
+     ],
+     "rating-a": 40,
+     "ref": "edgecore/dcs240-psu-dc@2",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": [
+      8
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-2/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-2/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-2/module/pole-rtn"
+      }
+     ],
+     "rating-a": 40,
+     "ref": "edgecore/dcs240-psu-dc@2",
+     "side": null,
+     "voltage": null
+    }
+   ],
    "description": "Dual -48 VDC PSUs, back-to-front airflow - blue handles and blue release latches",
    "files": {
     "bottom": "dcs240.dc-b2f.bottom.svg",
@@ -3665,10 +3718,57 @@
   },
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {
-    "psu-1": "edgecore/dcs240-psu-dc@1",
-    "psu-2": "edgecore/dcs240-psu-dc@1"
+    "psu-1": "edgecore/dcs240-psu-dc@2",
+    "psu-2": "edgecore/dcs240-psu-dc@2"
    },
+   "dc-ports": [
+    {
+     "awg": [
+      8
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-1/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-1/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-1/module/pole-rtn"
+      }
+     ],
+     "rating-a": 40,
+     "ref": "edgecore/dcs240-psu-dc@2",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": [
+      8
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-2/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-2/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-2/module/pole-rtn"
+      }
+     ],
+     "rating-a": 40,
+     "ref": "edgecore/dcs240-psu-dc@2",
+     "side": null,
+     "voltage": null
+    }
+   ],
    "description": "Dual -48 VDC PSUs, front-to-back airflow - red handles and red release latches",
    "files": {
     "bottom": "dcs240.dc-f2b.bottom.svg",
@@ -4314,7 +4414,7 @@
    "scope": [
     "rear"
    ],
-   "wanted": "An elevation of the DC supply. The rear elevation and both rear photographs draw the AC pair; the datasheet rates a -48 VDC variant at 1600 W and the package contents list a \"DC power cable (included with DC PSUs only)\", so it certainly exists. edgecore/dcs240-psu-dc@1 therefore borrows the AC module's measured face and marks its terminal estimated.",
+   "wanted": "An elevation of the DC supply. The rear elevation and both rear photographs draw the AC pair; the datasheet rates a -48 VDC variant at 1600 W and the package contents list a \"DC power cable (included with DC PSUs only)\", so it certainly exists. edgecore/dcs240-psu-dc@2 is therefore drawn from the quick start guide's photograph of the supply, a close-up in perspective with no scale, and every position on it is an estimate.",
    "what": "dc-supply-face"
   },
   {

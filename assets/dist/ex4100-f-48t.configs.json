@@ -1686,7 +1686,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      360.1,
@@ -1726,7 +1727,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      360.1,
@@ -1766,7 +1768,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      374.35,
@@ -1806,7 +1809,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      374.35,
@@ -1846,7 +1850,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      391.8,
@@ -1886,7 +1891,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      391.8,
@@ -1926,7 +1932,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      406.05,
@@ -1966,7 +1973,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      406.05,
@@ -2032,6 +2040,44 @@
   ],
   "left": [],
   "rear": [
+   {
+    "accepts": [
+     "generic/two-hole-lug-5-8@1"
+    ],
+    "at": [
+     59.4125,
+     5.7
+    ],
+    "bores": [
+     "1",
+     "2"
+    ],
+    "default": null,
+    "group": "grounding",
+    "group-states": false,
+    "id": "ground-pair",
+    "interface": "stud-pair-5-8",
+    "kind": "connector",
+    "lift": 0.0,
+    "mate": [
+     69.85,
+     8.2
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "the earthing terminal, two bare M5 holes for a two-hole lug (Table 46)",
+     "data-group": "grounding",
+     "data-group-role": "furniture"
+    },
+    "rel-pos": 0,
+    "rotate": 0,
+    "turns": [
+     0,
+     180
+    ]
+   },
    {
     "accepts": [
      "generic/rj45-plug@1"
@@ -2199,6 +2245,7 @@
  "configs": [
   {
    "airflow": "front-to-back",
+   "attrs": {},
    "bays": {},
    "description": "EX4100-F-48T as shipped - 48 jacks without PoE, four Virtual Chassis and four uplink SFP+ cages, the built-in 90 W AC supply and one built-in front-to-back fan (Tables 16 and 26).",
    "files": {
@@ -2790,17 +2837,6 @@
    "what": "label-plates"
   },
   {
-   "because": "needs-drawing",
-   "blocks": [],
-   "kind": "declared",
-   "note": "The earthing terminal is two bare holes for M5 screws. The library has no pair part for M5 holes on a 5/8 in pitch, so they are drawn as holes and no lug seat is offered.",
-   "scope": [
-    "rear"
-   ],
-   "wanted": "a two-hole M5 earth terminal part",
-   "what": "ground-hole-seat"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
@@ -2825,6 +2861,17 @@
    ],
    "wanted": "A flat drawing or photograph of the lid, the underside and the side panels.",
    "what": "four-faces"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The guide names the screws and the lug and gives no spacing for the two holes; `ground-stud-pitch` says what the pair is drawn at and why.",
+   "scope": [
+    "ground-pair"
+   ],
+   "wanted": "a drawing that dimensions the two holes, or the lug's own datasheet",
+   "what": "ground-pair-pitch"
   },
   {
    "because": "L40",
@@ -2886,7 +2933,11 @@
   },
   "earthing": {
    "confidence": "photo-measured",
-   "note": "Table 46 and Figure 96 - a protective earthing terminal on the rear panel for a Panduit LCD10-14A-L lug on two M5 by 10 mm screws, which are separately orderable. The photograph shows two bare holes on a lighter plate 15.7 mm apart (the 5/8 in lug pitch is 15.9) and no screws, so they are drawn as holes on the plate and no two-hole seat is offered."
+   "note": "Table 46 and Figure 96 - a protective earthing terminal on the rear panel for a Panduit LCD10-14A-L lug on two M5 by 10 mm screws, which are separately orderable. The photograph shows two bare holes on a lighter plate 15.7 mm apart (the 5/8 in lug pitch is 15.9) and no screws, so they were drawn as holes on the plate. They are still drawn as bare holes, now parts: one two-hole seat on that lug's 5/8 in. pitch (`ground-stud-pitch` says how the pitch is read)."
+  },
+  "ground-stud-pitch": {
+   "confidence": "estimated",
+   "note": "INFERRED, NOT STATED. Table 46 names two M5 x 10 mm screws with washer (separately orderable) and a Panduit LCD10-14A-L lug or equivalent (not provided) for the 24 and 48 port models, and gives no spacing. The image puts the two holes 15.7 mm apart, which is the 5/8 in. (15.875) of the library's two-hole lug for the same hole-spacing code (Panduit LCD6-10A-L: '.63 hole spacing'). The terminal is `common/ground-hole-pair-5-8-m5@1`: two bare M5 holes on 5/8 in. centres, presenting `stud-pair-5-8`, so one two-hole lug (`generic/two-hole-lug-5-8@1`) lands across them and a ring lug still lands on either hole. The holes stay bare, as the photograph shows them; the screws are fitted with the lug. The holes were drawn 15.7 apart as decor and the pair stands on their midpoint."
   },
   "lamp-size": {
    "confidence": "estimated",
@@ -2933,7 +2984,19 @@
    "note": "Figures 26 and 28 and Tables 22 and 25 - a dark plate at the right end holds the chassis lamps SYS, ALM, MST and CLD (left column) and the port mode lamps SPD, DX and EN (right column, three rows: the PoE lamp is not available on a model without PoE, Table 25 note, and the photograph prints no PoE legend), each lamp above its legend, a round blue Factory Reset/Mode button with a list icon and the USB Type-C console (CON). The columns centre at 425.9 and 431.6 mm. The lamps are very faint in the photograph and are placed from their legends."
   }
  },
- "seat-turns": {},
+ "seat-turns": {
+  "rear": {
+   "ground-pair": {
+    "generic/two-hole-lug-5-8@1": 0
+   },
+   "ground-pair/1": {
+    "generic/ring-lug@1": 0
+   },
+   "ground-pair/2": {
+    "generic/ring-lug@1": 180
+   }
+  }
+ },
  "views": [
   "front",
   "rear",

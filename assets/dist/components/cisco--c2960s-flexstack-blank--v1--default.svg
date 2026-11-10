@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="103.3mm" height="39.0mm" viewBox="0 0 103.3 39.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="c2960s-flexstack-blank" data-path="c2960s-flexstack-blank" data-class="blank" data-behaviour="fills" data-ref="cisco/c2960s-flexstack-blank@1:1.0.0" data-body-depth="3.0" data-wall="#344a54" data-model="FlexStack slot blank cover" data-role="slot-blank" transform="translate(0,0)">
+    <title>c2960s-flexstack-blank</title>
+    <g id="c2960s-flexstack-blank--rear-plate-fill" fill="#404040">
+      <path d="M 92.4 -0.4 L 103.7 -0.4 L 103.7 31.7 L 103.3 31.7 L 92.7 21.1 L 92.4 0 Z" />
+      <path d="M -0.4 10.6 L 0 10.6 L 10.9 19.3 L 10.9 39.4 L -0.4 39.4 Z" />
+    </g>
+    <path id="c2960s-flexstack-blank--plate" d="M 0 0 L 92.4 0 L 92.7 21.1 L 103.3 31.7 L 103.3 39 L 10.9 39 L 10.9 19.3 L 0 10.6 Z" fill="#393e41" stroke="#344a54" stroke-width="0.8" stroke-linejoin="round" data-z-out="3.0" data-z-color="#393e41" data-z-shape="1" />
+    <g id="c2960s-flexstack-blank--screw-t">
+      <circle cx="7.1" cy="7.6" r="3" fill="#c2cfce" stroke="#8d949c" stroke-width="0.3" />
+      <path d="M 5.2 7.6 H 9.0 M 7.1 5.7 V 9.5" stroke="#4a4f55" stroke-width="0.35" fill="none" />
+    </g>
+    <g id="c2960s-flexstack-blank--screw-b">
+      <circle cx="94.8" cy="32.5" r="3" fill="#c2cfce" stroke="#8d949c" stroke-width="0.3" />
+      <path d="M 92.9 32.5 H 96.7 M 94.8 30.6 V 34.4" stroke="#4a4f55" stroke-width="0.35" fill="none" />
+    </g>
+    <g id="c2960s-flexstack-blank--screw-l">
+      <circle cx="4.7" cy="26.9" r="3.4" fill="#c2cfce" stroke="#8d949c" stroke-width="0.3" />
+      <path d="M 2.6 26.9 H 6.8 M 4.7 24.8 V 29" stroke="#4a4f55" stroke-width="0.35" fill="none" />
+    </g>
+  </g>
+</svg>
