@@ -21,6 +21,16 @@ HERE = Path(__file__).resolve().parent
 DIST = HERE / "assets" / "dist"
 VENDOR = HERE / "vendor"
 
+# The host takes 20,000 static files per version and refuses the whole deploy
+# above that. Warn well before it, and fail with room left for one more refresh.
+UPLOAD_WARN = 15000
+UPLOAD_FAIL = 18000
+UPLOAD_LIMIT = 20000
+# One pack is fetched whole by whoever wants one device's YAML, and the host
+# takes 25 MiB a file.
+PACK_WARN = 8 * 1000 * 1000
+PACK_FAIL = 20 * 1024 * 1024
+
 problems = []
 notes = []
 skips = []   # checks that could not run here, printed by name so a pass never hides one
@@ -129,10 +139,12 @@ check((DIST / "sizes.json").exists(), "sizes.json written",
 # These attributes ARE the product as far as this site is concerned: without
 # them a drawing is a picture rather than something addressable.
 face = None
+_dfp = DIST / "default-faces.json"
+_dff = json.loads(_dfp.read_text()) if _dfp.exists() else {}
 if devices is not None and devices.get("devices"):
     for dev in devices["devices"]:
-        p = DIST / f"{dev['name']}.front.svg"
-        if p.exists():
+        p = DIST / _dff.get(dev["name"], {}).get("front", "")
+        if p.is_file():
             face = p.read_text()
             break
 if face is None:
@@ -1430,13 +1442,28 @@ check(not _both and not _stray and len(_skip) * 20 <= len(_devs),
 # first of them, so `<device>.<config>.<view>.svg` stops existing for most
 # configurations. site/faces.js resolves a face through configs[].files; no
 # other site code may build a per-configuration face name by hand.
+#
+# AND NO CODE BUILDS A DEFAULT FACE'S URL BY HAND. The site leaves out the
+# plain `<device>.<view>.svg` copies (tools/pack-assets.py), so a face URL under
+# assets/dist/ made from a variable followed by `.<view>.svg` or `.${...}.svg`
+# names a file most devices no longer have: site/faces.js defaultFace says which
+# file draws the default face. Literal names stay, for the devices pack-assets
+# keeps (KEEP_PLAIN).
+_DIST_AT = r"(?:assets/dist/|\$\{\s*(?:DIST|dist)\s*\})"
+_VIEW = r"(?:front|rear|left|right|top|bottom)"
+_HAND_RE = re.compile(
+    r"\$\{[^}]+\}\.\$\{[^}]+\}\.\$\{[^}]+\}\.svg[`'\"]|\{[a-z_]+\}\.\{[a-z_]+\}\.\{?[a-z_]*\}?\.?front\.svg|\.base\.front\.svg"
+    + rf"|{_DIST_AT}\$\{{[^}}]+\}}\.(?:{_VIEW}|\$\{{[^}}]+\}})\.svg"
+    + rf"|\b(?:DIST|dist)\s*\+\s*[A-Za-z_][\w.\[\]]*\s*\+\s*['\"`]\.(?:{_VIEW}|\$\{{[^}}]+\}})\.svg")
 _hand = []
-for _f in sorted(list((HERE / "site").rglob("*.js")) + list(HERE.glob("*.html")) + [HERE / "brand" / "build-brand.py"]):
+for _f in sorted(list((HERE / "site").rglob("*.js")) + list(HERE.glob("*.html"))
+                 + list((HERE / "components").rglob("*.html")) + list((HERE / "components").rglob("*.js"))
+                 + [HERE / "brand" / "build-brand.py"]):
     if _f.name == "faces.js": continue
     _t = _f.read_text()
-    for _mm in re.finditer(r"\$\{[^}]+\}\.\$\{[^}]+\}\.\$\{[^}]+\}\.svg[`'\"]|\{[a-z_]+\}\.\{[a-z_]+\}\.\{?[a-z_]*\}?\.?front\.svg|\.base\.front\.svg", _t):
+    for _mm in _HAND_RE.finditer(_t):
         _hand.append(f"{_f.relative_to(HERE)}:{_t[:_mm.start()].count(chr(10)) + 1}")
-check(not _hand, "no site code builds a per-configuration face file name by hand (site/faces.js resolves them)",
+check(not _hand, "no site code builds a face file name or URL by hand (site/faces.js resolves them)",
       f"{len(_hand)}: " + ", ".join(_hand))
 
 # EVERY CONFIGURATION NAMES ITS FACES (Portrayal #670). configs[].files maps each
@@ -1460,6 +1487,97 @@ check("export function faceFile" not in _vd
       or re.search(r"export\s*\{\s*faceFile\s*\}\s*from\s*'\.\./vendor/dist\.js'", _fj) is not None,
       "site/faces.js re-exports the vendored kit's faceFile rather than keeping its own copy",
       "vendor/dist.js exports faceFile but site/faces.js defines its own")
+
+# THE DEFAULT FACES AND THE PACKS (tools/pack-assets.py). The site leaves out the
+# plain `<device>.<view>.svg` copies of each default face and the loose DCIM YAML:
+# default-faces.json says which file draws each default face, and the YAML sits
+# in one pack per target and manufacturer. Held here so a re-vendor that would
+# leave a page asking for a file that is not there fails now.
+import importlib.util as _pau, shutil as _pash, subprocess as _pasp, base64 as _pab64
+_pas = _pau.spec_from_file_location("pack_assets", HERE / "tools" / "pack-assets.py")
+_pa = _pau.module_from_spec(_pas); _pas.loader.exec_module(_pa)
+_dfs = _dff or None
+_names = [d["name"] for d in (devices or {}).get("devices", [])]
+check(_dfs is not None, "assets/dist/default-faces.json is written", "tools/pack-assets.py writes it")
+_nodf = [n for n in _names if not (_dfs or {}).get(n)]
+_dfmiss = [f for n in _names for f in (_dfs or {}).get(n, {}).values() if not (DIST / f).is_file()]
+check(not _nodf and not _dfmiss,
+      "every device has an entry in default-faces.json, and every file it names exists",
+      f"{len(_nodf)} without an entry (e.g. {_nodf[:3]}), {len(_dfmiss)} dangling (e.g. {_dfmiss[:3]})")
+check(_dfs == _pa.default_faces(DIST), "default-faces.json is what configs.json names for each default configuration",
+      "run tools/pack-assets.py")
+_stray = []
+for _n in _names:
+    if _n in _pa.KEEP_PLAIN: continue
+    for _v in sorted(set(_pa.VIEWS) | set((_dfs or {}).get(_n, {}))):
+        _pl = DIST / f"{_n}.{_v}.svg"
+        _nm = (_dfs or {}).get(_n, {}).get(_v)
+        if (_pl.is_file() and _nm and _nm != _pl.name and (DIST / _nm).is_file()
+                and (DIST / _nm).read_bytes() == _pl.read_bytes()):
+            _stray.append(_pl.name)
+check(not _stray, "no plain <device>.<view>.svg is left for a device outside KEEP_PLAIN, unless it differs from the default face",
+      f"{len(_stray)}, e.g. {_stray[:3]}: run tools/pack-assets.py")
+_served_code = sorted(list((HERE / "site").rglob("*.js")) + list(HERE.glob("*.html"))
+                      + list((HERE / "components").rglob("*.html")) + list((HERE / "components").rglob("*.js")))
+_lit_re = re.compile(rf"{_DIST_AT}([A-Za-z0-9][\w.-]*\.{_VIEW}\.svg)")
+_lit_gone = sorted({f"{_f.relative_to(HERE)}: {_m.group(1)}" for _f in _served_code
+                    for _m in _lit_re.finditer(_f.read_text()) if not (DIST / _m.group(1)).is_file()})
+check(not _lit_gone, "every face file named literally in served code exists (only KEEP_PLAIN devices can be)",
+      f"{len(_lit_gone)}: {_lit_gone[:4]}")
+
+_ex = HERE / "assets" / "exports"
+_listed = json.loads((_ex / "files.json").read_text()) if (_ex / "files.json").exists() else {}
+_indexed = json.loads((_ex / "index.json").read_text()) if (_ex / "index.json").exists() else {}
+_paths = sorted({p for ps in _listed.values() for p in ps}
+                | {p for e in _indexed.values() for ps in e.values() for p in ps})
+_packs, _nopack = {}, []
+for _p in _paths:
+    _pf = _ex / _pa.pack_path(_p)
+    if _pf not in _packs:
+        _packs[_pf] = json.loads(_pf.read_text(encoding="utf-8")) if _pf.is_file() else {}
+    if _p not in _packs[_pf]:
+        _nopack.append(_p)
+check(_paths and not _nopack, "every path in files.json and index.json is in its pack",
+      f"{len(_nopack)} of {len(_paths)} missing, e.g. {_nopack[:3]}: run tools/pack-assets.py")
+_loose = sorted(str(f.relative_to(_ex)) for t in _pa.TARGETS if (_ex / t).is_dir() for f in (_ex / t).rglob("*.yaml"))
+check(not _loose, "no loose .yaml is left under assets/exports/ (the packs hold them)",
+      f"{len(_loose)}, e.g. {_loose[:3]}: run tools/pack-assets.py")
+# site/exports-pack.js packOf names the pack pack-assets.py wrote, for every path
+if _pash.which("node"):
+    _js = ("const src = require('fs').readFileSync(process.argv[1], 'utf8');\n"
+           "import('data:text/javascript;base64,' + Buffer.from(src).toString('base64')).then(m => {\n"
+           "  const paths = JSON.parse(require('fs').readFileSync(0, 'utf8'));\n"
+           "  console.log(JSON.stringify(paths.map(p => m.packOf(p))));\n"
+           "});\n")
+    _r = _pasp.run(["node", "-e", _js, str(HERE / "site" / "exports-pack.js")], input=json.dumps(_paths),
+                   capture_output=True, text=True)
+    try:
+        _got = json.loads(_r.stdout)
+    except ValueError:
+        _got = None
+    _off = [] if _got is None else [p for p, u in zip(_paths, _got) if u != "assets/exports/" + _pa.pack_path(p)]
+    check(_got is not None and len(_got) == len(_paths) and not _off,
+          "site/exports-pack.js packOf names the pack tools/pack-assets.py wrote, for every path",
+          (_r.stderr[-200:] if _got is None else f"{len(_off)} differ, e.g. {_off[:3]}"))
+else:
+    skips.append("packOf against pack-assets.py: node is not installed here")
+_big = sorted((f.stat().st_size, f.name) for f in (_ex / "packs").rglob("*.json")) if (_ex / "packs").is_dir() else []
+check(not _big or _big[-1][0] <= PACK_FAIL, "no export pack is over 20 MiB (the host takes 25 MiB a file)",
+      f"{_big[-1:]}")
+if _big and PACK_WARN < _big[-1][0] <= PACK_FAIL:
+    print(f"WARN  the largest export pack is {_big[-1][0] / 1e6:.1f} MB ({_big[-1][1]}); it is fetched whole for one device's YAML")
+
+# THE UPLOAD COUNT. The host refuses a deploy of more than 20,000 static files, so
+# the count is read from what build-public.py would list if the working tree were
+# committed, less _headers and _redirects, which the host reads as settings.
+_up = _pasp.run([sys.executable, str(HERE / "tools" / "build-public.py"), "--list", "--as-committed"],
+                capture_output=True, text=True)
+_upn = len([l for l in _up.stdout.splitlines()
+            if "\t" in l and l.split("\t")[0] not in ("_headers", "_redirects")])
+check(_up.returncode == 0 and 0 < _upn <= UPLOAD_FAIL,
+      f"the upload is at most {UPLOAD_FAIL} files (the host takes {UPLOAD_LIMIT})",
+      f"{_upn} files" if _up.returncode == 0 else (_up.stderr or _up.stdout)[-300:])
+_upload_say = f"upload: {_upn} files (Workers Free allows {UPLOAD_LIMIT:,} per version)"
 
 # WHICH NOS A SOFTWARE VENDOR'S EXPORTS RUN, before and after Portrayal #677.
 # #677 replaces per-hardware NOS overlays (overlays.json, exporter --nos) with
@@ -2678,6 +2796,9 @@ check(not _first_faults,
 
 for s in skips:
     print(f"SKIP  {s}")
+print(_upload_say)
+if _upn > UPLOAD_WARN:
+    print(f"::warning::{_upload_say}; the deploy fails above {UPLOAD_LIMIT:,}")
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
     for p in problems:
