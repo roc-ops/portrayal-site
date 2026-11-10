@@ -1543,6 +1543,8 @@ _loose = sorted(str(f.relative_to(_ex)) for t in _pa.TARGETS if (_ex / t).is_dir
 check(not _loose, "no loose .yaml is left under assets/exports/ (the packs hold them)",
       f"{len(_loose)}, e.g. {_loose[:3]}: run tools/pack-assets.py")
 # site/exports-pack.js packOf names the pack pack-assets.py wrote, for every path
+# (packOf's URL is percent-encoded; the file's name is not)
+from urllib.parse import unquote as _pau_unquote
 if _pash.which("node"):
     _js = ("const src = require('fs').readFileSync(process.argv[1], 'utf8');\n"
            "import('data:text/javascript;base64,' + Buffer.from(src).toString('base64')).then(m => {\n"
@@ -1555,7 +1557,7 @@ if _pash.which("node"):
         _got = json.loads(_r.stdout)
     except ValueError:
         _got = None
-    _off = [] if _got is None else [p for p, u in zip(_paths, _got) if u != "assets/exports/" + _pa.pack_path(p)]
+    _off = [] if _got is None else [p for p, u in zip(_paths, _got) if _pau_unquote(u) != "assets/exports/" + _pa.pack_path(p)]
     check(_got is not None and len(_got) == len(_paths) and not _off,
           "site/exports-pack.js packOf names the pack tools/pack-assets.py wrote, for every path",
           (_r.stderr[-200:] if _got is None else f"{len(_off)} differ, e.g. {_off[:3]}"))
