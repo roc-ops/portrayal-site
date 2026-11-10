@@ -272,24 +272,8 @@ for d in asr-9001 as7946-30xb as5912-54x s9510-28dc dcp-sc-28p; do
   cp "$SRC/dist/$d.configs.json" "$HERE/assets/dist/"
 done
 
-# A size index for the drawings, so a page can say how big a download will be
-# BEFORE it builds it. Juniper made this necessary: an MX10016 front is 9.5 MB
-# of SVG and 12.7 MB once base64'd into a draw.io library, so a whole-vendor
-# library is tens of megabytes and the only warning used to be the wait.
-python3 - "$HERE/assets/dist" <<'PYEOF'
-import json, os, sys
-root = sys.argv[1]
-sizes = {}
-for dirpath, _, names in os.walk(root):
-    for n in names:
-        if not n.endswith('.svg'):
-            continue
-        full = os.path.join(dirpath, n)
-        sizes[os.path.relpath(full, root)] = os.path.getsize(full)
-json.dump(sizes, open(os.path.join(root, 'sizes.json'), 'w'), separators=(',', ':'))
-print("sizes: %d drawings indexed, %.1f MB total"
-      % (len(sizes), sum(sizes.values()) / 1048576))
-PYEOF
+# assets/dist/sizes.json, the size index for the drawings, is written by
+# tools/pack-assets.py at the end, after the plain faces are left out.
 
 # The DCIM exports, GENERATED rather than copied.
 #
@@ -591,5 +575,9 @@ du -sh "$HERE/assets/dist" "$HERE/vendor"
 # something this site depends on goes away the failure is SILENT - a tab renders
 # slightly wrong, or a download comes out empty. This is the only thing that
 # turns that into a noise. Non-zero exit fails the refresh.
+
+# Leave out the plain-face copies, pack the DCIM exports, and write sizes.json
+# and default-faces.json, so what is uploaded stays under the host's file limit.
+python3 "$HERE/tools/pack-assets.py" "$HERE"
 
 python3 "$HERE/check-contract.py"
