@@ -36,9 +36,20 @@ test('the adjustment is checked, not waved through: a wrong axis, a range of one
   assert.ok(broken((a, d) => { d['not-a-key'] = 1; }).includes('additionalProperties'), 'the schema still takes no key it does not describe');
 });
 
-test('each published schema is the vendored one of the same name wherever its label is the one upstream names', () => {
+// HELD: published schemas that are not republished to match the vendored copy yet.
+const HELD_REASON = 'held until Portrayal settles the attrs.speeds typing (Portrayal issue #1699)';
+const HELD = [
+  {label: 'v1', name: 'component.schema.json', reason: HELD_REASON},
+  {label: 'v1', name: 'device.schema.json', reason: HELD_REASON},
+  {label: 'v1', name: 'listing.schema.json', reason: HELD_REASON},
+  {label: 'v3', name: 'rack.schema.json', reason: HELD_REASON},
+];
+const isHeld = (label, name) => HELD.some(h => h.label === label && h.name === name);
+
+test('each published schema is the vendored one of the same name wherever its label is the one upstream names, except the four held', () => {
   const dir = new URL('../../publish/schemas/', import.meta.url);
   let same = 0;
+  const held = [];
   for (const label of readdirSync(dir).filter(n => /^v\d+$/.test(n)))
     for (const name of readdirSync(new URL(`${label}/`, dir)).filter(n => n.endsWith('.schema.json'))) {
       const pub = readFileSync(new URL(`${label}/${name}`, dir), 'utf8');
@@ -47,7 +58,18 @@ test('each published schema is the vendored one of the same name wherever its la
       let vend = null;
       try { vend = readFileSync(new URL(`../../assets/schemas/${name}`, import.meta.url), 'utf8'); } catch { vend = null; }
       // an older label of a schema that has moved on (the rack file's v1 and v2) is kept as published
-      if (vend && JSON.parse(vend).$id === mine.$id) { assert.equal(pub, vend, `${label}/${name} differs from the vendored schema`); same++; }
+      if (!(vend && JSON.parse(vend).$id === mine.$id)) continue;
+      if (isHeld(label, name)) {
+        // a held exception that stops differing must fail, not stay on as a silent exemption
+        assert.notEqual(pub, vend, `${label}/${name} is held (${HELD_REASON}) but now equals the vendored schema: take it off HELD`);
+        held.push(`${label}/${name}`);
+      } else { assert.equal(pub, vend, `${label}/${name} differs from the vendored schema`); same++; }
     }
-  assert.ok(same >= 6, `only ${same} published schemas were compared`);
+  assert.deepEqual(held.sort(), ['v1/component.schema.json', 'v1/device.schema.json', 'v1/listing.schema.json', 'v3/rack.schema.json'], 'every held schema is published and still differs');
+  assert.ok(same >= 2, `only ${same} published schemas were compared`);
+});
+
+test('the held list is exactly four, each with its reason', () => {
+  assert.deepEqual(HELD.map(h => `${h.label}/${h.name}`), ['v1/component.schema.json', 'v1/device.schema.json', 'v1/listing.schema.json', 'v3/rack.schema.json']);
+  for (const h of HELD) assert.equal(h.reason, 'held until Portrayal settles the attrs.speeds typing (Portrayal issue #1699)');
 });
