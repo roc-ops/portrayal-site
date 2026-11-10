@@ -31,9 +31,9 @@
 //   PNG       - raster.js's rasterize, which only takes a URL: the SVG built
 //               above is not one, so it is turned into an object URL first
 //               and the URL is revoked once the raster is done.
-//   DCIM      - links built straight off assets/exports/index.json, never a
-//               hand-typed filename; a device missing from the index gets no
-//               links rather than a guessed one.
+//   DCIM      - download links built straight off assets/exports/index.json,
+//               never a hand-typed filename; a device missing from the index
+//               gets no links rather than a guessed one.
 //
 // The picture follows the switch (ui.mode): in 2D this stage shows the same
 // elevation it exports, in 3D the mounted scene. Clicking a device on the
@@ -49,6 +49,7 @@ import {colorOf} from '../cables.js';
 import {looseReason, endView} from '../plan.js';
 import {drawioMedia} from '../../../vendor/rack/export-data.js';
 import {rasterize} from '../../raster.js';
+import {exportText} from '../../exports-pack.js';
 // A circular import (the rail imports this stage); setMode is only read inside
 // a click handler, never while the modules are being evaluated. Stages may use
 // the rail's functions - never its `epoch`.
@@ -56,9 +57,27 @@ import {setMode} from '../stage-rail.js';
 
 const EXPORTS_BASE = 'assets/exports/';
 
-// Every YAML the index lists for the cast, as real links - never a filename
-// this page invents. A device the index does not know about says so instead
-// of silently having no links.
+// A YAML is a name inside a pack, not a file to link to, so a link downloads
+// the text the pack holds, as the Exporter's Download button does.
+async function downloadExport(path, link) {
+  try {
+    const text = await exportText(path);
+    if (text === null) throw new Error('not in its pack');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], {type: 'text/yaml'}));
+    a.download = path.split('/').pop();
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    link.removeAttribute('title');
+  } catch (err) {
+    link.title = `could not read ${path}: ${err.message}`;
+    console.warn(link.title);
+  }
+}
+
+// Every YAML the index lists for the cast, as download links - never a
+// filename this page invents. A device the index does not know about says so
+// instead of silently having no links.
 function dcimSection(index) {
   const wrap = el('div', {class: 'dcim'});
   for (const e of CAST) {
@@ -71,9 +90,9 @@ function dcimSection(index) {
     const ul = el('ul', {class: 'dcim-links'});
     for (const kind of ['netbox', 'nautobot']) {
       for (const path of entry[kind] || []) {
-        const href = EXPORTS_BASE + path.split('/').map(encodeURIComponent).join('/');
-        ul.append(el('li', {}, [el('a', {href, target: '_blank', rel: 'noopener',
-          text: `${kind} — ${path.split('/').pop()}`})]));
+        const a = el('a', {href: '#', text: `${kind} — ${path.split('/').pop()}`});
+        a.onclick = ev => { ev.preventDefault(); downloadExport(path, a); };
+        ul.append(el('li', {}, [a]));
       }
     }
     wrap.append(ul);

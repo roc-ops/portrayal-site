@@ -4509,7 +4509,8 @@ def check_showcase_first_device(page, base):
 # is the drawing each of these pages exports, overlays or reads.
 LISTED_OPENED_JS = """async device => {
   const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
-  const face = await (await fetch(`assets/dist/${device}.front.svg`)).text();
+  const named = (await (await fetch('assets/dist/default-faces.json')).json())[device].front;
+  const face = await (await fetch(`assets/dist/${named}`)).text();
   return {device, cfg: meta.default, kind: meta.configs.find(c => c.name === meta.default)?.kind ?? null,
           ports: (face.match(/data-class="port"/g) || []).length};
 }"""
@@ -7999,12 +8000,12 @@ def check_rack_ears_meet_face(page, base):
       const {OPENING} = await import('/vendor/rack/rails.js');
       const C = await import('/vendor/rack/catalog.js');
       const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      const faces = fetch('/assets/dist/default-faces.json').then(r => r.json());
       const pane = document.querySelector('#paneFront');
       const out = [];
       for (const g of pane.querySelectorAll('[data-item-id][data-panel="mounted"]')) {
         const ref = g.dataset.deviceRef, cfg = cat[ref].default;
-        let r = await fetch(`/assets/dist/${ref}.${cfg}.front.svg`);
-        if (!r.ok) r = await fetch(`/assets/dist/${ref}.front.svg`);
+        const r = await fetch(`/assets/dist/${(await faces)[ref].front}`);
         const root = new DOMParser().parseFromString(await r.text(), 'image/svg+xml').documentElement;
         const vb = root.getAttribute('viewBox').trim().split(/[\s,]+/).map(Number);
         const fw = parseFloat(root.getAttribute('data-face-w'));

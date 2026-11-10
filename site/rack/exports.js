@@ -23,6 +23,7 @@ import {itemsWithU, heightOf} from '../../vendor/rack/fit.js';
 import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
+import {exportText} from '../exports-pack.js';
 import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, managerNotes, isRackMount,
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
@@ -466,8 +467,14 @@ function fetchText(url) {
   return TEXT.get(url);
 }
 const fetchJson = async url => JSON.parse(await fetchText(url));
-// index.json and files.json paths already start with the target folder.
-const exportUrl = path => EXPORTS_BASE + path.split('/').map(encodeURIComponent).join('/');
+// A type file's text, from the pack it lives in. index.json and files.json paths
+// already start with the target folder. A pack that cannot be read, or that lacks
+// the path, fails this one file, as a file that could not be fetched did.
+const typeText = async path => {
+  const text = await exportText(path);
+  if (text === null) throw new Error(`${path}: not in its pack`);
+  return text;
+};
 
 // What a face has SEATED: a bay's module or a cage's occupant. Default
 // parts carry data-ref exactly as swapped ones do, so this is the rack as
@@ -548,7 +555,7 @@ export async function dcimContext(rack, chassisOf, target) {
   const notes = [...besideNotes(rack, chassisOf), ...mountNotes(rails, chassisOf, rack.frame)];
   const types = new Map();
   const readType = path => (probeFail.type && path.includes(probeFail.type)
-    ? Promise.reject(new Error('probe: this type file cannot be read')) : fetchText(exportUrl(path)));
+    ? Promise.reject(new Error('probe: this type file cannot be read')) : typeText(path));
   for (const it of items) {
     const manufacturer = chassisOf(it.ref)?.manufacturer;
     const m = matchDeviceType({cfg: it.cfg, manufacturer, paths: index[it.ref]?.[target] || []});
@@ -684,7 +691,7 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
     .concat(ctx.modules.map(m => m.path).filter(Boolean))).sort();
   let typeFiles = 0;
   for (const p of paths) {
-    try { entries.push({name: `types/${p.split('/').slice(1).join('/')}`, bytes: enc.encode(await fetchText(exportUrl(p)))}); typeFiles++; }
+    try { entries.push({name: `types/${p.split('/').slice(1).join('/')}`, bytes: enc.encode(await typeText(p))}); typeFiles++; }
     catch { left.push(`${p} couldn't be fetched, so it is not in this zip.`); }
   }
   const manufacturers = uniq([...[...ctx.types.values()].filter(Boolean).map(t => t.manufacturer),

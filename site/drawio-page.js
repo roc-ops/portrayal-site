@@ -2,13 +2,14 @@
 import { createDevicePicker } from '../vendor/devsel.js';
 import { firstListed } from './featured.js';
 import { jdist } from '../vendor/dist.js';
+import { defaultFaces, defaultFaceIn } from './faces.js';
 import { entry, library, rackDiagram, connectable, RACK, SCALE } from '../vendor/drawio.js';
 import { loadFace, portsOf } from '../vendor/zones.js';
 import { buildStencil, rasterize } from '../vendor/omnigraffle.js';
 
 const $ = id => document.getElementById(id);
 const DIST = 'assets/dist/';
-let DEVICES = [], DEV = null, COMPONENTS = [], SIZES = {};
+let DEVICES = [], DEV = null, COMPONENTS = [], SIZES = {}, FACES = {};
 
 // A component's namespace is its vendor's first word, lowercased - casa for
 // Casa Systems, ufispace for UfiSpace. Checked against every namespace in the
@@ -26,7 +27,7 @@ const nsOfDevice = d => d.ns || nsOf(d.manufacturer);
 /** The default face for a device: the NOS-neutral front if there is one, else
  *  the first configuration's. The picture is the same either way; the
  *  configurations differ in what is seated, which a device type does not carry. */
-const faceUrl = (d, face) => `${DIST}${d.name}.${face}.svg`;
+const faceUrl = (d, face) => defaultFaceIn(FACES, DIST, d.name, face);
 
 /** The vendor's line cards, supervisors, supplies - the things that go IN the
  *  chassis. For a modular vendor these outnumber the chassis many times over:
@@ -484,7 +485,7 @@ const plural = (w, n) => n === 1 ? w : (w.endsWith('h') ? `${w}es` : `${w}s`);
 function estimate(key, {faces, modules, optics}) {
   let bytes = 0;
   for (const d of inScope(key)) {
-    for (const f of faces) bytes += SIZES[`${d.name}.${f}.svg`] || 0;
+    for (const f of faces) bytes += SIZES[FACES[d.name]?.[f]] || 0;
   }
   const sizeOf = c => SIZES[c.files.default.replace(/^.*?dist\//, '')] || SIZES[c.files.default] || 0;
   if (modules) for (const c of modulesFor(key)) bytes += sizeOf(c);
@@ -558,6 +559,7 @@ function describe() {
     DEVICES = (await jdist(`${DIST}devices.json`)).devices;
     COMPONENTS = (await jdist(`${DIST}components.json`).catch(() => ({}))).components || [];
     SIZES = await jdist(`${DIST}sizes.json`).catch(() => ({}));
+    FACES = await defaultFaces(DIST);
   } catch (err) {
     $('note').textContent = `could not load the device index: ${err.message}`;
     return;
