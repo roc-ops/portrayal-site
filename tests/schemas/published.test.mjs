@@ -66,7 +66,10 @@ test('each published schema is the vendored one of the same name wherever its la
       } else { assert.equal(pub, vend, `${label}/${name} differs from the vendored schema`); same++; }
     }
   assert.deepEqual(held.sort(), ['v1/component.schema.json', 'v1/device.schema.json', 'v1/listing.schema.json', 'v3/rack.schema.json'], 'every held schema is published and still differs');
-  assert.ok(same >= 2, `only ${same} published schemas were compared`);
+  // the floor of six counts every schema examined, equal or held and shown to differ, so holding one cannot lower it;
+  // and at least two must still be compared equal, so the equality check is not emptied by holding the rest
+  assert.ok(same + HELD.length >= 6, `only ${same} compared equal and ${HELD.length} held: fewer than 6 published schemas were examined`);
+  assert.ok(same >= 2, `only ${same} published schemas were compared equal`);
 });
 
 test('the held list is exactly four, each with its reason', () => {
