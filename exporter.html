@@ -127,6 +127,8 @@ import { jdist } from './vendor/dist.js';
 import { firstListed, namesDevice } from './site/featured.js';
 import { makeZip } from './site/bundle.js';
 import { rasterize } from './site/raster.js';
+import { defaultFace } from './site/faces.js';
+import { exportText } from './site/exports-pack.js';
 
 const $ = id => document.getElementById(id);
 let DEVICES = [], INDEX = {}, text = '', file = '', DEV = '';
@@ -238,12 +240,20 @@ async function show(repaint = true) {
     return;
   }
   file = $('variant').value || files[0];
-  const res = await fetch('assets/exports/' + file);
-  if (!res.ok) {
+  let got;
+  try {
+    got = await exportText(file);
+  } catch (err) {
+    text = '';
+    $('out').innerHTML = `<span class="bad">Could not read ${file}: ${err.message}</span>`;
+    return;
+  }
+  if (got === null) {
+    text = '';
     $('out').innerHTML = `<span class="bad">Missing: ${file}</span>`;
     return;
   }
-  text = await res.text();
+  text = got;
   $('out').textContent = text;
   $('src').textContent = 'library/exports/' + file;
 }
@@ -294,16 +304,21 @@ async function buildBundle(btn) {
   $('bnote').textContent = `fetching ${wanted.length + maps.length} files…`;
   const enc = new TextEncoder();
   const entries = [];
-  for (const rel of wanted) {
-    const res = await fetch('assets/exports/' + rel);
-    if (!res.ok) continue;
-    entries.push({name: rel.split('/').slice(1).join('/'),
-                  bytes: new Uint8Array(await res.arrayBuffer())});
-  }
-  for (const rel of maps) {
-    const res = await fetch('assets/exports/' + rel);
-    if (!res.ok) continue;
-    entries.push({name: rel, bytes: new Uint8Array(await res.arrayBuffer())});
+  try {
+    for (const rel of wanted) {
+      const yaml = await exportText(rel);
+      if (yaml === null) continue;
+      entries.push({name: rel.split('/').slice(1).join('/'), bytes: enc.encode(yaml)});
+    }
+    for (const rel of maps) {
+      const yaml = await exportText(rel);
+      if (yaml === null) continue;
+      entries.push({name: rel, bytes: enc.encode(yaml)});
+    }
+  } catch (err) {
+    $('bnote').textContent = `could not read the export packs: ${err.message}`;
+    btn.disabled = false;
+    return;
   }
 
   // ── images, rendered rather than fetched ──────────────────────────────
@@ -336,7 +351,8 @@ async function buildBundle(btn) {
         for (const face of ['front', 'rear']) {
           if (!new RegExp(`^${face}_image:\\s*true`, 'm').test(yaml)) continue;
           $('bnote').textContent = `rendering ${++made} images…`;
-          const png = await rasterize(`assets/dist/${dev}.${face}.svg`);
+          const svg = await defaultFace('assets/dist/', dev, face);
+          const png = svg && await rasterize(svg);
           if (png) entries.push({name: `elevation-images/${parts[2]}/${slug}.${face}.png`,
                                  bytes: png});
         }

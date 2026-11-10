@@ -15,6 +15,26 @@
 import {jdist, faceFile} from '../vendor/dist.js';
 export {faceFile} from '../vendor/dist.js';
 
+// THE DEFAULT FACE. The site does not serve a plain `<device>.<view>.svg` (a copy
+// of the default configuration's face) for most devices; tools/pack-assets.py
+// leaves them out and writes `default-faces.json`, `{device: {view: file}}`, which
+// says which file draws each device's default face. Anything that wants "the"
+// face of a device, with no configuration in hand, asks here.
+
+/** default-faces.json, read once per page. */
+export const defaultFaces = dist => jdist(`${dist}default-faces.json`);
+
+/** The URL of ref's default face for `view` in a map `defaultFaces` returned, or null. */
+export function defaultFaceIn(map, dist, ref, view) {
+  const f = map?.[ref]?.[view];
+  return f ? dist + f : null;
+}
+
+/** The URL of `ref`'s default face for `view`, or null if it has none. */
+export async function defaultFace(dist, ref, view) {
+  return defaultFaceIn(await defaultFaces(dist), dist, ref, view);
+}
+
 /** The URL of `view` of `ref` in configuration `config`, reading ref's configs.json. */
 export async function faceUrl(dist, ref, config, view) {
   const index = await jdist(`${dist}${ref}.configs.json`).catch(() => null);
