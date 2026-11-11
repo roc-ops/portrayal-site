@@ -167,6 +167,7 @@ import { statesOfEl, boundLamps, offIsSet } from './vendor/states.js';
 import { encodeSwaps, searchWith, rawParam } from './vendor/swap.js';
 import { swapsNow, fieldsNow, encodeFields, decodeFields,
          installOpticFields, OPTIC_CSS } from './site/optics.js';
+import { encodePulled, decodePulled } from './site/pulled-link.js';
 import { configuredFace } from './site/rack/face.js';
 import { rasterize } from './site/raster.js';
 import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
@@ -618,6 +619,20 @@ let pendingFields = null;
   if (Object.keys(fromUrl).length) pendingFields = fromUrl;
 }
 
+// THE PARTS A LINK TAKES OFF, read at the same moment for the same reason: the
+// kit's shell does not read `pulled=`, and writeLocation rewrites the whole
+// query on the first `load`, so the parameter is gone before anything could
+// apply it. Held here until applyPendingPulled has run, and writeLocation writes
+// it back meanwhile, as it does `fields=`. Only for the device the link names: a
+// link for one that is not here says nothing about the fallback.
+let pendingPulled = null;
+{
+  const want = new URLSearchParams(location.search).get('device');
+  const fromUrl = decodePulled(rawParam(location.search, 'pulled'));
+  if (fromUrl.paths.length && want) pendingPulled = {...fromUrl, device: want};
+}
+const pulledNow = () => encodePulled(shell.pulledPaths(), shell.pulledViews());
+
 // A SWAP SURVIVES A RELOAD, and a link to this page says what it shows.
 // The shell already READS `?device=&config=&view=&swap=` on load; nothing here
 // ever wrote them, so a module or an optic chosen here was gone on reload and
@@ -647,6 +662,10 @@ function writeLocation() {
     // before they land would rewrite them to nothing - the trap shell.js warns
     // about for `swap=` in the same breath.
     fields: encodeFields(pendingFields || fieldsNow(shell)),
+    // AND WHAT IS TAKEN OFF, so a link can arrive with the cover already off.
+    // A removed part is a way to look at the device, not a build of it: it
+    // is not part of what swap= and fields= say the device is.
+    pulled: pendingPulled ? encodePulled(pendingPulled.paths, pendingPulled.views) : pulledNow(),
   });
   if (search !== location.search) {
     try { history.replaceState(history.state, '', `${location.pathname}${search}${location.hash}`); }
@@ -658,6 +677,8 @@ function writeLocation() {
 }
 shell.on('change', writeLocation);
 shell.on('load', writeLocation);
+// A pull announces itself as `pulled`, not `change`, so the link needs its own ear.
+shell.on('pulled', writeLocation);
 
 // A PART THAT SLIDES (Portrayal #950, kit 0.20.0): the kit's control for a
 // device that declares an adjustment (the FS DIN rail shelves' rail-setback),
@@ -744,8 +765,30 @@ document.head.appendChild(Object.assign(document.createElement('style'), {textCo
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: EARS_CSS}));
 
+/** TAKE OFF WHAT THE LINK SAYS, AFTER THE SWAPS AND FIELDS, because a path may
+ *  name a part a swap seated. The shell's setPulled is silent about a path that
+ *  names nothing (it only skips it), so what did not come off is found by asking
+ *  what is off now, and named in a warning as the swaps are. Written back
+ *  either way: what the link asked for that is not true here falls out of it. */
+function applyPendingPulled() {
+  const map = pendingPulled;
+  pendingPulled = null;
+  try {
+    if (map && map.device === state.device) {
+      shell.setPulled(map.paths, true, map.views);
+      const now = shell.pulledPaths(), nowViews = shell.pulledViews();
+      const ignored = map.paths.filter((p, i) => !now.some((q, j) =>
+        q === p && (map.views[i] == null || nowViews[j] === map.views[i])));
+      if (ignored.length) console.warn('[portrayal] pulled naming nothing on', state.device, ignored);
+    }
+  } finally {
+    writeLocation();
+  }
+}
+
 await shell.ready;
 applyPendingFields();
+applyPendingPulled();
 </script>
 <script>
 // Close the export menu on Escape or on a click outside it. <details> handles
