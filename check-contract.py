@@ -2360,7 +2360,11 @@ check(_ksr is not None and _ksr.returncode == 0,
 # against throwaway git repositories and a fake `gh`, so a change that breaks it
 # is found here and not on the day a set is waiting.
 _mtt = HERE / "tests" / "tools" / "merge_train_test.py"
-_mtr = _sp.run([sys.executable, str(_mtt)], capture_output=True, text=True) if _mtt.is_file() else None
+# Without the caller's GIT_* variables: under a pre-push hook in a linked worktree
+# GIT_DIR names the repository being pushed, which the test's git calls must not touch.
+_mtr = (_sp.run([sys.executable, str(_mtt)], capture_output=True, text=True,
+                env={k: v for k, v in os.environ.items() if not k.startswith("GIT_")})
+        if _mtt.is_file() else None)
 check(_mtr is not None and _mtr.returncode == 0,
       "tools/merge-train.py passes its tests against throwaway git repositories and a fake gh",
       (_mtr.stderr[-600:] if _mtr else "no tests/tools/merge_train_test.py"))
