@@ -8046,6 +8046,81 @@ def check_rack_ears_meet_face(page, base):
     return bad
 
 
+# THE 3D FLANGE REACHES THE RAIL (#176). The 3D generic ear's flange was a fixed
+# 24 mm box beside the face while its screws sat on the rail's hole, so on a
+# narrow device (the 221 mm TM-340) the screw heads hung ~98 mm out in the air.
+# It runs from the body's own edge out to EAR_OVERHANG past the rail hole now,
+# the same ends the 2D flange has. Measured off the scene: each generic ear's
+# two `ear-flange` meshes against the body's half width and the rail hole, and
+# every screw head's x against the flange it must sit in. The FHD-CMP5DR is not
+# in the sample: it is a rack-face part and the 3D scene builds no ears for it.
+@extra("rack.html: the 3D generic ear flange runs from the device's edge to the rail hole, so a narrow device's screws sit in it (#176)")
+def check_rack_ears_meet_face_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_ears_meet_face_3d] no WebGL here - the 3D flange was not checked")
+        return bad
+    sample = [("tm-340", 10), ("s9600-72xc", 20)]
+    rack = page.evaluate("""async sample => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Ears meet 3D'});
+      for (const [ref, ru] of sample)
+        ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru, face: 'front', label: ref}));
+      return r;
+    }""", sample)
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the ear-flange scene")
+    ids = {it["ref"]: it["id"] for it in rack["items"]}
+    got = page.evaluate(r"""async ids => {
+      const {SIDES} = await import('/vendor/rack/rails.js');
+      const {EAR_OVERHANG} = await import('/site/rack/ear-holes.js');
+      const w = window.__rack.scene().three.scene, out = {};
+      for (const [ref, id] of Object.entries(ids)) {
+        const g = w.getObjectByName(`device-${id}`), e = w.getObjectByName(`ears-${id}`);
+        const body = g && g.children.find(o => o.isMesh && o.geometry.type === 'BoxGeometry');
+        if (!body || !e) { out[ref] = null; continue; }
+        const flanges = [], heads = [];
+        e.traverse(o => { if (!o.isMesh) return;
+          if (o.name === 'ear-flange') flanges.push({x: o.position.x, width: o.geometry.parameters.width});
+          if (o.geometry.type === 'CylinderGeometry') heads.push(o.position.x); });
+        out[ref] = {kind: e.userData.ears ?? null, half: body.geometry.parameters.width / 2, flanges, heads};
+      }
+      return {items: out, hole: Math.abs(SIDES[1].hole), overhang: EAR_OVERHANG};
+    }""", ids)
+    want_outer = got["hole"] + got["overhang"]
+    for ref, _ in sample:
+        d = got["items"].get(ref)
+        if d is None:
+            bad.append(f"{ref}: its device or ears are not in the 3D scene")
+            continue
+        if d["kind"] != "generic":
+            bad.append(f"{ref}: its ears are {d['kind']!r}, expected generic")
+            continue
+        if len(d["flanges"]) != 2:
+            bad.append(f"{ref}: {len(d['flanges'])} ear flanges, expected 2")
+            continue
+        for f in d["flanges"]:
+            inner, outer = abs(f["x"]) - f["width"] / 2, abs(f["x"]) + f["width"] / 2
+            if abs(inner - d["half"]) > 0.05:
+                bad.append(f"{ref}: a flange starts {inner:.2f} mm from the centre, not at the body's edge {d['half']:.2f}")
+            if abs(outer - want_outer) > 0.05:
+                bad.append(f"{ref}: a flange ends {outer:.2f} mm from the centre, not {want_outer:.2f} (rail hole + overhang)")
+        outer = max(abs(f["x"]) + f["width"] / 2 for f in d["flanges"])
+        if not d["heads"]:
+            bad.append(f"{ref}: no screw heads found")
+        for hx in d["heads"]:
+            if not d["half"] <= abs(hx) <= outer:
+                bad.append(f"{ref}: a screw head at {hx:.2f} mm is outside the flange ({d['half']:.2f}..{outer:.2f})")
+    return bad
+
+
 # THE BUNDLES IN THE EXPORTS (Portrayal #923, kit 0.9.0): the cable schedule
 # names each member's bundle in its `bundle` column and carries the kit's line
 # for the bundle in its notes, measured with the page's routes, cable types and
@@ -8832,7 +8907,7 @@ HALF_U_3D_JS = """async () => {
     const body = g.children.find(o => o.isMesh && o.geometry.type === 'BoxGeometry');
     const flanges = [], heads = [];
     e?.traverse(o => { if (!o.isMesh) return;
-      if (o.geometry.type === 'BoxGeometry' && o.geometry.parameters.width === 24) flanges.push([o.position.y, o.geometry.parameters.height]);
+      if (o.name === 'ear-flange') flanges.push([o.position.y, o.geometry.parameters.height]);
       if (o.geometry.type === 'CylinderGeometry') heads.push(o.position.y); });
     out[id] = {y: g.position.y, h: body.geometry.parameters.height, flanges, heads};
   }

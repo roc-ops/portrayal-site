@@ -12,7 +12,7 @@
 // Every device goes through configuredFace, with its own swaps and fields.
 
 import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from '../../vendor/rack/rails.js';
-import {earHoles} from './ear-holes.js';
+import {earHoles, EAR_OVERHANG} from './ear-holes.js';
 import {configuredFace, earPlanFor, zeroUModuleEnds} from './face.js';
 import {svgEl, importDrawingNode} from './dom.js';
 import {paintFace} from './settable.js';
@@ -102,7 +102,6 @@ function outline(top, ruH, text, attrs, C = OUTLINE) {
 // nearly invisible against the rail itself. It reads as metal now - a
 // muted-ink flange (not full ink, so it stays a shade behind the device's
 // own panel) with a darker screw head and a short slot line.
-const EAR_OVERHANG = 3; // mm the flange runs past the hole centre, so the screw head sits inside it
 const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 
 // `plan` is the kit's generic-ear plan (face.js earPlanFor), or null where
@@ -111,9 +110,10 @@ const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 // device is still bolted to the rail at every U, as the BOM counts it.
 //
 // THE FLANGE STARTS AT THE FACE'S OWN EDGE (#168), `face` = [left, right] in
-// pane x, as the plan's flange does (ears2d.js: from the face's side out to
-// the 482.6 mm rack face) and as rack3d.js's flange does (from W/2 out). It
-// started at the opening's edge, so every device narrower than the 450.85 mm
+// pane x, as the plan's flange does (from the face's side out: ears2d.js) and
+// as rack3d.js's does (from W/2, #176). Both of ours end EAR_OVERHANG past the
+// rail hole (ear-holes.js earFlange: 235.55 mm from the centre); the kit's plan
+// runs on to the 482.6 mm rack face (241.3 mm). It started at the opening's edge, so every device narrower than the 450.85 mm
 // opening - 186 of the 187 that take a generic ear - showed a strip of rail
 // between its body and each ear: 9.75 mm on the 431.35 mm XCU10, 115 mm on a
 // half-width box. Without a face (a missing drawing) it keeps the opening.
