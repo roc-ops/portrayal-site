@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="107.4mm" height="43.7mm" viewBox="0 0 107.4 43.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='vertiv/imd-5m@'] .state-booting { --led-color: #facc15; }
+    g[data-ref^='vertiv/imd-5m@'] .state-running { --led-color: #22c55e; }</style>
+  <g id="imd-5m" data-path="imd-5m" data-class="nic" data-behaviour="fills" data-ref="vertiv/imd-5m@1:1.0.0" data-body-depth="40" data-module="IMD-5M" transform="translate(0,0)">
+    <title>imd-5m</title>
+    <rect id="imd-5m--plate" x="0" y="0" width="107.4" height="43.7" rx="2.4" fill="#2b2b2a" stroke="#454543" stroke-width="0.3" />
+    <rect id="imd-5m--latch-left" x="0.4" y="14.8" width="8.4" height="14.0" rx="1.0" fill="#101010" />
+    <rect id="imd-5m--latch-right" x="98.8" y="14.8" width="8.2" height="14.0" rx="1.0" fill="#101010" />
+    <rect id="imd-5m--link-socket" x="44.7" y="6.1" width="7.8" height="10.5" rx="1.0" fill="#8a8a88" stroke="#4c4c4a" stroke-width="0.3" />
+    <path id="imd-5m--power-socket" d="M 52.7 18.7 H 61.6 L 60.4 24.0 H 53.9 Z" fill="#0e0e0e" stroke="#555553" stroke-width="0.3" />
+    <rect id="imd-5m--slot" x="51.9" y="29.5" width="3.2" height="6.4" rx="0.5" fill="#0d0d0d" stroke="#3a3a38" stroke-width="0.2" />
+    <rect id="imd-5m--lcd-bezel" x="66.7" y="5.8" width="27.5" height="30.6" rx="0.8" fill="#1c1c1c" />
+    <rect id="imd-5m--lcd" x="68.3" y="7.5" width="25.9" height="28.3" fill="#ceced0" data-path="imd-5m/lcd" />
+    <rect x="68.3" y="7.5" width="25.9" height="1.4" fill="#4caf50" />
+    <path d="M 71.0 15.0 h 4.0 M 71.0 16.2 h 8.0 M 71.0 19.0 h 12.0" stroke="#3a3a3a" stroke-width="0.7" />
+    <g id="imd-5m--silkscreen" font-family="sans-serif" fill="#e8e8e8">
+      <text x="14.2" y="40.6" font-size="2.6" text-anchor="middle">1</text>
+      <text x="46.2" y="40.6" font-size="2.6" text-anchor="middle">2</text>
+      <path d="M 17.2 38.8 h 3.0 M 17.2 39.8 h 3.0 M 49.2 38.8 h 3.0 M 49.2 39.8 h 3.0" stroke="#e8e8e8" stroke-width="0.3" />
+      <circle cx="23.2" cy="39.0" r="1.5" fill="none" stroke="#e8e8e8" stroke-width="0.3" />
+      <text x="101.0" y="42.0" font-size="2.2" text-anchor="end">IMD-5M</text>
+    </g>
+    <g id="imd-5m--eth1" data-path="imd-5m/eth1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(14.2,21.4)" data-group="ethernet" data-group-role="management" data-description="the two Ethernet ports, which act as a two-port switch">
+      <title>imd-5m--eth1</title>
+      <g id="imd-5m--eth1--jack" data-path="imd-5m/eth1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>imd-5m--eth1--jack</title>
+        <path id="imd-5m--eth1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="imd-5m--eth1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="imd-5m--eth1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="imd-5m/eth1/jack/opening" data-class="cutout" />
+        <g id="imd-5m--eth1--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="imd-5m--eth1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="imd-5m--eth1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="imd-5m/eth1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="imd-5m--eth1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="imd-5m/eth1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="imd-5m--eth2" data-path="imd-5m/eth2" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(30.4,21.4)" data-group="ethernet" data-group-role="management" data-description="the two Ethernet ports, which act as a two-port switch">
+      <title>imd-5m--eth2</title>
+      <g id="imd-5m--eth2--jack" data-path="imd-5m/eth2/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>imd-5m--eth2--jack</title>
+        <path id="imd-5m--eth2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="imd-5m--eth2--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="imd-5m--eth2--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="imd-5m/eth2/jack/opening" data-class="cutout" />
+        <g id="imd-5m--eth2--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="imd-5m--eth2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="imd-5m--eth2--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="imd-5m/eth2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="imd-5m--eth2--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="imd-5m/eth2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="imd-5m--sensor" data-path="imd-5m/sensor" data-class="port" data-ref="common/rj11-jack@1:1.3.0" data-depth="20.57" data-function="remote-sensor" data-media="rj12-sensor" transform="translate(12.5,3.15)" data-group="peripheral" data-group-role="management">
+      <title>imd-5m--sensor</title>
+      <path id="imd-5m--sensor--housing" fill-rule="evenodd" fill="#c9cdd1" stroke="#5c6167" stroke-width="0.15" d="     M 0.8 0 h 12.4 a 0.8 0.8 0 0 1 0.8 0.8 v 11.9 a 0.8 0.8 0 0 1 -0.8 0.8 h -12.4 a 0.8 0.8 0 0 1 -0.8 -0.8 v -11.9 a 0.8 0.8 0 0 1 0.8 -0.8 z     M 2.06 1.5 h 9.88 v 6.85 h -1.64 v 1.69 h -1.28 v 2.72 h -4.04 v -2.72 h -1.28 v -1.69 h -1.64 z" />
+      <path id="imd-5m--sensor--jack" fill="none" d="M 2.06 1.5 h 9.88 v 11.26 h -9.88 z" data-path="imd-5m/sensor/jack" data-class="jack" />
+      <g id="imd-5m--sensor--opening" data-path="imd-5m/sensor/opening" data-class="port" data-inner="1" data-ref="std/rj11@1:1.0.0" data-depth="20.57" data-wall="#3a3f45" data-cavity="cavity" data-media="rj11" transform="translate(2.06,1.5)">
+        <title>imd-5m--sensor--opening</title>
+        <path id="imd-5m--sensor--opening--cavity" fill="#17191c" d="     M 0 0 h 9.88 v 6.85 h -1.64 v 1.69 h -1.28 v 2.72 h -4.04 v -2.72 h -1.28 v -1.69 h -1.64 z" />
+        <path id="imd-5m--sensor--opening--opening" fill="none" d="M 0 0 h 9.88 v 11.26 h -9.88 z" data-path="imd-5m/sensor/opening/opening" data-class="cutout" />
+        <g id="imd-5m--sensor--opening--pins" fill="#a8873c">
+          <rect x="4.20" y="0.6" width="0.46" height="2.3" />
+          <rect x="5.22" y="0.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.94 3.425" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="7 4.925" data-cp-dir="front" />
+      <g data-cp="tel" data-cp-at="7 4.925" data-cp-dir="front" />
+    </g>
+    <g id="imd-5m--serial" data-path="imd-5m/serial" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-role="serial" transform="translate(27.1,3.3)" data-group="peripheral" data-group-role="management">
+      <title>imd-5m--serial</title>
+      <path id="imd-5m--serial--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="imd-5m--serial--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="imd-5m--serial--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="imd-5m/serial/opening" data-class="cutout" />
+      <g id="imd-5m--serial--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="imd-5m--usb" data-path="imd-5m/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(51.7,7.15) rotate(270 6.0 2.25)" data-group="peripheral" data-group-role="management">
+      <title>imd-5m--usb</title>
+      <rect id="imd-5m--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="imd-5m/usb/opening" data-class="cutout" />
+      <rect id="imd-5m--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="imd-5m--restart" data-path="imd-5m/restart" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" transform="translate(21.2,37.0)" data-group="controls" data-group-role="management">
+      <title>imd-5m--restart</title>
+      <circle id="imd-5m--restart--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="imd-5m--restart--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="imd-5m/restart/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+    </g>
+    <g id="imd-5m--status" data-path="imd-5m/status" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(36.0,38.0)" data-group="status-leds" data-group-role="indicator">
+      <title>imd-5m--status</title>
+      <circle id="imd-5m--status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="imd-5m--status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="imd-5m/status/lamp" data-class="led" data-states="off running booting" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>

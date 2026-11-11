@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440mm" height="198.25mm" viewBox="0 0 440 198.25" data-device="nport-5650-16-t" data-view="top" data-weight-kg="2.51" data-weight-note="2,510 g; the data sheet does not say whether the package is included" data-serial-standards="RS-232, RS-422, RS-485" data-serial-connector="8-pin RJ45" data-serial-rate-max="921.6 kbps" data-power-input-ac="100 to 240 VAC, 47 to 63 Hz" data-power-input-current="158 mA @ 100 VAC" data-operating-temp-c="-40 to 75" data-storage-temp-c="-40 to 75" data-humidity="5 to 95% non-condensing" data-safety="UL 62368-1" data-emc="EN 55032/35" data-emi="CISPR 32, FCC Part 15B Class A" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Moxa NPort 5650-16-T","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/screw-head@1":"1.1.1"},"source-sha256":"6a8c3a023346abb16fcef8e99e56b2bbd9a1d64898403dfe624fc41adb3053b4","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NPort 5650-16-T" data-sku="NPort 5650-16-T" data-part-number="" x="0" y="0" width="440" height="198.25" rx="1.2" fill="#3a3e47" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-motif-cc98462474" width="177.18" height="77.3" patternUnits="userSpaceOnUse">
+      <path d="M 0 0 L 177.17 0 L 164.39 11.3 L 13.08 11.3 Z" fill="#17191c" />
+      <path d="M 25.56 21.7 L 151.9 21.7 L 138.82 33.29 L 38.64 33.29 Z" fill="#17191c" />
+      <path d="M 50.83 44 L 126.63 44 L 113.85 55.29 L 63.91 55.29 Z" fill="#17191c" />
+      <path d="M 75.8 65.99 L 101.37 65.99 L 88.59 77.29 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-65b788a6c8" width="87.7" height="76.7" patternUnits="userSpaceOnUse">
+      <path d="M 0 0 L 0 11.3 L 13.08 11.3 Z" fill="#17191c" />
+      <path d="M 0 22 L 25.27 22 L 38.05 33.29 L 0 33.29 Z" fill="#17191c" />
+      <path d="M 0 43.7 L 50.54 43.7 L 63.32 55.29 L 0 55.29 Z" fill="#17191c" />
+      <path d="M 0 64.8 L 74.91 64.8 L 87.69 76.69 L 0 76.69 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-47bebc342e" width="88" height="76.7" patternUnits="userSpaceOnUse">
+      <path d="M 87.99 0 L 87.99 11.3 L 74.91 11.3 Z" fill="#17191c" />
+      <path d="M 62.72 22 L 87.99 22 L 87.99 33.29 L 49.94 33.29 Z" fill="#17191c" />
+      <path d="M 37.75 43.7 L 87.99 43.7 L 87.99 55.29 L 24.67 55.29 Z" fill="#17191c" />
+      <path d="M 13.38 64.8 L 87.99 64.8 L 87.99 76.69 L 0 76.69 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-cc98462474-o131_99-8_92" width="177.18" height="77.3" patternUnits="userSpaceOnUse" patternTransform="translate(131.99 8.92)">
+      <path d="M 0 0 L 177.17 0 L 164.39 11.3 L 13.08 11.3 Z" fill="#17191c" />
+      <path d="M 25.56 21.7 L 151.9 21.7 L 138.82 33.29 L 38.64 33.29 Z" fill="#17191c" />
+      <path d="M 50.83 44 L 126.63 44 L 113.85 55.29 L 63.91 55.29 Z" fill="#17191c" />
+      <path d="M 75.8 65.99 L 101.37 65.99 L 88.59 77.29 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-65b788a6c8-o88_29-86_21" width="87.7" height="76.7" patternUnits="userSpaceOnUse" patternTransform="translate(88.29 86.21)">
+      <path d="M 0 0 L 0 11.3 L 13.08 11.3 Z" fill="#17191c" />
+      <path d="M 0 22 L 25.27 22 L 38.05 33.29 L 0 33.29 Z" fill="#17191c" />
+      <path d="M 0 43.7 L 50.54 43.7 L 63.32 55.29 L 0 55.29 Z" fill="#17191c" />
+      <path d="M 0 64.8 L 74.91 64.8 L 87.69 76.69 L 0 76.69 Z" fill="#17191c" />
+    </pattern>
+    <pattern id="portrayal-motif-47bebc342e-o265_16-86_21" width="88" height="76.7" patternUnits="userSpaceOnUse" patternTransform="translate(265.16 86.21)">
+      <path d="M 87.99 0 L 87.99 11.3 L 74.91 11.3 Z" fill="#17191c" />
+      <path d="M 62.72 22 L 87.99 22 L 87.99 33.29 L 49.94 33.29 Z" fill="#17191c" />
+      <path d="M 37.75 43.7 L 87.99 43.7 L 87.99 55.29 L 24.67 55.29 Z" fill="#17191c" />
+      <path d="M 13.38 64.8 L 87.99 64.8 L 87.99 76.69 L 0 76.69 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="top-plate" data-kind="envelope" x="0" y="0" width="440" height="198.25" rx="0.6" fill="#3a3e47" />
+    <rect id="vent-rear-centre" data-kind="vent-field" data-aperture="air" x="131.99" y="8.92" width="177.18" height="77.3" rx="0.6" fill="url(#portrayal-motif-cc98462474-o131_99-8_92)" data-vent="1" />
+    <rect id="vent-left" data-kind="vent-field" data-aperture="air" x="88.29" y="86.21" width="87.7" height="76.7" rx="0.6" fill="url(#portrayal-motif-65b788a6c8-o88_29-86_21)" data-vent="1" />
+    <rect id="vent-right" data-kind="vent-field" data-aperture="air" x="265.16" y="86.21" width="88" height="76.7" rx="0.6" fill="url(#portrayal-motif-47bebc342e-o265_16-86_21)" data-vent="1" />
+  </g>
+  <g id="top-screw-1" data-path="top-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.1" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(68.95,180.13)" data-group="furniture" data-group-role="furniture">
+    <title>top-screw-1</title>
+    <circle id="top-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="top-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="top-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="top-screw-2" data-path="top-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.1" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(219.07,180.13)" data-group="furniture" data-group-role="furniture">
+    <title>top-screw-2</title>
+    <circle id="top-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="top-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="top-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="top-screw-3" data-path="top-screw-3" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.1" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(369.19,180.13)" data-group="furniture" data-group-role="furniture">
+    <title>top-screw-3</title>
+    <circle id="top-screw-3--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="top-screw-3--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="top-screw-3--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="53mm" height="1750mm" viewBox="0 0 53 1750" data-device="p36g18m" data-view="left" data-length-mm="1750" data-weight-kg="9.9" data-input-ac="single-phase, 200-240 V, 30 A (24 A derated), 5.0 kVA (drawing note 1)" data-input-plug="other" data-input-cord="fixed" data-input-phase="single" data-input-current-a="24" data-plug-rating-a="30" data-breakers="two 20 A double-pole electromechanical switches and breakers" data-metering-scope="outlet" data-outlet-switching="true" data-network-module="G5 controller" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit P36G18M","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"e41ab80a1782a4df4b3812abb9794a99642046cbf1170c1229c1589b29fe23d1","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="P36G18M" data-sku="P36G18M" data-part-number="" x="0" y="0" width="53" height="1750" rx="1.2" fill="#0e0e10" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="side-mark-1" data-kind="side-mark" x="16.81" y="1705.68" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-2" data-kind="side-mark" x="16.81" y="1681.4" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-3" data-kind="side-mark" x="35.82" y="1540.42" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-4" data-kind="side-mark" x="35.82" y="1426.34" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-5" data-kind="side-mark" x="41.67" y="1291.79" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-6" data-kind="side-mark" x="41.67" y="1237.39" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-7" data-kind="side-mark" x="41.67" y="1088.8" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-8" data-kind="side-mark" x="41.67" y="1034.39" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-9" data-kind="side-mark" x="41.67" y="885.22" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-10" data-kind="side-mark" x="41.67" y="830.81" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-11" data-kind="side-mark" x="20.91" y="769.39" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-12" data-kind="side-mark" x="20.91" y="644.2" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-13" data-kind="side-mark" x="41.67" y="523.1" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-14" data-kind="side-mark" x="41.67" y="468.7" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-15" data-kind="side-mark" x="41.67" y="319.52" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-16" data-kind="side-mark" x="41.67" y="265.12" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-17" data-kind="side-mark" x="16.81" y="162.45" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-18" data-kind="side-mark" x="17.4" y="137.88" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-19" data-kind="side-mark" x="41.67" y="115.94" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-20" data-kind="side-mark" x="41.67" y="61.54" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-21" data-kind="side-mark" x="8.62" y="1719.13" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-22" data-kind="side-mark" x="8.62" y="1481.04" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-23" data-kind="side-mark" x="13.3" y="1407.62" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-24" data-kind="side-mark" x="37.29" y="1407.62" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-25" data-kind="side-mark" x="8.62" y="1394.17" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-26" data-kind="side-mark" x="8.62" y="1192.63" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-27" data-kind="side-mark" x="8.62" y="989.64" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-28" data-kind="side-mark" x="8.62" y="787.23" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-29" data-kind="side-mark" x="8.62" y="625.77" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-30" data-kind="side-mark" x="8.62" y="423.36" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-31" data-kind="side-mark" x="8.62" y="220.95" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+    <rect id="side-mark-32" data-kind="side-mark" x="8.62" y="18.25" width="8.5" height="8.5" rx="4.25" fill="#26292d" />
+  </g>
+</svg>

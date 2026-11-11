@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="600mm" height="2133.6mm" viewBox="0 0 600 2133.6" data-device="32620-703" data-view="left" data-shell="sheet" data-material="Steel and aluminum with plastic T-shaped cable guides and plastic accessories" data-finish="Black powder coat paint" data-color="Black" data-environment="Indoor use only, in environmentally controlled areas">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Chatsworth Products 32620-703","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"7cbc4cfc63756105a775c481ddeb0ab2440c5afbd1dc8ad199618f0e2da0c60d","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="32620-703" x="0" y="0" width="600" height="2133.6" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="rear-arm-1" data-kind="finger" x="17" y="16.23" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-1" data-kind="finger" x="3" y="7.23" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-1" data-kind="finger" x="399" y="16.23" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-1" data-kind="finger" x="583" y="7.23" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-2" data-kind="finger" x="17" y="60.68" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-2" data-kind="finger" x="3" y="51.68" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-2" data-kind="finger" x="399" y="60.68" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-2" data-kind="finger" x="583" y="51.68" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-3" data-kind="finger" x="17" y="105.12" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-3" data-kind="finger" x="3" y="96.12" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-3" data-kind="finger" x="399" y="105.12" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-3" data-kind="finger" x="583" y="96.12" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-4" data-kind="finger" x="17" y="149.58" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-4" data-kind="finger" x="3" y="140.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-4" data-kind="finger" x="399" y="149.58" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-4" data-kind="finger" x="583" y="140.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-5" data-kind="finger" x="17" y="194.03" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-5" data-kind="finger" x="3" y="185.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-5" data-kind="finger" x="399" y="194.03" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-5" data-kind="finger" x="583" y="185.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-6" data-kind="finger" x="17" y="238.47" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-6" data-kind="finger" x="3" y="229.47" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-6" data-kind="finger" x="399" y="238.47" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-6" data-kind="finger" x="583" y="229.47" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-7" data-kind="finger" x="17" y="282.93" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-7" data-kind="finger" x="3" y="273.93" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-7" data-kind="finger" x="399" y="282.93" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-7" data-kind="finger" x="583" y="273.93" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-8" data-kind="finger" x="17" y="327.38" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-8" data-kind="finger" x="3" y="318.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-8" data-kind="finger" x="399" y="327.38" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-8" data-kind="finger" x="583" y="318.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-9" data-kind="finger" x="17" y="371.83" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-9" data-kind="finger" x="3" y="362.83" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-9" data-kind="finger" x="399" y="371.83" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-9" data-kind="finger" x="583" y="362.83" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-10" data-kind="finger" x="17" y="416.28" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-10" data-kind="finger" x="3" y="407.28" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-10" data-kind="finger" x="399" y="416.28" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-10" data-kind="finger" x="583" y="407.28" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-11" data-kind="finger" x="17" y="460.73" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-11" data-kind="finger" x="3" y="451.73" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-11" data-kind="finger" x="399" y="460.73" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-11" data-kind="finger" x="583" y="451.73" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-12" data-kind="finger" x="17" y="505.18" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-12" data-kind="finger" x="3" y="496.18" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-12" data-kind="finger" x="399" y="505.18" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-12" data-kind="finger" x="583" y="496.18" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-13" data-kind="finger" x="17" y="549.63" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-13" data-kind="finger" x="3" y="540.63" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-13" data-kind="finger" x="399" y="549.63" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-13" data-kind="finger" x="583" y="540.63" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-14" data-kind="finger" x="17" y="594.08" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-14" data-kind="finger" x="3" y="585.08" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-14" data-kind="finger" x="399" y="594.08" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-14" data-kind="finger" x="583" y="585.08" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-15" data-kind="finger" x="17" y="638.53" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-15" data-kind="finger" x="3" y="629.53" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-15" data-kind="finger" x="399" y="638.53" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-15" data-kind="finger" x="583" y="629.53" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-16" data-kind="finger" x="17" y="682.98" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-16" data-kind="finger" x="3" y="673.98" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-16" data-kind="finger" x="399" y="682.98" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-16" data-kind="finger" x="583" y="673.98" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-17" data-kind="finger" x="17" y="727.43" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-17" data-kind="finger" x="3" y="718.43" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-17" data-kind="finger" x="399" y="727.43" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-17" data-kind="finger" x="583" y="718.43" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-18" data-kind="finger" x="17" y="771.88" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-18" data-kind="finger" x="3" y="762.88" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-18" data-kind="finger" x="399" y="771.88" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-18" data-kind="finger" x="583" y="762.88" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-19" data-kind="finger" x="17" y="816.33" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-19" data-kind="finger" x="3" y="807.33" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-19" data-kind="finger" x="399" y="816.33" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-19" data-kind="finger" x="583" y="807.33" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-20" data-kind="finger" x="17" y="860.78" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-20" data-kind="finger" x="3" y="851.78" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-20" data-kind="finger" x="399" y="860.78" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-20" data-kind="finger" x="583" y="851.78" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-21" data-kind="finger" x="17" y="905.23" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-21" data-kind="finger" x="3" y="896.23" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-21" data-kind="finger" x="399" y="905.23" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-21" data-kind="finger" x="583" y="896.23" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-22" data-kind="finger" x="17" y="949.68" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-22" data-kind="finger" x="3" y="940.68" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-22" data-kind="finger" x="399" y="949.68" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-22" data-kind="finger" x="583" y="940.68" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-23" data-kind="finger" x="17" y="994.13" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-23" data-kind="finger" x="3" y="985.13" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-23" data-kind="finger" x="399" y="994.13" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-23" data-kind="finger" x="583" y="985.13" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-24" data-kind="finger" x="17" y="1038.58" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-24" data-kind="finger" x="3" y="1029.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-24" data-kind="finger" x="399" y="1038.58" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-24" data-kind="finger" x="583" y="1029.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-25" data-kind="finger" x="17" y="1083.03" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-25" data-kind="finger" x="3" y="1074.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-25" data-kind="finger" x="399" y="1083.03" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-25" data-kind="finger" x="583" y="1074.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-26" data-kind="finger" x="17" y="1127.47" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-26" data-kind="finger" x="3" y="1118.47" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-26" data-kind="finger" x="399" y="1127.47" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-26" data-kind="finger" x="583" y="1118.47" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-27" data-kind="finger" x="17" y="1171.92" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-27" data-kind="finger" x="3" y="1162.92" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-27" data-kind="finger" x="399" y="1171.92" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-27" data-kind="finger" x="583" y="1162.92" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-28" data-kind="finger" x="17" y="1216.38" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-28" data-kind="finger" x="3" y="1207.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-28" data-kind="finger" x="399" y="1216.38" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-28" data-kind="finger" x="583" y="1207.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-29" data-kind="finger" x="17" y="1260.83" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-29" data-kind="finger" x="3" y="1251.83" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-29" data-kind="finger" x="399" y="1260.83" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-29" data-kind="finger" x="583" y="1251.83" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-30" data-kind="finger" x="17" y="1305.28" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-30" data-kind="finger" x="3" y="1296.28" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-30" data-kind="finger" x="399" y="1305.28" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-30" data-kind="finger" x="583" y="1296.28" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-31" data-kind="finger" x="17" y="1349.72" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-31" data-kind="finger" x="3" y="1340.72" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-31" data-kind="finger" x="399" y="1349.72" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-31" data-kind="finger" x="583" y="1340.72" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-32" data-kind="finger" x="17" y="1394.17" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-32" data-kind="finger" x="3" y="1385.17" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-32" data-kind="finger" x="399" y="1394.17" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-32" data-kind="finger" x="583" y="1385.17" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-33" data-kind="finger" x="17" y="1438.62" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-33" data-kind="finger" x="3" y="1429.62" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-33" data-kind="finger" x="399" y="1438.62" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-33" data-kind="finger" x="583" y="1429.62" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-34" data-kind="finger" x="17" y="1483.08" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-34" data-kind="finger" x="3" y="1474.08" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-34" data-kind="finger" x="399" y="1483.08" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-34" data-kind="finger" x="583" y="1474.08" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-35" data-kind="finger" x="17" y="1527.53" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-35" data-kind="finger" x="3" y="1518.53" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-35" data-kind="finger" x="399" y="1527.53" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-35" data-kind="finger" x="583" y="1518.53" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-36" data-kind="finger" x="17" y="1571.97" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-36" data-kind="finger" x="3" y="1562.97" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-36" data-kind="finger" x="399" y="1571.97" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-36" data-kind="finger" x="583" y="1562.97" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-37" data-kind="finger" x="17" y="1616.42" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-37" data-kind="finger" x="3" y="1607.42" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-37" data-kind="finger" x="399" y="1616.42" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-37" data-kind="finger" x="583" y="1607.42" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-38" data-kind="finger" x="17" y="1660.88" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-38" data-kind="finger" x="3" y="1651.88" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-38" data-kind="finger" x="399" y="1660.88" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-38" data-kind="finger" x="583" y="1651.88" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-39" data-kind="finger" x="17" y="1705.33" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-39" data-kind="finger" x="3" y="1696.33" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-39" data-kind="finger" x="399" y="1705.33" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-39" data-kind="finger" x="583" y="1696.33" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-40" data-kind="finger" x="17" y="1749.78" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-40" data-kind="finger" x="3" y="1740.78" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-40" data-kind="finger" x="399" y="1749.78" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-40" data-kind="finger" x="583" y="1740.78" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-41" data-kind="finger" x="17" y="1794.22" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-41" data-kind="finger" x="3" y="1785.22" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-41" data-kind="finger" x="399" y="1794.22" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-41" data-kind="finger" x="583" y="1785.22" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-42" data-kind="finger" x="17" y="1838.67" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-42" data-kind="finger" x="3" y="1829.67" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-42" data-kind="finger" x="399" y="1838.67" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-42" data-kind="finger" x="583" y="1829.67" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-43" data-kind="finger" x="17" y="1883.12" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-43" data-kind="finger" x="3" y="1874.12" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-43" data-kind="finger" x="399" y="1883.12" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-43" data-kind="finger" x="583" y="1874.12" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-44" data-kind="finger" x="17" y="1927.58" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-44" data-kind="finger" x="3" y="1918.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-44" data-kind="finger" x="399" y="1927.58" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-44" data-kind="finger" x="583" y="1918.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-45" data-kind="finger" x="17" y="1972.03" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-45" data-kind="finger" x="3" y="1963.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-45" data-kind="finger" x="399" y="1972.03" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-45" data-kind="finger" x="583" y="1963.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-46" data-kind="finger" x="17" y="2016.48" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-46" data-kind="finger" x="3" y="2007.48" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-46" data-kind="finger" x="399" y="2016.48" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-46" data-kind="finger" x="583" y="2007.48" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-47" data-kind="finger" x="17" y="2060.93" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-47" data-kind="finger" x="3" y="2051.93" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-47" data-kind="finger" x="399" y="2060.93" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-47" data-kind="finger" x="583" y="2051.93" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-arm-48" data-kind="finger" x="17" y="2105.38" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="rear-head-48" data-kind="finger" x="3" y="2096.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="front-arm-48" data-kind="finger" x="399" y="2105.38" width="184" height="12" rx="0.6" fill="#26282a" />
+    <rect id="front-head-48" data-kind="finger" x="583" y="2096.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="rear-door" data-kind="cover" x="0" y="0" width="3" height="2133.6" rx="0.6" fill="#2f3134" />
+    <rect id="front-door" data-kind="cover" x="597" y="0" width="3" height="2133.6" rx="0.6" fill="#2f3134" />
+  </g>
+</svg>

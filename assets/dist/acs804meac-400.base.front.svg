@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="212.7mm" height="29.49mm" viewBox="0 0 212.7 29.49" data-device="acs804meac-400" data-view="front" data-weight-note="not stated, the two documents that give a weight disagree (gap `weight`)" data-power-max-w="28" data-power-input="external AC/DC power adapter, 100 to 240 VAC, 50/60 Hz in, 12 VDC out (data sheet)" data-power-usage="typical 6.2 W (0.13 A) at 120 VAC and 7 W (0.10 A) at 240 VAC; maximum 28 W at both (data sheet)" data-operating-temp-c="0 to 70" data-storage-temp-c="-20 to 90" data-operating-humidity="20% to 80% non-condensing RH" data-storage-humidity="5% to 95% relative humidity" data-cpu="Dual-core ARM Cortex-A9 MPCore with CoreSight" data-ram="1 GB DDR3L" data-storage="16 GB eMMC flash" data-serial-pinout="automatic Cyclades and Cisco pin-out detection (data sheet)" data-modem="built-in V.92 analog modem (installer guide)" data-sensor-ports="environmental sensor port (RJ45, 1-wire) and a digital in port (installer guide)" data-digital-out="two relay switches on one four-pin connector, 12 A and 300 V (installer guide)" data-certification="Emissions and immunity: FCC Class A, CE Class A, UKCA, ICES-003, VCCI, RCM, Customs Union, KCC. Safety: UL, cUL, EN-60950, CB, Customs Union (data sheet).">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-status.state-initialized, #led-status .state-initialized { --led-color: #00b300; }
+    #led-power.state-power-supplied, #led-power .state-power-supplied { --led-color: #00b300; }
+</style>
+  <metadata>{"device":"Vertiv ACS804MEAC-400","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/usb-symbol@1":"1.0.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0","vertiv/acs800-digital-out@1":"1.0.0"},"source-sha256":"8fc20be8b08d5b008d4390bb2064f6cd0ed35bea759e33430a76e57ac13107c8","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ACS804MEAC-400" data-sku="ACS804MEAC-400" data-part-number="" x="0" y="0" width="212.7" height="29.49" rx="1.2" fill="#494949" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="orange-line" data-kind="trim" x="0.6" y="27.99" width="211.5" height="1.5" rx="0.6" fill="#ec8e30" />
+    <rect id="usb-frame-1" data-kind="frame-plate" x="168.3" y="7.3" width="13.8" height="13.6" rx="0.8" fill="#d8d8d8" />
+    <rect id="usb-inset-1" data-kind="frame-plate" x="168.8" y="7.8" width="12.8" height="12.6" rx="0.6" fill="#262626" />
+    <rect id="usb-frame-2" data-kind="frame-plate" x="185.4" y="7.3" width="13.8" height="13.6" rx="0.8" fill="#d8d8d8" />
+    <rect id="usb-inset-2" data-kind="frame-plate" x="185.9" y="7.8" width="12.8" height="12.6" rx="0.6" fill="#262626" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="4" y="6.4" width="40.1" height="9.2" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="76.1" y="15.02" font-family="sans-serif" font-size="2" text-anchor="end" fill="#f4f4f4" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-status">STATUS</text>
+    <text x="76.1" y="20.3" font-family="sans-serif" font-size="2" text-anchor="end" fill="#f4f4f4" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-power">POWER</text>
+    <text x="93" y="26.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f4f4" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="modem">MODEM</text>
+    <text x="113.6" y="26.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f4f4" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="digital-in">DIGITAL IN</text>
+    <text x="134.1" y="26.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f4f4" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="digital-out">DIGITAL OUT</text>
+    <text x="154.9" y="26.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#f4f4f4" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="sensor">SENSOR</text>
+    <text x="4" y="22.7" font-family="sans-serif" font-size="3.9" text-anchor="start" fill="#f4f4f4" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Avocent ACS800</text>
+  </g>
+  <g id="modem" data-path="modem" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#ececec" data-function="modem" data-media="rj45-telemetry" data-rel-pos="1" transform="translate(85.05,8.2)" data-group="modem" data-group-role="management" data-description="the MODEM jack of the internal V.92 analog modem">
+    <title>modem</title>
+    <path id="modem--housing" fill-rule="evenodd" fill="#ececec" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="modem--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="modem--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="modem/opening" data-class="cutout" />
+    <g id="modem--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="digital-in" data-path="digital-in" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#ececec" data-function="digital-in" data-media="rj45-telemetry" data-rel-pos="1" transform="translate(105.7,8.2)" data-group="sensors" data-group-role="management" data-description="the DIGITAL IN and SENSOR jacks, one for digital-in sensors and one for a 1-Wire environmental sensor">
+    <title>digital-in</title>
+    <path id="digital-in--housing" fill-rule="evenodd" fill="#ececec" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="digital-in--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="digital-in--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="digital-in/opening" data-class="cutout" />
+    <g id="digital-in--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="digital-out" data-path="digital-out" data-class="port" data-ref="vertiv/acs800-digital-out@1:1.0.0" data-media="relay-terminal" data-poles="4" data-rating-a="12" data-rating-v="300" data-switches="2" data-rel-pos="1" transform="translate(126.1,15.3)" data-group="digital-out" data-group-role="management" data-description="the four-pin DIGITAL OUT connector, two relay switches of two pins each">
+    <title>digital-out</title>
+    <rect id="digital-out--body" x="0" y="0" width="16.0" height="5.6" rx="0.5" fill="#9cc896" stroke="#5f8a5a" stroke-width="0.25" data-path="digital-out/body" data-class="connector" />
+    <g id="digital-out--pins">
+      <rect x="1.3" y="0.9" width="2.4" height="2.2" rx="0.2" fill="#1d2b1c" />
+      <rect x="5.1" y="0.9" width="2.4" height="2.2" rx="0.2" fill="#1d2b1c" />
+      <rect x="8.9" y="0.9" width="2.4" height="2.2" rx="0.2" fill="#1d2b1c" />
+      <rect x="12.7" y="0.9" width="2.4" height="2.2" rx="0.2" fill="#1d2b1c" />
+      <circle cx="2.5" cy="4.2" r="0.6" fill="#b9bec3" stroke="#6b7076" stroke-width="0.12" />
+      <circle cx="6.3" cy="4.2" r="0.6" fill="#b9bec3" stroke="#6b7076" stroke-width="0.12" />
+      <circle cx="10.1" cy="4.2" r="0.6" fill="#b9bec3" stroke="#6b7076" stroke-width="0.12" />
+      <circle cx="13.9" cy="4.2" r="0.6" fill="#b9bec3" stroke="#6b7076" stroke-width="0.12" />
+    </g>
+    <g data-cp="mate" data-cp-at="8 2.8" data-cp-dir="front" />
+  </g>
+  <g id="sensor" data-path="sensor" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-finish="#ececec" data-function="sensor" data-media="rj45-telemetry" data-rel-pos="2" transform="translate(147.0,8.2)" data-group="sensors" data-group-role="management" data-description="the DIGITAL IN and SENSOR jacks, one for digital-in sensors and one for a 1-Wire environmental sensor">
+    <title>sensor</title>
+    <path id="sensor--housing" fill-rule="evenodd" fill="#ececec" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="sensor--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="sensor--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sensor/opening" data-class="cutout" />
+    <g id="sensor--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="usb-1" data-path="usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="1" transform="translate(169.2,8.0)" data-group="usb" data-group-role="management" data-description="the four USB 2.0 Type A ports on the front, two stacked in each of two blocks">
+    <title>usb-1</title>
+    <rect id="usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-1/opening" data-class="cutout" />
+    <rect id="usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-2" data-path="usb-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="2" transform="translate(169.2,14.9)" data-group="usb" data-group-role="management" data-description="the four USB 2.0 Type A ports on the front, two stacked in each of two blocks">
+    <title>usb-2</title>
+    <rect id="usb-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-2/opening" data-class="cutout" />
+    <rect id="usb-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-3" data-path="usb-3" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="3" transform="translate(186.3,8.0)" data-group="usb" data-group-role="management" data-description="the four USB 2.0 Type A ports on the front, two stacked in each of two blocks">
+    <title>usb-3</title>
+    <rect id="usb-3--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-3/opening" data-class="cutout" />
+    <rect id="usb-3--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-4" data-path="usb-4" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="4" transform="translate(186.3,14.9)" data-group="usb" data-group-role="management" data-description="the four USB 2.0 Type A ports on the front, two stacked in each of two blocks">
+    <title>usb-4</title>
+    <rect id="usb-4--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-4/opening" data-class="cutout" />
+    <rect id="usb-4--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-mark-1" data-path="usb-mark-1" data-class="silkscreen" data-ref="common/usb-symbol@1:1.0.0" data-rel-pos="1" transform="translate(172.8,23.2)" data-group="furniture" data-group-role="furniture">
+    <title>usb-mark-1</title>
+    <g id="usb-mark-1--symbol" stroke="#c7ccd1" fill="#c7ccd1" stroke-linecap="round" data-path="usb-mark-1/symbol" data-class="silkscreen">
+      <line x1="0.9" y1="2" x2="5.5" y2="2" stroke-width="0.42" fill="none" />
+      <circle cx="0.75" cy="2" r="0.55" />
+      <path d="M 5.3 1.35 L 6.25 2 L 5.3 2.65 z" stroke="none" />
+      <path d="M 2.6 2 L 3.5 0.95 L 4.35 0.95" stroke-width="0.36" fill="none" />
+      <rect x="4.25" y="0.55" width="0.8" height="0.8" stroke="none" />
+      <path d="M 2.0 2 L 2.9 3.05 L 3.75 3.05" stroke-width="0.36" fill="none" />
+      <circle cx="4.05" cy="3.05" r="0.42" stroke="none" />
+    </g>
+  </g>
+  <g id="usb-mark-2" data-path="usb-mark-2" data-class="silkscreen" data-ref="common/usb-symbol@1:1.0.0" data-rel-pos="2" transform="translate(189.9,23.2)" data-group="furniture" data-group-role="furniture">
+    <title>usb-mark-2</title>
+    <g id="usb-mark-2--symbol" stroke="#c7ccd1" fill="#c7ccd1" stroke-linecap="round" data-path="usb-mark-2/symbol" data-class="silkscreen">
+      <line x1="0.9" y1="2" x2="5.5" y2="2" stroke-width="0.42" fill="none" />
+      <circle cx="0.75" cy="2" r="0.55" />
+      <path d="M 5.3 1.35 L 6.25 2 L 5.3 2.65 z" stroke="none" />
+      <path d="M 2.6 2 L 3.5 0.95 L 4.35 0.95" stroke-width="0.36" fill="none" />
+      <rect x="4.25" y="0.55" width="0.8" height="0.8" stroke="none" />
+      <path d="M 2.0 2 L 2.9 3.05 L 3.75 3.05" stroke-width="0.36" fill="none" />
+      <circle cx="4.05" cy="3.05" r="0.42" stroke="none" />
+    </g>
+  </g>
+  <g id="led-status" data-path="led-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(78.5,13.4)" data-group="status-leds" data-group-role="indicator" data-description="the STATUS and POWER lamps" data-states="off initialized" data-for="chassis">
+    <title>led-status</title>
+    <circle id="led-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-status/lamp" data-class="led" data-states="off initialized" data-z-dome="0.3" />
+  </g>
+  <g id="led-power" data-path="led-power" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(78.5,18.6)" data-group="status-leds" data-group-role="indicator" data-description="the STATUS and POWER lamps" data-states="off power-supplied" data-for="chassis">
+    <title>led-power</title>
+    <circle id="led-power--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-power--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-power/lamp" data-class="led" data-states="off power-supplied" data-z-dome="0.3" />
+  </g>
+</svg>

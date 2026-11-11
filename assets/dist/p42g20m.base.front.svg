@@ -1,0 +1,762 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="56mm" height="1780mm" viewBox="0 0 56 1780" data-device="p42g20m" data-view="front" data-length-mm="1780" data-weight-kg="6.8" data-input-ac="three-phase delta, 200-240 V, 60 A (48 A derated), 17.3 kVA (drawing note 1)" data-input-plug="other" data-input-cord="fixed" data-input-phase="three" data-input-wiring="delta" data-input-current-a="48" data-plug-rating-a="60" data-breakers="six 20 A double-pole electromechanical switches and breakers" data-metering-scope="outlet" data-outlet-switching="true" data-network-module="G5 controller" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit P42G20M","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/ground-screw@1":"1.0.0","panduit/g5-breaker-20a@1":"1.0.0","panduit/g5-controller@1":"1.0.0","panduit/g5-outlet-c13-c15-c19@1":"1.0.0","panduit/g5-outlet-c13-c15@1":"1.0.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source-sha256":"031d4554303810b7c3bd8d204aaec89277c9284a231382aaa376b20d923fc75e","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="P42G20M" data-sku="P42G20M" data-part-number="" x="0" y="0" width="56" height="1780" rx="1.2" fill="#0e0e10" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="moulding-1" data-kind="outlet-moulding" x="1" y="1283.1" width="54" height="151.4" rx="2" fill="#e4e5e7" />
+    <rect id="moulding-2" data-kind="outlet-moulding" x="1" y="1117.1" width="54" height="151.4" rx="2" fill="#9a9da1" />
+    <rect id="moulding-3" data-kind="outlet-moulding" x="1" y="951.1" width="54" height="151.4" rx="2" fill="#55585c" />
+    <rect id="moulding-4" data-kind="outlet-moulding" x="1" y="284.2" width="54" height="114.3" rx="2" fill="#e4e5e7" />
+    <rect id="moulding-5" data-kind="outlet-moulding" x="1" y="149.2" width="54" height="114.3" rx="2" fill="#9a9da1" />
+    <rect id="moulding-6" data-kind="outlet-moulding" x="1" y="13.2" width="54" height="114.3" rx="2" fill="#55585c" />
+    <rect id="controller-bracket-1" data-kind="screw-head" x="24.7" y="781.2" width="6.6" height="6.6" rx="3.3" fill="#565b60" />
+    <rect id="controller-bracket-2" data-kind="screw-head" x="24.7" y="644.2" width="6.6" height="6.6" rx="3.3" fill="#565b60" />
+  </g>
+  <rect id="region--bank-1" data-path="region:bank-1" data-class="region" data-members="outlet-1 outlet-2 outlet-3 outlet-4 outlet-5 outlet-6 outlet-7 outlet-8 breaker-1" x="4" y="1286.7" width="48" height="387.4" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--bank-2" data-path="region:bank-2" data-class="region" data-members="outlet-9 outlet-10 outlet-11 outlet-12 outlet-13 outlet-14 outlet-15 outlet-16 breaker-2" x="4" y="1120.7" width="48" height="479.4" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--bank-3" data-path="region:bank-3" data-class="region" data-members="outlet-17 outlet-18 outlet-19 outlet-20 outlet-21 outlet-22 outlet-23 outlet-24 breaker-3" x="4" y="954.7" width="48" height="570.4" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--bank-4" data-path="region:bank-4" data-class="region" data-members="outlet-25 outlet-26 outlet-27 outlet-28 outlet-29 outlet-30 breaker-4" x="4" y="287.8" width="48" height="344.3" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--bank-5" data-path="region:bank-5" data-class="region" data-members="outlet-31 outlet-32 outlet-33 outlet-34 outlet-35 outlet-36 breaker-5" x="4" y="152.8" width="48" height="405.3" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <rect id="region--bank-6" data-path="region:bank-6" data-class="region" data-members="outlet-37 outlet-38 outlet-39 outlet-40 outlet-41 outlet-42 breaker-6" x="4" y="16.8" width="48" height="461.3" rx="0.8" fill="none" stroke="none" pointer-events="all" data-extent="derived" />
+  <g id="outlet-1" data-path="outlet-1" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="1" transform="translate(4.0,1398.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-1</title>
+    <path id="outlet-1--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-1/recess" data-class="inlet" />
+    <g id="outlet-1--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-2" data-path="outlet-2" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="2" transform="translate(28.0,1398.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-2</title>
+    <path id="outlet-2--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-2/recess" data-class="inlet" />
+    <g id="outlet-2--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-3" data-path="outlet-3" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="3" transform="translate(4.0,1360.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-3</title>
+    <path id="outlet-3--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-3/recess" data-class="inlet" />
+    <g id="outlet-3--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-4" data-path="outlet-4" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="4" transform="translate(28.0,1360.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-4</title>
+    <path id="outlet-4--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-4/recess" data-class="inlet" />
+    <g id="outlet-4--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-5" data-path="outlet-5" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="5" transform="translate(4.0,1323.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-5</title>
+    <path id="outlet-5--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-5/recess" data-class="inlet" />
+    <g id="outlet-5--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-6" data-path="outlet-6" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="6" transform="translate(28.0,1323.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-6</title>
+    <path id="outlet-6--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-6/recess" data-class="inlet" />
+    <g id="outlet-6--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-7" data-path="outlet-7" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="7" transform="translate(4.0,1286.7)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-7</title>
+    <path id="outlet-7--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-7/recess" data-class="inlet" />
+    <g id="outlet-7--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-8" data-path="outlet-8" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="8" transform="translate(28.0,1286.7)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-8</title>
+    <path id="outlet-8--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-8/recess" data-class="inlet" />
+    <g id="outlet-8--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-9" data-path="outlet-9" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="9" transform="translate(4.0,1232.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-9</title>
+    <path id="outlet-9--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-9/recess" data-class="inlet" />
+    <g id="outlet-9--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-10" data-path="outlet-10" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="10" transform="translate(28.0,1232.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-10</title>
+    <path id="outlet-10--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-10/recess" data-class="inlet" />
+    <g id="outlet-10--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-11" data-path="outlet-11" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="11" transform="translate(4.0,1194.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-11</title>
+    <path id="outlet-11--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-11/recess" data-class="inlet" />
+    <g id="outlet-11--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-12" data-path="outlet-12" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="12" transform="translate(28.0,1194.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-12</title>
+    <path id="outlet-12--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-12/recess" data-class="inlet" />
+    <g id="outlet-12--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-13" data-path="outlet-13" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="13" transform="translate(4.0,1157.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-13</title>
+    <path id="outlet-13--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-13/recess" data-class="inlet" />
+    <g id="outlet-13--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-14" data-path="outlet-14" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="14" transform="translate(28.0,1157.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-14</title>
+    <path id="outlet-14--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-14/recess" data-class="inlet" />
+    <g id="outlet-14--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-15" data-path="outlet-15" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="15" transform="translate(4.0,1120.7)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-15</title>
+    <path id="outlet-15--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-15/recess" data-class="inlet" />
+    <g id="outlet-15--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-16" data-path="outlet-16" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="16" transform="translate(28.0,1120.7)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-16</title>
+    <path id="outlet-16--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-16/recess" data-class="inlet" />
+    <g id="outlet-16--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-17" data-path="outlet-17" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="17" transform="translate(4.0,1066.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-17</title>
+    <path id="outlet-17--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-17/recess" data-class="inlet" />
+    <g id="outlet-17--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-18" data-path="outlet-18" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="18" transform="translate(28.0,1066.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-18</title>
+    <path id="outlet-18--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-18/recess" data-class="inlet" />
+    <g id="outlet-18--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-19" data-path="outlet-19" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="19" transform="translate(4.0,1028.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-19</title>
+    <path id="outlet-19--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-19/recess" data-class="inlet" />
+    <g id="outlet-19--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-20" data-path="outlet-20" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="20" transform="translate(28.0,1028.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-20</title>
+    <path id="outlet-20--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-20/recess" data-class="inlet" />
+    <g id="outlet-20--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-21" data-path="outlet-21" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="21" transform="translate(4.0,991.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-21</title>
+    <path id="outlet-21--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-21/recess" data-class="inlet" />
+    <g id="outlet-21--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-22" data-path="outlet-22" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="22" transform="translate(28.0,991.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-22</title>
+    <path id="outlet-22--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-22/recess" data-class="inlet" />
+    <g id="outlet-22--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-23" data-path="outlet-23" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="23" transform="translate(4.0,954.7)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-23</title>
+    <path id="outlet-23--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-23/recess" data-class="inlet" />
+    <g id="outlet-23--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-24" data-path="outlet-24" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="24" transform="translate(28.0,954.7)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-24</title>
+    <path id="outlet-24--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-24/recess" data-class="inlet" />
+    <g id="outlet-24--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-25" data-path="outlet-25" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="25" transform="translate(4.0,362.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-25</title>
+    <path id="outlet-25--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-25/recess" data-class="inlet" />
+    <g id="outlet-25--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-26" data-path="outlet-26" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="26" transform="translate(28.0,362.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-26</title>
+    <path id="outlet-26--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-26/recess" data-class="inlet" />
+    <g id="outlet-26--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-27" data-path="outlet-27" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="27" transform="translate(4.0,324.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-27</title>
+    <path id="outlet-27--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-27/recess" data-class="inlet" />
+    <g id="outlet-27--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-28" data-path="outlet-28" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="28" transform="translate(28.0,324.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-28</title>
+    <path id="outlet-28--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-28/recess" data-class="inlet" />
+    <g id="outlet-28--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-29" data-path="outlet-29" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="29" transform="translate(4.0,287.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-29</title>
+    <path id="outlet-29--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-29/recess" data-class="inlet" />
+    <g id="outlet-29--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-30" data-path="outlet-30" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="30" transform="translate(28.0,287.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-30</title>
+    <path id="outlet-30--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-30/recess" data-class="inlet" />
+    <g id="outlet-30--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-31" data-path="outlet-31" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="31" transform="translate(4.0,227.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-31</title>
+    <path id="outlet-31--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-31/recess" data-class="inlet" />
+    <g id="outlet-31--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-32" data-path="outlet-32" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="32" transform="translate(28.0,227.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-32</title>
+    <path id="outlet-32--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-32/recess" data-class="inlet" />
+    <g id="outlet-32--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-33" data-path="outlet-33" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="33" transform="translate(4.0,189.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-33</title>
+    <path id="outlet-33--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-33/recess" data-class="inlet" />
+    <g id="outlet-33--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-34" data-path="outlet-34" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="34" transform="translate(28.0,189.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-34</title>
+    <path id="outlet-34--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-34/recess" data-class="inlet" />
+    <g id="outlet-34--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-35" data-path="outlet-35" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="35" transform="translate(4.0,152.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-35</title>
+    <path id="outlet-35--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-35/recess" data-class="inlet" />
+    <g id="outlet-35--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-36" data-path="outlet-36" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="36" transform="translate(28.0,152.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-36</title>
+    <path id="outlet-36--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-36/recess" data-class="inlet" />
+    <g id="outlet-36--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-37" data-path="outlet-37" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="37" transform="translate(4.0,91.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-37</title>
+    <path id="outlet-37--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-37/recess" data-class="inlet" />
+    <g id="outlet-37--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-38" data-path="outlet-38" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="38" transform="translate(28.0,91.0)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-38</title>
+    <path id="outlet-38--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-38/recess" data-class="inlet" />
+    <g id="outlet-38--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-39" data-path="outlet-39" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="39" transform="translate(4.0,53.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-39</title>
+    <path id="outlet-39--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-39/recess" data-class="inlet" />
+    <g id="outlet-39--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-40" data-path="outlet-40" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="40" transform="translate(28.0,53.9)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-40</title>
+    <path id="outlet-40--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-40/recess" data-class="inlet" />
+    <g id="outlet-40--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-41" data-path="outlet-41" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-combo" data-rating-a="10" data-rel-pos="41" transform="translate(4.0,16.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-41</title>
+    <path id="outlet-41--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-41/recess" data-class="inlet" />
+    <g id="outlet-41--nose">
+      <path d="M 5 2.4 H 19 A 1.6 1.6 0 0 1 20.6 4 V 31 A 1.6 1.6 0 0 1 19 32.6 H 5 L 3.4 31 V 4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 6 5 H 10 V 8.4 H 6 Z" fill="#0b0b0b" />
+      <path d="M 6 26.6 H 10 V 30 H 6 Z" fill="#0b0b0b" />
+      <path d="M 14.6 15 H 18 V 20 H 14.6 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-42" data-path="outlet-42" data-class="inlet" data-ref="panduit/g5-outlet-c13-c15-c19@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="panduit-c13-c15-c19-combo" data-rating-a="16" data-rel-pos="42" transform="translate(28.0,16.8)" data-group="outlets" data-group-role="traffic" data-states="on off">
+    <title>outlet-42</title>
+    <path id="outlet-42--recess" d="M 3 0 H 21 A 3 3 0 0 1 24 3 V 32 A 3 3 0 0 1 21 35 H 3 A 3 3 0 0 1 0 32 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-42/recess" data-class="inlet" />
+    <g id="outlet-42--nose">
+      <path d="M 4.2 2.2 H 19.8 A 1.6 1.6 0 0 1 21.4 3.8 V 31.2 A 1.6 1.6 0 0 1 19.8 32.8 H 4.2 L 2.6 31.2 V 3.8 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 5 4.4 H 9.4 V 8.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 5 26.4 H 9.4 V 30.6 H 5 Z" fill="#0b0b0b" />
+      <path d="M 14.4 13.6 H 19 V 21.4 H 14.4 Z" fill="#0b0b0b" />
+      <path d="M 10.2 2.2 H 13.8 V 3.6 H 10.2 Z" fill="#5f5e5d" />
+    </g>
+    <g data-cp="mate" data-cp-at="12 17.5" data-cp-dir="front" />
+  </g>
+  <g id="breaker-1" data-path="breaker-1" data-class="breaker" data-ref="panduit/g5-breaker-20a@1:1.0.0" data-label="B1" data-lines="L1-L2" data-poles="2" data-rating-a="20" data-rel-pos="1" transform="translate(4.7,1603.9)" data-group="breakers" data-group-role="service" data-description="Breaker B1, a 20 A double-pole switch and breaker across L1-L2">
+    <title>breaker-1</title>
+    <g id="breaker-1--plate" transform="matrix(0,-1,1,0,0,70.2)">
+      <rect x="0" y="0" width="70.2" height="46.6" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+      <circle cx="11.8" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="11.8" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <rect x="15.9" y="22.5" width="26.8" height="19.2" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" />
+      <rect id="breaker-1--rocker" x="22.0" y="26.5" width="12.0" height="11.2" rx="0.6" fill="#1b1c1e" stroke="#4d5257" stroke-width="0.2" data-path="breaker-1/rocker" data-class="breaker" data-states="on off" />
+    </g>
+    <g id="breaker-1--silkscreen" font-family="sans-serif" fill="#d9dbde">
+      <text x="14.0" y="34.3" font-size="7.2" text-anchor="middle" transform="rotate(-90 14.0 34.3)" data-from="label">B1</text>
+      <text x="23.3" y="8.2" font-size="3.6" text-anchor="middle" transform="rotate(180 23.3 7.0)" data-from="lines">L1-L2</text>
+    </g>
+  </g>
+  <g id="breaker-2" data-path="breaker-2" data-class="breaker" data-ref="panduit/g5-breaker-20a@1:1.0.0" data-label="B2" data-lines="L2-L3" data-poles="2" data-rating-a="20" data-rel-pos="2" transform="translate(4.7,1529.9)" data-group="breakers" data-group-role="service" data-description="Breaker B2, a 20 A double-pole switch and breaker across L2-L3">
+    <title>breaker-2</title>
+    <g id="breaker-2--plate" transform="matrix(0,-1,1,0,0,70.2)">
+      <rect x="0" y="0" width="70.2" height="46.6" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+      <circle cx="11.8" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="11.8" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <rect x="15.9" y="22.5" width="26.8" height="19.2" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" />
+      <rect id="breaker-2--rocker" x="22.0" y="26.5" width="12.0" height="11.2" rx="0.6" fill="#1b1c1e" stroke="#4d5257" stroke-width="0.2" data-path="breaker-2/rocker" data-class="breaker" data-states="on off" />
+    </g>
+    <g id="breaker-2--silkscreen" font-family="sans-serif" fill="#d9dbde">
+      <text x="14.0" y="34.3" font-size="7.2" text-anchor="middle" transform="rotate(-90 14.0 34.3)" data-from="label">B2</text>
+      <text x="23.3" y="8.2" font-size="3.6" text-anchor="middle" transform="rotate(180 23.3 7.0)" data-from="lines">L2-L3</text>
+    </g>
+  </g>
+  <g id="breaker-3" data-path="breaker-3" data-class="breaker" data-ref="panduit/g5-breaker-20a@1:1.0.0" data-label="B3" data-lines="L3-L1" data-poles="2" data-rating-a="20" data-rel-pos="3" transform="translate(4.7,1454.9)" data-group="breakers" data-group-role="service" data-description="Breaker B3, a 20 A double-pole switch and breaker across L3-L1">
+    <title>breaker-3</title>
+    <g id="breaker-3--plate" transform="matrix(0,-1,1,0,0,70.2)">
+      <rect x="0" y="0" width="70.2" height="46.6" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+      <circle cx="11.8" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="11.8" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <rect x="15.9" y="22.5" width="26.8" height="19.2" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" />
+      <rect id="breaker-3--rocker" x="22.0" y="26.5" width="12.0" height="11.2" rx="0.6" fill="#1b1c1e" stroke="#4d5257" stroke-width="0.2" data-path="breaker-3/rocker" data-class="breaker" data-states="on off" />
+    </g>
+    <g id="breaker-3--silkscreen" font-family="sans-serif" fill="#d9dbde">
+      <text x="14.0" y="34.3" font-size="7.2" text-anchor="middle" transform="rotate(-90 14.0 34.3)" data-from="label">B3</text>
+      <text x="23.3" y="8.2" font-size="3.6" text-anchor="middle" transform="rotate(180 23.3 7.0)" data-from="lines">L3-L1</text>
+    </g>
+  </g>
+  <g id="breaker-4" data-path="breaker-4" data-class="breaker" data-ref="panduit/g5-breaker-20a@1:1.0.0" data-label="B4" data-lines="L1-L2" data-poles="2" data-rating-a="20" data-rel-pos="4" transform="translate(4.7,561.9)" data-group="breakers" data-group-role="service" data-description="Breaker B4, a 20 A double-pole switch and breaker across L1-L2">
+    <title>breaker-4</title>
+    <g id="breaker-4--plate" transform="matrix(0,-1,1,0,0,70.2)">
+      <rect x="0" y="0" width="70.2" height="46.6" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+      <circle cx="11.8" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="11.8" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <rect x="15.9" y="22.5" width="26.8" height="19.2" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" />
+      <rect id="breaker-4--rocker" x="22.0" y="26.5" width="12.0" height="11.2" rx="0.6" fill="#1b1c1e" stroke="#4d5257" stroke-width="0.2" data-path="breaker-4/rocker" data-class="breaker" data-states="on off" />
+    </g>
+    <g id="breaker-4--silkscreen" font-family="sans-serif" fill="#d9dbde">
+      <text x="14.0" y="34.3" font-size="7.2" text-anchor="middle" transform="rotate(-90 14.0 34.3)" data-from="label">B4</text>
+      <text x="23.3" y="8.2" font-size="3.6" text-anchor="middle" transform="rotate(180 23.3 7.0)" data-from="lines">L1-L2</text>
+    </g>
+  </g>
+  <g id="breaker-5" data-path="breaker-5" data-class="breaker" data-ref="panduit/g5-breaker-20a@1:1.0.0" data-label="B5" data-lines="L2-L3" data-poles="2" data-rating-a="20" data-rel-pos="5" transform="translate(4.7,487.9)" data-group="breakers" data-group-role="service" data-description="Breaker B5, a 20 A double-pole switch and breaker across L2-L3">
+    <title>breaker-5</title>
+    <g id="breaker-5--plate" transform="matrix(0,-1,1,0,0,70.2)">
+      <rect x="0" y="0" width="70.2" height="46.6" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+      <circle cx="11.8" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="11.8" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <rect x="15.9" y="22.5" width="26.8" height="19.2" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" />
+      <rect id="breaker-5--rocker" x="22.0" y="26.5" width="12.0" height="11.2" rx="0.6" fill="#1b1c1e" stroke="#4d5257" stroke-width="0.2" data-path="breaker-5/rocker" data-class="breaker" data-states="on off" />
+    </g>
+    <g id="breaker-5--silkscreen" font-family="sans-serif" fill="#d9dbde">
+      <text x="14.0" y="34.3" font-size="7.2" text-anchor="middle" transform="rotate(-90 14.0 34.3)" data-from="label">B5</text>
+      <text x="23.3" y="8.2" font-size="3.6" text-anchor="middle" transform="rotate(180 23.3 7.0)" data-from="lines">L2-L3</text>
+    </g>
+  </g>
+  <g id="breaker-6" data-path="breaker-6" data-class="breaker" data-ref="panduit/g5-breaker-20a@1:1.0.0" data-label="B6" data-lines="L3-L1" data-poles="2" data-rating-a="20" data-rel-pos="6" transform="translate(4.7,407.9)" data-group="breakers" data-group-role="service" data-description="Breaker B6, a 20 A double-pole switch and breaker across L3-L1">
+    <title>breaker-6</title>
+    <g id="breaker-6--plate" transform="matrix(0,-1,1,0,0,70.2)">
+      <rect x="0" y="0" width="70.2" height="46.6" rx="2.2" fill="#232528" stroke="#3b3e42" stroke-width="0.3" />
+      <circle cx="11.8" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="12.9" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="11.8" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <circle cx="55.6" cy="32.6" r="2.6" fill="#4d5257" stroke="#6b7076" stroke-width="0.2" />
+      <rect x="15.9" y="22.5" width="26.8" height="19.2" fill="#0b0b0c" stroke="#3b3e42" stroke-width="0.2" />
+      <rect id="breaker-6--rocker" x="22.0" y="26.5" width="12.0" height="11.2" rx="0.6" fill="#1b1c1e" stroke="#4d5257" stroke-width="0.2" data-path="breaker-6/rocker" data-class="breaker" data-states="on off" />
+    </g>
+    <g id="breaker-6--silkscreen" font-family="sans-serif" fill="#d9dbde">
+      <text x="14.0" y="34.3" font-size="7.2" text-anchor="middle" transform="rotate(-90 14.0 34.3)" data-from="label">B6</text>
+      <text x="23.3" y="8.2" font-size="3.6" text-anchor="middle" transform="rotate(180 23.3 7.0)" data-from="lines">L3-L1</text>
+    </g>
+  </g>
+  <g id="controller" data-path="controller" data-class="bay" data-group="controller" data-group-role="management" data-rel-pos="1">
+    <title>controller</title>
+    <rect id="controller--opening" x="4.5" y="652.1" width="47" height="127.8" fill="#101214" />
+    <g id="controller--module" data-path="controller/module" data-class="nic" data-behaviour="fills" data-ref="panduit/g5-controller@1:1.0.0" data-body-depth="40" data-module="G5 controller" transform="translate(28,716) translate(-23.5,-63.9)">
+      <title>controller--module</title>
+      <rect id="controller--module--faceplate" x="0" y="0" width="47" height="127.8" rx="1.5" fill="#18191b" stroke="#3a3d41" stroke-width="0.25" />
+      <rect id="controller--module--display" x="19.7" y="77.2" width="17.8" height="35.6" fill="#0c0d0e" stroke="#4a4d51" stroke-width="0.3" data-path="controller/module/display" data-class="decor" />
+      <circle id="controller--module--indicator-1" cx="8.5" cy="106.4" r="3.3" fill="none" stroke="#6b7076" stroke-width="0.3" />
+      <circle id="controller--module--indicator-2" cx="8.5" cy="93.8" r="3.3" fill="none" stroke="#6b7076" stroke-width="0.3" />
+      <circle id="controller--module--indicator-3" cx="8.5" cy="81.0" r="3.3" fill="none" stroke="#6b7076" stroke-width="0.3" />
+      <circle id="controller--module--status-lamp" cx="26.4" cy="71.5" r="1.2" fill="none" stroke="#6b7076" stroke-width="0.25" />
+      <circle id="controller--module--reset" cx="41.8" cy="71.5" r="0.9" fill="#0b0b0c" stroke="#6b7076" stroke-width="0.2" />
+      <rect x="5.5" y="48.2" width="17.3" height="17.9" fill="#141516" stroke="#34373b" stroke-width="0.2" />
+      <rect x="28.0" y="48.2" width="11.4" height="17.9" fill="#141516" stroke="#34373b" stroke-width="0.2" />
+      <rect x="5.9" y="29.2" width="16.7" height="15.5" fill="#141516" stroke="#34373b" stroke-width="0.2" />
+      <rect x="5.9" y="11.9" width="16.7" height="15.7" fill="#141516" stroke="#34373b" stroke-width="0.2" />
+      <rect x="24.5" y="29.2" width="15.5" height="15.5" fill="#141516" stroke="#34373b" stroke-width="0.2" />
+      <rect x="24.5" y="11.9" width="15.5" height="15.7" fill="#141516" stroke="#34373b" stroke-width="0.2" />
+      <g id="controller--module--jack-1" data-path="controller/module/jack-1" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-telemetry" transform="translate(6.25,50.55)" data-group="jacks" data-group-role="management">
+        <title>controller--module--jack-1</title>
+        <path id="controller--module--jack-1--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-1--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-1--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="controller/module/jack-1/opening" data-class="cutout" />
+        <g id="controller--module--jack-1--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="controller--module--jack-2" data-path="controller/module/jack-2" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-telemetry" transform="translate(6.35,30.35) rotate(90 7.9 6.6)" data-group="jacks" data-group-role="management">
+        <title>controller--module--jack-2</title>
+        <path id="controller--module--jack-2--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-2--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-2--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="controller/module/jack-2/opening" data-class="cutout" />
+        <g id="controller--module--jack-2--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="controller--module--jack-3" data-path="controller/module/jack-3" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-telemetry" transform="translate(6.35,13.15) rotate(90 7.9 6.6)" data-group="jacks" data-group-role="management">
+        <title>controller--module--jack-3</title>
+        <path id="controller--module--jack-3--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-3--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-3--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="controller/module/jack-3/opening" data-class="cutout" />
+        <g id="controller--module--jack-3--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="controller--module--jack-4" data-path="controller/module/jack-4" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-telemetry" transform="translate(24.35,30.35) rotate(270 7.9 6.6)" data-group="jacks" data-group-role="management">
+        <title>controller--module--jack-4</title>
+        <path id="controller--module--jack-4--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-4--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-4--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="controller/module/jack-4/opening" data-class="cutout" />
+        <g id="controller--module--jack-4--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="controller--module--jack-5" data-path="controller/module/jack-5" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-telemetry" transform="translate(24.35,13.15) rotate(270 7.9 6.6)" data-group="jacks" data-group-role="management">
+        <title>controller--module--jack-5</title>
+        <path id="controller--module--jack-5--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-5--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="controller--module--jack-5--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="controller/module/jack-5/opening" data-class="cutout" />
+        <g id="controller--module--jack-5--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="controller--module--usb-a" data-path="controller/module/usb-a" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(27.7,54.9) rotate(90 6.0 2.25)" data-group="jacks" data-group-role="management">
+        <title>controller--module--usb-a</title>
+        <rect id="controller--module--usb-a--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="controller/module/usb-a/opening" data-class="cutout" />
+        <rect id="controller--module--usb-a--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="ground" data-path="ground" data-class="ground" data-behaviour="mounts" data-ref="common/ground-screw@1:1.0.0" data-rel-pos="1" transform="translate(6.0,1741.2)" data-group="grounding" data-group-role="furniture">
+    <title>ground</title>
+    <circle id="ground--stud" cx="2.8" cy="2.8" r="2.8" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" data-path="ground/stud" data-class="stud" data-z-cyl="3.2" data-z-color="#8a9099" />
+    <circle id="ground--washer" cx="2.8" cy="2.8" r="2.66" fill="#7d848c" stroke="#565c63" stroke-width="0.45" stroke-dasharray="0.55 0.4" data-z-cyl="0.5" data-z-lift="3.2" data-z-color="#6e747c" />
+    <g id="ground--screw-cap" data-z-cyl="1.0" data-z-lift="3.7" data-z-color="#8a9099">
+      <circle cx="2.8" cy="2.8" r="2.53" fill="#8a9099" stroke="#4a4f55" stroke-width="0.25" />
+      <line x1="1.1" y1="2.8" x2="4.5" y2="2.8" stroke="#4a4f55" stroke-width="0.45" />
+      <line x1="2.8" y1="1.1" x2="2.8" y2="4.5" stroke="#4a4f55" stroke-width="0.45" />
+    </g>
+    <g data-cp="mate" data-cp-at="2.8 2.8" data-cp-dir="front" data-cp-on="ground--screw-cap" />
+  </g>
+</svg>

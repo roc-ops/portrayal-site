@@ -204,6 +204,68 @@
    },
    {
     "accepts": [
+     "generic/din-1-0-2-3-plug@1"
+    ],
+    "at": [
+     178.795,
+     64.495
+    ],
+    "bores": [],
+    "default": null,
+    "group": "timing",
+    "group-states": false,
+    "id": "clk-10mhz",
+    "interface": "din-1-0-2-3",
+    "kind": "connector",
+    "lift": 3.85,
+    "mate": [
+     182.3,
+     68.0
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "timing",
+     "data-group-role": "management"
+    },
+    "rel-pos": 3,
+    "rotate": null,
+    "turns": null
+   },
+   {
+    "accepts": [
+     "generic/din-1-0-2-3-plug@1"
+    ],
+    "at": [
+     191.545,
+     64.495
+    ],
+    "bores": [],
+    "default": null,
+    "group": "timing",
+    "group-states": false,
+    "id": "clk-1pps",
+    "interface": "din-1-0-2-3",
+    "kind": "connector",
+    "lift": 3.85,
+    "mate": [
+     195.05,
+     68.0
+    ],
+    "media": null,
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "timing",
+     "data-group-role": "management"
+    },
+    "rel-pos": 4,
+    "rotate": null,
+    "turns": null
+   },
+   {
+    "accepts": [
      "generic/rj45-plug@1"
     ],
     "at": [
@@ -1130,18 +1192,6 @@
    "what": "power-draw"
   },
   {
-   "because": "needs-drawing",
-   "blocks": [],
-   "kind": "declared",
-   "note": "Table 4 of the fixed-port install guide gives the 10MHz and 1PPS connectors as DIN 1.0/2.3. The standards registry has no key for it - sma, smb, mcx and f-type are there, DIN 1.0/2.3 is not - so these two openings are declared as panel cutouts at their measured size rather than composed from a std/ part. Substituting sma or smb would name a connector Cisco does not. THE REASON WAS vendor-silent AND THAT WAS THE WRONG TOKEN. Cisco is not silent - it names the connector outright. What is missing is a panel-cutout dimension, which is needs-drawing, and the difference matters because the two tokens ask different things of a reader: vendor-silent reads as closed until better documents appear, needs-drawing reads as an errand somebody can run today. The correction came from asr9k-cards, who had just been wrong in exactly this direction about the XFP - concluding a figure was unsourceable after searching the intake rather than the standards - and found it in INF-8077i ten minutes after looking somewhere else. IEC 61169-8 is the somewhere else here, and nobody has opened it yet.",
-   "scope": [
-    "clk-10mhz",
-    "clk-1pps"
-   ],
-   "wanted": "a std/din-1-0-2-3 part and its standards.yaml key. THE CONNECTOR IS STANDARDISED, so a sourced dimension exists to be found rather than estimated - DIN 1.0/2.3 is specified in IEC 61169-8, and any manufacturer's bulkhead-jack panel drawing carries the D-hole figure. std/mcx is the worked example of exactly this being done properly earlier tonight: registered from IEC 61169-36 / CECC 22220 at 4.95 x 4.50 with confidence verified, replacing an estimate that was 28 percent too small. This should be done the same way, and until it is, an sma or smb standing in would be a plausible wrong answer - which is the failure mode this project keeps having to dig back out",
-   "what": "din-1-0-2-3-connector"
-  },
-  {
    "because": "L21",
    "blocks": [],
    "count": 8,
@@ -1196,7 +1246,7 @@
    "note": "THE FLANGE WAS AT THE WRONG END ON THREE OF THE FOUR SIDE VIEWS AND THE FIX IS DERIVED, NOT GUESSED. This is a front-mounted 2 RU chassis, so its integral flanges are at the FRONT - that half was never in doubt. What was in doubt was which end of each view the front is, because nothing in the schema, the renderer or any device file stated it, and this device answered it four different ways: top had the flange at y = 0, bottom at y = 464, left at x = 0 and right at x = 464. Four faces, one feature, three of them wrong, and no label anywhere to check the geometry against - which is why it survived. THE RENDERER IS THE AUTHORITY AND IT IS UNAMBIGUOUS. library/demo2/viewer3d.js builds each face in local coordinates (x right, y up, z out of the face) and orients it with a fixed rotation, with the front face at +z and the rear at -z. Applying those rotations to the local axes gives the depth direction of every side view outright: right is rot [0, +pi/2, 0], which sends local +x to world -z, so INCREASING x ON A RIGHT VIEW RUNS TOWARDS THE REAR AND x = 0 IS THE FRONT. left is rot [0, -pi/2, 0], which sends local +x to world +z, so x = 0 IS THE REAR AND x = depth IS THE FRONT. top is rot [-pi/2, 0, 0], which sends local +y to world -z; SVG y runs downwards so image y = 0 is local +y, giving y = 0 REAR and y = depth FRONT - the same answer Figure 9 gave for the ASR 9006 and 9904, now confirmed from the code as well as from the drawing. The box-UV path agrees independently, and so does viewer3d.js's own comment on the component branch, 'face end at image left -> front' for the right side. Three derivations, one answer. LEFT AND RIGHT ARE OPPOSITE AND THAT IS THE TRAP - they are two views of the same axis from opposite sides, so a feature at the front sits at x = 0 on one and x = depth on the other. Mirroring left from right by copying the x is exactly wrong, and copying it while ALSO negating it is exactly right. TOP AND BOTTOM ARE NOT OPPOSITE, which is the other half of the trap and the one that reads as inconsistent: looking at a chassis from below flips LEFT and RIGHT, not front and back, so top and bottom share a depth axis and a full-width strip has the SAME y on both"
   },
   "din-connectors": {
-   "note": "THE 10MHz AND 1PPS PORTS ARE DECLARED AS PANEL CUTOUTS AND NOT COMPOSED, deliberately. Table 4 of the guide gives their connector as DIN 1.0/2.3, and there is no std/ part for it - the registry has sma, smb, mcx and f-type. Substituting one of those would name a connector Cisco does not. The holes are measured (about 4 mm, centred at y 68.0) and a gap records what is missing"
+   "note": "The 10MHz and 1PPS ports are common/din-1-0-2-3-jack@1 placements under the ids their holes already had. Table 4 of the fixed-port install guide (PDF p21, printed p13) gives both connectors as DIN 1.0/2.3, and Figure 13 (PDF p20, printed p12) draws two round jacks side by side under callout 2 with a short legend over each, which the silkscreen of this face already follows. Each hole is the jack's own round 5.59 mm opening, which replaces the 4 mm hole drawn before, and keeps the centre that hole had. The guide states neither impedance nor thread, so the placements state none"
   },
   "face-check": {
    "note": "done BEFORE measuring, per the ASR 9910 lesson in stencil-as-metrology.md, where Cisco's master filenames name the wrong faces. No swap here: asr-9001-front carries the MPA bays, the PSU openings, every port, the LED cluster, the fan module and the 'Cisco ASR-9001' branding, and matches Figure 7 of the guide, 'Front Panel of the Cisco ASR 9001 Router'. asr-9001-rear is a plain louvred panel"

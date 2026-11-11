@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="87.0mm" height="40.7mm" viewBox="0 0 87.0 40.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ex-um-8x8sfp" data-path="ex-um-8x8sfp" data-class="line-card" data-behaviour="fills" data-ref="juniper/ex-um-8x8sfp@1:1.0.0" data-model="EX-UM-8X8SFP" data-ports-note="eight SFP+ ports, each at 10 Gbps with SFP+ or 1 Gbps with SFP, usable as Virtual Chassis ports" data-power-absent="not-published" data-sfp-plus="8" data-weight="0.74 lb (0.34 kg)" data-states="ok fail absent" transform="translate(0,0)">
+    <title>ex-um-8x8sfp</title>
+    <rect id="ex-um-8x8sfp--face" x="0" y="0" width="87" height="40.7" rx="0.6" fill="#888c92" stroke="#4b5057" stroke-width="0.4" />
+    <g id="ex-um-8x8sfp--vents" fill="#3a3d43">
+      <path d="M 3.3 7.4 l 1.0 -1.73 h 2.0 l 1.0 1.73 l -1.0 1.73 h -2.0 z" />
+      <path d="M 7.5 9.5 l 1.0 -1.73 h 2.0 l 1.0 1.73 l -1.0 1.73 h -2.0 z" />
+      <path d="M 2.8 12.4 l 1.0 -1.73 h 2.0 l 1.0 1.73 l -1.0 1.73 h -2.0 z" />
+      <path d="M 75.6 5.4 l 1.0 -1.73 h 2.0 l 1.0 1.73 l -1.0 1.73 h -2.0 z" />
+      <path d="M 79.8 7.9 l 1.0 -1.73 h 2.0 l 1.0 1.73 l -1.0 1.73 h -2.0 z" />
+      <path d="M 75.6 10.8 l 1.0 -1.73 h 2.0 l 1.0 1.73 l -1.0 1.73 h -2.0 z" />
+      <path d="M 79.8 13.2 l 1.0 -1.73 h 2.0 l 1.0 1.73 l -1.0 1.73 h -2.0 z" />
+    </g>
+    <g id="ex-um-8x8sfp--notches" fill="#2b2e33">
+      <rect x="7.3" y="36.0" width="2.4" height="5.0" rx="1.2" />
+      <rect x="42.3" y="36.0" width="2.4" height="5.0" rx="1.2" />
+      <rect x="76.9" y="36.0" width="2.4" height="5.0" rx="1.2" />
+    </g>
+    <g id="ex-um-8x8sfp--screw-left">
+      <circle cx="4.8" cy="19.6" r="4.5" fill="#b6babf" stroke="#80858b" stroke-width="0.35" />
+      <circle cx="4.8" cy="19.6" r="3.1" fill="none" stroke="#80858b" stroke-width="0.3" />
+      <line x1="2.2" y1="21.2" x2="7.4" y2="18.0" stroke="#6b7076" stroke-width="0.6" stroke-linecap="round" />
+    </g>
+    <g id="ex-um-8x8sfp--screw-right">
+      <circle cx="81.7" cy="19.6" r="4.5" fill="#b6babf" stroke="#80858b" stroke-width="0.35" />
+      <circle cx="81.7" cy="19.6" r="3.1" fill="none" stroke="#80858b" stroke-width="0.3" />
+      <line x1="79.1" y1="21.2" x2="84.3" y2="18.0" stroke="#6b7076" stroke-width="0.6" stroke-linecap="round" />
+    </g>
+    <g id="ex-um-8x8sfp--silkscreen" font-family="sans-serif" fill="#d8dade" text-anchor="middle">
+      <text x="83.7" y="2.9" font-size="2.3" text-anchor="end">EX-UM-8X8SFP</text>
+      <text x="8.5" y="32.2" font-size="1.5">ST</text>
+      <text x="19.1" y="36.0" font-size="2.0">0</text>
+      <text x="24.2" y="37.8" font-size="2.0">1</text>
+      <text x="33.4" y="36.0" font-size="2.0">2</text>
+      <text x="38.7" y="37.8" font-size="2.0">3</text>
+      <text x="47.7" y="36.0" font-size="2.0">4</text>
+      <text x="53.2" y="37.8" font-size="2.0">5</text>
+      <text x="62.1" y="36.0" font-size="2.0">6</text>
+      <text x="67.2" y="37.8" font-size="2.0">7</text>
+    </g>
+    <g id="ex-um-8x8sfp--port-0" data-path="ex-um-8x8sfp/port-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(13.5,7.3)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-0</title>
+      <rect id="ex-um-8x8sfp--port-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-0/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--port-1" data-path="ex-um-8x8sfp/port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(13.5,22.3) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-1</title>
+      <rect id="ex-um-8x8sfp--port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-1/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--port-2" data-path="ex-um-8x8sfp/port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(28.7,7.3)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-2</title>
+      <rect id="ex-um-8x8sfp--port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-2/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--port-3" data-path="ex-um-8x8sfp/port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(28.7,22.3) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-3</title>
+      <rect id="ex-um-8x8sfp--port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-3/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--port-4" data-path="ex-um-8x8sfp/port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(43.9,7.3)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-4</title>
+      <rect id="ex-um-8x8sfp--port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-4/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--port-5" data-path="ex-um-8x8sfp/port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(43.9,22.3) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-5</title>
+      <rect id="ex-um-8x8sfp--port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-5/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--port-6" data-path="ex-um-8x8sfp/port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(59.1,7.3)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-6</title>
+      <rect id="ex-um-8x8sfp--port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-6/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--port-7" data-path="ex-um-8x8sfp/port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(59.1,22.3) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic" data-description="The eight uplink cages, numbered 0 to 7 as printed, the even numbers on the upper row. SFP+ at 10 Gbps, or SFP at 1 Gbps with an SFP transceiver">
+      <title>ex-um-8x8sfp--port-7</title>
+      <rect id="ex-um-8x8sfp--port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="ex-um-8x8sfp/port-7/opening" data-class="cutout" />
+      <rect id="ex-um-8x8sfp--port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="ex-um-8x8sfp--port-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="ex-um-8x8sfp--port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="ex-um-8x8sfp--led-1-link" data-path="ex-um-8x8sfp/led-1-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(14.975,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-1-link</title>
+      <path id="ex-um-8x8sfp--led-1-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-1-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-0-link" data-path="ex-um-8x8sfp/led-0-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(17.675,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-0-link</title>
+      <path id="ex-um-8x8sfp--led-0-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-0-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-1-status" data-path="ex-um-8x8sfp/led-1-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(22.175,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-1-status</title>
+      <path id="ex-um-8x8sfp--led-1-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-1-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-0-status" data-path="ex-um-8x8sfp/led-0-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(24.975,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-0-status</title>
+      <path id="ex-um-8x8sfp--led-0-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-0-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-3-link" data-path="ex-um-8x8sfp/led-3-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(30.175,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-3-link</title>
+      <path id="ex-um-8x8sfp--led-3-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-3-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-2-link" data-path="ex-um-8x8sfp/led-2-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(32.875,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-2-link</title>
+      <path id="ex-um-8x8sfp--led-2-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-2-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-3-status" data-path="ex-um-8x8sfp/led-3-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(37.375,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-3-status</title>
+      <path id="ex-um-8x8sfp--led-3-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-3-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-2-status" data-path="ex-um-8x8sfp/led-2-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(40.175,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-2-status</title>
+      <path id="ex-um-8x8sfp--led-2-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-2-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-5-link" data-path="ex-um-8x8sfp/led-5-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(45.375,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-5-link</title>
+      <path id="ex-um-8x8sfp--led-5-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-5-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-4-link" data-path="ex-um-8x8sfp/led-4-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(48.075,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-4-link</title>
+      <path id="ex-um-8x8sfp--led-4-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-4-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-5-status" data-path="ex-um-8x8sfp/led-5-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(52.575,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-5-status</title>
+      <path id="ex-um-8x8sfp--led-5-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-5-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-4-status" data-path="ex-um-8x8sfp/led-4-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(55.375,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-4-status</title>
+      <path id="ex-um-8x8sfp--led-4-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-4-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-7-link" data-path="ex-um-8x8sfp/led-7-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(60.575,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-7-link</title>
+      <path id="ex-um-8x8sfp--led-7-link--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-7-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-6-link" data-path="ex-um-8x8sfp/led-6-link" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="link activity" transform="translate(63.275,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-6-link</title>
+      <path id="ex-um-8x8sfp--led-6-link--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-6-link/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-7-status" data-path="ex-um-8x8sfp/led-7-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(67.775,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-7-status</title>
+      <path id="ex-um-8x8sfp--led-7-status--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-7-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-6-status" data-path="ex-um-8x8sfp/led-6-status" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-function="status" transform="translate(70.575,18.6)" data-group="port-leds" data-group-role="indicator" data-description="Four arrow lamps between the rows for each pair of ports: link activity of the lower port, link activity of the upper port, status of the lower port, status of the upper port. Numbered in printed order, left to right">
+      <title>ex-um-8x8sfp--led-6-status</title>
+      <path id="ex-um-8x8sfp--led-6-status--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="ex-um-8x8sfp/led-6-status/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="ex-um-8x8sfp--led-st" data-path="ex-um-8x8sfp/led-st" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="module status" transform="translate(7.5,27.1)" data-group="status" data-group-role="indicator" data-description="the ST lamp of the module (guide Figure 22, callout 1)">
+      <title>ex-um-8x8sfp--led-st</title>
+      <circle id="ex-um-8x8sfp--led-st--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ex-um-8x8sfp--led-st--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ex-um-8x8sfp/led-st/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>
