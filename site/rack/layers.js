@@ -58,6 +58,15 @@ export function layerOfKind(kind) {
   return kind === 'cable manager' ? 'managers' : kind === 'pdu' ? 'pdus' : null;
 }
 
+export const MENU_MARGIN = 8;
+/** How far to move a panel sideways (px, + is right) to sit inside a window `width` wide with `margin` to spare:
+ *  its right edge in first, then its left edge (a panel wider than the window keeps its left edge in view). */
+export function shiftIntoWindow(left, right, width, margin = MENU_MARGIN) {
+  let by = Math.min(0, width - margin - right);
+  if (left + by < margin) by = margin - left;
+  return by;
+}
+
 // ── the control ──────────────────────────────────────────────────────────
 /** Two rows into `host`: the presets and the five layers; `onLayers(array)` on each pick. `get()` is what is on. */
 export function mountLayers(host, onLayers) {
@@ -97,6 +106,17 @@ export function mountLayers(host, onLayers) {
   };
   row('Show', PRESETS.map(p => [p[0], p[1], `${p[1]}: ${p[2]}`]), 'layersPreset', id => pick(PRESETS.find(p => p[0] === id)[3]));
   row('Layers', LAYERS, 'layersSet', id => pick(cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]));
+  // The open panel stays inside the window: placed by the stylesheet, then moved by what is left over.
+  const menu = host.closest('details');
+  const place = () => {
+    host.style.transform = '';
+    if (!menu?.open) return;
+    const r = host.getBoundingClientRect();
+    const by = shiftIntoWindow(r.left, r.right, innerWidth);
+    if (by) host.style.transform = `translateX(${by}px)`;
+  };
+  menu?.addEventListener('toggle', place);
+  addEventListener('resize', place);
   paint();
   return {get: () => [...cur]};
 }

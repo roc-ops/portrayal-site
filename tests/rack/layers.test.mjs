@@ -2,7 +2,7 @@
 // in the browser, and what a cable or a part belongs to.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {LAYERS_KEY, LAYER_IDS, PRESETS, LAYERS_DEFAULT, presetOf, loadLayers, saveLayers, layerOfMedia, layerOfKind} from '../../site/rack/layers.js';
+import {LAYERS_KEY, LAYER_IDS, PRESETS, LAYERS_DEFAULT, presetOf, loadLayers, saveLayers, layerOfMedia, layerOfKind, shiftIntoWindow} from '../../site/rack/layers.js';
 
 const store = (v = null) => { const m = new Map(v == null ? [] : [[LAYERS_KEY, v]]); return {getItem: k => m.get(k) ?? null, setItem: (k, x) => { m.set(k, String(x)); }, map: m}; };
 
@@ -34,6 +34,15 @@ test('the layers are kept as a list in order, and only a list of layers is read 
   const blocked = {getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }};
   assert.deepEqual(loadLayers(blocked), LAYER_IDS);
   assert.doesNotThrow(() => saveLayers(['power'], blocked));
+});
+
+test('an open panel is shifted into the window with 8px to spare, its left edge kept in view', () => {
+  assert.equal(shiftIntoWindow(855, 1207, 1280), 0, 'already inside');
+  assert.equal(shiftIntoWindow(1137, 1504, 1280), -232, 'past the right edge: its right edge to 1272');
+  assert.equal(shiftIntoWindow(-40, 300, 1280), 48, 'past the left edge: its left edge to 8');
+  assert.equal(shiftIntoWindow(20, 372, 375), -5, 'inside the window but not the margin');
+  assert.equal(shiftIntoWindow(20, 500, 375), -12, 'wider than the window: the left edge wins (to 8)');
+  assert.equal(shiftIntoWindow(300, 400, 500, 0), 0, 'no margin');
 });
 
 test('a cable belongs to power or to data, and a part to managers, PDUs or no layer', () => {

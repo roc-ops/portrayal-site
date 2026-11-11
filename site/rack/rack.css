@@ -61,7 +61,10 @@
    display: none, which also takes it out of the pointer's way. What is selected
    (rk-selected) stays shown, and a cable the reader picked from the list (on)
    with it. Never in a file: a sheet is not in the panes. */
-#layers { min-width: 22rem; }
+/* The panel hangs from the control's right edge (the control sits toward the
+   right of the bar), never wider than the window less 8px each side; layers.js
+   shifts it into the window when the control is too near either edge. */
+#layersMenu > #layers { left: auto; right: 0; box-sizing: border-box; min-width: min(22rem, calc(100vw - 16px)); max-width: calc(100vw - 16px); }
 .rk-layers-row { display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: center; }
 .rk-layers-label { width: 4rem; font-family: system-ui, sans-serif; font-size: 0.78rem; color: var(--pt-ink-muted); }
 #layers button { font: inherit; font-family: system-ui, sans-serif; font-size: 0.78rem; background: var(--control); color: var(--ink);

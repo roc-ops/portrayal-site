@@ -22058,6 +22058,37 @@ def check_rack_layers(page, base):
     return bad
 
 
+MENU_IN_WINDOW_JS = """() => {
+  const panel = document.getElementById('layers'), r = panel.getBoundingClientRect(), w = window.innerWidth;
+  const out = [...panel.querySelectorAll('button')].map(b => [b.textContent, b.getBoundingClientRect()]).filter(([, q]) => q.left < 0 || q.right > w).map(([t]) => t);
+  return {left: r.left, right: r.right, width: w, outside: out, buttons: panel.querySelectorAll('[data-layers-preset]').length + ':' + panel.querySelectorAll('[data-layers-set]').length};
+}"""
+
+
+@extra("rack.html: the open Show menu stays inside the window at 1280 and 1100 px wide - its panel's right edge at or below the window's width, its left edge at or above 0, and each of the five presets and five layers inside it (#197)")
+def check_rack_layers_menu_in_window(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1280, "height": 800})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    park_mouse(page)
+    if page.locator("#layersMenu").get_attribute("open") is None:
+        page.click("#layersMenu > summary")
+    for width in (1280, 1100):
+        page.set_viewport_size({"width": width, "height": 800})
+        page.wait_for_timeout(300)
+        m = page.evaluate(MENU_IN_WINDOW_JS)
+        if m["buttons"] != "5:5":
+            bad.append(f"{width} px: the menu holds {m['buttons']} preset and layer buttons, expected 5:5")
+        if m["right"] > m["width"] or m["left"] < 0:
+            bad.append(f"{width} px: the open Show menu's panel runs from {m['left']:.1f} to {m['right']:.1f}, outside the window's {m['width']} px")
+        if m["outside"]:
+            bad.append(f"{width} px: these Show buttons are outside the window ({m['width']} px wide): {m['outside']}")
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    print("[check_rack_layers_menu_in_window] the open Show menu inside the window at 1280 and 1100 px")
+    return bad
+
+
 # THE DETAIL HELD BACK BY THE CHECK (rack3d.js startDetail): every scene the page starts building has its
 # startDetail wrapped to keep the detail from starting until `window.__goDetail()` is called. The scene is then
 # up with its sheet parts as plain boxes, as a large rack's is for minutes.
