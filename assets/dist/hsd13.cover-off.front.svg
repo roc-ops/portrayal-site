@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="40.64mm" viewBox="0 0 482.6 40.64" data-device="hsd13" data-view="front" data-shell="sheet" data-material="Plastic" data-cover="Press on" data-removable-fingers="Plastic fingers can be removed where needed for cable entrance" data-vertical-manager="VSD Series">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Hubbell HSD13","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"hubbell/hsd13-base@1":"1.0.0","hubbell/hsd13-end@1":"1.0.0","hubbell/hsd13-finger@1":"1.0.0"},"source-sha256":"33826da96d6cec95828b59c024c074c66c46a01bc993d1a17dfbdd1032a53111","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="HSD13" x="0" y="0" width="482.6" height="40.64" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="x" data-guide-finger-pitch="20.32" data-guide-finger-gap="9" x="0" y="2.5" width="482.6" height="35.64" fill="none" stroke="none" pointer-events="none" />
+  <g id="base" data-path="base" data-class="mechanical" data-ref="hubbell/hsd13-base@1:1.0.0" data-depth="78.78" data-wall="#2a2c2e" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the plastic base plate">
+    <title>base</title>
+    <rect id="base--floor" x="0" y="0" width="482.6" height="40.64" fill="#2a2c2e" data-path="base/floor" data-class="bezel" />
+  </g>
+  <g id="finger-upper-1" data-path="finger-upper-1" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-end@1:1.0.0" data-material="Plastic" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-1</title>
+    <rect id="finger-upper-1--block" x="0" y="0" width="13.28" height="2.5" fill="#3d4044" data-path="finger-upper-1/block" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-2" data-path="finger-upper-2" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="2" transform="translate(22.28,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-2</title>
+    <rect id="finger-upper-2--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-2/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-3" data-path="finger-upper-3" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="3" transform="translate(42.6,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-3</title>
+    <rect id="finger-upper-3--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-3/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-4" data-path="finger-upper-4" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="4" transform="translate(62.92,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-4</title>
+    <rect id="finger-upper-4--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-4/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-5" data-path="finger-upper-5" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="5" transform="translate(83.24,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-5</title>
+    <rect id="finger-upper-5--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-5/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-6" data-path="finger-upper-6" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="6" transform="translate(103.56,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-6</title>
+    <rect id="finger-upper-6--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-6/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-7" data-path="finger-upper-7" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="7" transform="translate(123.88,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-7</title>
+    <rect id="finger-upper-7--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-7/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-8" data-path="finger-upper-8" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="8" transform="translate(144.2,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-8</title>
+    <rect id="finger-upper-8--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-8/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-9" data-path="finger-upper-9" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="9" transform="translate(164.52,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-9</title>
+    <rect id="finger-upper-9--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-9/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-10" data-path="finger-upper-10" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="10" transform="translate(184.84,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-10</title>
+    <rect id="finger-upper-10--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-10/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-11" data-path="finger-upper-11" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="11" transform="translate(205.16,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-11</title>
+    <rect id="finger-upper-11--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-11/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-12" data-path="finger-upper-12" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="12" transform="translate(225.48,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-12</title>
+    <rect id="finger-upper-12--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-12/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-13" data-path="finger-upper-13" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="13" transform="translate(245.8,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-13</title>
+    <rect id="finger-upper-13--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-13/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-14" data-path="finger-upper-14" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="14" transform="translate(266.12,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-14</title>
+    <rect id="finger-upper-14--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-14/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-15" data-path="finger-upper-15" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="15" transform="translate(286.44,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-15</title>
+    <rect id="finger-upper-15--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-15/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-16" data-path="finger-upper-16" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="16" transform="translate(306.76,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-16</title>
+    <rect id="finger-upper-16--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-16/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-17" data-path="finger-upper-17" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="17" transform="translate(327.08,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-17</title>
+    <rect id="finger-upper-17--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-17/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-18" data-path="finger-upper-18" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="18" transform="translate(347.4,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-18</title>
+    <rect id="finger-upper-18--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-18/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-19" data-path="finger-upper-19" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="19" transform="translate(367.72,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-19</title>
+    <rect id="finger-upper-19--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-19/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-20" data-path="finger-upper-20" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="20" transform="translate(388.04,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-20</title>
+    <rect id="finger-upper-20--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-20/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-21" data-path="finger-upper-21" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="21" transform="translate(408.36,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-21</title>
+    <rect id="finger-upper-21--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-21/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-22" data-path="finger-upper-22" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="22" transform="translate(428.68,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-22</title>
+    <rect id="finger-upper-22--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-22/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-23" data-path="finger-upper-23" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="23" transform="translate(449.0,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-23</title>
+    <rect id="finger-upper-23--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-upper-23/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-upper-24" data-path="finger-upper-24" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-end@1:1.0.0" data-material="Plastic" data-rel-pos="24" transform="translate(469.32,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-upper-24</title>
+    <rect id="finger-upper-24--block" x="0" y="0" width="13.28" height="2.5" fill="#3d4044" data-path="finger-upper-24/block" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-1" data-path="finger-lower-1" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-end@1:1.0.0" data-material="Plastic" data-rel-pos="25" transform="translate(0.0,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-1</title>
+    <rect id="finger-lower-1--block" x="0" y="0" width="13.28" height="2.5" fill="#3d4044" data-path="finger-lower-1/block" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-2" data-path="finger-lower-2" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="26" transform="translate(22.28,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-2</title>
+    <rect id="finger-lower-2--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-2/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-3" data-path="finger-lower-3" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="27" transform="translate(42.6,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-3</title>
+    <rect id="finger-lower-3--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-3/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-4" data-path="finger-lower-4" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="28" transform="translate(62.92,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-4</title>
+    <rect id="finger-lower-4--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-4/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-5" data-path="finger-lower-5" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="29" transform="translate(83.24,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-5</title>
+    <rect id="finger-lower-5--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-5/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-6" data-path="finger-lower-6" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="30" transform="translate(103.56,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-6</title>
+    <rect id="finger-lower-6--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-6/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-7" data-path="finger-lower-7" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="31" transform="translate(123.88,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-7</title>
+    <rect id="finger-lower-7--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-7/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-8" data-path="finger-lower-8" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="32" transform="translate(144.2,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-8</title>
+    <rect id="finger-lower-8--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-8/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-9" data-path="finger-lower-9" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="33" transform="translate(164.52,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-9</title>
+    <rect id="finger-lower-9--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-9/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-10" data-path="finger-lower-10" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="34" transform="translate(184.84,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-10</title>
+    <rect id="finger-lower-10--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-10/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-11" data-path="finger-lower-11" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="35" transform="translate(205.16,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-11</title>
+    <rect id="finger-lower-11--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-11/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-12" data-path="finger-lower-12" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="36" transform="translate(225.48,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-12</title>
+    <rect id="finger-lower-12--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-12/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-13" data-path="finger-lower-13" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="37" transform="translate(245.8,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-13</title>
+    <rect id="finger-lower-13--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-13/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-14" data-path="finger-lower-14" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="38" transform="translate(266.12,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-14</title>
+    <rect id="finger-lower-14--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-14/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-15" data-path="finger-lower-15" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="39" transform="translate(286.44,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-15</title>
+    <rect id="finger-lower-15--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-15/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-16" data-path="finger-lower-16" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="40" transform="translate(306.76,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-16</title>
+    <rect id="finger-lower-16--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-16/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-17" data-path="finger-lower-17" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="41" transform="translate(327.08,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-17</title>
+    <rect id="finger-lower-17--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-17/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-18" data-path="finger-lower-18" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="42" transform="translate(347.4,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-18</title>
+    <rect id="finger-lower-18--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-18/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-19" data-path="finger-lower-19" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="43" transform="translate(367.72,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-19</title>
+    <rect id="finger-lower-19--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-19/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-20" data-path="finger-lower-20" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="44" transform="translate(388.04,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-20</title>
+    <rect id="finger-lower-20--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-20/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-21" data-path="finger-lower-21" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="45" transform="translate(408.36,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-21</title>
+    <rect id="finger-lower-21--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-21/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-22" data-path="finger-lower-22" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="46" transform="translate(428.68,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-22</title>
+    <rect id="finger-lower-22--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-22/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-23" data-path="finger-lower-23" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-finger@1:1.0.0" data-material="Plastic" data-rel-pos="47" transform="translate(449.0,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-23</title>
+    <rect id="finger-lower-23--finger" x="0" y="0" width="11.32" height="2.5" fill="#3d4044" data-path="finger-lower-23/finger" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+  <g id="finger-lower-24" data-path="finger-lower-24" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hsd13-end@1:1.0.0" data-material="Plastic" data-rel-pos="48" transform="translate(469.32,38.14)" data-group="fingers" data-group-role="furniture" data-description="the two rows of 22 fingers and two end blocks, upper row first, left to right" data-z-lift="-78.78" data-in="base" data-under="cover">
+    <title>finger-lower-24</title>
+    <rect id="finger-lower-24--block" x="0" y="0" width="13.28" height="2.5" fill="#3d4044" data-path="finger-lower-24/block" data-class="bezel" data-z-out="-2" data-z-color="#3d4044" />
+  </g>
+</svg>

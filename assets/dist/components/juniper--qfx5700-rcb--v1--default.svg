@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="198.8mm" height="30.8mm" viewBox="0 0 198.8 30.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-active { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-beacon { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-booting { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-detected { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-error { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-major { --led-color: #ef4444; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-major-and-minor { --led-color: #ef4444; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-major-and-minor { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-minor { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-online { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx5700-rcb@'] .state-primary { --led-color: #22c55e; }</style>
+  <g id="qfx5700-rcb" data-path="qfx5700-rcb" data-class="supervisor" data-behaviour="fills" data-ref="juniper/qfx5700-rcb@1:1.0.0" data-power-draw-max-w="80" data-role="routing-engine" data-states="ok fail absent" transform="translate(0,0)">
+    <title>qfx5700-rcb</title>
+    <defs>
+      <pattern id="qfx5700-rcb--hex" width="2.4" height="4.16" patternUnits="userSpaceOnUse">
+        <circle cx="1.2" cy="1.04" r="0.78" fill="#2f3237" />
+        <circle cx="0" cy="3.12" r="0.78" fill="#2f3237" />
+        <circle cx="2.4" cy="3.12" r="0.78" fill="#2f3237" />
+      </pattern>
+    </defs>
+    <rect id="qfx5700-rcb--face" x="0" y="3.0" width="198.8" height="27.8" rx="0.6" fill="#c3c7cc" stroke="#8b9097" stroke-width="0.4" />
+    <rect id="qfx5700-rcb--ejector-strip" x="0" y="0" width="198.8" height="3.0" fill="#9aa0a6" stroke="#7b8187" stroke-width="0.3" />
+    <g id="qfx5700-rcb--ejector-bars" fill="#7e848a" stroke="#5f656b" stroke-width="0.3">
+      <rect x="3.3" y="0.3" width="33.0" height="3.2" rx="1.2" />
+      <rect x="164.0" y="0.3" width="34.0" height="3.2" rx="1.2" />
+    </g>
+    <g id="qfx5700-rcb--vents">
+      <rect x="3.0" y="5.5" width="10.0" height="23.0" fill="url(#qfx5700-rcb--hex)" />
+      <rect x="14.0" y="17.5" width="30.0" height="11.0" fill="url(#qfx5700-rcb--hex)" />
+      <rect x="64.0" y="18.0" width="93.0" height="10.5" fill="url(#qfx5700-rcb--hex)" />
+      <rect x="85.0" y="6.5" width="31.0" height="11.0" fill="url(#qfx5700-rcb--hex)" />
+      <rect x="160.0" y="18.0" width="10.0" height="10.5" fill="url(#qfx5700-rcb--hex)" />
+      <rect x="186.0" y="5.5" width="11.0" height="17.0" fill="url(#qfx5700-rcb--hex)" />
+    </g>
+    <circle id="qfx5700-rcb--led-ssd0" cx="21.4" cy="8.5" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="qfx5700-rcb/led-ssd0" data-class="led" data-states="off detected active" />
+    <circle id="qfx5700-rcb--led-ssd1" cx="21.4" cy="13.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="qfx5700-rcb/led-ssd1" data-class="led" data-states="off detected active" />
+    <circle id="qfx5700-rcb--led-pwr" cx="86.4" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="qfx5700-rcb/led-pwr" data-class="led" data-states="off online beacon" />
+    <circle id="qfx5700-rcb--led-sts" cx="94.4" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="qfx5700-rcb/led-sts" data-class="led" data-states="off online beacon booting error" />
+    <circle id="qfx5700-rcb--led-alm" cx="100.5" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="qfx5700-rcb/led-alm" data-class="led" data-states="off major major-and-minor minor" />
+    <circle id="qfx5700-rcb--led-mst" cx="106.3" cy="2.4" r="1.0" fill="var(--led-color, #8a8d93)" stroke="#6b6f75" stroke-width="0.3" data-path="qfx5700-rcb/led-mst" data-class="led" data-states="off primary" />
+    <circle id="qfx5700-rcb--reset" cx="113.6" cy="2.4" r="0.8" fill="#1b1d20" stroke="#6b6f75" stroke-width="0.3" data-path="qfx5700-rcb/reset" data-class="button" />
+    <circle id="qfx5700-rcb--online" cx="35.0" cy="8.5" r="1.5" fill="#8a8f95" stroke="#4a4e54" stroke-width="0.35" data-path="qfx5700-rcb/online" data-class="button" />
+    <path d="M 30.8 7.4 V 8.6 M 29.7 8.0 A 1.3 1.3 0 1 0 31.9 8.0" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+    <rect x="176.0" y="23.2" width="21.6" height="5.4" rx="1.0" fill="#aeb3b9" stroke="#4a4e54" stroke-width="0.3" />
+    <path d="M 183.0 16.0 V 19.6 M 181.9 16.9 L 183.0 15.7 L 184.1 16.9" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+    <g id="qfx5700-rcb--silkscreen" font-family="sans-serif" fill="#2a2d31">
+      <text x="19.4" y="9.0" font-size="1.5" text-anchor="end">SSD0</text>
+      <text x="19.4" y="13.9" font-size="1.5" text-anchor="end">SSD1</text>
+      <text x="54.2" y="4.6" font-size="1.5" text-anchor="middle">OUT</text>
+      <text x="54.2" y="13.7" font-size="1.5" text-anchor="middle">IN</text>
+      <text x="48.7" y="22.9" font-size="1.5" text-anchor="middle">PPS</text>
+      <text x="59.6" y="22.9" font-size="1.5" text-anchor="middle">10 MHz</text>
+      <text x="83.6" y="7.2" font-size="1.5" text-anchor="middle" transform="rotate(90 83.6 7.2)">BITS</text>
+      <text x="88.0" y="2.3" font-size="1.2">OK/</text>
+      <text x="88.0" y="3.7" font-size="1.2">FAIL</text>
+      <text x="96.0" y="2.3" font-size="1.2">ON/</text>
+      <text x="96.0" y="3.7" font-size="1.2">OFF</text>
+      <text x="101.8" y="3.4" font-size="1.2">ALM</text>
+      <text x="107.6" y="3.4" font-size="1.2">MST</text>
+      <text x="115.0" y="3.4" font-size="1.2">RST</text>
+      <text x="115.4" y="7.2" font-size="1.5" text-anchor="middle" transform="rotate(90 115.4 7.2)">CON</text>
+      <text x="158.6" y="10.4" font-size="1.5" text-anchor="middle" transform="rotate(90 158.6 10.4)">MGMT</text>
+      <text x="186.8" y="26.9" font-size="2.0" font-weight="bold" text-anchor="middle">JNP5700-RCB</text>
+    </g>
+    <g id="qfx5700-rcb--usb" data-path="qfx5700-rcb/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB port for installing Junos OS Evolved" data-media="usb-a" transform="translate(172.3,10.45) rotate(90 6.0 2.25)" data-group="mgmt" data-group-role="management">
+      <title>qfx5700-rcb--usb</title>
+      <rect id="qfx5700-rcb--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="qfx5700-rcb/usb/opening" data-class="cutout" />
+      <rect id="qfx5700-rcb--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="qfx5700-rcb--mgmt" data-path="qfx5700-rcb/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" data-speed="1g" transform="translate(138.8,3.8)" data-group="mgmt" data-group-role="management">
+      <title>qfx5700-rcb--mgmt</title>
+      <g id="qfx5700-rcb--mgmt--jack" data-path="qfx5700-rcb/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>qfx5700-rcb--mgmt--jack</title>
+        <path id="qfx5700-rcb--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="qfx5700-rcb--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="qfx5700-rcb--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="qfx5700-rcb/mgmt/jack/opening" data-class="cutout" />
+        <g id="qfx5700-rcb--mgmt--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="qfx5700-rcb--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="qfx5700-rcb--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="qfx5700-rcb/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="qfx5700-rcb--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="qfx5700-rcb/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="qfx5700-rcb--con" data-path="qfx5700-rcb/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(118.2,0.6) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+      <title>qfx5700-rcb--con</title>
+      <path id="qfx5700-rcb--con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="qfx5700-rcb--con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="qfx5700-rcb--con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="qfx5700-rcb/con/opening" data-class="cutout" />
+      <g id="qfx5700-rcb--con--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="qfx5700-rcb--bits" data-path="qfx5700-rcb/bits" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS clocking" data-media="rj48" transform="translate(65.9,0.6) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>qfx5700-rcb--bits</title>
+      <path id="qfx5700-rcb--bits--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="qfx5700-rcb--bits--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="qfx5700-rcb--bits--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="qfx5700-rcb/bits/opening" data-class="cutout" />
+      <g id="qfx5700-rcb--bits--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="qfx5700-rcb--pps-out" data-path="qfx5700-rcb/pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS out" data-media="coax-smb" transform="translate(46.3,6.1)" data-group="timing" data-group-role="management">
+      <title>qfx5700-rcb--pps-out</title>
+      <circle id="qfx5700-rcb--pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="qfx5700-rcb/pps-out/opening" data-class="cutout" />
+      <g id="qfx5700-rcb--pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+    <g id="qfx5700-rcb--mhz-out" data-path="qfx5700-rcb/mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz out" data-media="coax-smb" transform="translate(57.2,6.1)" data-group="timing" data-group-role="management">
+      <title>qfx5700-rcb--mhz-out</title>
+      <circle id="qfx5700-rcb--mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="qfx5700-rcb/mhz-out/opening" data-class="cutout" />
+      <g id="qfx5700-rcb--mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+    <g id="qfx5700-rcb--pps-in" data-path="qfx5700-rcb/pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS in" data-media="coax-smb" transform="translate(46.3,15.0)" data-group="timing" data-group-role="management">
+      <title>qfx5700-rcb--pps-in</title>
+      <circle id="qfx5700-rcb--pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="qfx5700-rcb/pps-in/opening" data-class="cutout" />
+      <g id="qfx5700-rcb--pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+    <g id="qfx5700-rcb--mhz-in" data-path="qfx5700-rcb/mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz in" data-media="coax-smb" transform="translate(57.2,15.0)" data-group="timing" data-group-role="management">
+      <title>qfx5700-rcb--mhz-in</title>
+      <circle id="qfx5700-rcb--mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="qfx5700-rcb/mhz-in/opening" data-class="cutout" />
+      <g id="qfx5700-rcb--mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="88.45mm" viewBox="0 0 482.6 88.45" data-device="cmduct2u" data-view="front" data-shell="sheet" data-weight-kg="0.97" data-material="Steel and Plastic" data-color="Black" data-mounting-hardware="M6x12 screws, M6 cage nuts and M6 plastic washers, four of each" data-standards="EIA RS310-D">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"StarTech.com CMDUCT2U","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"startech/cmduct-fingers@1":"1.0.0","startech/cmduct2u-base@1":"1.0.0","startech/cmduct2u-cover@1":"1.0.0"},"source-sha256":"9e0db072e0b2d9299a089dd053d3b0222826406056470c6b5d40a925b695e32f","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CMDUCT2U" x="0" y="0" width="482.6" height="88.45" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="x" data-guide-finger-pitch="27.84" data-guide-finger-gap="11" x="23.8" y="1" width="435" height="86.45" fill="none" stroke="none" pointer-events="none" />
+  <g id="base" data-path="base" data-class="mechanical" data-ref="startech/cmduct2u-base@1:1.0.0" data-depth="70.6" data-wall="#232527" data-material="steel" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the plate, its ears and its three pass-through holes">
+    <title>base</title>
+    <path id="base--floor" fill="#232527" fill-rule="evenodd" d="     M0,0 H482.6 V88.45 H0 Z     M55.9,9.725 H146.7 A4.6,4.6 0 0 1 151.3,14.325 V74.125 A4.6,4.6 0 0 1 146.7,78.725 H55.9 A4.6,4.6 0 0 1 51.3,74.125 V14.325 A4.6,4.6 0 0 1 55.9,9.725 Z     M195.9,9.725 H286.7 A4.6,4.6 0 0 1 291.3,14.325 V74.125 A4.6,4.6 0 0 1 286.7,78.725 H195.9 A4.6,4.6 0 0 1 191.3,74.125 V14.325 A4.6,4.6 0 0 1 195.9,9.725 Z     M335.9,9.725 H426.7 A4.6,4.6 0 0 1 431.3,14.325 V74.125 A4.6,4.6 0 0 1 426.7,78.725 H335.9 A4.6,4.6 0 0 1 331.3,74.125 V14.325 A4.6,4.6 0 0 1 335.9,9.725 Z     M5.55,3 H12.05 A3.25,3.25 0 0 1 12.05,9.5 H5.55 A3.25,3.25 0 0 1 5.55,3 Z     M5.55,78.95 H12.05 A3.25,3.25 0 0 1 12.05,85.45 H5.55 A3.25,3.25 0 0 1 5.55,78.95 Z     M470.55,3 H477.05 A3.25,3.25 0 0 1 477.05,9.5 H470.55 A3.25,3.25 0 0 1 470.55,3 Z     M470.55,78.95 H477.05 A3.25,3.25 0 0 1 477.05,85.45 H470.55 A3.25,3.25 0 0 1 470.55,78.95 Z" data-path="base/floor" data-class="bezel" />
+    <path id="base--floor-lit" fill="#fff" fill-opacity="0.12" fill-rule="evenodd" d="     M0,0 H482.6 V88.45 H0 Z     M55.9,9.725 H146.7 A4.6,4.6 0 0 1 151.3,14.325 V74.125 A4.6,4.6 0 0 1 146.7,78.725 H55.9 A4.6,4.6 0 0 1 51.3,74.125 V14.325 A4.6,4.6 0 0 1 55.9,9.725 Z     M195.9,9.725 H286.7 A4.6,4.6 0 0 1 291.3,14.325 V74.125 A4.6,4.6 0 0 1 286.7,78.725 H195.9 A4.6,4.6 0 0 1 191.3,74.125 V14.325 A4.6,4.6 0 0 1 195.9,9.725 Z     M335.9,9.725 H426.7 A4.6,4.6 0 0 1 431.3,14.325 V74.125 A4.6,4.6 0 0 1 426.7,78.725 H335.9 A4.6,4.6 0 0 1 331.3,74.125 V14.325 A4.6,4.6 0 0 1 335.9,9.725 Z     M5.55,3 H12.05 A3.25,3.25 0 0 1 12.05,9.5 H5.55 A3.25,3.25 0 0 1 5.55,3 Z     M5.55,78.95 H12.05 A3.25,3.25 0 0 1 12.05,85.45 H5.55 A3.25,3.25 0 0 1 5.55,78.95 Z     M470.55,3 H477.05 A3.25,3.25 0 0 1 477.05,9.5 H470.55 A3.25,3.25 0 0 1 470.55,3 Z     M470.55,78.95 H477.05 A3.25,3.25 0 0 1 477.05,85.45 H470.55 A3.25,3.25 0 0 1 470.55,78.95 Z" />
+  </g>
+  <g id="fingers-upper" data-path="fingers-upper" data-class="mechanical" data-ref="startech/cmduct-fingers@1:1.0.0" data-material="steel" data-rel-pos="1" transform="translate(23.8,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two walls of fingers along the top and bottom of the duct" data-z-lift="-70.6" data-in="base" data-under="cover">
+    <title>fingers-upper</title>
+    <rect id="fingers-upper--root" x="0" y="0" width="435" height="1" fill="#1e2124" data-path="fingers-upper/root" data-class="bezel" data-z-out="-52.5" data-z-color="#2a2e33" />
+    <rect id="fingers-upper--f0" x="0" y="0" width="17.1" height="1" fill="#363b41" data-path="fingers-upper/f0" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f1" x="28.1" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f1" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f2" x="55.94" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f2" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f3" x="83.78" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f3" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f4" x="111.62" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f4" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f5" x="139.46" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f5" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f6" x="167.3" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f6" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f7" x="195.14" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f7" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f8" x="222.98" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f8" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f9" x="250.82" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f9" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f10" x="278.66" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f10" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f11" x="306.5" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f11" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f12" x="334.34" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f12" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f13" x="362.18" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f13" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f14" x="390.02" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-upper/f14" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-upper--f15" x="417.86" y="0" width="17.14" height="1" fill="#363b41" data-path="fingers-upper/f15" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+  </g>
+  <g id="fingers-lower" data-path="fingers-lower" data-class="mechanical" data-ref="startech/cmduct-fingers@1:1.0.0" data-material="steel" data-rel-pos="2" transform="translate(23.8,87.45)" data-group="fingers" data-group-role="furniture" data-description="the two walls of fingers along the top and bottom of the duct" data-z-lift="-70.6" data-in="base" data-under="cover">
+    <title>fingers-lower</title>
+    <rect id="fingers-lower--root" x="0" y="0" width="435" height="1" fill="#1e2124" data-path="fingers-lower/root" data-class="bezel" data-z-out="-52.5" data-z-color="#2a2e33" />
+    <rect id="fingers-lower--f0" x="0" y="0" width="17.1" height="1" fill="#363b41" data-path="fingers-lower/f0" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f1" x="28.1" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f1" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f2" x="55.94" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f2" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f3" x="83.78" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f3" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f4" x="111.62" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f4" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f5" x="139.46" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f5" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f6" x="167.3" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f6" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f7" x="195.14" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f7" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f8" x="222.98" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f8" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f9" x="250.82" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f9" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f10" x="278.66" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f10" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f11" x="306.5" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f11" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f12" x="334.34" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f12" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f13" x="362.18" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f13" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f14" x="390.02" y="0" width="16.84" height="1" fill="#363b41" data-path="fingers-lower/f14" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+    <rect id="fingers-lower--f15" x="417.86" y="0" width="17.14" height="1" fill="#363b41" data-path="fingers-lower/f15" data-class="bezel" data-z-out="-13.5" data-z-color="#363b41" />
+  </g>
+  <g id="cover" data-path="cover" data-class="mechanical" data-behaviour="mounts" data-ref="startech/cmduct2u-cover@1:1.0.0" data-rel-pos="1" transform="translate(23.8,0.0)" data-group="cover" data-group-role="furniture" data-description="the removable cover over the finger tips, shipped fitted" data-z-lift="-70.6" data-in="base">
+    <title>cover</title>
+    <rect id="cover--plate" x="0" y="0" width="435" height="88.45" rx="1" fill="#303336" data-path="cover/plate" data-class="bezel" data-z-out="0" data-z-lift="69.6" data-z-color="#303336" />
+    <rect id="cover--lip-top" x="0" y="1" width="435" height="1" fill="#3a3d40" data-path="cover/lip-top" data-class="bezel" data-z-out="0" data-z-color="#303336" />
+    <rect id="cover--lip-bottom" x="0" y="87.45" width="435" height="1" fill="#26282b" data-path="cover/lip-bottom" data-class="bezel" data-z-out="0" data-z-color="#303336" />
+  </g>
+</svg>

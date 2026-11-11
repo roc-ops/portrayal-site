@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="62.0mm" height="125.5mm" viewBox="0 0 62.0 125.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex9253-fan-3ru@'] .state-fault { --led-color: #ef4444; }
+    g[data-ref^='juniper/ex9253-fan-3ru@'] .state-initialising { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex9253-fan-3ru@'] .state-initialising { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex9253-fan-3ru@'] .state-running { --led-color: #22c55e; }</style>
+  <g id="ex9253-fan-3ru" data-path="ex9253-fan-3ru" data-class="fan" data-behaviour="fills" data-ref="juniper/ex9253-fan-3ru@1:1.0.0" data-airflow="front-to-back" data-power-draw-max-w="95" data-power-draw-typical-w="20" data-role="chassis-fan" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex9253-fan-3ru</title>
+    <defs>
+      <pattern id="ex9253-fan-3ru--hex" width="2.6" height="4.5" patternUnits="userSpaceOnUse">
+        <polygon points="1.3,0.1 2.25,0.65 2.25,1.75 1.3,2.3 0.35,1.75 0.35,0.65" fill="#050607" />
+        <polygon points="0,2.35 0.95,2.9 0.95,4.0 0,4.55 -0.95,4.0 -0.95,2.9" fill="#050607" />
+        <polygon points="2.6,2.35 3.55,2.9 3.55,4.0 2.6,4.55 1.65,4.0 1.65,2.9" fill="#050607" />
+      </pattern>
+    </defs>
+    <rect id="ex9253-fan-3ru--face" x="0.2" y="0.2" width="61.6" height="125.1" rx="2.0" fill="#4a4e54" stroke="#2d3033" stroke-width="0.4" data-fill-from="handle-finish" data-stroke-derive="handle-finish" />
+    <g id="ex9253-fan-3ru--grille-top">
+      <path d="M 6.5 8.5 H 24.5 Q 26.5 10 28.2 10 H 35.6 Q 37.5 10 39 8.5 H 55.5 V 50 Q 55.5 60 45 60 H 17 Q 6.5 60 6.5 50 Z" fill="#1a1d20" />
+      <path d="M 6.5 8.5 H 24.5 Q 26.5 10 28.2 10 H 35.6 Q 37.5 10 39 8.5 H 55.5 V 50 Q 55.5 60 45 60 H 17 Q 6.5 60 6.5 50 Z" fill="url(#ex9253-fan-3ru--hex)" />
+    </g>
+    <g id="ex9253-fan-3ru--grille-bottom">
+      <path d="M 12 78 Q 12 70 20 70 H 42 Q 50 70 50 78 V 112 Q 50 120 43 120 H 19 Q 12 120 12 112 Z" fill="#1a1d20" />
+      <path d="M 12 78 Q 12 70 20 70 H 42 Q 50 70 50 78 V 112 Q 50 120 43 120 H 19 Q 12 120 12 112 Z" fill="url(#ex9253-fan-3ru--hex)" />
+    </g>
+    <g id="ex9253-fan-3ru--chip">
+      <rect x="24" y="61.5" width="14.5" height="8" rx="0.8" fill="#6f7377" />
+      <circle cx="27.2" cy="65.5" r="1.9" fill="#4a4e54" data-fill-from="handle-finish" />
+      <g id="ex9253-fan-3ru--silkscreen">
+        <text x="33.2" y="64.7" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">AIR</text>
+        <text x="33.2" y="67.8" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">OUT</text>
+      </g>
+    </g>
+    <g id="ex9253-fan-3ru--handle" data-path="ex9253-fan-3ru/handle" data-class="latch" data-z-out="2.0">
+      <path d="M 20.6 122 V 108 Q 20.6 103.6 31 103.6 Q 41.4 103.6 41.4 108 V 122" fill="none" stroke="#4a4e54" stroke-width="2.2" data-stroke-from="handle-finish" />
+      <rect x="25.4" y="115" width="11.2" height="6" rx="0.6" fill="#14161a" />
+    </g>
+    <g id="ex9253-fan-3ru--screw" data-path="ex9253-fan-3ru/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+      <circle cx="31.6" cy="6.9" r="3.2" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+      <circle cx="31.6" cy="6.9" r="1.2" fill="#26292d" />
+      <path d="M 30.4 6.9 H 32.8 M 31.6 5.7 V 8.1" stroke="#5a5f66" stroke-width="0.4" />
+    </g>
+    <circle cx="5.6" cy="118.9" r="1.7" fill="none" stroke="#2a2d31" stroke-width="0.35" />
+    <circle id="ex9253-fan-3ru--led-status" cx="5.6" cy="118.9" r="1.0" fill="var(--led-color, #3a3f44)" data-path="ex9253-fan-3ru/led-status" data-class="led" data-states="running initialising fault off" />
+  </g>
+</svg>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="73.5mm" height="40.0mm" viewBox="0 0 73.5 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="7280cr3-pwr-1000-dc" data-path="7280cr3-pwr-1000-dc" data-class="psu" data-behaviour="fills" data-ref="arista/7280cr3-pwr-1000-dc@1:1.0.0" data-airflow="front-to-back" data-inlet="dc-terminal" data-input="dc" data-input-note="-40 to -60 VDC, 30 A" data-power-output-w="1000" data-states="absent" transform="translate(0,0)">
+    <title>7280cr3-pwr-1000-dc</title>
+    <rect id="7280cr3-pwr-1000-dc--body" x="0" y="0" width="73.5" height="40" rx="0.8" fill="#bcbec3" stroke="#6c7075" stroke-width="0.4" />
+    <g id="7280cr3-pwr-1000-dc--guard">
+      <rect x="1.2" y="0.8" width="40.3" height="38.6" rx="0.6" fill="#d3d5d9" stroke="#8a8d92" stroke-width="0.3" />
+      <circle cx="21.4" cy="20.1" r="18.0" fill="#4b4b4d" />
+      <g fill="none" stroke="#d3d5d9" stroke-width="1.0">
+        <circle cx="21.4" cy="20.1" r="15.2" />
+        <circle cx="21.4" cy="20.1" r="10.8" />
+        <circle cx="21.4" cy="20.1" r="6.4" />
+      </g>
+      <g stroke="#e6e8ea" stroke-width="1.0">
+        <path d="M 21.4 2.1 V 38.1" />
+        <path d="M 3.4 20.1 H 39.4" />
+      </g>
+      <circle cx="21.4" cy="20.1" r="3.4" fill="#7e2a35" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--screws" fill="#c6c9cc" stroke="#6c7075" stroke-width="0.3">
+      <circle cx="6.2" cy="3.1" r="2.0" />
+      <circle cx="37.9" cy="3.1" r="2.0" />
+      <circle cx="6.2" cy="35.0" r="2.0" />
+      <circle cx="37.9" cy="35.0" r="2.0" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--holes">
+      <circle cx="51.0" cy="4.6" r="1.5" fill="#18191b" />
+      <circle cx="57.8" cy="4.6" r="1.6" fill="#2f6fd6" stroke="#d7dadd" stroke-width="0.3" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--terminal-block">
+      <rect x="44.6" y="8.6" width="22.4" height="30.2" rx="1.0" fill="#2a2d31" stroke="#4b4b4d" stroke-width="0.3" />
+      <rect x="46.2" y="10.2" width="19.2" height="27.0" rx="0.8" fill="#9aa0a6" stroke="#6c7075" stroke-width="0.25" />
+      <path d="M 55.8 22.0 H 55.8" stroke="#6c7075" stroke-width="0.3" />
+      <path d="M 48.4 21.9 H 63.2" fill="none" stroke="#6c7075" stroke-width="0.3" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--status" data-path="7280cr3-pwr-1000-dc/status" data-class="led" data-states="off ok fault">
+      <circle cx="68.8" cy="5.0" r="2.4" fill="#d7dadd" stroke="#8a8d92" stroke-width="0.25" />
+      <circle id="7280cr3-pwr-1000-dc--status-lens" cx="68.8" cy="5.0" r="1.4" fill="var(--led-color, #3fbf4d)" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--handle" data-path="7280cr3-pwr-1000-dc/handle" data-class="handle" data-z-bar="5.0">
+      <path d="M 6.2 35.0 L 37.9 3.4" fill="none" stroke="#a32a38" stroke-width="5.2" stroke-linecap="round" data-stroke-from="handle-finish" />
+      <circle cx="6.2" cy="35.0" r="2.1" fill="#c6c9cc" stroke="#6c7075" stroke-width="0.3" />
+      <circle cx="37.9" cy="3.4" r="2.1" fill="#c6c9cc" stroke="#6c7075" stroke-width="0.3" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--latch" data-path="7280cr3-pwr-1000-dc/latch" data-class="latch" data-z-out="1.2">
+      <rect x="68.0" y="10.4" width="5.0" height="12.8" rx="0.8" fill="#a9acb1" stroke="#6c7075" stroke-width="0.3" />
+      <rect x="69.0" y="12.2" width="2.8" height="9.0" rx="0.5" fill="#4b4b4d" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--pole-neg" data-path="7280cr3-pwr-1000-dc/pole-neg" data-class="screw" data-ref="common/terminal-screw-34@1:1.0.1" transform="translate(49.5,12.3)">
+      <title>7280cr3-pwr-1000-dc--pole-neg</title>
+      <circle id="7280cr3-pwr-1000-dc--pole-neg--head" cx="1.7" cy="1.7" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-color="#c3c9cf" />
+      <path id="7280cr3-pwr-1000-dc--pole-neg--slot" d="M 0.35 1.7 H 3.05 M 1.7 0.35 V 3.05" fill="none" stroke="#5b6167" stroke-width="0.3" stroke-linecap="round" />
+      <g data-cp="mate" data-cp-at="1.7 1.7" data-cp-dir="front" data-cp-on="7280cr3-pwr-1000-dc--pole-neg--head" />
+    </g>
+    <g id="7280cr3-pwr-1000-dc--pole-pos" data-path="7280cr3-pwr-1000-dc/pole-pos" data-class="screw" data-ref="common/terminal-screw-34@1:1.0.1" transform="translate(49.5,27.1)">
+      <title>7280cr3-pwr-1000-dc--pole-pos</title>
+      <circle id="7280cr3-pwr-1000-dc--pole-pos--head" cx="1.7" cy="1.7" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-color="#c3c9cf" />
+      <path id="7280cr3-pwr-1000-dc--pole-pos--slot" d="M 0.35 1.7 H 3.05 M 1.7 0.35 V 3.05" fill="none" stroke="#5b6167" stroke-width="0.3" stroke-linecap="round" />
+      <g data-cp="mate" data-cp-at="1.7 1.7" data-cp-dir="front" data-cp-on="7280cr3-pwr-1000-dc--pole-pos--head" />
+    </g>
+  </g>
+</svg>

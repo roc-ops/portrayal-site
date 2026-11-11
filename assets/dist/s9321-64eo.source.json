@@ -57,6 +57,12 @@
   "color": "#404244",
   "depth": 762,
   "height": 87.7,
+  "kits": [
+   {
+    "ref": "ufispace/adjustable-rail-771-kit@1",
+    "supply": "in-box"
+   }
+  ],
   "ru": 2,
   "weight-kg": 23.74,
   "width": 436
@@ -83,8 +89,8 @@
   },
   "dc": {
    "bays": {
-    "psu-0": "ufispace/psu-302-dc@1",
-    "psu-1": "ufispace/psu-302-dc@1"
+    "psu-0": "ufispace/psu-302-dc@2",
+    "psu-1": "ufispace/psu-302-dc@2"
    },
    "component-attrs": {
     "fan-808012": {
@@ -106,6 +112,15 @@
  "description": "UfiSpace S9321-64EO 800G AI/ML data center switch - 2RU white box, 64x OSFP 200/400/800G in four rows of sixteen plus a stacked SFP28 management pair, 1PPS and 10MHz SMB timing inputs and an RJ45/micro-USB console, Broadcom Tomahawk 5 at 51.2 Tbps; four hot-swap fans (3+1) and dual 3000W PSUs (1+1) at the rear, orderable in AC or DC, front-to-back airflow only. The OSFP faceplate is what separates this from the S9321-64E, which is the same chassis with 64 QSFP-DD",
  "format": 1,
  "gaps": [
+  {
+   "note": "No figure of the seven UfiSpace guides that show the DC supply's terminal block names a conductor at either pole: the guides' connecting-power figure marks the two lugs' cables by colour only (red on the left pole, blue on the right) and the supply's own face prints no legend that a held figure shows. The two poles are stated `unstated`, and a feed is not called crossed on them.",
+   "reason": "needs-drawing",
+   "scope": [
+    "ufispace/psu-302-dc@2"
+   ],
+   "wanted": "a straight-on photograph or drawing of the PSU-302-DESR's terminal block with the legend printed at its poles",
+   "what": "dc-polarity"
+  },
   {
    "note": "spec/schemas/standards.yaml carries no `osfp` key, so std/osfp@1 - built for this device - declares `interface: osfp` instead of `conforms:`, and L9 therefore never checks its 23.10 x 13.50 mm aperture against anything. The number is measured off HIG Figure 8 and corroborated by the OSFP MSA module envelope (22.58 x 13.0 mm), which is not the same thing as the MSA's own faceplate-opening figure. The cage DEPTH, 47 mm, is a straight estimate: no held document dimensions an OSFP receptacle. The same absence shows up a second time in the tooling: lint's own PLUGGABLE_CAGES set lists eleven cage media and not osfp, so L40 skips the osfp-800g group and then reports `attrs.optics-osfp` as naming no group's media. THAT WARNING IS LEFT STANDING because it is true and it is this gap's own record - the optics list is correct and nothing in the toolchain can currently reach it through the media name.",
    "reason": "needs-drawing",
@@ -342,7 +357,7 @@
    "title": "UfiSpace S9321-64E/EO Hardware Installation Guide"
   }
  ],
- "version": "1.0.16",
+ "version": "1.1.2",
  "views": {
   "bottom": {
    "components": {
@@ -3314,7 +3329,8 @@
      {
       "accepts": [
        "ufispace/psu-302-ac@1",
-       "ufispace/psu-302-dc@1"
+       "ufispace/psu-302-dc@1",
+       "ufispace/psu-302-dc@2"
       ],
       "at": [
        358.0,
@@ -3332,7 +3348,8 @@
      {
       "accepts": [
        "ufispace/psu-302-ac@1",
-       "ufispace/psu-302-dc@1"
+       "ufispace/psu-302-dc@1",
+       "ufispace/psu-302-dc@2"
       ],
       "at": [
        358.0,

@@ -15,11 +15,37 @@ const plain = v => !!v && typeof v === 'object' && !Array.isArray(v);
 const nameOf = entry => entry.label || entry.ref || entry.id;
 const orList = names => (names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`);
 
+// WHAT A DEVICE'S PARTS CAN BE SET TO, grouped: `[{can: [names], paths: [...]}]`
+// for the parts that share a vocabulary, in the order the catalogue lists
+// them. The lamps of a switch are a hundred paths and a handful of
+// vocabularies, so the caller (inspect, a refusal) gets the handful.
+export function settableOf(facts) {
+  const groups = new Map();
+  for (const [path, can] of Object.entries(facts?.states || {})) {
+    if (!Array.isArray(can) || !can.length) continue;
+    const key = can.join(' ');
+    if (!groups.has(key)) groups.set(key, {can: [...can], paths: []});
+    groups.get(key).paths.push(path);
+  }
+  return [...groups.values()];
+}
+
+// The sentence for a path the device does not declare: what it does declare,
+// as vocabularies with a few paths each, so a made-up path is answered with
+// what to ask for instead.
+const SHOWN = 4;
+function declaredText(facts) {
+  const groups = settableOf(facts);
+  if (!groups.length) return '';
+  const part = g => `${g.paths.slice(0, SHOWN).join(', ')}${g.paths.length > SHOWN ? ` and ${g.paths.length - SHOWN} more` : ''} can be ${orList(g.can)}`;
+  return ` It declares: ${groups.slice(0, 6).map(part).join('; ')}${groups.length > 6 ? `; and ${groups.length - 6} more kinds` : ''}.`;
+}
+
 // One state of one part against what the part declares: null when it can be
 // that, else the sentence. A part that declares nothing cannot be set.
 export function stateRefusal(entry, path, state, facts) {
   const can = facts?.states && Object.hasOwn(facts.states, path) ? facts.states[path] : null;
-  if (!can) return `${path} on ${nameOf(entry)} cannot be set: it declares no state.`;
+  if (!can) return `${path} on ${nameOf(entry)} cannot be set: it declares no state.${declaredText(facts)}`;
   return can.includes(state) ? null : `${path} on ${nameOf(entry)} cannot be ${state}: it can be ${orList(can)}.`;
 }
 

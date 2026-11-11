@@ -9,7 +9,7 @@ import {positionOf, uLabel, zeroUOf, bundlesOf, bundleName, firstU, railWidth, R
 import {routeText, trunkRoute, FILL_LIMIT} from './route.js';
 import {isRackMount, isZeroUPart, railOf, unitsOf, itemUnits, unitsText, spansMeet, isQuarter} from './fit.js';
 import {zeroUEntries, whereText, hungText} from './zero-u.js';
-import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText, bundleOfCable, widthCounts} from './bundles.js';
+import {bundleCheck, straps as strapsOf, trunkLength, strapSpacing, membersText, bundleOfCable, widthCounts, waypointText} from './bundles.js';
 export {positionOf};
 import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS, cableColorOf} from './cable-rules.js';
 import {storedText, mText} from './slack.js';
@@ -340,7 +340,9 @@ export function bundleExports(rack, ctx = {}) {
     const size = check.size, bend = check.bend;
     return {id: b.id, number: b.number, label: b.label || '', name: flat(bundleName(b)),
             members: b.members.map(m => m.cable), drawn, checked: !!check.checked,
-            length_m: len ? len.metres : null,
+            // a tie (#1017) has no length to give, so `length_m` is null and `tie_at` says where it is held
+            length_m: len && !len.tie ? len.metres : null,
+            ...(len?.tie ? {tie: true, tie_at: waypointText(rack, b.route[0])} : {}),
             // where the length and the straps are an estimate for want of a cable's path (bundles.js):
             // `straight`, measured along the straight line between waypoints, the shortest it could be;
             // `few`, measured on fewer than half of the riders, which can be over. The notes say it too.
@@ -362,6 +364,7 @@ export function bundleExports(rack, ctx = {}) {
 // "8 straps every 12 in", "8 straps (6 every 12 in, 2 where a cable leaves)", "no straps"
 const strapsText = (n, e, k) => {
   if (!n) return 'no straps';
+  if (k?.tie) return count(n, 'strap', 'straps');
   const kinds = k ? [k.spacing && e ? `${k.spacing} every ${e.value} ${e.unit}` : null, k.breakout ? `${k.breakout} where a cable leaves` : null,
                      k.anchor ? `${k.anchor} at a tray` : null].filter(Boolean) : [];
   if (k && (k.breakout || k.anchor)) return `${count(n, 'strap', 'straps')} (${kinds.join(', ')})`;
@@ -376,7 +379,7 @@ export function bundleNote(e) {
   const head = `${e.name} (${e.id}): ${count(n, 'cable', 'cables')}${n ? ` (${membersText(e.members)})` : ''}`;
   if (!e.drawn) return `${head}, no straps.`;
   if (!e.checked) return `${head}; its route could not be read, so its length, straps, size and bend are not given.`;
-  const run = [e.length_m != null ? `${e.length_m} m` : null,
+  const run = [e.tie ? `tied at ${e.tie_at}` : e.length_m != null ? `${e.length_m} m` : null,
                e.straps != null ? strapsText(e.straps, e.every, e.strap_kinds) : 'straps not counted'].filter(Boolean).join(', ');
   const size = e.size_mm != null ? `${Math.round(e.size_mm)} mm across, limit ${e.limit_mm} mm${e.limit_at ? ` at ${e.limit_at}${e.limit_estimated ? ' (estimated)' : ''}` : ''}` : null;
   const bend = e.bend_mm != null ? `bend radius ${e.bend_mm} mm (${e.bend_by})` : 'bend not checked';
@@ -402,13 +405,14 @@ export function strapBomRows(bundles = [], {anchors = null} = {}) {
   if (anchors) addW(widthCounts(anchors.map(x => x.width_mm)));
   const byWidth = Object.entries(widths).filter(([, n]) => n > 0).sort((p, q) => q[0] - p[0]).map(([w, n]) => `${n} of ${w} mm`).join(', ');
   const kind = k => bundles.reduce((a, e) => a + (e.strap_kinds?.[k] || 0), 0);
-  const spacing = kind('spacing'), breakout = kind('breakout'), anchor = anchors ? anchors.length : kind('anchor');
-  const qty = spacing + breakout + anchor;
+  const spacing = kind('spacing'), breakout = kind('breakout'), anchor = anchors ? anchors.length : kind('anchor'), tie = kind('tie');
+  const qty = spacing + breakout + tie + anchor;
   if (!qty) return [];
   const used = bundles.filter(e => e.straps > 0);
   const every = uniq(used.filter(e => e.every && e.strap_kinds?.spacing).map(e => `${e.every.value} ${e.every.unit}`));
   const what = [spacing ? `${spacing} along ${count(used.filter(e => e.strap_kinds?.spacing).length, 'bundle', 'bundles')}, one every ${andWords(every)}` : null,
                 breakout ? `${breakout} where a cable joins or leaves a bundle` : null,
+                tie ? `${tie} round a bundle tied at one point` : null,
                 anchor ? `${anchor} at tray tie slots` : null].filter(Boolean);
   return [{section: 'Cables', qty, manufacturer: '', model: 'Hook-and-loop cable strap',
            description: `${what.join('; ')}; ${byWidth ? `${byWidth} wide; ` : ''}length to suit`, ref: ''}];
@@ -433,6 +437,9 @@ export {isRackMount} from './fit.js';
 const MOUNTS = {
   'din-rail': {tag: 'DIN rail', what: 'a DIN-rail device', where: 'a shelf or DIN-rail bracket'},
   desktop: {tag: 'desktop', what: 'a desktop device', where: 'a shelf'},
+  ceiling: {tag: 'ceiling mount', what: 'a ceiling-mount device', where: 'a shelf or bracket'},
+  strand: {tag: 'strand mount', what: 'a strand-mount device', where: 'a shelf or bracket'},
+  pedestal: {tag: 'pedestal mount', what: 'a pedestal-mount device', where: 'a shelf or bracket'},
   wall: {tag: 'wall mount', what: 'a wall-mount device', where: 'a shelf or bracket'}};
 // A rack-face part (a 0U cable manager) bolts to the rails like a rack device:
 // it needs no shelf, so it has no "needs" sentence - managerNotes says where it is.
@@ -795,14 +802,34 @@ export function yamlHead(text) {
 }
 
 // A module type's file is named for the part number (attrs.model), a "/"
-// in it written "-" (exporter.html reads it the same way).
-export function moduleTypePath(paths, model) {
-  if (!model) return null;
-  const want = [model, model.replace(/\//g, '-')];
-  return paths.find(p => p.includes('/module-types/') && want.includes(stemOf(p))) ?? null;
+// in it written "-" (exporter.html reads it the same way). A contract with no
+// attrs.model is filed under its name, which is why `name` is the second try.
+// `model` may be a list: a component with `part-numbers` has one file per key,
+// and they are tried in the order given, the name after them.
+export function moduleTypePath(paths, model, name) {
+  const files = paths.filter(p => p.includes('/module-types/'));
+  for (const key of [...(Array.isArray(model) ? model : [model]), name]) {
+    if (!key) continue;
+    const want = [key, key.replace(/\//g, '-')];
+    const hit = files.find(p => want.includes(stemOf(p)));
+    if (hit) return hit;
+  }
+  return null;
 }
-export const partNumber = comp => comp?.attrs?.model ?? comp?.attrs?.part ?? comp?.attrs?.['part-number']
-  ?? comp?.attrs?.['vendor-sku'] ?? '';
+// EVERY ORDER CODE A COMPONENT IS EXPORTED UNDER, sorted: the keys of its
+// `part-numbers` map (one module type each), else the one code its attrs state,
+// else none. A bay accepts the component and not a code, so nothing here can
+// say which of two was bought; partNumber takes the first. Sorted because the
+// index sorts every key it writes, so the order a contract lists them in never
+// reaches a reader, and the same component must open the same file everywhere.
+export const partNumbers = comp => {
+  const keys = Object.keys(comp?.['part-numbers'] ?? {}).sort();
+  if (keys.length) return keys;
+  const one = comp?.attrs?.model ?? comp?.attrs?.part ?? comp?.attrs?.['part-number']
+    ?? comp?.attrs?.['vendor-sku'] ?? '';
+  return one === '' ? [] : [one];
+};
+export const partNumber = comp => partNumbers(comp)[0] ?? '';
 
 // A DCIM wants unique device names, and NetBox's are unique IGNORING CASE
 // ("Leaf" and "leaf" are one name): two items may share a label, or differ
@@ -849,6 +876,10 @@ export const DCIM_LIMITS = {
   deviceName: 64,
   // NetBox Rack.name is a 100-character field (seen on NetBox 4.7.2).
   rackName: 100,
+  // NetBox CableBundle.name is a 100-character field, unique across the
+  // instance (facts: v4.7.2, 251458b8, dcim/models/cables.py, CableBundle:
+  // CharField(max_length=100, unique=True)). Nautobot has no bundle.
+  cableBundleName: 100,
   // Cable.label (100) and Cable.description (200, PrimaryModel), NetBox v4.7.2
   // (facts: 251458b8, dcim/models/cables.py and netbox/models/__init__.py).
   // Nautobot's label is held to the same 100 here; its cable has no
@@ -1161,7 +1192,8 @@ export function hardwareNotes(frame) {
 // cable-plugs.js read it (`ends`, as for cableFindings); the two ends are
 // said in one order, so A-to-B and B-to-A are one line. The plugs a cable is
 // drawn with are part of the cable: they are never lines of their own.
-const FAMILY = {fiber: 'fiber', copper: 'copper', dac: 'DAC', aoc: 'AOC', power: 'power', ground: 'ground'};
+const FAMILY = {fiber: 'fiber', copper: 'copper', dac: 'DAC', aoc: 'AOC', power: 'power', ground: 'ground',
+  stack: 'stack', usb: 'USB', console: 'console'};
 const familyOf = info => (info && Object.hasOwn(FAMILY, info.family ?? '') ? FAMILY[info.family] : null);
 // WHAT THE LAY FINDS FOR ONE CABLE, as sentences for a notes cell (#1007):
 // its tight bends in one sentence (route.js bendFindings: the one finding's

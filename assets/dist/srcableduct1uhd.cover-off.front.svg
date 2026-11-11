@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="51.82mm" viewBox="0 0 482.6 51.82" data-device="srcableduct1uhd" data-view="front" data-shell="sheet" data-weight-kg="1.18" data-material="Cold rolled steel" data-color="Black" data-mounting-hardware="included" data-product-compliance="RoHS; EIA/ECA-310-E">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Eaton SRCABLEDUCT1UHD","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"eaton/tripplite-duct-1uhd-base@1":"1.0.0","eaton/tripplite-duct-1uhd-fingers@1":"1.0.0"},"source-sha256":"835f9bf37d9613ceb5f6422607ac0e579ddca175cff0b97dad1b51b564704a39","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="SRCABLEDUCT1UHD" x="0" y="0" width="482.6" height="51.82" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="x" data-guide-finger-pitch="46" data-guide-finger-gap="34" x="25.4" y="2.2" width="431.8" height="47.42" fill="none" stroke="none" pointer-events="none" />
+  <g id="base" data-path="base" data-class="mechanical" data-ref="eaton/tripplite-duct-1uhd-base@1:1.0.0" data-depth="113.16" data-wall="#3a3d41" data-finish="#3a3d41" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the steel back plate with its ears">
+    <title>base</title>
+    <path id="base--floor" fill="#3a3d41" data-fill-from="finish" fill-rule="evenodd" d="     M3,0 H479.6 A3,3 0 0 1 482.6,3 V48.82 A3,3 0 0 1 479.6,51.82 H3 A3,3 0 0 1 0,48.82 V3 A3,3 0 0 1 3,0 Z     M5.8,6.91 H11.8 A3,3 0 0 1 11.8,12.91 H5.8 A3,3 0 0 1 5.8,6.91 Z     M5.8,38.91 H11.8 A3,3 0 0 1 11.8,44.91 H5.8 A3,3 0 0 1 5.8,38.91 Z     M470.8,6.91 H476.8 A3,3 0 0 1 476.8,12.91 H470.8 A3,3 0 0 1 470.8,6.91 Z     M470.8,38.91 H476.8 A3,3 0 0 1 476.8,44.91 H470.8 A3,3 0 0 1 470.8,38.91 Z" data-path="base/floor" data-class="bezel" />
+    <rect x="3" y="0" width="476.6" height="0.6" fill="#4d5156" />
+  </g>
+  <g id="fingers-upper" data-path="fingers-upper" data-class="mechanical" data-ref="eaton/tripplite-duct-1uhd-fingers@1:1.0.0" data-finish="#4d5156" data-material="Cold rolled steel" data-rel-pos="1" transform="translate(25.4,1.1)" data-group="fingers" data-group-role="furniture" data-description="the wall of pockets along the top and the one along the bottom" data-z-lift="-113.16" data-in="base" data-under="cover">
+    <title>fingers-upper</title>
+    <rect id="fingers-upper--root" x="0" y="0" width="431.8" height="1.1" fill="#2d3033" data-path="fingers-upper/root" data-class="bezel" data-z-out="-110.36" data-z-color="#2d3033" />
+    <rect id="fingers-upper--rim" x="0" y="0" width="431.8" height="1.1" fill="#2d3033" data-path="fingers-upper/rim" data-class="bezel" data-z-out="0" data-z-lift="101.16" data-z-color="#383b3f" />
+    <rect id="fingers-upper--f0" x="0" y="0" width="14.9" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f0" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f1" x="48.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f1" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f2" x="94.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f2" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f3" x="140.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f3" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f4" x="186.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f4" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f5" x="232.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f5" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f6" x="278.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f6" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f7" x="324.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f7" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f8" x="370.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f8" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-upper--f9" x="416.9" y="0" width="14.9" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-upper/f9" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+  </g>
+  <g id="fingers-lower" data-path="fingers-lower" data-class="mechanical" data-ref="eaton/tripplite-duct-1uhd-fingers@1:1.0.0" data-finish="#4d5156" data-material="Cold rolled steel" data-rel-pos="2" transform="translate(25.4,49.62)" data-group="fingers" data-group-role="furniture" data-description="the wall of pockets along the top and the one along the bottom" data-z-lift="-113.16" data-in="base" data-under="cover">
+    <title>fingers-lower</title>
+    <rect id="fingers-lower--root" x="0" y="0" width="431.8" height="1.1" fill="#2d3033" data-path="fingers-lower/root" data-class="bezel" data-z-out="-110.36" data-z-color="#2d3033" />
+    <rect id="fingers-lower--rim" x="0" y="0" width="431.8" height="1.1" fill="#2d3033" data-path="fingers-lower/rim" data-class="bezel" data-z-out="0" data-z-lift="101.16" data-z-color="#383b3f" />
+    <rect id="fingers-lower--f0" x="0" y="0" width="14.9" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f0" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f1" x="48.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f1" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f2" x="94.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f2" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f3" x="140.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f3" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f4" x="186.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f4" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f5" x="232.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f5" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f6" x="278.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f6" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f7" x="324.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f7" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f8" x="370.9" y="0" width="12" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f8" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+    <rect id="fingers-lower--f9" x="416.9" y="0" width="14.9" height="1.1" fill="#4d5156" data-fill-from="finish" data-path="fingers-lower/f9" data-class="bezel" data-z-out="-12" data-z-lift="2.8" />
+  </g>
+</svg>

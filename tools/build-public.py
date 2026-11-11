@@ -9,6 +9,9 @@ assets/exports/ on one machine must not ship from that machine and not from CI.
     tools/build-public.py            build public/ (replacing it)
     tools/build-public.py --out DIR  build somewhere else
     tools/build-public.py --list     print "served-path<TAB>source-path", build nothing
+    tools/build-public.py --list --as-committed
+                                     the same list as if the working tree were committed:
+                                     untracked files git does not ignore are in, deleted ones out
     tools/build-public.py --print P  print P, a file the build generates (sitemap.xml, index.md)
 
 --list is what check-contract.py reads, so the contract checks what will be
@@ -71,19 +74,26 @@ GENERATED = {"sitemap.xml": sitemap,
                 for p in LISTED}}
 
 
-def tracked(*paths):
-    out = subprocess.run(["git", "-C", str(HERE), "ls-files", "-z", "--", *paths],
+def tracked(*paths, as_committed=False):
+    """Tracked files. With as_committed, the files a commit of the working tree
+    would track: also the untracked files git does not ignore, and not the ones
+    deleted from disk."""
+    flags = ["--cached", "--others", "--exclude-standard"] if as_committed else []
+    out = subprocess.run(["git", "-C", str(HERE), "ls-files", "-z", *flags, "--", *paths],
                          check=True, capture_output=True).stdout
-    return [p for p in out.decode().split("\0") if p]
+    found = [p for p in out.decode().split("\0") if p]
+    if as_committed:
+        found = sorted({p for p in found if os.path.lexists(HERE / p)})
+    return found
 
 
-def manifest():
+def manifest(as_committed=False):
     """Every served path and the tracked file it comes from."""
     m = {}
-    for p in tracked(*PAGES, *DIRS):
+    for p in tracked(*PAGES, *DIRS, as_committed=as_committed):
         m[p] = p
     for base, names in (("coming-soon", SHARED), ("publish", ONLY_FULL)):
-        for p in tracked(*[f"{base}/{n}" for n in names]):
+        for p in tracked(*[f"{base}/{n}" for n in names], as_committed=as_committed):
             m[p[len(base) + 1:]] = p
     missing = [p for p in PAGES if p not in m]
     if missing:
@@ -92,7 +102,7 @@ def manifest():
 
 
 def main(argv):
-    m = manifest()
+    m = manifest("--as-committed" in argv)
     if "--print" in argv:
         print(GENERATED[argv[argv.index("--print") + 1]](), end="")
         return

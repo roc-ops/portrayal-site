@@ -15,17 +15,21 @@ import {ownRoute, autoRoute, routedLength, pointOf, portPoint, routePath} from '
 import {fits, fitsDepth, fitsZeroU, isRackFace, isNarrow, railOf, heightOf, shrinkRack, settleZeroU, setbackOf, isZeroUPart} from './fit.js';
 import {whereText, zeroUName, fitsHang, hangingOn} from './zero-u.js';
 import {stateRefusal} from './states.js';
+import {displayRefusal, displaysOf} from './displays.js';
+import {shapeRefusal, contentNotes, contentKind} from '../displays.js';
 import {spareRefusal, amountRefusal, spareLoad, loadText, whereText as spareWhere, trayText, FORMS, mText} from './slack.js';
 import {traysOf} from './solids.js';
 import {configFacts} from './catalog.js';
+import {appliedFrame, editRefusal, frameName, unholdable} from './frames.js';
 import {placement, moveItem, managersOf} from './managers.js';
 import {canCable, withCable, updateCable, cablesOf, cableName, endName, endKey, parseColor,
-        connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS} from './cable-rules.js';
-import {portIdsOf, zeroUEnds, zeroUEndsText} from './ports.js';
+        connectorOf, mediaKind, portPathOf, isElementId, elementIdReason, MEDIA, MEDIA_LABELS,
+        dcFeedChecks, dcTypeOf, dcPoleWord, feedSides} from './cable-rules.js';
+import {portIdsOf, zeroUEnds, zeroUEndsText, seatedEndReason, dcReader, dcEndOf} from './ports.js';
 import {validate, same} from './validate.js';
 import {withRoutedLengths, pathwaysOf, waypointLanesOf, resolveRoute, pathwaysAt, zeroUPathways, pathwayId} from './route.js';
 import {slotsFor, slotEnv, resolverFor, holdsAt, partName, partOf} from './slots.js';
-import {acceptSwaps, underCarrier} from '../swap.js';
+import {acceptSwaps, underCarrier, spanWhy} from '../swap.js';
 import {followSwaps, keptSwaps, unknownTexts, rewriteRack, rewroteText, pairText} from '../redirects.js';
 import {fieldAccepts} from '../fields.js';
 
@@ -280,8 +284,19 @@ function fit(rack, {id, path, ref: given}, ctx) {
     if (!target) return {error: `${path} is not a bay or cage on ${it.label}. It has: ${slotList(env, R, path)}.`};
     isCage = !!target.isCage;
     view = target.view ?? null;
-    if (ref && ref !== 'default' && acceptSwaps(next, env).ignored.includes(path))
-      return {error: `${path} cannot take ${ref} while the slot it shares a seat with holds something.`};
+    if (ref && ref !== 'default') {
+      const {ignored, why} = acceptSwaps(next, env);
+      // a two-slot card over a full bay, or a part into a covered one, says
+      // which bay to empty (docs/pcie-two-slot-bays-design.md, R4)
+      if (why?.[path]) return {error: why[path]};
+      if (ignored.includes(path))
+        return {error: `${path} cannot take ${ref} while the slot it shares a seat with holds something.`};
+    } else if (ref === 'default') {
+      // putting back a default can put a filler under a two-slot card
+      const said = spanWhy(path, holdsAt(env, next, path, target),
+        {holds: p => holdsAt(env, next, p, R.entryAt(p)), comp: r => partOf(ctx.compByRef, r)});
+      if (said) return {error: said};
+    }
     holds = holdsAt(env, next, path, target);
   } else {
     next = Object.fromEntries(Object.entries(flat).filter(([k]) => k === path || !underCarrier(k, path)));
@@ -546,6 +561,40 @@ function readingsSet(rack, {id, readings}, ctx) {
   return done(withEntry(rack, id, {...rest, readings: structuredClone(readings)}), `Stored the readings of ${name}.`);
 }
 
+// WHAT A DISPLAY SHOWS (docs/display-content-design.md), on a device or on a
+// part beside the rack, by the path of the display. The content is checked
+// against the display when the parts lists are loaded: a part that is no
+// display, and content the display cannot take, are refused with a sentence;
+// text longer than the display, or a picture that does not fill its window,
+// is kept and said.
+function displaySet(rack, {id, path, content}, ctx) {
+  const e = entryOf(rack, id);
+  if (!e) return {error: GONE};
+  const had = e.displays && typeof e.displays === 'object' ? e.displays : {};
+  const name = entryName(e, ctx.chassisOf);
+  if (content == null) {
+    if (!Object.hasOwn(had, path)) return unchanged(rack);
+    const {[path]: _was, ...rest} = had;
+    const {displays: _d, ...bare} = e;
+    return done(withEntry(rack, id, Object.keys(rest).length ? {...e, displays: rest} : bare), `Cleared what ${path} on ${name} shows.`);
+  }
+  const bad = shapeRefusal(content);
+  if (bad) return {error: bad};
+  const s = slotsFor(ctx, e.ref);
+  if (s?.error) return s;
+  let notes = [];
+  if (s) {
+    const no = displayRefusal({...e, label: name}, path, content, ctx);
+    if (no) return {error: no};
+    const d = displaysOf(e, ctx)?.find(x => x.path === path);
+    notes = d ? contentNotes(d, content, `${path} on ${name}`) : [];
+  }
+  if (same(had[path], content)) return unchanged(rack);
+  const shown = {text: 'text', digits: `"${content.digits}"`, image: 'an image'}[contentKind(content)];
+  return done(withEntry(rack, id, {...e, displays: {...had, [path]: structuredClone(content)}}),
+    `${path} on ${name} now shows ${shown}.${notes.length ? ` ${notes.join(' ')}` : ''}`, {findings: notes.map(note)});
+}
+
 // What a frame change did to the parts beside the rack, as sentences.
 function zeroUSaid({moved, removed}, chassisOf) {
   const names = list => list.map(z => zeroUName(z, chassisOf)).join(', ');
@@ -562,6 +611,42 @@ function zeroUSaid({moved, removed}, chassisOf) {
 // point on their own side when the kind changes, down when the rack is lower,
 // and off it when they no longer fit; each is named.
 function frame(rack, p, ctx) {
+  // A FRAME THAT HOLDS A RACK PRODUCT is edited only in what the product
+  // leaves open (frames.js editRefusal); customising it frees the rest.
+  const bad = editRefusal(rack.frame, p.holes ? {...p, holes: {...rack.frame.holes, ...p.holes}} : p, ctx.frameOf);
+  return bad ? {error: bad} : frameWith(rack, p, ctx);
+}
+
+// APPLY A RACK PRODUCT: its ref and its numbers go into the frame by the same
+// path a frame edit takes, so a lower height packs devices down and the parts
+// beside the rack follow. Nothing is written that rack file version 3 lacks.
+function frameApply(rack, {ref}, ctx) {
+  if (typeof ctx.frameOf !== 'function') return {error: 'The rack products are not loaded, so a product cannot be applied.'};
+  const row = ctx.frameOf(ref);
+  if (!row) return {error: `There is no rack product ${ref}.`};
+  const no = unholdable(row);
+  if (no) return {error: no};
+  // the first unit is the file's own (startU) and is never written here, so a
+  // frame not counting from the product's would stay out of step with it
+  const start = row.numbering?.start ?? 1;
+  if (firstU(rack.frame) !== start)
+    return {error: `${frameName(row)} counts from U${start}, and this frame counts from U${firstU(rack.frame)}; set the first unit to ${start} first.`};
+  const next = appliedFrame(rack.frame, row);
+  const patch = Object.fromEntries(['kind', 'heightRU', 'numbering', 'holes', 'railDepth', 'usableDepth', 'ref']
+    .filter(k => !same(next[k], rack.frame[k])).map(k => [k, next[k]]));
+  if (!Object.keys(patch).length) return unchanged(rack);
+  const r = frameWith(rack, patch, ctx);
+  if (r.error || r.rack === rack) return r;
+  const said = `Set the frame to ${frameName(row)} (${row.ref}).`;
+  return {...r, summary: r.summary === 'Changed the rack frame.' ? said : `${said} ${r.summary}`};
+}
+
+function frameCustomise(rack) {
+  if (rack.frame.ref == null) return unchanged(rack);
+  return done(withFrame(rack, {ref: null}), `The frame keeps its numbers and no longer follows ${rack.frame.ref}: it is a generic frame.`);
+}
+
+function frameWith(rack, p, ctx) {
   const r = frameItems(rack, p, ctx);
   if (r.error || r.rack === rack) return r;
   const z = settleZeroU(r.rack, ctx.chassisOf);
@@ -659,17 +744,63 @@ function zeroUEndRefused(rack, ends, ctx) {
   }
   return null;
 }
+// AN END ON A VIEW OR PORT THAT A SEATED PART DOES NOT HAVE is refused with the
+// sentence the loose-end finding gives (ports.js seatedEndReason).
+function seatedEndRefused(rack, ends, ctx) {
+  const why = seatedEndReason(rack, ends, ctx);
+  return why ? {error: `${why}.`} : null;
+}
+// THE DC FACTS OF AN END, from the catalogue alone (no page): the port an end at
+// a DC port, a pole or a pluggable connector is on, as the `dc` key of an end's
+// info has them (ports.js): {path, end, pole?, role?, kind, connector, direction,
+// voltage, rating-a, awg, side, poles: [{role, path, stand-in?}]}; null for any
+// other end, and for every end without the catalogue. The poles carry no plug.
+export function dcFactsReader(rack, ctx) {
+  const read = dcReader(rack, ctx);
+  if (!read) return () => null;
+  return end => {
+    if (!end || !read(end)) return null;
+    const item = (rack.items || []).find(i => i.id === end.item);
+    const hit = item ? dcEndOf(item, portPathOf(end.path ?? ''), ctx) : null;
+    if (!hit || hit.end === 'contact') return null;
+    const q = hit.port;
+    return {path: q.path, end: hit.end, ...(hit.end === 'pole' ? {pole: hit.pole, role: q.poles[hit.pole].role} : {}), kind: q.kind, connector: q.connector,
+            direction: q.direction, voltage: q.voltage, 'rating-a': q['rating-a'], awg: q.awg, side: q.side,
+            poles: q.poles.map(x => ({role: x.role, path: x.path, ...(x['stand-in'] ? {'stand-in': x['stand-in']} : {})}))};
+  };
+}
+// Where a DC end landed, for the summary: "the DC port psu-0/module/input", "the BATT pole of psu-0/module/input"
+const dcWhere = d => (d.end === 'pole' ? `the ${dcPoleWord(d, d.pole)} of ${d.path}`
+  : `the DC port ${d.path}${d.end === 'connector' ? ', by its connector' : ''}`);
+// The findings of a cable that has a DC end: its checks (cable-rules.js dcFeedChecks),
+// the type read from `ctx.cableTypes` when it has the table, polarity first; then the
+// device sides it makes true; then the notes of what an end or the cable does not state.
+// [] for a cable with no DC end.
+function dcFindings(rack, cable, ctx) {
+  const read = dcFactsReader(rack, ctx), da = read(cable.a), db = read(cable.b);
+  if (!da && !db) return [];
+  const got = dcFeedChecks({dc: da}, {dc: db}, {type: dcTypeOf(ctx?.cableTypes, cable)});
+  const sided = [...new Set([cable.a.item, cable.b.item])].flatMap(id => {
+    const item = itemOf(rack, id), f = item ? feedSides(rack, item, read) : null;
+    return f && f.cables.includes(cable.id) ? [f.text] : [];
+  });
+  return [...got.warnings, ...sided].map(text => ({kind: 'warning', text})).concat(got.notes.map(note));
+}
 function cableAdd(rack, {a, b, media = '', purpose = '', label = '', length = null, color = null}, ctx) {
   const {chassisOf} = ctx;
   if (!hasEnd(rack, a.item) || !hasEnd(rack, b.item)) return {error: NOT_ADDED};
-  const refused = endRefused([a, b]) ?? zeroUEndRefused(rack, [a, b], ctx);
+  const refused = endRefused([a, b]) ?? zeroUEndRefused(rack, [a, b], ctx) ?? seatedEndRefused(rack, [a, b], ctx);
   if (refused) return refused;
   const tint = parseColor(color);
   if (!tint.ok) return {error: tint.reason};
-  const can = canCable(rack, a, b, {uOf: heightOf(chassisOf)});
+  const can = canCable(rack, a, b, {uOf: heightOf(chassisOf), dc: dcReader(rack, ctx)});
   if (!can.ok) return {error: can.reason};
   const {rack: next, cable} = withCable(rack, {a, b, media, purpose, label, length: lengthOf(length), color: tint.color});
-  return done(next, `Added cable ${cableName(cable)}.`, {created: {id: cable.id}});
+  // a DC end says which port or pole it landed on, and the cable's DC checks follow
+  const read = dcFactsReader(next, ctx);
+  const clauses = [['A', cable.a], ['B', cable.b]].flatMap(([k, e]) => { const d = read(e); return d ? [`end ${k} on ${dcWhere(d)}`] : []; });
+  const added = done(next, `Added cable ${cableName(cable)}${clauses.length ? `: ${clauses.join(', ')}` : ''}.`, {created: {id: cable.id}});
+  return clauses.length ? {...added, findings: dcFindings(next, cable, ctx)} : added;
 }
 
 // RE-POINTING AN END (`a`, `b`) keeps the cable - its id, media, purpose,
@@ -685,11 +816,12 @@ function cableUpdate(rack, {id, a, b, ...p}, ctx) {
   const ends = {a: a ? endOf(a) : c.a, b: b ? endOf(b) : c.b};
   const moved = ['a', 'b'].filter(k => endKey(ends[k]) !== endKey(c[k]));
   if (moved.some(k => !hasEnd(rack, ends[k].item))) return {error: GONE};
-  const refused = endRefused(moved.map(k => ends[k])) ?? zeroUEndRefused(rack, moved.map(k => ends[k]), ctx);
+  const refused = endRefused(moved.map(k => ends[k])) ?? zeroUEndRefused(rack, moved.map(k => ends[k]), ctx)
+    ?? seatedEndRefused(rack, moved.map(k => ends[k]), ctx);
   if (refused) return refused;
   const uOf = heightOf(chassisOf);
   if (moved.length) {
-    const can = canCable(rack, ends.a, ends.b, {ignoreId: id, uOf});
+    const can = canCable(rack, ends.a, ends.b, {ignoreId: id, uOf, dc: dcReader(rack, ctx)});
     if (!can.ok) return {error: can.reason};
   }
   const {straps: tie, ...fields} = p;
@@ -715,13 +847,16 @@ function cableUpdate(rack, {id, a, b, ...p}, ctx) {
   let next = updateCable(rack, id, {...want, ...Object.fromEntries([...moved, ...plugged].map(k => [k, ends[k]]))});
   if (untie) next = {...next, cables: next.cables.map(x => { if (x.id !== id) return x; const {straps: _s, ...rest} = x; return rest; })};
   const name = cableName(cableOf(next, id));
-  const said = moved.map(k => `Moved end ${k.toUpperCase()} of cable ${name} to ${endName(next, ends[k], uOf)}.`);
+  const read = dcFactsReader(next, ctx);
+  const landed = k => { const d = read(ends[k]); return d ? ` End ${k.toUpperCase()} is on ${dcWhere(d)}.` : ''; };
+  const said = moved.map(k => `Moved end ${k.toUpperCase()} of cable ${name} to ${endName(next, ends[k], uOf)}.${landed(k)}`);
   // A bundled cable stays in its bundle; an end now on another device is said.
   const bun = bundleOfCable(rack, id);
   const away = bun ? moved.filter(k => ends[k].item !== c[k].item) : [];
   return {rack: next, summary: said.length ? said.join(' ') : `Edited cable ${name}.`,
           findings: [...(moved.length && c.routeEdited === true ? [note(`${c.id}'s route was drawn for its old end.`)] : []),
-                     ...away.map(k => note(`${c.id} stays in ${bundleName(bun)}; its ${k} end is now on another device.`))]};
+                     ...away.map(k => note(`${c.id} stays in ${bundleName(bun)}; its ${k} end is now on another device.`)),
+                     ...(moved.length ? dcFindings(next, cableOf(next, id), ctx) : [])]};
 }
 
 // Through withoutCables: a cable leaves its bundle in the same step.
@@ -1262,7 +1397,7 @@ const RU = {type: 'number', minimum: 1, multipleOf: 0.5,
 const WHOLE_RU = {type: 'integer', minimum: 1, description: 'The U its bottom sits in, counted from 1 at the bottom of the rails.'};
 const END = {type: 'object', required: ['item', 'path', 'view'], additionalProperties: false,
   description: 'One end of a cable: a port on a device, or an outlet of a part beside the rack (a zero-U PDU).',
-  properties: {item: ID('device or part beside the rack'), path: {type: 'string', minLength: 1, description: "The port or outlet, as the free ports name it (e.g. port-1, outlet-a2)."},
+  properties: {item: ID('device or part beside the rack'), path: {type: 'string', minLength: 1, description: 'The port, outlet or DC port, as the free ports name it (port-1, outlet-a2, psu-0/module/input); a DC pole by its own path.'},
                view: {enum: ['front', 'rear'], description: "Which of the device's own panels the port is on: front or rear."},
                plug: {type: 'string', minLength: 1, description: 'The plug or lug at this end, as a component ref (e.g. generic/c14-plug@1). Only for a port that takes more than one.'}}};
 const LENGTH = {type: ['object', 'null'], required: ['value'], additionalProperties: false,
@@ -1325,7 +1460,7 @@ export const COMMANDS = {
     args: args(['id'], {id: ID('cable manager')})},
   detach: {run: detach, description: 'Unbolt a cable manager from its device; it stays at its U on its own.',
     args: args(['id'], {id: ID('cable manager')})},
-  frame: {run: frame, description: 'Change the rack frame. A lower height packs devices down and removes from the bottom what still does not fit; their cables are kept as loose ends.',
+  frame: {run: frame, description: 'Change the rack frame. A lower height packs devices down and removes from the bottom what still does not fit; their cables are kept as loose ends. A frame set from a rack product refuses a number the product fixes, and takes a rail depth only within its range; customise it first to change those.',
     args: args([], {kind: {enum: ['four-post', 'two-post'], description: 'four-post or two-post.'},
       heightRU: {type: 'integer', minimum: 1, maximum: 100, description: 'How many U tall, from 1 to 100.'},
       numbering: {enum: ['bottom-up', 'top-down'], description: 'Which way the U labels count.'},
@@ -1336,9 +1471,14 @@ export const COMMANDS = {
       usableDepth: {type: 'number', exclusiveMinimum: 0, description: 'Millimetres from the front rail to the deepest point a device may reach.'},
       startU: {type: 'integer', minimum: 1, description: 'The number of the first unit, for a rack whose labels do not start at 1.'},
       setback: {type: ['number', 'null'], description: 'Millimetres a faceplate stands behind its rail in this rack, for a device that states none; null for flush.'}})},
+  'frame.apply': {run: frameApply, description: "Set the rack frame from a rack product: its ref is kept in the frame, and its height, kind, numbering, rail holes, rail depth and usable depth are copied in. Devices are packed as for a lower frame height. Refused when the catalogue has no such product.",
+    args: args(['ref'], {ref: {type: 'string', minLength: 1, description: "The product, as the catalogue lists it: vendor/name@major, e.g. apc/ar203a@1."}})},
+  'frame.customise': {run: frameCustomise, description: 'Stop following the rack product the frame was set from. Every number stays; the frame becomes a generic one that can be edited freely.',
+    args: args([], {})},
   rename: {run: rename, description: 'Rename the rack.', args: args(['name'], {name: {type: 'string', description: 'The new name.'}})},
-  dcim: {run: dcim, step: false, description: 'Set the names a NetBox or Nautobot import needs: the site (or location) and the device role. Not an undo step.',
-    args: args([], {site: {type: 'string', description: "NetBox's site, Nautobot's location."}, role: {type: 'string', description: 'The device role.'}})},
+  dcim: {run: dcim, step: false, description: 'Set the names a NetBox or Nautobot import needs: the site (or location), the device role and the NetBox version. Not an undo step.',
+    args: args([], {site: {type: 'string', description: "NetBox's site, Nautobot's location."}, role: {type: 'string', description: 'The device role.'},
+      netbox: {type: 'string', description: "The NetBox version the files are for, e.g. 4.6. From 4.6 on, the NetBox files also make the rack's cable bundles; blank or older writes none."}})},
   fit: {run: fit, description: 'Seat one part in one bay or cage of a placed device, empty it, or put back what its configuration builds there. Only that slot changes; a part taken out takes what was seated in it, and its settings, with it. Refused, with what the slot takes, when the part does not fit there.',
     args: args(['id', 'path', 'ref'], {id: ID('device'),
       path: {type: 'string', minLength: 1, description: 'The bay or cage, as inspecting the device lists it (e.g. port-1, bay-2/module/lc1).'},
@@ -1368,18 +1508,25 @@ export const COMMANDS = {
     args: args(['id', 'on'], {id: ID('part beside the rack'),
       on: {type: ['array', 'null'], minItems: 1, description: 'The ids of the brackets that hold it, or null to take it off them.',
         items: {type: 'string', minLength: 1, description: 'A bracket id, or "@name" from earlier in this batch.'}}})},
-  'state.set': {run: stateSet, description: 'Set what one part of a placed device or of a part beside the rack is, such as an outlet of a PDU on or off; null clears it. Refused, with what the part can be, when it declares no such state.',
+  'state.set': {run: stateSet, description: 'Set what one part of a placed device or of a part beside the rack is, such as a status lamp lit, a port lamp up, a PSU or fan lamp ok, or an outlet of a PDU on or off; null clears it. `inspect` of the device lists every path it can set and what each can be (`settable`). Refused, with what the device does declare, when the path or the state is not one of them.',
     args: args(['id', 'path', 'state'], {id: ID('device or part beside the rack'),
-      path: {type: 'string', minLength: 1, description: 'The part, by its path on the device (e.g. outlet-a1).'},
+      path: {type: 'string', minLength: 1, description: 'The part, by its path on the device, as `inspect` lists it under settable (e.g. led-sys, led-port-3, outlet-a1).'},
       state: {type: ['string', 'null'], minLength: 1, description: 'The state name, as the part declares it (e.g. on, off); null to clear.'}})},
   'readings.set': {run: readingsSet, description: 'Store readings taken from a device or a part beside the rack, with where they came from and when; null clears them.',
     args: args(['id', 'readings'], {id: ID('device or part beside the rack'),
       readings: {type: ['object', 'null'], description: '{source, at, values}: where they came from, an RFC 3339 time, and part path to {current-a, power-w, energy-kwh}; null to clear.'}})},
+  'display.set': {run: displaySet, description: 'Set what a display of a placed device or of a part beside the rack shows: text (lines, cut to its columns and rows), digits (a segment display) or an image (fitted to the window; a GIF shows its first frame); null clears it. Refused, with the displays it has, when the path is no display or the display cannot show that. The displays query lists them.',
+    args: args(['id', 'path', 'content'], {id: ID('device or part beside the rack'),
+      path: {type: 'string', minLength: 1, description: 'The display, by its path as the displays query lists it (e.g. network-module/module/lcd).'},
+      content: {type: ['object', 'null'], additionalProperties: false, description: 'One of text, digits or image; null to clear.',
+        properties: {text: {type: 'array', items: {type: 'string'}, description: 'The lines of text, for a pixel or character display.'},
+                     digits: {type: 'string', description: 'The digits of a segment display: 0 to 9, a to f, a space for blank; right-aligned.'},
+                     image: {type: 'string', minLength: 1, description: 'A data URL of an SVG, PNG, JPEG or GIF up to 512 KiB, or a library asset path.'}}}})},
   'zerou.remove': {run: zeroURemove, description: 'Take a part away from beside the rack. Its cables (the cords on a PDU\'s outlets) are kept as loose ends, or removed with it.',
     args: args(['id'], {id: ID('part beside the rack'), cables: {enum: ['keep', 'remove'], description: 'keep its cables as loose ends, or remove them; keep when left out.'}})},
-  'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. Refused when a port already has a cable or a device is gone.',
+  'cable.add': {run: cableAdd, description: 'Run a cable between two free ports. A DC feed lands on a DC port or on one pole of it; the summary says which, and the findings carry its DC checks, polarity first. Refused when a port already has a cable or a device is gone.',
     args: args(['a', 'b'], {a: END, b: END, ...CABLE_FIELDS, as: AS})},
-  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label, length or color, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable.",
+  'cable.update': {run: cableUpdate, description: "Change a cable's type, purpose, label, length or color, or move either end to another port. A moved end keeps the cable's id and everything else about it; refused when the new port already has a cable. A moved DC end is checked the same.",
     args: args(['id'], {id: ID('cable'), a: {...END, description: 'Move end A to this port; left where it is when left out.'},
       b: {...END, description: 'Move end B to this port; left where it is when left out.'}, ...CABLE_FIELDS, straps: CABLE_STRAPS})},
   'cable.remove': {run: cableRemove, description: 'Delete a cable.', args: args(['id'], {id: ID('cable')})},

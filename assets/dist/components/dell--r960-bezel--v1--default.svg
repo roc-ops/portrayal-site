@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="430.8mm" height="168.5mm" viewBox="0 0 430.8 168.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="r960-bezel" data-path="r960-bezel" data-class="bezel" data-behaviour="mounts" data-ref="dell/r960-bezel@1:1.0.0" data-body-depth="14.0" data-power-absent="not-applicable" transform="translate(0,0)">
+    <title>r960-bezel</title>
+    <defs>
+      <pattern id="r960-bezel--honey" x="61.8" y="40.05" width="77.0" height="44.45" patternUnits="userSpaceOnUse">
+        <g fill="none" stroke="#8f8b85" stroke-width="6.9" stroke-linejoin="round">
+          <polygon points="-25.63,0 -12.82,-22.2 12.82,-22.2 25.63,0 12.82,22.2 -12.82,22.2" />
+          <polygon points="51.37,0 64.18,-22.2 89.82,-22.2 102.63,0 89.82,22.2 64.18,22.2" />
+          <polygon points="-25.63,44.45 -12.82,22.25 12.82,22.25 25.63,44.45 12.82,66.65 -12.82,66.65" />
+          <polygon points="51.37,44.45 64.18,22.25 89.82,22.25 102.63,44.45 89.82,66.65 64.18,66.65" />
+          <polygon points="12.87,22.2 25.69,0 51.31,0 64.13,22.2 51.31,44.4 25.69,44.4" />
+          <polygon points="12.87,-22.25 25.69,-44.45 51.31,-44.45 64.13,-22.25 51.31,-0.05 25.69,-0.05" />
+          <polygon points="12.87,66.65 25.69,44.45 51.31,44.45 64.13,66.65 51.31,88.85 25.69,88.85" />
+        </g>
+      </pattern>
+    </defs>
+    <g id="r960-bezel--plate" data-path="r960-bezel/plate" data-class="bezel" data-description="the bezel - end plates and honeycomb bars - over an open ground" data-z-out="14.0" data-z-color="#8f8b85" data-z-shape="1">
+      <rect x="0" y="0" width="430.8" height="168.5" fill="#2b2e32" />
+      <rect x="21.0" y="0.5" width="377.0" height="167.5" fill="url(#r960-bezel--honey)" />
+      <rect x="21.0" y="0.5" width="377.0" height="1.2" fill="#8f8b85" />
+      <rect x="21.0" y="166.8" width="377.0" height="1.2" fill="#8f8b85" />
+    </g>
+    <rect id="r960-bezel--release" x="410.0" y="62.3" width="20.8" height="43.9" rx="2" fill="#4a4f55" stroke="#1d2024" stroke-width="0.4" data-path="r960-bezel/release" data-class="control" data-description="the release button at the right end - pressed after unlocking, to free the bezel's left end" />
+    <rect id="r960-bezel--logo-zone" x="181.0" y="90.0" width="50.0" height="22.0" fill="none" stroke="none" data-path="r960-bezel/logo-zone" data-class="bezel" data-description="where Dell's wordmark sits; reserved and left empty" />
+    <circle id="r960-bezel--lock" cx="10.5" cy="13.3" r="3.6" fill="#16181a" stroke="#4a4f55" stroke-width="0.6" data-path="r960-bezel/lock" data-class="control" data-description="the keylock - unlocked with the bezel key before the bezel comes off" />
+  </g>
+</svg>

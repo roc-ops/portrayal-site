@@ -867,7 +867,21 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, cornersOf, 
         fills.append(svgEl('path', {d: cap.d, fill: 'none', stroke: BAND, 'stroke-width': cap.width, 'stroke-linecap': 'round', 'data-bundle-cap': f.id}));
       }
     }
-    if (!here) continue;
+    if (!here) {
+      // A ONE-WAYPOINT TRUNK IS A TIE (kit 0.51.0, Portrayal #1126): no stretch, one strap round the pack
+      // at its ring, across the way the pack lies there.
+      const s = (f.straps?.straps ?? []).find(x => x.kind === 'tie'), i = s ? lay.indexOf(L.trunk[0]) : -1;
+      const there = i >= 0 ? lay.packAt(i) : null, p = there && pt(i), n = there && lay.across(i);
+      if (!p || !n) continue;
+      const m = turn(there.c), c = [p[0] + m[0], p[1] + m[1]], nn = turn(n), len = Math.hypot(nn[0], nn[1]) || 1, u = [nn[0] / len, nn[1] / len];
+      const half = there.diameter / 2 + 2;
+      const bar = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': '0', 'data-pack': String(Math.round(there.diameter * 100) / 100)},
+        {x1: c[0] - u[0] * half, y1: c[1] - u[1] * half, x2: c[0] + u[0] * half, y2: c[1] + u[1] * half}, s);
+      const laid = there.members.map(id => { const o = turn(lay.offset(id, i)); return [p[0] + o[0], p[1] + o[1]]; });
+      noteStrap(bar, {c, n: u, ...packSpan(laid, c, u, WIDTH, there.diameter)});
+      bars.append(bar);
+      continue;
+    }
     g.append(env);
     // A corner too tight for the bundle's bend radius (kit 0.8.0, Portrayal
     // #922): ringed where this pane places it.
@@ -908,9 +922,9 @@ function drawBundles2d(svg, rack, routes, pane, turn, lines, bendOf, cornersOf, 
       bars.append(bar);
     }
   }
-  if (!bands.childElementCount) return;
+  if (!bands.childElementCount && !bars.childElementCount) return;
   // Under every cable, so the members show inside the envelope; the straps over them.
-  layer.prepend(bands);
+  if (bands.childElementCount) layer.prepend(bands);
   layer.append(bars);
 }
 

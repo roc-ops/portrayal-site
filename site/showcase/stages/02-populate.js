@@ -23,7 +23,7 @@
 //
 // Verified against assets/dist/asr-9006.configs.json's .bays.front:
 //   slot-0/slot-1 accept only a9k-rsp880-{se,tr,lt-se,lt-tr} + the slot cover
-//   slot-2..slot-5 accept only line cards (a9k-16x100ge-tr, a9k-4x100ge-se,
+//   slot-2..slot-5 accept only line cards (a9k-16x100ge-se, a9k-16x100ge-tr, a9k-4x100ge-se,
 //   a9k-8x100ge-se, ...) + the slot cover
 
 import {stage3d, stageRack, el, title, lead, panZoom} from '../artifact.js';

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="81.0mm" height="81.7mm" viewBox="0 0 81.0 81.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="qfx10002-fan-afo" data-path="qfx10002-fan-afo" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx10002-fan-afo@1:1.0.0" data-body-depth="115.0" data-wall="#15181b" data-airflow="front-to-back" data-airflow-cfm="150" data-fans-per-module="2" data-hot-swap="yes" data-power-draw-max-w="80" data-role="fan-module" data-states="absent" transform="translate(0,0)">
+    <title>qfx10002-fan-afo</title>
+    <defs>
+      <pattern id="qfx10002-fan-afo--qfx10002-fan-afo-mesh" x="0" y="0" width="1.905" height="3.3" patternUnits="userSpaceOnUse">
+        <path d="M 0.953 0 L 1.905 0.55 L 1.905 1.65 L 0.953 2.2 L 0 1.65 L 0 0.55 Z" fill="none" stroke="#5a5f65" stroke-width="0.16" />
+        <path d="M 0 2.2 L 0.953 2.75 L 0.953 3.3 M 1.905 2.2 L 0.953 2.75" fill="none" stroke="#5a5f65" stroke-width="0.16" />
+      </pattern>
+    </defs>
+    <rect id="qfx10002-fan-afo--handle" x="0" y="0" width="81" height="81.7" rx="1.6" fill="#ec640e" stroke="#903d09" stroke-width="0.4" data-fill-from="handle-finish" data-stroke-derive="handle-finish" data-path="qfx10002-fan-afo/handle" data-class="handle" />
+    <g id="qfx10002-fan-afo--windows">
+      <polygon id="qfx10002-fan-afo--grille-top" points="8.9,4.3 73.3,4.3 74.2,8.6 68.6,28.2 66.5,35.1 18.2,35.1 15.7,30.0 9.6,8.6" fill="#17191b" data-path="qfx10002-fan-afo/grille-top" data-class="rotor" data-z-vent="60" />
+      <polygon points="8.9,4.3 73.3,4.3 74.2,8.6 68.6,28.2 66.5,35.1 18.2,35.1 15.7,30.0 9.6,8.6" fill="url(#qfx10002-fan-afo--qfx10002-fan-afo-mesh)" />
+      <polygon id="qfx10002-fan-afo--grille-bottom" points="8.9,77.4 73.3,77.4 74.2,73.1 68.6,53.5 66.5,46.6 18.2,46.6 15.7,51.7 9.6,73.1" fill="#17191b" data-path="qfx10002-fan-afo/grille-bottom" data-class="rotor" data-z-vent="60" />
+      <polygon points="8.9,77.4 73.3,77.4 74.2,73.1 68.6,53.5 66.5,46.6 18.2,46.6 15.7,51.7 9.6,73.1" fill="url(#qfx10002-fan-afo--qfx10002-fan-afo-mesh)" />
+    </g>
+    <g id="qfx10002-fan-afo--screw">
+      <circle cx="3.9" cy="5.1" r="3.3" fill="#2e3135" stroke="#17191c" stroke-width="0.25" />
+      <circle cx="3.9" cy="5.1" r="2.0" fill="#555a60" />
+      <path d="M 2.5 5.1 H 5.3 M 3.9 3.7 V 6.5" stroke="#17191c" stroke-width="0.4" fill="none" />
+    </g>
+    <g id="qfx10002-fan-afo--tabs">
+      <rect id="qfx10002-fan-afo--latch-left" x="0.2" y="35.4" width="11.4" height="9.2" rx="1.2" fill="#c84f08" stroke="#8d3705" stroke-width="0.3" data-path="qfx10002-fan-afo/latch-left" data-class="latch" data-z-out="1.5" data-z-color="#c84f08" />
+      <path d="M 2.0 37.4 V 42.6 M 3.6 37.4 V 42.6 M 5.2 37.4 V 42.6 M 6.8 37.4 V 42.6 M 8.4 37.4 V 42.6" stroke="#6e2c04" stroke-width="0.5" fill="none" />
+      <rect id="qfx10002-fan-afo--latch-right" x="69.4" y="35.4" width="11.4" height="9.2" rx="1.2" fill="#c84f08" stroke="#8d3705" stroke-width="0.3" data-path="qfx10002-fan-afo/latch-right" data-class="latch" data-z-out="1.5" data-z-color="#c84f08" />
+      <path d="M 72.6 37.4 V 42.6 M 74.2 37.4 V 42.6 M 75.8 37.4 V 42.6 M 77.4 37.4 V 42.6 M 79.0 37.4 V 42.6" stroke="#6e2c04" stroke-width="0.5" fill="none" />
+    </g>
+    <g id="qfx10002-fan-afo--label">
+      <rect x="33.3" y="37.2" width="14" height="7.5" rx="0.8" fill="#4a4f55" stroke="#2d3135" stroke-width="0.25" />
+      <circle cx="37.3" cy="40.95" r="2.0" fill="#ec640e" />
+      <path d="M 37.3 40.95 m -1.2 -0.9 a 1.2 1.2 0 0 1 2.4 0 M 37.3 40.95 m 1.2 0.9 a 1.2 1.2 0 0 1 -2.4 0" stroke="#4a4f55" stroke-width="0.4" fill="none" />
+    </g>
+    <g id="qfx10002-fan-afo--silkscreen" font-family="sans-serif" font-weight="bold" font-size="2.3" fill="#ffffff">
+      <text x="43.9" y="40.4" text-anchor="middle">AIR</text>
+      <text x="43.9" y="43.5" text-anchor="middle">OUT</text>
+    </g>
+  </g>
+</svg>

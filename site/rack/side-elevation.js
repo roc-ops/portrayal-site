@@ -366,7 +366,8 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
   const bars = svgEl('g', {'data-bundle-straps': pane, 'pointer-events': 'none'});
   for (const f of routes.bundles?.values() ?? []) {
     const lay = f.lay;
-    if (!f.drawn || !lay?.stretches?.length) continue;
+    // (a one-waypoint trunk has no stretch: it is a tie, drawn below as a strap alone)
+    if (!f.drawn || !lay) continue;
     // a node's centre: the kit's point for it, laid on a ring's sill where the kit places the opening
     const at = new Map();
     const pt = i => {
@@ -419,7 +420,7 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
     // side every landed cable is on both panes, so what this leaves out is a
     // stretch whose riders all have a loose end.
     const shown = st => st.members.some(id => onPane.has(id));
-    for (const st of lay.stretches) {
+    for (const st of lay.stretches ?? []) {
       const p = shown(st) ? pt(st.from) : null, q = p && pt(st.to);
       if (!p || !q) continue;
       here++;
@@ -428,7 +429,21 @@ export function drawSideCables(svg, rack, routes, reasons = new Map(), {uOf = un
       fills.append(svgEl('path', {d, fill: 'none', stroke: BAND, 'stroke-width': st.diameter, 'stroke-linecap': 'round',
         'data-bundle-trunk': f.id, 'data-stretch': `${st.from}-${st.to}`, 'data-riders': String(st.members.length)}));
     }
-    if (!here) continue;
+    if (!here) {
+      // A ONE-WAYPOINT TRUNK IS A TIE (kit 0.51.0, Portrayal #1126): one strap across the pack at its ring,
+      // square to the way the pack runs there. Where the kit's direction runs along the view (the pane sees the
+      // loop round the pack face on), the strap is a bar up the pack's height.
+      const s = (f.straps?.straps ?? []).find(x => x.kind === 'tie'), i = s ? lay.indexOf(f.check?.layout?.trunk?.[0]) : -1;
+      const there = i >= 0 ? lay.packAt(i) : null, p = there && pt(i);
+      if (!p || !there.members.some(id => onPane.has(id))) continue;
+      const a = project(pane, frame, s.point), b = s.dir ? project(pane, frame, {x: s.point.x + s.dir.x, y: s.point.y + s.dir.y, z: s.point.z + s.dir.z}) : a;
+      const seen = [b[0] - a[0], b[1] - a[1]], end = Math.hypot(...seen) <= 1e-6, d = end ? [1, 0] : seen, len = Math.hypot(...d), half = there.diameter / 2 + 2;
+      const xy = {x1: n3(p[0] + d[1] / len * half), y1: n3(p[1] - d[0] / len * half), x2: n3(p[0] - d[1] / len * half), y2: n3(p[1] + d[0] / len * half)};
+      const el = strapBarEl({'data-strap': f.id, 'data-members': f.members.join(' '), 'data-along': '0', 'data-pack': String(Math.round(there.diameter * 100) / 100)}, xy, s);
+      noteStrap(el, {c: p, n: [d[1] / len, -d[0] / len], lo: -there.diameter / 2, hi: there.diameter / 2});
+      bars.append(el);
+      continue;
+    }
     g.append(env);
     bands.append(g);
     for (const s of f.straps?.straps ?? []) {

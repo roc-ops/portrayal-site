@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portrayal.dev/schemas/v1/rack-product.schema.json",
+  "title": "Portrayal rack product (v1) - a frame or cabinet the library models",
+  "description": "A RACK PRODUCT IS A RACK OR A CABINET AS A MAKER SELLS IT. It lives at racks/<vendor>/<name>/rack.yaml, is versioned by the rack.lock.json beside it, and is referenced as <vendor>/<name>@<major>. It is not a device (a device is placed in a rack; a rack is not) and it is not the Rack Builder's file (`rack.schema.json`, the rack someone built). This first version holds the frame: height, numbering, posts, holes and the rails. Channels, doors, panels, the base and baying come with the cabinets, as additive keys; until then an unknown key is refused, never ignored.",
+  "type": "object",
+  "required": [
+    "format",
+    "kind",
+    "name",
+    "version",
+    "maturity",
+    "manufacturer",
+    "model",
+    "form",
+    "ru",
+    "numbering",
+    "holes",
+    "rails"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": 1
+    },
+    "kind": {
+      "const": "rack"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "the directory name, unique within the vendor across racks AND devices, so a ref never needs the kind to resolve (L193)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "semver, checked against rack.lock.json. Major: a number a saved rack file copies or positions against (height, numbering, width, holes, rail positions and depth, the depth a device may have, hole centres once stated). Minor: a figure stated where there was none (a load rating, a weight, the outer box). Patch: a statement nothing positions against (prose, provenance, a corrected rating)."
+    },
+    "maturity": {
+      "enum": [
+        "draft",
+        "modelled",
+        "verified"
+      ],
+      "description": "as a device states it: draft needs nothing, modelled needs provenance citing a document, verified needs every figure read from one"
+    },
+    "manufacturer": {
+      "type": "string",
+      "description": "the maker on the product, which is the namespace it lives under: APC's racks are under `apc` however a reseller lists them"
+    },
+    "model": {
+      "type": "string"
+    },
+    "part-numbers": {
+      "type": "object",
+      "description": "orderable SKU -> what it is, as a device writes them",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "aliases": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "the other names the product is sold or listed under; one shape, as a device's aliases",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "kind"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^\\S(.*\\S)?$"
+          },
+          "kind": {
+            "enum": [
+              "vendor",
+              "marketing",
+              "oem",
+              "superseded",
+              "variant"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "shared": {
+            "const": true
+          }
+        }
+      }
+    },
+    "description": {
+      "type": "string"
+    },
+    "form": {
+      "enum": [
+        "2-post-frame",
+        "4-post-frame",
+        "4-post-cabinet",
+        "wall-frame",
+        "wall-frame-vertical",
+        "wall-cabinet",
+        "wall-cabinet-vertical",
+        "desktop-frame"
+      ],
+      "description": "the NetBox and Nautobot form slug, plus `desktop-frame`, which neither has and which exports as `2-post-frame`. It says how the rack stands and how many posts it has, so a rack has no `mount` key"
+    },
+    "ru": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "rack units the rack OFFERS (a device's `ru` is the units it takes)"
+    },
+    "numbering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "direction",
+        "start"
+      ],
+      "properties": {
+        "direction": {
+          "enum": [
+            "bottom-up",
+            "top-down"
+          ],
+          "description": "the way the labels run, by the direction the maker's text gives. A rack file stores positions bottom-up whatever this says"
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "the label of the first unit; 1 unless the source says otherwise (NetBox `starting_unit`)"
+        }
+      }
+    },
+    "width": {
+      "enum": [
+        10,
+        19,
+        21,
+        23
+      ],
+      "description": "nominal rail width, inches. Absent means 19"
+    },
+    "holes": {
+      "type": "object",
+      "description": "the hole style is a FIT FACT, not decoration: a part that clips into holes refuses a tapped rail",
+      "required": [
+        "style"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "enum": [
+            "square",
+            "round",
+            "tapped"
+          ]
+        },
+        "thread": {
+          "enum": [
+            "12-24",
+            "10-32",
+            "M6"
+          ],
+          "description": "the thread of a tapped hole, and only of one"
+        },
+        "size": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "mm across a square or round hole, written only where a source prints it"
+        },
+        "fixing": {
+          "type": "string",
+          "description": "what a square or round hole takes (`M6` cage nuts), written only where a source says"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "style": {
+                "const": "tapped"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "thread"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "thread"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "hole-centres": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "mm from the left hole line to the right. Written where a source prints it, or as an EIA-310 stand-in that `provenance` and `gaps` declare"
+    },
+    "opening": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "mm clear between the rails, with the same rule as `hole-centres`"
+    },
+    "rails": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "the rail planes: `front`, and on a four-post frame `rear`. L193 holds the list to the form",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "front",
+              "rear"
+            ]
+          },
+          "depth": {
+            "description": "mm from the front rail to this one, fixed or a range the Rack Builder sets within",
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "fixed"
+                ],
+                "properties": {
+                  "fixed": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "max": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "step": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "factory": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "max-device-depth": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "mm, the maker's usable depth (the rack file's `usableDepth`)"
+    },
+    "outer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "w",
+        "h",
+        "d"
+      ],
+      "description": "the outside box in mm, width, height and depth, as the maker prints it",
+      "properties": {
+        "w": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "h": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "d": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "weight-kg": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "the rack's own weight, written only where a source gives it"
+    },
+    "load": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "the maker's ratings. A rating not stated is not written; the catalogue says `not stated`, never zero",
+      "properties": {
+        "static-kg": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rolling-kg": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "datasheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "description": "the product data sheet, as a device registers it"
+    },
+    "references": {
+      "type": "array",
+      "description": "the other documents the figures came from. A `sha256` is present exactly when the project holds a copy",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "where each figure came from, keyed by the rack's own key (L193). `confidence` is the library's word for it; a figure no document prints is `estimated`, and is also a `gaps` entry",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "note"
+        ],
+        "properties": {
+          "confidence": {
+            "enum": [
+              "measured",
+              "photo-measured",
+              "drawing",
+              "datasheet",
+              "registry",
+              "borrowed",
+              "estimated",
+              "known-wrong"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "description": "what the sources do not say, as a device declares it: a token, why it is missing, and what would close it",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "what",
+          "reason",
+          "wanted"
+        ],
+        "properties": {
+          "what": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "reason": {
+            "enum": [
+              "vendor-silent",
+              "sources-disagree",
+              "nos-dependent",
+              "needs-hardware",
+              "needs-photo",
+              "needs-drawing"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "wanted": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

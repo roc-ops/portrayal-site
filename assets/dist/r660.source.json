@@ -454,6 +454,16 @@
    ],
    "wanted": "a straight-on photograph of a single-slot E3.S blank, or of an R660 E3.S front with empty slots",
    "what": "e3s-blank-face-estimated"
+  },
+  {
+   "note": "the risers' cage plates are drawn 1.0 proud of the rear wall (the ISM's table 12, PDF page 27, puts nothing but the supplies' handles past it), and a seated card's bracket flange stands past the wall with the part of the riser that covers it. The flange is the bracket's own 9.4 return flange (std/pcie-bracket-lp@1, PCIe CEM 5.0 figure 11-9) and the cover is each cage's `flange-cover` node, a column the flange ends sit behind, as the R740xd draws its riser shroud. A rear bay cannot recess its occupant, so the flange stands 9.4 past the wall in a configuration with such a card seated, and a filler's bracket gets the cover as a card's does. The ISM gives no depth for either. The cover's reach is Dell's service model's: the pieces over riser 2A's flange ends reach 19.8 and 19.3 and over riser 3A's 19.2 (the cages drawn at 19.3 and 19.2), against its low-profile brackets' 8.2 to 9.2; the other risers' cages carry those figures as estimates. The model's meshes are compressed, so only boxes were read and the covers' outlines are the skins', not the model's.",
+   "reason": "needs-drawing",
+   "scope": [
+    "rear",
+    "risers"
+   ],
+   "wanted": "the model's meshes decoded, for the covers' outlines, and the models of risers 2Q and 2S",
+   "what": "card-bracket-flange-past-the-wall"
   }
  ],
  "groups": {
@@ -518,11 +528,12 @@
    "role": "furniture",
    "term": "Part"
   },
-  "leds": {
-   "description": "the iDRAC Direct lamp",
+  "local-access": {
+   "description": "the front VGA, the USB-A and the iDRAC Direct micro-AB USB",
    "index-origin": 1,
-   "role": "indicator",
-   "term": "LED"
+   "mixed": "local console and service access",
+   "role": "management",
+   "term": "Port"
   },
   "lom-card": {
    "description": "the LOM card position. The group holds the card, not its two ports, as the R740xd's NDC group does: the ports are the card's own.",
@@ -560,12 +571,11 @@
    "role": "indicator",
    "term": "Panel"
   },
-  "ports": {
-   "description": "the front VGA, the USB-A and the iDRAC Direct micro-AB USB",
+  "port-leds": {
+   "description": "the iDRAC Direct lamp",
    "index-origin": 1,
-   "mixed": "local console and service access",
-   "role": "management",
-   "term": "Port"
+   "role": "indicator",
+   "term": "LED"
   },
   "processors": {
    "description": "the two processor heatsinks - CPU 1 on the right as the front faces you",
@@ -710,7 +720,7 @@
    "title": "Dell PowerEdge R660 Technical Guide"
   }
  ],
- "version": "5.1.1",
+ "version": "6.0.0",
  "views": {
   "bottom": {
    "panel": {
@@ -1060,7 +1070,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-1",
       "ref": "std/usb-a@1",
       "rel-pos": 1,
@@ -1072,7 +1082,7 @@
        460.59,
        31.2
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "idrac-direct",
       "ref": "std/micro-usb@1",
       "rel-pos": 2,
@@ -1083,7 +1093,7 @@
        437.22,
        17.41
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "vga",
       "ref": "std/vga@1",
       "rel-pos": 3,
@@ -1130,6 +1140,18 @@
        "mark-vga"
       ],
       "group": "covers",
+      "hides": [
+       "drive-0",
+       "drive-1",
+       "drive-2",
+       "drive-3",
+       "drive-4",
+       "drive-5",
+       "drive-6",
+       "drive-7",
+       "drive-8",
+       "drive-9"
+      ],
       "id": "bezel",
       "ref": "dell/bezel-1u-16g@1",
       "rel-pos": 3
@@ -1141,7 +1163,7 @@
       ],
       "description": "R660 ISM table 131: solid green for two seconds when a laptop is connected, flashing green (two on, two off) when recognised, off when unplugged - the R740xd's table 8 word for word.",
       "for": "idrac-direct",
-      "group": "leds",
+      "group": "port-leds",
       "id": "idrac-direct-led",
       "ref": "common/led-dot@1",
       "rel-pos": 1,
@@ -2434,7 +2456,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-1",
       "ref": "std/usb-a@1",
       "rel-pos": 1,
@@ -2446,7 +2468,7 @@
        460.59,
        31.2
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "idrac-direct",
       "ref": "std/micro-usb@1",
       "rel-pos": 2,
@@ -2457,7 +2479,7 @@
        437.22,
        17.41
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "vga",
       "ref": "std/vga@1",
       "rel-pos": 3,
@@ -2510,6 +2532,22 @@
        "centre-vent"
       ],
       "group": "covers",
+      "hides": [
+       "e3s-0",
+       "e3s-1",
+       "e3s-2",
+       "e3s-3",
+       "e3s-4",
+       "e3s-5",
+       "e3s-6",
+       "e3s-7",
+       "e3s-8",
+       "e3s-9",
+       "e3s-10",
+       "e3s-11",
+       "e3s-12",
+       "e3s-13"
+      ],
       "id": "bezel",
       "ref": "dell/bezel-1u-16g@1",
       "rel-pos": 3
@@ -2521,7 +2559,7 @@
       ],
       "description": "R660 ISM table 131: solid green for two seconds when a laptop is connected, flashing green (two on, two off) when recognised, off when unplugged - the R740xd's table 8 word for word.",
       "for": "idrac-direct",
-      "group": "leds",
+      "group": "port-leds",
       "id": "idrac-direct-led",
       "ref": "common/led-dot@1",
       "rel-pos": 1,
@@ -3329,7 +3367,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-1",
       "ref": "std/usb-a@1",
       "rel-pos": 1,
@@ -3341,7 +3379,7 @@
        460.59,
        31.2
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "idrac-direct",
       "ref": "std/micro-usb@1",
       "rel-pos": 2,
@@ -3352,7 +3390,7 @@
        437.22,
        17.41
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "vga",
       "ref": "std/vga@1",
       "rel-pos": 3,
@@ -3406,6 +3444,24 @@
        "centre-vent"
       ],
       "group": "covers",
+      "hides": [
+       "e3s-0",
+       "e3s-1",
+       "e3s-2",
+       "e3s-3",
+       "e3s-4",
+       "e3s-5",
+       "e3s-6",
+       "e3s-7",
+       "e3s-8",
+       "e3s-9",
+       "e3s-10",
+       "e3s-11",
+       "e3s-12",
+       "e3s-13",
+       "e3s-14",
+       "e3s-15"
+      ],
       "id": "bezel",
       "ref": "dell/bezel-1u-16g@1",
       "rel-pos": 3
@@ -3417,7 +3473,7 @@
       ],
       "description": "R660 ISM table 131: solid green for two seconds when a laptop is connected, flashing green (two on, two off) when recognised, off when unplugged - the R740xd's table 8 word for word.",
       "for": "idrac-direct",
-      "group": "leds",
+      "group": "port-leds",
       "id": "idrac-direct-led",
       "ref": "common/led-dot@1",
       "rel-pos": 1,
@@ -3957,7 +4013,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-1",
       "ref": "std/usb-a@1",
       "rel-pos": 1,
@@ -3969,7 +4025,7 @@
        460.59,
        31.2
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "idrac-direct",
       "ref": "std/micro-usb@1",
       "rel-pos": 2,
@@ -3980,7 +4036,7 @@
        437.22,
        17.41
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "vga",
       "ref": "std/vga@1",
       "rel-pos": 3,
@@ -4028,7 +4084,7 @@
       ],
       "description": "R660 ISM table 131: solid green for two seconds when a laptop is connected, flashing green (two on, two off) when recognised, off when unplugged - the R740xd's table 8 word for word.",
       "for": "idrac-direct",
-      "group": "leds",
+      "group": "port-leds",
       "id": "idrac-direct-led",
       "ref": "common/led-dot@1",
       "rel-pos": 1,
@@ -7832,7 +7888,7 @@
       "attrs": {
        "usb": "2.0"
       },
-      "group": "ports",
+      "group": "local-access",
       "id": "usb-1",
       "ref": "std/usb-a@1",
       "rel-pos": 1,
@@ -7844,7 +7900,7 @@
        460.59,
        31.2
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "idrac-direct",
       "ref": "std/micro-usb@1",
       "rel-pos": 2,
@@ -7855,7 +7911,7 @@
        437.22,
        17.41
       ],
-      "group": "ports",
+      "group": "local-access",
       "id": "vga",
       "ref": "std/vga@1",
       "rel-pos": 3,
@@ -7900,6 +7956,16 @@
        "mark-vga"
       ],
       "group": "covers",
+      "hides": [
+       "drive-0",
+       "drive-1",
+       "drive-2",
+       "drive-3",
+       "drive-4",
+       "drive-5",
+       "drive-6",
+       "drive-7"
+      ],
       "id": "bezel",
       "ref": "dell/bezel-1u-16g@1",
       "rel-pos": 3
@@ -7911,7 +7977,7 @@
       ],
       "description": "R660 ISM table 131: solid green for two seconds when a laptop is connected, flashing green (two on, two off) when recognised, off when unplugged - the R740xd's table 8 word for word.",
       "for": "idrac-direct",
-      "group": "leds",
+      "group": "port-leds",
       "id": "idrac-direct-led",
       "ref": "common/led-dot@1",
       "rel-pos": 1,

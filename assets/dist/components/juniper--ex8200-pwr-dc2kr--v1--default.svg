@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="70.1mm" height="104.0mm" viewBox="0 0 70.1 104.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex8200-pwr-dc2kr@'] .state-disabled { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-dc2kr@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-dc2kr@'] .state-fuse { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-dc2kr@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8200-pwr-dc2kr@'] .state-overloaded { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8200-pwr-dc2kr@'] .state-overloaded { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8200-pwr-dc2kr@'] .state-reversed { --led-color: #ef4444; }</style>
+  <g id="ex8200-pwr-dc2kr" data-path="ex8200-pwr-dc2kr" data-class="psu" data-behaviour="fills" data-ref="juniper/ex8200-pwr-dc2kr@1:1.0.0" data-airflow="front-to-back" data-inlet="dc-terminal" data-input="-40 to -72 VDC (nominal -48 VDC), 50 A maximum per input at nominal; output 52 VDC; 100 A internal fuse" data-power-output-w="2000" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(0,0)">
+    <title>ex8200-pwr-dc2kr</title>
+    <rect id="ex8200-pwr-dc2kr--face" x="0" y="0" width="70.1" height="104.0" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+    <rect id="ex8200-pwr-dc2kr--switch" x="27.0" y="8.0" width="10.9" height="15.0" rx="0.8" fill="#4a4f55" stroke="#2b2e33" stroke-width="0.3" data-path="ex8200-pwr-dc2kr/switch" data-class="switch" />
+    <rect x="28.7" y="11.6" width="7.5" height="7.8" rx="0.5" fill="#8a8f95" />
+    <circle id="ex8200-pwr-dc2kr--led-fail" cx="17.0" cy="31.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8200-pwr-dc2kr/led-fail" data-class="led" data-states="off failed overloaded" />
+    <circle id="ex8200-pwr-dc2kr--led-out-ok" cx="23.5" cy="31.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8200-pwr-dc2kr/led-out-ok" data-class="led" data-states="off ok disabled" />
+    <circle id="ex8200-pwr-dc2kr--led-a-in-ok" cx="30.0" cy="31.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8200-pwr-dc2kr/led-a-in-ok" data-class="led" data-states="off ok fuse reversed" />
+    <circle id="ex8200-pwr-dc2kr--led-b-in-ok" cx="36.5" cy="31.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8200-pwr-dc2kr/led-b-in-ok" data-class="led" data-states="off ok fuse reversed" />
+    <g id="ex8200-pwr-dc2kr--silkscreen" font-family="sans-serif" font-size="1.3" fill="#2b2e33" text-anchor="middle">
+      <text x="17.0" y="35.0">FAIL</text>
+      <text x="23.5" y="35.0">OUT OK</text>
+      <text x="30.0" y="35.0">A IN OK</text>
+      <text x="36.5" y="35.0">B IN OK</text>
+      <text x="32.5" y="6.6">ENABLE</text>
+    </g>
+    <g id="ex8200-pwr-dc2kr--terminals" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+      <rect x="52.0" y="6.0" width="14.0" height="26.0" rx="1.0" fill="#8a8f95" />
+      <circle cx="57.0" cy="12.0" r="2.4" />
+      <circle cx="62.0" cy="12.0" r="2.4" />
+      <circle cx="57.0" cy="24.0" r="2.4" />
+      <circle cx="62.0" cy="24.0" r="2.4" />
+    </g>
+    <g id="ex8200-pwr-dc2kr--vents" fill="#4a4f55">
+      <rect x="4.6" y="41.0" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="44.6" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="48.2" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="51.8" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="55.4" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="59.0" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="62.6" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="66.2" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="69.8" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="73.4" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="77.0" width="58.9" height="1.4" rx="0.5" />
+      <rect x="4.6" y="80.6" width="58.9" height="1.4" rx="0.5" />
+    </g>
+    <rect id="ex8200-pwr-dc2kr--handle" x="8.0" y="94.5" width="22.0" height="6.0" rx="2.5" fill="#6d7278" stroke="#4a4f55" stroke-width="0.3" data-path="ex8200-pwr-dc2kr/handle" data-class="latch" />
+    <g id="ex8200-pwr-dc2kr--screw" data-path="ex8200-pwr-dc2kr/screw" data-class="screw">
+      <circle cx="46.6" cy="92.3" r="2.6" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.4" />
+      <path d="M 44.9 92.3 H 48.3 M 46.6 90.6 V 94.0" stroke="#4a4f55" stroke-width="0.4" />
+    </g>
+  </g>
+</svg>

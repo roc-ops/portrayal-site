@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="133.35mm" viewBox="0 0 482.6 133.35" data-device="9511-1903" data-view="front" data-shell="sheet" data-weight-kg="2.04" data-material="Steel" data-finish="Black Powdercoat Finish" data-color="Black">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Belden 9511-1903","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"belden/9511-1903-panel@1":"1.0.0","belden/saddle-ring@1":"1.0.0"},"source-sha256":"0e0352e23b17f10b4a2d8ee0d49f8b706f996345e0c2cfe35ff9dbe79d091a1d","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="9511-1903" x="0" y="0" width="482.6" height="133.35" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <g id="panel" data-path="panel" data-class="mechanical" data-ref="belden/9511-1903-panel@1:1.0.0" data-depth="74.7" data-wall="#3c3f43" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the flat steel panel with its ears">
+    <title>panel</title>
+    <rect id="panel--floor" x="0" y="0" width="482.6" height="133.35" fill="#2a2d31" data-path="panel/floor" data-class="bezel" />
+    <rect id="panel--floor-lit" x="0" y="0" width="482.6" height="133.35" fill="#fff" fill-opacity="0.1" />
+  </g>
+  <g id="guide-1" data-path="guide-1" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="1" transform="translate(36.3,13.3)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-1</title>
+    <rect id="guide-1--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-1/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-1--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-1/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-1--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-1/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-1--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-1/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-1--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-1/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-1--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-1--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-1--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+  <g id="guide-2" data-path="guide-2" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="2" transform="translate(36.3,80.0)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-2</title>
+    <rect id="guide-2--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-2/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-2--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-2/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-2--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-2/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-2--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-2/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-2--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-2/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-2--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-2--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-2--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+  <g id="guide-3" data-path="guide-3" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="3" transform="translate(116.3,46.7)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-3</title>
+    <rect id="guide-3--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-3/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-3--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-3/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-3--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-3/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-3--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-3/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-3--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-3/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-3--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-3--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-3--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+  <g id="guide-4" data-path="guide-4" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="4" transform="translate(196.3,46.7)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-4</title>
+    <rect id="guide-4--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-4/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-4--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-4/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-4--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-4/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-4--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-4/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-4--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-4/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-4--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-4--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-4--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+  <g id="guide-5" data-path="guide-5" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="5" transform="translate(276.3,46.7)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-5</title>
+    <rect id="guide-5--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-5/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-5--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-5/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-5--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-5/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-5--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-5/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-5--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-5/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-5--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-5--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-5--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+  <g id="guide-6" data-path="guide-6" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="6" transform="translate(356.3,46.7)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-6</title>
+    <rect id="guide-6--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-6/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-6--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-6/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-6--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-6/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-6--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-6/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-6--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-6/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-6--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-6--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-6--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+  <g id="guide-7" data-path="guide-7" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="7" transform="translate(436.3,13.3)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-7</title>
+    <rect id="guide-7--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-7/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-7--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-7/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-7--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-7/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-7--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-7/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-7--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-7/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-7--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-7--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-7--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+  <g id="guide-8" data-path="guide-8" data-class="mechanical" data-ref="belden/saddle-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 68.7" data-guide-depth="10" data-finish="black powder coat" data-material="steel" data-rel-pos="8" transform="translate(436.3,80.0)" data-group="guides" data-group-role="furniture" data-description="eight steel saddle rings, two stacked at each end and four across the middle, cables passing through along the panel" data-z-lift="-74.7" data-in="panel">
+    <title>guide-8</title>
+    <rect id="guide-8--back" x="0" y="0" width="10" height="40" fill="#4a5058" data-path="guide-8/back" data-class="bezel" data-z-out="-71.7" data-z-color="#4a5058" />
+    <rect id="guide-8--top" x="0" y="0" width="10" height="3" fill="#59606a" data-path="guide-8/top" data-class="bezel" data-z-out="0" data-z-color="#59606a" />
+    <rect id="guide-8--bottom" x="0" y="37" width="10" height="3" fill="#3f444b" data-path="guide-8/bottom" data-class="bezel" data-z-out="0" data-z-lift="18.0" data-z-color="#3f444b" />
+    <rect id="guide-8--hook" x="0" y="29" width="10" height="8" fill="#4a5058" data-path="guide-8/hook" data-class="bezel" data-z-out="-53.7" data-z-lift="18.0" data-z-color="#4a5058" />
+    <rect id="guide-8--front" x="0" y="0" width="10" height="40" rx="1" fill="#59606a" data-path="guide-8/front" data-class="bezel" data-z-out="0" data-z-lift="71.7" data-z-color="#59606a" />
+    <rect id="guide-8--front-lit" x="0" y="0" width="10" height="40" rx="1" fill="#fff" fill-opacity="0.08" />
+    <rect id="guide-8--front-rim" x="0.4" y="0.4" width="9.2" height="39.2" rx="1" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="0.6" />
+    <rect id="guide-8--front-shade" x="0" y="37" width="10" height="3" fill="#000" fill-opacity="0.3" />
+  </g>
+</svg>

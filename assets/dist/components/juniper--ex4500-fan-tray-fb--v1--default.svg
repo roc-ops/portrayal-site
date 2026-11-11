@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="352.5mm" height="63.1mm" viewBox="0 0 352.5 63.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ex4500-fan-tray-fb" data-path="ex4500-fan-tray-fb" data-class="fan" data-behaviour="fills" data-ref="juniper/ex4500-fan-tray-fb@1:1.0.0" data-airflow="front-to-back" data-power-absent="not-published" data-role="chassis-fan" data-states="absent" transform="translate(0,0)">
+    <title>ex4500-fan-tray-fb</title>
+    <defs>
+      <pattern id="ex4500-fan-tray-fb--hex" width="2.6" height="4.5" patternUnits="userSpaceOnUse">
+        <polygon points="1.3,0.1 2.25,0.65 2.25,1.75 1.3,2.3 0.35,1.75 0.35,0.65" fill="#050607" />
+        <polygon points="0,2.35 0.95,2.9 0.95,4.0 0,4.55 -0.95,4.0 -0.95,2.9" fill="#050607" />
+        <polygon points="2.6,2.35 3.55,2.9 3.55,4.0 2.6,4.55 1.65,4.0 1.65,2.9" fill="#050607" />
+      </pattern>
+    </defs>
+    <rect id="ex4500-fan-tray-fb--face" x="0.3" y="0.3" width="351.9" height="62.5" rx="4.0" fill="#74787d" stroke="#3f4247" stroke-width="0.5" />
+    <g id="ex4500-fan-tray-fb--field">
+      <rect x="22.7" y="4.0" width="303.1" height="55.1" rx="1.0" fill="#1a1d20" />
+      <rect x="22.7" y="4.0" width="303.1" height="55.1" rx="1.0" fill="url(#ex4500-fan-tray-fb--hex)" />
+      <rect id="ex4500-fan-tray-fb--exhaust-label" x="120.0" y="34.0" width="112.0" height="9.0" rx="0.8" fill="#3fa34d" fill-opacity="0.85" />
+    </g>
+    <g id="ex4500-fan-tray-fb--handle-left" data-path="ex4500-fan-tray-fb/handle-left" data-class="latch" data-z-out="3.0">
+      <rect x="7.0" y="0.8" width="12.0" height="61.5" rx="5.0" fill="#8d9197" stroke="#4d5156" stroke-width="0.4" />
+      <circle cx="16.6" cy="7.0" r="3.6" fill="#c9ccd0" stroke="#6f7378" stroke-width="0.4" />
+      <path d="M 14.6 7.0 H 18.6 M 16.6 5.0 V 9.0" stroke="#4d5156" stroke-width="0.5" />
+      <circle cx="16.6" cy="56.1" r="3.6" fill="#c9ccd0" stroke="#6f7378" stroke-width="0.4" />
+      <path d="M 14.6 56.1 H 18.6 M 16.6 54.1 V 58.1" stroke="#4d5156" stroke-width="0.5" />
+    </g>
+    <g id="ex4500-fan-tray-fb--handle-right" data-path="ex4500-fan-tray-fb/handle-right" data-class="latch" data-z-out="3.0">
+      <rect x="333.5" y="0.8" width="12.0" height="61.5" rx="5.0" fill="#8d9197" stroke="#4d5156" stroke-width="0.4" />
+      <circle cx="337.8" cy="6.7" r="3.6" fill="#c9ccd0" stroke="#6f7378" stroke-width="0.4" />
+      <path d="M 335.8 6.7 H 339.8 M 337.8 4.7 V 8.7" stroke="#4d5156" stroke-width="0.5" />
+      <circle cx="337.8" cy="56.1" r="3.6" fill="#c9ccd0" stroke="#6f7378" stroke-width="0.4" />
+      <path d="M 335.8 56.1 H 339.8 M 337.8 54.1 V 58.1" stroke="#4d5156" stroke-width="0.5" />
+    </g>
+    <g id="ex4500-fan-tray-fb--silkscreen">
+      <text x="176.0" y="40.4" font-family="sans-serif" font-size="3.4" fill="#f0f2f3" text-anchor="middle">EXHAUST</text>
+      <text x="16.5" y="16.9" font-family="sans-serif" font-size="4.2" fill="#e8eaec" text-anchor="middle">1</text>
+      <text x="16.5" y="46.9" font-family="sans-serif" font-size="4.2" fill="#e8eaec" text-anchor="middle">0</text>
+    </g>
+  </g>
+</svg>

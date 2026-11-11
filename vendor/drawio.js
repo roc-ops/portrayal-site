@@ -17,6 +17,7 @@
 
 import { readDrawing, exportName } from './zones.js';
 import { normalise } from './marks.js';
+import { COLORS, mediaColor } from './rack/cable-geometry.js';
 
 // Standalone entries are drawn at 2 px/mm, which is legible on a blank canvas.
 export const SCALE = 2;
@@ -30,6 +31,30 @@ export const RACK = {
   outer: 180, unit: 14.8, marginL: 33, marginR: 9, marginTop: 21, marginBottom: 22,
 };
 RACK.width = RACK.outer - RACK.marginL - RACK.marginR;      // 138
+
+// THE OPENING IN MILLIMETRES: the 19-inch rack face (EIA-310) that RACK.width
+// draw.io units stand for. A face is drawn at its true width, so one millimetre
+// is RACK.width / RACK_FACE_MM units for every device in a cabinet - the
+// viewBox of a drawing is not the opening, and fitting one to the other
+// squeezed a drawing with end rings outside its face and stretched a narrow one.
+const RACK_FACE_MM = 482.6;
+
+/** Where a drawing sits in the opening and how wide it is, in draw.io units:
+ *  `x` from the opening's left edge, `w` its full width. A drawing that
+ *  declares its face (`data-face-w`, written when the drawing is bigger than
+ *  the face) has the face at 0 in its own millimetres, so what stands outside
+ *  it hangs out over the opening by the viewBox's offset. One that does not
+ *  declare one IS its face, with no ears of its own, and is centred between
+ *  the rails (a face as wide as the opening fills it, so it starts at 0). */
+function rackFit(svgText, vb) {
+  const k = RACK.width / RACK_FACE_MM;
+  // relief.js's faceDeclared reads the same attribute, but that file wants a
+  // browser to load and this one runs without a document
+  const root = /<svg\b[^>]*>/.exec(svgText || '');
+  const declared = !!root && /\sdata-face-w="[\d.eE+-]+"/.test(root[0]);
+  const w = vb[2] * k;
+  return {x: declared ? vb[0] * k : (RACK.width - w) / 2, w};
+}
 
 const esc = s => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -233,7 +258,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
 /** A library entry for one device, at whatever scale the caller wants. */
 export function entry(name, svgText, vb, ports, opts = {}) {
   const {ru = null, visible = false} = opts;
-  const w = ru ? RACK.width : vb[2] * SCALE;
+  const w = ru ? rackFit(svgText, vb).w : vb[2] * SCALE;
   const h = ru ? RACK.unit * ru : vb[3] * SCALE;
   const id = slug(name);
   return {
@@ -290,14 +315,28 @@ const TOP = 30;
 // port's data-path - `slot-2/module/p0` for a port on a seated card - and
 // `view` the face it is on.
 
-/** Jacket colours by `media`. A default, not a rule: `cableStyle` takes a map
- *  of the embedder's own (merged over this one) or a function. */
-export const CABLE_COLOURS = {
-  dac: '#4D4D4D', aoc: '#2F80C0', cu: '#7A5C99', mm: '#16A5A5', sm: '#D4A017',
-  om1: '#E07B39', om2: '#E07B39', om3: '#16A5A5', om4: '#16A5A5', om5: '#7DB343',
-  os1: '#D4A017', os2: '#D4A017', cat5e: '#7A5C99', cat6: '#7A5C99', cat6a: '#7A5C99',
-  default: '#808080',
-};
+// THE COLOUR OF A CABLE IS THE KIT'S (#1028): the one the Rack Builder draws it
+// in (rack/cable-geometry.js COLORS, by mediaColor), so a drawing exported here
+// shows each cable as the explorer does. A media the kit has no colour for takes
+// what the explorer gives it. The table is derived, never a second set of hexes.
+const MEDIA_KEYS = ['dac', 'aoc', 'cu', 'mm', 'sm', 'om1', 'om2', 'om3', 'om4', 'om5',
+  'os1', 'os2', 'cat5e', 'cat6', 'cat6a', 'default'];
+
+/** Jacket colours by `media`, as the kit draws them. A default, not a rule:
+ *  `cableStyle` takes a map of the embedder's own (read ahead of this) or a
+ *  function. */
+export const CABLE_COLOURS = Object.fromEntries(MEDIA_KEYS.map(k => [k, mediaColor({media: k})]));
+
+// The kit's colour for a cable of a plan: its media, and its purpose where it
+// is copper, which a plan keys as `copper-<purpose>` (rack/export-data.js
+// drawioMedia).
+function kitColour(cable, key) {
+  const m = /^copper-(.*)$/.exec(key);
+  if (m || key === 'copper') return mediaColor({media: 'copper', purpose: cable.purpose ?? (m && m[1])});
+  return mediaColor({media: key});
+}
+// Whether the kit has a colour of its own for this media key.
+const kitKnows = key => /^copper(-|$)/.test(key) || (Object.hasOwn(COLORS, key) && key !== 'copper');
 
 // ORTHOGONAL, AND NO ARROWS. A patch lead has no direction, and draw.io's
 // default edge ends in an arrowhead that says it does. NOT html=1, here or on
@@ -313,9 +352,12 @@ const CABLE_EDGE = 'edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=none;' +
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 function cableStyleOf(cable, opt) {
   if (typeof opt === 'function') return String(opt(cable));
-  const map = opt ? {...CABLE_COLOURS, ...opt} : CABLE_COLOURS;
   const own = typeof cable.color === 'string' && HEX.test(cable.color) ? cable.color : null;
-  const colour = own || map[String(cable.media || '').toLowerCase()] || map.default;
+  const key = String(cable.media || '').toLowerCase();
+  // a caller's map is read first: its entry for the media, else its `default`
+  // for a media the kit has no colour for; the kit's colour answers the rest
+  const mapped = opt && (Object.hasOwn(opt, key) ? opt[key] : !kitKnows(key) ? opt.default : undefined);
+  const colour = own || mapped || kitColour(cable, key);
   return `${CABLE_EDGE}strokeColor=${colour};`;
 }
 
@@ -580,15 +622,16 @@ export function rackDiagram(groups, {faces = ['front'], labels = true,
           // every device against a number it is not in.
           const top = RACK.marginTop + (m.u - 1) * RACK.unit;
           const dh = RACK.unit * ru;
-          const sub = deviceCells(id, f.svg, f.vb, f.ports, RACK.marginL, top,
-                                  RACK.width, dh, {visible: false});
+          const fit = rackFit(f.svg, f.vb);
+          const sub = deviceCells(id, f.svg, f.vb, f.ports, RACK.marginL + fit.x, top,
+                                  fit.w, dh, {visible: false});
           // The group keeps the name as its value - Outline lists it, search
           // finds it, an edge endpoint reports it - but does not PRINT it.
           // Drawn, it lands a couple of units off its own device and collides
           // with the U numbers, and a label against the wrong number is worse
           // than none. The faceplate carries the model in silkscreen anyway.
           sub[0] = cell(id, m.name, 'group;html=1;noLabel=1;',
-                        RACK.marginL, top, RACK.width, dh, rackId);
+                        RACK.marginL + fit.x, top, fit.w, dh, rackId);
           for (let k = 1; k < sub.length; k++) {
             sub[k] = sub[k].replace(/parent="1"/, `parent="${id}"`);
           }

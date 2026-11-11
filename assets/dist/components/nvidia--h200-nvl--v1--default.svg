@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="41.91mm" viewBox="0 0 120.02 41.91">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="h200-nvl" data-path="h200-nvl" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/h200-nvl@1:1.0.0" data-body-depth="268.6" data-wall="#8a9199" data-airflow="bidirectional; the heat sink takes system airflow either way along the card" data-board-sku="P1010 SKU 230, NVPN 900-21010-xx40-xxx" data-cooling="passive" data-eol="none-announced" data-form-factor="Full-height, full-length (FHFL) 10.5 in, dual-slot" data-memory="141 GB HBM3e, 6016-bit, 4,813 GB/s" data-model="H200 NVL" data-nvlink="one bridge connector on the top edge; 900 GB/s with a 2-slot bridge" data-part-numbers="PNY NVH200NVLTCGPU-KIT" data-pcie-connector="x16" data-pcie-generation="5" data-pcie-height="full" data-power-draw-max-w="600" data-power-input="host PCIe slot and one PCIe 16-pin (12VHPWR) auxiliary connector" data-role="gpu" data-weight-kg="1.217" transform="translate(0,0)">
+    <title>h200-nvl</title>
+    <path id="h200-nvl--plate" d="M1.9 7.4 L7.27 7.4 L9.57 5.1 L20.0 5.1 L21.0 4.1 L119.2 4.1 L119.2 0.3 L120.02 0.3 L120.02 39.7 L119.2 39.7 L119.2 40.0 L9.67 40.0 L7.27 37.6 L1.9 37.6 A1.9 1.9 0 0 1 0 35.7 L0 29.8 A1.9 1.9 0 0 1 1.9 27.9 L7.27 27.9 L10.95 24.22 A2.4 2.4 0 0 0 10.95 20.88 L7.27 17.2 L1.9 17.2 A1.9 1.9 0 0 1 0 15.3 L0 9.3 A1.9 1.9 0 0 1 1.9 7.4 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+    <path id="h200-nvl--flange-fold" d="M119.6 0.6 V39.4" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+    <g id="h200-nvl--grille" data-path="h200-nvl/grille" data-class="bezel" data-z-out="0.8" data-z-color="#9aa1a8">
+      <rect x="29.8" y="9.9" width="79.31" height="29.4" rx="2.0" fill="#a7aeb5" stroke="#5f666d" stroke-width="0.35" />
+      <path id="h200-nvl--vent" d="M35.79 11.8 L102.82 11.8 A3.5 3.5 0 0 0 107.31 16.29 L107.31 32.51 A3.5 3.5 0 0 0 103.11 37.6 L35.5 37.6 A3.5 3.5 0 0 0 31.2 32.55 L31.2 16.25 A3.5 3.5 0 0 0 35.79 11.8 Z" fill="#141618" stroke="#41474d" stroke-width="0.3" data-path="h200-nvl/vent" data-class="vent" />
+      <g id="h200-nvl--fins" fill="#565c62">
+        <rect x="36.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="41.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="46.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="51.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="56.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="61.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="66.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="71.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="76.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="81.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="86.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="91.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="96.0" y="12.1" width="0.5" height="25.2" />
+        <rect x="101.0" y="12.1" width="0.5" height="25.2" />
+      </g>
+      <g id="h200-nvl--screw-1" data-path="h200-nvl/screw-1" data-class="screw">
+        <circle cx="32.5" cy="13.0" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="32.5" cy="13.0" r="0.8" fill="#4a4f55" />
+      </g>
+      <g id="h200-nvl--screw-2" data-path="h200-nvl/screw-2" data-class="screw">
+        <circle cx="106.11" cy="13.0" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="106.11" cy="13.0" r="0.8" fill="#4a4f55" />
+      </g>
+      <g id="h200-nvl--screw-3" data-path="h200-nvl/screw-3" data-class="screw">
+        <circle cx="32.5" cy="35.8" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="32.5" cy="35.8" r="0.8" fill="#4a4f55" />
+      </g>
+      <g id="h200-nvl--screw-4" data-path="h200-nvl/screw-4" data-class="screw">
+        <circle cx="106.11" cy="35.8" r="2.15" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.3" />
+        <circle cx="106.11" cy="35.8" r="0.8" fill="#4a4f55" />
+      </g>
+    </g>
+  </g>
+</svg>

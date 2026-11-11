@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="167.6mm" height="929.6mm" viewBox="0 0 167.6 929.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="jnp10016-fan2" data-path="jnp10016-fan2" data-class="fan" data-behaviour="fills" data-ref="juniper/jnp10016-fan2@2:2.0.0" data-body-depth="139.7" data-model="JNP10016-FAN2" data-power-draw-max-w="2340" data-power-draw-typical-w="2220" data-states="ok fail absent" transform="translate(0,0)">
+    <title>jnp10016-fan2</title>
+    <rect id="jnp10016-fan2--face" x="0" y="0" width="167.6" height="929.6" rx="1.2" fill="#565b61" stroke="#44484d" stroke-width="0.6" />
+    <g id="jnp10016-fan2--lamps">
+      <circle id="jnp10016-fan2--led-fan" cx="14.0" cy="6.5" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+      <circle id="jnp10016-fan2--led-ftc" cx="22.0" cy="6.5" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      <circle id="jnp10016-fan2--led-sib" cx="34.0" cy="6.5" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      <circle id="jnp10016-fan2--led-status" cx="42.0" cy="6.5" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="jnp10016-fan2--fit" transform="scale(0.9523 1.0061)">
+      <g id="jnp10016-fan2--mesh">
+        <rect x="8.0" y="22.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="22.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="22.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="22.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="66.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="66.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="66.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="66.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="111.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="111.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="111.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="111.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="155.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="155.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="155.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="155.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="200.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="200.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="200.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="200.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="245.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="245.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="245.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="245.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="289.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="289.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="289.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="289.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="334.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="334.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="334.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="334.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="378.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="378.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="378.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="378.8" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="423.40000000000003" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="423.40000000000003" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="423.40000000000003" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="423.40000000000003" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="468.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="468.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="468.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="468.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="512.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="512.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="512.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="512.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="557.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="557.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="557.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="557.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="601.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="601.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="601.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="601.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="646.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="646.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="646.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="646.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="691.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="691.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="691.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="691.0" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="735.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="735.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="735.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="735.6" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="780.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="780.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="780.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="780.2" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="824.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="824.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="824.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="824.8000000000001" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="8.0" y="869.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="49.0" y="869.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="90.0" y="869.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+        <rect x="131.0" y="869.4" width="37.0" height="40.6" rx="6.0" fill="#33373c" />
+      </g>
+      <g id="jnp10016-fan2--handle-top">
+        <rect x="8.0" y="64.0" width="160.0" height="8.0" rx="4.0" fill="#17191c" />
+      </g>
+      <g id="jnp10016-fan2--handle-bottom">
+        <rect x="8.0" y="852.0" width="160.0" height="8.0" rx="4.0" fill="#17191c" />
+      </g>
+    </g>
+    <g id="jnp10016-fan2--silkscreen">
+      <g id="jnp10016-fan2--t14.011.8-silkscreen">
+        <text x="14.0" y="11.8" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle">FAN</text>
+      </g>
+      <g id="jnp10016-fan2--t22.011.8-silkscreen">
+        <text x="22.0" y="11.8" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle">FTC</text>
+      </g>
+      <g id="jnp10016-fan2--t38.011.8-silkscreen">
+        <text x="38.0" y="11.8" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle">SIB STATUS</text>
+      </g>
+    </g>
+  </g>
+</svg>

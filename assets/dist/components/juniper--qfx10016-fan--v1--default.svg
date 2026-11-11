@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="168.0mm" height="929.6mm" viewBox="0 0 168.0 929.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx10016-fan@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx10016-fan@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/qfx10016-fan@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="qfx10016-fan" data-path="qfx10016-fan" data-class="fan" data-behaviour="fills" data-ref="juniper/qfx10016-fan@1:1.0.0" data-body-depth="102.0" data-airflow="front-to-back" data-fans-per-tray="21" data-hot-swap="yes" data-model="QFX10016-FAN" data-power-draw-max-w="975" data-power-draw-typical-w="475" data-role="fan-tray" data-states="ok fail absent" transform="translate(0,0)">
+    <title>qfx10016-fan</title>
+    <rect id="qfx10016-fan--face" x="0" y="0" width="168.0" height="929.6" rx="1.2" fill="#565b61" stroke="#44484d" stroke-width="0.6" />
+    <rect x="0.6" y="0.6" width="166.8" height="16.0" fill="#44484d" />
+    <g id="qfx10016-fan--screws">
+      <circle cx="14.5" cy="8.6" r="4.2" fill="#8a8f95" stroke="#33373c" stroke-width="0.4" />
+      <circle cx="153.5" cy="8.6" r="4.2" fill="#8a8f95" stroke="#33373c" stroke-width="0.4" />
+    </g>
+    <g id="qfx10016-fan--lamps">
+      <circle id="qfx10016-fan--led-fan" cx="14.1" cy="27.6" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="qfx10016-fan/led-fan" data-class="led" data-states="off ok fault" />
+      <circle id="qfx10016-fan--led-ftc" cx="23.0" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="qfx10016-fan/led-ftc" data-class="led" data-states="off ok fault" />
+      <circle id="qfx10016-fan--led-sib-a" cx="31.8" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="qfx10016-fan/led-sib-a" data-class="led" data-states="off ok fault" />
+      <circle id="qfx10016-fan--led-sib-b" cx="39.9" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="qfx10016-fan/led-sib-b" data-class="led" data-states="off ok fault" />
+      <circle id="qfx10016-fan--led-sib-c" cx="48.1" cy="27.6" r="1.0" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="qfx10016-fan/led-sib-c" data-class="led" data-states="off ok fault" />
+    </g>
+    <g id="qfx10016-fan--mesh" fill="#33373c">
+      <rect x="87.7" y="51.6" width="34.6" height="34.0" rx="6.0" />
+      <rect x="128.9" y="51.6" width="34.6" height="34.0" rx="6.0" />
+      <rect x="5.3" y="94.0" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="94.0" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="94.0" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="94.0" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="137.55" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="137.55" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="137.55" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="137.55" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="181.1" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="181.1" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="181.1" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="181.1" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="224.65" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="224.65" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="224.65" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="224.65" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="268.2" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="268.2" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="268.2" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="268.2" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="311.75" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="311.75" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="311.75" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="311.75" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="355.3" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="355.3" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="355.3" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="355.3" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="398.85" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="398.85" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="398.85" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="398.85" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="442.4" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="442.4" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="442.4" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="442.4" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="485.95" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="485.95" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="485.95" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="485.95" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="529.5" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="529.5" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="529.5" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="529.5" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="573.05" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="573.05" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="573.05" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="573.05" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="616.6" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="616.6" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="616.6" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="616.6" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="660.15" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="660.15" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="660.15" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="660.15" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="703.7" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="703.7" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="703.7" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="703.7" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="747.25" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="747.25" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="747.25" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="747.25" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="790.8" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="790.8" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="790.8" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="790.8" width="34.6" height="33.6" rx="6.0" />
+      <rect x="5.3" y="834.35" width="34.6" height="33.6" rx="6.0" />
+      <rect x="46.5" y="834.35" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="834.35" width="34.6" height="33.6" rx="6.0" />
+      <rect x="128.9" y="834.35" width="34.6" height="33.6" rx="6.0" />
+      <rect x="87.7" y="883.0" width="34.6" height="34.0" rx="6.0" />
+      <rect x="128.9" y="883.0" width="34.6" height="34.0" rx="6.0" />
+    </g>
+    <g id="qfx10016-fan--handle-top" data-path="qfx10016-fan/handle-top" data-class="handle">
+      <rect x="3.5" y="85.9" width="162.2" height="7.7" rx="3.85" fill="#17191c" />
+    </g>
+    <g id="qfx10016-fan--handle-bottom" data-path="qfx10016-fan/handle-bottom" data-class="handle">
+      <rect x="3.5" y="872.0" width="162.2" height="7.7" rx="3.85" fill="#17191c" />
+    </g>
+    <g id="qfx10016-fan--silkscreen">
+      <text x="14.1" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">FAN</text>
+      <text x="23.0" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">FTC</text>
+      <text x="40.0" y="33.6" font-family="sans-serif" font-size="1.7" fill="#e8eaec" text-anchor="middle">SIB STATUS</text>
+    </g>
+  </g>
+</svg>

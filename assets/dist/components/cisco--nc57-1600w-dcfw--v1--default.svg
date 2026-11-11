@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="81.0mm" height="43.5mm" viewBox="0 0 81.0 43.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/nc57-1600w-dcfw@'] .state-failed { --led-color: #f59e0b; }
+    g[data-ref^='cisco/nc57-1600w-dcfw@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='cisco/nc57-1600w-dcfw@'] .state-warning { --led-color: #f59e0b; }</style>
+  <g id="nc57-1600w-dcfw" data-path="nc57-1600w-dcfw" data-class="psu" data-behaviour="fills" data-ref="cisco/nc57-1600w-dcfw@1:1.2.0" data-airflow="front-to-back" data-hot-swappable="yes" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-48 V to -60 V DC" data-output="12 V / 133.3 A" data-power-output-w="1600" data-states="absent" transform="translate(0,0)">
+    <title>nc57-1600w-dcfw</title>
+    <rect id="nc57-1600w-dcfw--body" x="0" y="0" width="81" height="43.5" rx="0.6" fill="#c3c7cc" stroke="#6b7076" stroke-width="0.3" />
+    <g id="nc57-1600w-dcfw--fan" data-path="nc57-1600w-dcfw/fan" data-class="rotor">
+      <circle cx="21" cy="20.5" r="17.2" fill="#1b1d20" stroke="#8d9298" stroke-width="0.5" />
+      <g stroke="#d3d6d9" stroke-width="0.7" stroke-linecap="round" fill="none">
+        <path d="M 21 4.8 V 11.5" transform="rotate(0 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(30 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(60 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(90 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(120 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(150 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(180 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(210 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(240 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(270 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(300 21 20.5)" />
+        <path d="M 21 4.8 V 11.5" transform="rotate(330 21 20.5)" />
+      </g>
+      <circle cx="21" cy="20.5" r="9.5" fill="#f4f4f4" stroke="#4a4f55" stroke-width="1.6" />
+    </g>
+    <g id="nc57-1600w-dcfw--screws" fill="#aeb3b8" stroke="#5c6167" stroke-width="0.25">
+      <circle cx="4.6" cy="4.0" r="1.5" />
+      <circle cx="37.4" cy="4.0" r="1.5" />
+      <circle cx="4.6" cy="40.0" r="1.5" />
+      <circle cx="37.4" cy="40.0" r="1.5" />
+    </g>
+    <path id="nc57-1600w-dcfw--pull-handle" d="M 4.0 22 V 35.5 Q 4.0 38.6 7.1 38.6 H 34.9 Q 38.0 38.6 38.0 35.5 V 22" fill="none" stroke="#585d63" stroke-width="2.2" stroke-linecap="round" />
+    <g id="nc57-1600w-dcfw--inlet" data-path="nc57-1600w-dcfw/inlet" data-class="bezel">
+      <rect x="43.5" y="3" width="26" height="37.5" rx="0.8" fill="#0d0f11" stroke="#3a3e43" stroke-width="0.3" />
+      <rect x="48" y="12" width="17" height="19" rx="1" fill="#2b2f33" />
+    </g>
+    <rect id="nc57-1600w-dcfw--latch" x="71" y="12" width="5.5" height="19" rx="1" fill="#3b82c4" stroke="#1f4e7a" stroke-width="0.3" data-path="nc57-1600w-dcfw/latch" data-class="latch" />
+    <circle id="nc57-1600w-dcfw--status" cx="76.2" cy="38.2" r="1.2" fill="var(--led-color, #3a3f44)" data-path="nc57-1600w-dcfw/status" data-class="led" data-states="off ok warning failed" />
+    <g id="nc57-1600w-dcfw--dc-header" data-path="nc57-1600w-dcfw/dc-header" data-class="inlet" data-ref="cisco/nxa-pdc-930w-dc-header@1:1.0.0" data-connector="DC power connector block" data-positions="3" transform="translate(52.0,13.5)">
+      <title>nc57-1600w-dcfw--dc-header</title>
+      <rect id="nc57-1600w-dcfw--dc-header--key" x="0" y="6.0" width="2.0" height="4.0" rx="0.4" fill="#2a2d31" />
+      <rect id="nc57-1600w-dcfw--dc-header--body" x="1.6" y="0" width="7.4" height="16.0" rx="0.5" fill="#24272b" stroke="#4a4f55" stroke-width="0.2" />
+      <g id="nc57-1600w-dcfw--dc-header--cells" fill="#0e0f11">
+        <rect x="2.6" y="1.5" width="5.4" height="3.8" rx="0.3" />
+        <rect x="2.6" y="6.1" width="5.4" height="3.8" rx="0.3" />
+        <rect x="2.6" y="10.7" width="5.4" height="3.8" rx="0.3" />
+      </g>
+      <g id="nc57-1600w-dcfw--dc-header--contacts" fill="#9a9fa5">
+        <rect x="4.7" y="2.8" width="1.2" height="1.2" />
+        <rect x="4.7" y="7.4" width="1.2" height="1.2" />
+        <rect x="4.7" y="12.0" width="1.2" height="1.2" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.3 8" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

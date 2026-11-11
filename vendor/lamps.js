@@ -29,7 +29,7 @@
 // module takes its lamps with it.
 
 import * as THREE from 'three';
-import { nodeTools, rasterize, canvasTex, tiltOf, tiltTools, tiltGroupIn, unproject,
+import { nodeTools, rasterSource, canvasTex, tiltOf, tiltTools, tiltGroupIn, unproject,
          withoutLampColors } from './relief.js';
 
 // SOMETHING UNDER THE LIVE ART. A blink is opacity 1 <-> 0 on the lamp, so a
@@ -152,7 +152,7 @@ export function createLamps() {
   async function add(key, r, pxmm) {
     const frames = [];
     for (const s of r.stops)
-      frames.push(canvasTex(await rasterize(phaseSvg(r.text, (s + 1e-4) * r.dur), r.w, r.h, pxmm)));
+      frames.push(canvasTex(await rasterSource(phaseSvg(r.text, (s + 1e-4) * r.dur), r.w, r.h, pxmm)));
     if (recs.has(key)) { for (const f of frames) f.dispose(); return; } // superseded mid-raster
     const old = r.mat.map;
     if (old && !r.mesh) { for (const f of frames) { f.repeat.copy(old.repeat); f.offset.copy(old.offset); } }
@@ -164,8 +164,9 @@ export function createLamps() {
   /**
    * Reconcile the animated set with the drawing.
    *   faces      LOD records: {key(view), svgText(restyled), wmm, hmm, matIndex}
-   *   entries    restyle entries: {svgText, anim?: {mat, w, h}}
-   *   restyle    text -> text with the current states applied (for entries)
+   *   entries    restyle entries: {svgText, view?, anim?: {mat, w, h}}
+   *   restyle    (text, view) -> text with the current states applied (for entries)
+   *   isOff      (path, view) -> is the part off on that face
    *   changed    Set of paths that changed, or null to reconcile everything
    */
   async function sync({faces = [], entries = [], faceGroups = {}, fruGroups = {}, faceFlip = {},
@@ -176,7 +177,7 @@ export function createLamps() {
     for (const e of entries) {
       if (!e.anim) continue;
       if (!touches(e.svgText, changed)) { if (recs.has(e)) keep.add(e); continue; }
-      const text = withBase(restyle(e.svgText));
+      const text = withBase(restyle(e.svgText, e.view));
       const have = recs.get(e);
       if (have && have.text === text) { keep.add(e); continue; }
       drop(e);
@@ -250,7 +251,7 @@ export function createLamps() {
           const mesh = new THREE.Mesh(new THREE.PlaneGeometry(at.w, at.h), mat);
           mesh.position.set(x, y, z);
           mesh.userData.portrayalPath = path;
-          mesh.visible = !isOff(path);
+          mesh.visible = !isOff(path, rec.key);
           (tr ? tiltGroupIn(fg || grp, tr.tilt, {fw: rec.wmm, fh: rec.hmm, flipLX: fx, flipLY: fy})
               : fg || grp).add(mesh);
           await add(key, {text, mat, w: rect.w, h: rect.h, stops, dur: a.dur, mesh, view: rec.key}, pxmm);

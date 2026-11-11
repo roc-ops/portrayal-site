@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="395.3mm" height="36.0mm" viewBox="0 0 395.3 36.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/ex8208-sre320@'] .state-booting { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-booting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-powered { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-primary { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='juniper/ex8208-sre320@'] .state-standby { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="ex8208-sre320" data-path="ex8208-sre320" data-class="supervisor" data-behaviour="fills" data-ref="juniper/ex8208-sre320@1:1.0.0" data-power-draw-max-w="200" data-role="routing-engine-and-fabric" data-states="ok fail absent" transform="translate(0,0)">
+    <title>ex8208-sre320</title>
+    <rect id="ex8208-sre320--face" x="10.4" y="3.5" width="374.2" height="29.1" rx="0.6" fill="#d3d6d9" stroke="#8a8f94" stroke-width="0.4" />
+    <rect id="ex8208-sre320--lever-left" x="7.2" y="28.8" width="117.8" height="3.5" rx="0.8" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="ex8208-sre320/lever-left" data-class="latch" />
+    <rect id="ex8208-sre320--lever-right" x="270.3" y="28.8" width="117.8" height="3.5" rx="0.8" fill="#9ba0a6" stroke="#6d7278" stroke-width="0.3" data-path="ex8208-sre320/lever-right" data-class="latch" />
+    <g id="ex8208-sre320--screws" fill="#9ba0a6" stroke="#4a4f55" stroke-width="0.3">
+      <circle cx="16.1" cy="7.9" r="2.1" />
+      <circle cx="16.1" cy="19.5" r="2.1" />
+      <circle cx="378.0" cy="7.9" r="2.1" />
+      <circle cx="378.0" cy="19.5" r="2.1" />
+      <circle cx="5.7" cy="18.0" r="2.4" />
+      <circle cx="389.0" cy="18.0" r="2.4" />
+    </g>
+    <circle id="ex8208-sre320--led-st" cx="25.6" cy="18.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8208-sre320/led-st" data-class="led" data-states="off ok booting failed" />
+    <circle id="ex8208-sre320--led-ms" cx="30.2" cy="18.0" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8208-sre320/led-ms" data-class="led" data-states="off primary standby" />
+    <circle id="ex8208-sre320--led-on" cx="25.6" cy="23.3" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8208-sre320/led-on" data-class="led" data-states="off powered" />
+    <circle id="ex8208-sre320--led-sf" cx="30.2" cy="23.3" r="1.0" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.3" data-path="ex8208-sre320/led-sf" data-class="led" data-states="off ok standby failed" />
+    <g id="ex8208-sre320--silkscreen" font-family="sans-serif" fill="#2b2e33">
+      <g font-size="1.5" text-anchor="middle">
+        <text x="25.6" y="13.0">ST</text>
+        <text x="30.2" y="13.0">MS</text>
+        <text x="25.6" y="16.0">ON</text>
+        <text x="30.2" y="16.0">SF</text>
+        <text x="156.4" y="9.6">AUX</text>
+        <text x="178.8" y="9.6">CONSOLE</text>
+        <text x="202.4" y="9.6">MGMT</text>
+        <text x="134.9" y="16.8">USB</text>
+      </g>
+      <text x="114.0" y="22.4" font-size="1.5" text-anchor="end">RESET</text>
+      <text x="48.0" y="29.0" font-size="2.6">EX8208  SRE320</text>
+    </g>
+    <g id="ex8208-sre320--reset" data-path="ex8208-sre320/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="power-cycles the module" transform="translate(115.8,19.5)" data-group="mgmt" data-group-role="management">
+      <title>ex8208-sre320--reset</title>
+      <circle id="ex8208-sre320--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="ex8208-sre320--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="ex8208-sre320/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+    </g>
+    <g id="ex8208-sre320--usb" data-path="ex8208-sre320/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB port for installing Junos OS" data-media="usb-a" transform="translate(128.9,19.8)" data-group="mgmt" data-group-role="management">
+      <title>ex8208-sre320--usb</title>
+      <rect id="ex8208-sre320--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="ex8208-sre320/usb/opening" data-class="cutout" />
+      <rect id="ex8208-sre320--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="ex8208-sre320--aux" data-path="ex8208-sre320/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="auxiliary port" data-media="rj45-serial" data-note="not enabled; reserved for future use" transform="translate(148.5,12.6)" data-group="mgmt" data-group-role="management">
+      <title>ex8208-sre320--aux</title>
+      <path id="ex8208-sre320--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ex8208-sre320--aux--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ex8208-sre320--aux--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ex8208-sre320/aux/opening" data-class="cutout" />
+      <g id="ex8208-sre320--aux--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="ex8208-sre320--con" data-path="ex8208-sre320/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45-serial" transform="translate(170.9,12.6)" data-group="mgmt" data-group-role="management">
+      <title>ex8208-sre320--con</title>
+      <path id="ex8208-sre320--con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ex8208-sre320--con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ex8208-sre320--con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ex8208-sre320/con/opening" data-class="cutout" />
+      <g id="ex8208-sre320--con--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="ex8208-sre320--mgmt" data-path="ex8208-sre320/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" transform="translate(194.5,12.6)" data-group="mgmt" data-group-role="management">
+      <title>ex8208-sre320--mgmt</title>
+      <g id="ex8208-sre320--mgmt--jack" data-path="ex8208-sre320/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>ex8208-sre320--mgmt--jack</title>
+        <path id="ex8208-sre320--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ex8208-sre320--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ex8208-sre320--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ex8208-sre320/mgmt/jack/opening" data-class="cutout" />
+        <g id="ex8208-sre320--mgmt--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="ex8208-sre320--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="ex8208-sre320--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ex8208-sre320/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="ex8208-sre320--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ex8208-sre320/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

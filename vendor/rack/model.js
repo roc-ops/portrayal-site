@@ -8,6 +8,7 @@
 
 import {RU} from './rails.js';
 import {hexColor} from './cable-geometry.js';
+import {shapeRefusal} from '../displays.js';
 
 export const FORMAT = 'portrayal-rack';
 // Zero-U parts and `side` (#926) did not raise it: both are optional keys a
@@ -43,7 +44,7 @@ const unknownOf = (o, known) => Object.fromEntries(Object.entries(o && typeof o 
   .filter(([k]) => !known.includes(k)).map(([k, v]) => [k, structuredClone(v)]));
 const FRAME_KEYS = ['kind', 'heightRU', 'numbering', 'holes', 'railDepth', 'usableDepth', 'ref', 'startU', 'setback', 'width'];
 const ITEM_KEYS = ['id', 'ref', 'cfg', 'label', 'ru', 'face', 'turned', 'swaps', 'fields', 'on', 'unit', 'side', 'setback', 'roll',
-                   'states', 'readings', 'readingsAsWritten'];
+                   'states', 'readings', 'readingsAsWritten', 'displays'];
 const RACK_KEYS = ['id', 'name', 'frame', 'items', 'zeroU', 'cables', 'dcim', 'bundles'];
 const DOC_KEYS = ['format', 'version', 'id', 'racks'];
 // The rail hole styles. `round` (version 4) is an unthreaded round hole.
@@ -122,14 +123,19 @@ export function nextRackName(names) {
   return `Rack ${Math.max(0, ...used) + 1}`;
 }
 
-// AN ITEM ID IS NEVER REUSED WHILE A CABLE END NAMES IT. A cable kept when its
-// device was removed (or trimmed by a shrink) still names that device's id,
-// and reads "the device was removed"; handing the id to the next device
-// placed would land the cable on something unrelated. So the ids in use are
-// the items' own and every id a cable end names. (model.js cannot import
-// cable-rules.js, which imports this file: the two ends are read here.)
+// AN ITEM ID IS NEVER REUSED WHILE A CABLE END, A ROUTE WAYPOINT OR A HOLDER
+// NAMES IT. A cable kept when its device was removed (or trimmed by a shrink)
+// still names that device's id, and reads "the device was removed"; handing
+// the id to the next device placed would land the cable on something
+// unrelated. So the ids in use are the items' own and every id a cable end or
+// a waypoint of its route names, and the holder an item says it hangs on.
+// (model.js cannot import cable-rules.js, which imports this file: the two
+// ends are read here.)
 const endItems = cables => (Array.isArray(cables) ? cables : [])
   .flatMap(c => [c?.a?.item, c?.b?.item]).filter(id => id != null && id !== '').map(id => ({id: String(id)}));
+const waypointItems = cables => (Array.isArray(cables) ? cables : []).flatMap(c => (Array.isArray(c?.route) ? c.route : []))
+  .filter(w => !!w && typeof w === 'object' && !Array.isArray(w) && typeof w.item === 'string' && w.item).map(w => ({id: w.item}));
+const holderItems = items => items.map(holderOf).filter(id => id !== null).map(id => ({id}));
 // A BUNDLE'S TRUNK AND PEEL POINTS name items too (#921): a removed manager's
 // id is not handed to the next device while a trunk still names it, so it can
 // never resolve to something placed later.
@@ -139,7 +145,8 @@ const bundleItems = bundles => bundleList(bundles).flatMap(b => [
   ...(Array.isArray(b.route) ? b.route : []),
   ...(Array.isArray(b.members) ? b.members : []).flatMap(m => (plainObj(m) ? [m.a, m.b] : []))])
   .filter(w => plainObj(w) && typeof w.item === 'string' && w.item).map(w => ({id: w.item}));
-export const itemIdsInUse = rack => [...rack.items, ...endItems(rack.cables), ...bundleItems(rack.bundles)];
+export const itemIdsInUse = rack => [...rack.items, ...endItems(rack.cables), ...waypointItems(rack.cables),
+  ...holderItems(rack.items), ...bundleItems(rack.bundles)];
 // A ZERO-U ID THE SAME WAY (P-0019): a cord kept when its PDU was taken away
 // still names the PDU's id, so the next part placed beside the rack is not
 // handed it.
@@ -239,13 +246,19 @@ export const renamed = (rack, name) => ({...rack, name: String(name)});
 // it whatever is there: two trimmed strings.
 const plain = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
 const word = v => (typeof v === 'string' ? v.trim() : '');
-export const dcimOf = rack => ({site: word(plain(rack?.dcim).site), role: word(plain(rack?.dcim).role)});
+// `netbox` (#945) is the version of NetBox the files are for; "4.6" or later
+// writes NetBox's own cable bundles (dcim-rules.js netboxHasBundles). It is
+// read only where the rack has it, so a rack without it reads as it did.
+export const dcimOf = rack => {
+  const had = plain(rack?.dcim);
+  return {site: word(had.site), role: word(had.role), ...('netbox' in had ? {netbox: word(had.netbox)} : {})};
+};
 // Fields of `dcim` this page does not know are kept as they are.
 // A key the rack did not have stays missing unless it is given a value: a blank
 // site on a rack with no site adds nothing, so saving never invents a field.
 export const withDcim = (rack, patch) => {
   const had = plain(rack.dcim), next = {...had};
-  for (const key of ['site', 'role']) {
+  for (const key of ['site', 'role', 'netbox']) {
     if (!(key in patch)) continue;
     const v = word(patch[key]);
     if (v || key in had) next[key] = v;
@@ -295,6 +308,21 @@ function readSettings(src, who, said) {
       said?.(`${Object.keys(dropped).join(', ')} on ${who} had a state that is not a name, so ${Object.keys(dropped).length === 1 ? 'it was' : 'they were'} dropped.`);
     if (plainRecord(src.states)) out.states = kept;
   }
+  // WHAT A DISPLAY SHOWS (docs/display-content-design.md): a map of part path
+  // to its content, read entry by entry as `states` is. An entry that is none
+  // of {text: [lines]}, {digits: text}, {image: text} is dropped and said. Whether
+  // the part is a display, and can show it, is for rack/displays.js, which can
+  // see the device.
+  if ('displays' in src) {
+    const kept = {}, dropped = [];
+    for (const [k, v] of Object.entries(plainRecord(src.displays) ? src.displays : {})) {
+      if (k && !shapeRefusal(v)) kept[k] = v; else dropped.push(k);
+    }
+    if (!plainRecord(src.displays)) said?.(`The displays of ${who} were not a map of part to what it shows, so they were dropped.`);
+    else if (dropped.length)
+      said?.(`${dropped.join(', ')} on ${who} had content that is not text, digits or an image, so ${dropped.length === 1 ? 'it was' : 'they were'} dropped.`);
+    if (plainRecord(src.displays) && Object.keys(kept).length) out.displays = structuredClone(kept);
+  }
   // `readings: null` says there are none, and is no key at all
   if (src.readings != null) {
     const r = src.readings;
@@ -335,7 +363,7 @@ function readZeroU(list, said) {
     if (typeof z.id !== 'string' || !z.id || seen.has(z.id)) z.id = nextId([...taken, ...[...seen].map(id => ({id}))], 'z');
     seen.add(z.id);
     // what it is set to is read as on an item; where it stands is kept as written
-    const {states: _s, readings: _r, readingsAsWritten: _w, ...rest} = z;
+    const {states: _s, readings: _r, readingsAsWritten: _w, displays: _d, ...rest} = z;
     return {...rest, ...readSettings(z, String(z.label ?? z.ref ?? z.id), said)};
   });
 }

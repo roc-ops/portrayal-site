@@ -226,7 +226,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      90.75,
@@ -266,7 +267,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      108.05,
@@ -306,7 +308,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      125.15,
@@ -346,7 +349,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      142.25,
@@ -623,19 +627,62 @@
   "d": 240.0,
   "h": 154.7,
   "mount": "rack",
-  "power": null,
+  "power": "dc",
   "ru": 3.5,
   "w": 437.0
  },
  "configs": [
   {
    "airflow": null,
+   "attrs": {},
    "bays": {
     "mic-0-0": "juniper/mx-mic-blank@2",
     "mic-0-1": "juniper/mx-mic-blank@2",
     "mic-1-0": "juniper/mx-mic-blank@2",
     "mic-1-1": "juniper/mx-mic-blank@2"
    },
+   "dc-ports": [
+    {
+     "awg": null,
+     "direction": "input",
+     "id": "input",
+     "path": "pem0/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "pem0/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "pem0/module/pole-rtn"
+      }
+     ],
+     "rating-a": null,
+     "ref": "juniper/mx104-psu-dc@1",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": null,
+     "direction": "input",
+     "id": "input",
+     "path": "pem1/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "pem1/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "pem1/module/pole-rtn"
+      }
+     ],
+     "rating-a": null,
+     "ref": "juniper/mx104-psu-dc@1",
+     "side": null,
+     "voltage": null
+    }
+   ],
    "description": "Chassis only - what you spec before deciding what goes in it. The 4 slot bays are EMPTY; psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with.",
    "files": {
     "bottom": "mx104.base.bottom.svg",
@@ -651,9 +698,64 @@
    "names": {},
    "occupants": {},
    "part-numbers": {},
-   "power": [],
+   "power": [
+    "dc"
+   ],
    "slots": [],
-   "states": {},
+   "states": {
+    "led-sys-ok": [
+     "off",
+     "ok"
+    ],
+    "led-sys-ok/lamp": [
+     "off",
+     "ok"
+    ],
+    "mic-0-0/module": [
+     "absent"
+    ],
+    "mic-0-1/module": [
+     "absent"
+    ],
+    "mic-1-0/module": [
+     "absent"
+    ],
+    "mic-1-1/module": [
+     "absent"
+    ],
+    "pem0/module": [
+     "absent"
+    ],
+    "pem1/module": [
+     "absent"
+    ],
+    "re0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re0/module/ethernet/led-a": [
+     "off",
+     "link"
+    ],
+    "re0/module/ethernet/led-b": [
+     "off",
+     "activity"
+    ],
+    "re1/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re1/module/ethernet/led-a": [
+     "off",
+     "link"
+    ],
+    "re1/module/ethernet/led-b": [
+     "off",
+     "activity"
+    ]
+   },
    "views": {}
   }
  ],
@@ -745,7 +847,9 @@
  "model": "MX104",
  "options": {
   "airflow": [],
-  "power": []
+  "power": [
+   "dc"
+  ]
  },
  "pdu-class": null,
  "provenance": {

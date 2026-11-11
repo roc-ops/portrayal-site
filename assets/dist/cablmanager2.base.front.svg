@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="43.5mm" viewBox="0 0 482.6 43.5" data-device="cablmanager2" data-view="front" data-shell="sheet" data-weight-kg="0.3781" data-material="Steel" data-ring-material="ABS" data-color="Black" data-taa="TAA compliant">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"StarTech.com CABLMANAGER2","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"startech/cablmanager2-panel@1":"1.0.0","startech/cablmanager2-ring-end@1":"1.0.0","startech/cablmanager2-ring@1":"1.0.0"},"source-sha256":"f15146d1b85c5ad93157abc6e79004eb6a8881fad86c7c43b9aa60dd2dc859a6","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CABLMANAGER2" x="0" y="0" width="482.6" height="43.5" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <g id="panel" data-path="panel" data-class="mechanical" data-ref="startech/cablmanager2-panel@1:1.0.0" data-depth="75.4" data-wall="#1b1d20" data-material="steel" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the flat steel panel and its folded edges">
+    <title>panel</title>
+    <path id="panel--floor" fill="#1b1d20" fill-rule="evenodd" d="     M0,0 H482.6 V43.5 H0 Z     M37.3,16.75 H77.3 V26.75 H37.3 Z     M131.1,1.05 H141.5 V42.45 H131.1 Z     M236.1,1.05 H246.5 V42.45 H236.1 Z     M341.1,1.05 H351.5 V42.45 H341.1 Z     M405.3,16.75 H445.3 V26.75 H405.3 Z     M7.1,2.8 H10.2 A3.1,3.1 0 0 1 10.2,9 H7.1 A3.1,3.1 0 0 1 7.1,2.8 Z     M7.1,34.5 H10.2 A3.1,3.1 0 0 1 10.2,40.7 H7.1 A3.1,3.1 0 0 1 7.1,34.5 Z     M472.4,2.8 H475.5 A3.1,3.1 0 0 1 475.5,9 H472.4 A3.1,3.1 0 0 1 472.4,2.8 Z     M472.4,34.5 H475.5 A3.1,3.1 0 0 1 475.5,40.7 H472.4 A3.1,3.1 0 0 1 472.4,34.5 Z" data-path="panel/floor" data-class="bezel" />
+    <path id="panel--floor-lit" fill="#fff" fill-opacity="0.12" fill-rule="evenodd" d="     M0,0 H482.6 V43.5 H0 Z     M37.3,16.75 H77.3 V26.75 H37.3 Z     M131.1,1.05 H141.5 V42.45 H131.1 Z     M236.1,1.05 H246.5 V42.45 H236.1 Z     M341.1,1.05 H351.5 V42.45 H341.1 Z     M405.3,16.75 H445.3 V26.75 H405.3 Z     M7.1,2.8 H10.2 A3.1,3.1 0 0 1 10.2,9 H7.1 A3.1,3.1 0 0 1 7.1,2.8 Z     M7.1,34.5 H10.2 A3.1,3.1 0 0 1 10.2,40.7 H7.1 A3.1,3.1 0 0 1 7.1,34.5 Z     M472.4,2.8 H475.5 A3.1,3.1 0 0 1 475.5,9 H472.4 A3.1,3.1 0 0 1 472.4,2.8 Z     M472.4,34.5 H475.5 A3.1,3.1 0 0 1 475.5,40.7 H472.4 A3.1,3.1 0 0 1 472.4,34.5 Z" />
+  </g>
+  <g id="guide-1" data-path="guide-1" data-class="mechanical" data-behaviour="mounts" data-ref="startech/cablmanager2-ring-end@1:1.0.0" data-guide="ring" data-guide-run="y" data-guide-aperture="34 69.4" data-guide-depth="10" data-material="ABS" data-rel-pos="1" transform="translate(37.3,16.75)" data-group="guides" data-group-role="furniture" data-description="five removable ABS D-ring hooks, the middle three along the panel and the two at the ends up and down it" data-z-lift="-75.4" data-in="panel">
+    <title>guide-1</title>
+    <rect id="guide-1--back" x="0" y="0" width="40" height="10" rx="1.2" fill="#40454c" data-path="guide-1/back" data-class="bezel" data-z-out="-72.4" data-z-color="#111315" />
+    <rect id="guide-1--bar-left" x="0" y="0" width="3" height="10" rx="1.2" fill="#40454c" data-path="guide-1/bar-left" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-1--bar-right" x="37" y="0" width="3" height="10" rx="1.2" fill="#40454c" data-path="guide-1/bar-right" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-1--tip" x="0" y="0" width="40" height="10" rx="1.2" fill="#40454c" data-path="guide-1/tip" data-class="bezel" data-z-out="0" data-z-lift="72.4" data-z-color="#101214" />
+    <rect id="guide-1--edge-top" x="1.2" y="0" width="37.6" height="1.2" fill="#2a2e33" />
+    <rect id="guide-1--edge-bottom" x="1.2" y="8.8" width="37.6" height="1.2" fill="#2a2e33" />
+    <rect id="guide-1--seam-left" x="3.5" y="1.2" width="0.4" height="7.6" fill="#23262a" />
+    <rect id="guide-1--seam-right" x="36.1" y="1.2" width="0.4" height="7.6" fill="#23262a" />
+  </g>
+  <g id="guide-2" data-path="guide-2" data-class="mechanical" data-behaviour="mounts" data-ref="startech/cablmanager2-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 69.4" data-guide-depth="10.4" data-material="ABS" data-rel-pos="2" transform="translate(131.1,1.75)" data-group="guides" data-group-role="furniture" data-description="five removable ABS D-ring hooks, the middle three along the panel and the two at the ends up and down it" data-z-lift="-75.4" data-in="panel">
+    <title>guide-2</title>
+    <rect id="guide-2--back" x="0" y="0" width="10.4" height="40" rx="1.2" fill="#40454c" data-path="guide-2/back" data-class="bezel" data-z-out="-72.4" data-z-color="#111315" />
+    <rect id="guide-2--bar-top" x="0" y="0" width="10.4" height="3" rx="1.2" fill="#40454c" data-path="guide-2/bar-top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-2--bar-bottom" x="0" y="37" width="10.4" height="3" rx="1.2" fill="#40454c" data-path="guide-2/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-2--tip" x="0" y="0" width="10.4" height="40" rx="1.2" fill="#40454c" data-path="guide-2/tip" data-class="bezel" data-z-out="0" data-z-lift="72.4" data-z-color="#101214" />
+    <rect id="guide-2--edge-left" x="0" y="1.2" width="1.2" height="37.6" fill="#2a2e33" />
+    <rect id="guide-2--edge-right" x="9.2" y="1.2" width="1.2" height="37.6" fill="#2a2e33" />
+    <rect id="guide-2--seam-top" x="1.2" y="3.5" width="8" height="0.4" fill="#23262a" />
+    <rect id="guide-2--seam-bottom" x="1.2" y="36.1" width="8" height="0.4" fill="#23262a" />
+  </g>
+  <g id="guide-3" data-path="guide-3" data-class="mechanical" data-behaviour="mounts" data-ref="startech/cablmanager2-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 69.4" data-guide-depth="10.4" data-material="ABS" data-rel-pos="3" transform="translate(236.1,1.75)" data-group="guides" data-group-role="furniture" data-description="five removable ABS D-ring hooks, the middle three along the panel and the two at the ends up and down it" data-z-lift="-75.4" data-in="panel">
+    <title>guide-3</title>
+    <rect id="guide-3--back" x="0" y="0" width="10.4" height="40" rx="1.2" fill="#40454c" data-path="guide-3/back" data-class="bezel" data-z-out="-72.4" data-z-color="#111315" />
+    <rect id="guide-3--bar-top" x="0" y="0" width="10.4" height="3" rx="1.2" fill="#40454c" data-path="guide-3/bar-top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-3--bar-bottom" x="0" y="37" width="10.4" height="3" rx="1.2" fill="#40454c" data-path="guide-3/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-3--tip" x="0" y="0" width="10.4" height="40" rx="1.2" fill="#40454c" data-path="guide-3/tip" data-class="bezel" data-z-out="0" data-z-lift="72.4" data-z-color="#101214" />
+    <rect id="guide-3--edge-left" x="0" y="1.2" width="1.2" height="37.6" fill="#2a2e33" />
+    <rect id="guide-3--edge-right" x="9.2" y="1.2" width="1.2" height="37.6" fill="#2a2e33" />
+    <rect id="guide-3--seam-top" x="1.2" y="3.5" width="8" height="0.4" fill="#23262a" />
+    <rect id="guide-3--seam-bottom" x="1.2" y="36.1" width="8" height="0.4" fill="#23262a" />
+  </g>
+  <g id="guide-4" data-path="guide-4" data-class="mechanical" data-behaviour="mounts" data-ref="startech/cablmanager2-ring@1:1.0.0" data-guide="ring" data-guide-run="x" data-guide-aperture="34 69.4" data-guide-depth="10.4" data-material="ABS" data-rel-pos="4" transform="translate(341.1,1.75)" data-group="guides" data-group-role="furniture" data-description="five removable ABS D-ring hooks, the middle three along the panel and the two at the ends up and down it" data-z-lift="-75.4" data-in="panel">
+    <title>guide-4</title>
+    <rect id="guide-4--back" x="0" y="0" width="10.4" height="40" rx="1.2" fill="#40454c" data-path="guide-4/back" data-class="bezel" data-z-out="-72.4" data-z-color="#111315" />
+    <rect id="guide-4--bar-top" x="0" y="0" width="10.4" height="3" rx="1.2" fill="#40454c" data-path="guide-4/bar-top" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-4--bar-bottom" x="0" y="37" width="10.4" height="3" rx="1.2" fill="#40454c" data-path="guide-4/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-4--tip" x="0" y="0" width="10.4" height="40" rx="1.2" fill="#40454c" data-path="guide-4/tip" data-class="bezel" data-z-out="0" data-z-lift="72.4" data-z-color="#101214" />
+    <rect id="guide-4--edge-left" x="0" y="1.2" width="1.2" height="37.6" fill="#2a2e33" />
+    <rect id="guide-4--edge-right" x="9.2" y="1.2" width="1.2" height="37.6" fill="#2a2e33" />
+    <rect id="guide-4--seam-top" x="1.2" y="3.5" width="8" height="0.4" fill="#23262a" />
+    <rect id="guide-4--seam-bottom" x="1.2" y="36.1" width="8" height="0.4" fill="#23262a" />
+  </g>
+  <g id="guide-5" data-path="guide-5" data-class="mechanical" data-behaviour="mounts" data-ref="startech/cablmanager2-ring-end@1:1.0.0" data-guide="ring" data-guide-run="y" data-guide-aperture="34 69.4" data-guide-depth="10" data-material="ABS" data-rel-pos="5" transform="translate(405.3,16.75)" data-group="guides" data-group-role="furniture" data-description="five removable ABS D-ring hooks, the middle three along the panel and the two at the ends up and down it" data-z-lift="-75.4" data-in="panel">
+    <title>guide-5</title>
+    <rect id="guide-5--back" x="0" y="0" width="40" height="10" rx="1.2" fill="#40454c" data-path="guide-5/back" data-class="bezel" data-z-out="-72.4" data-z-color="#111315" />
+    <rect id="guide-5--bar-left" x="0" y="0" width="3" height="10" rx="1.2" fill="#40454c" data-path="guide-5/bar-left" data-class="bezel" data-z-out="0" data-z-color="#111315" />
+    <rect id="guide-5--bar-right" x="37" y="0" width="3" height="10" rx="1.2" fill="#40454c" data-path="guide-5/bar-right" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-5--tip" x="0" y="0" width="40" height="10" rx="1.2" fill="#40454c" data-path="guide-5/tip" data-class="bezel" data-z-out="0" data-z-lift="72.4" data-z-color="#101214" />
+    <rect id="guide-5--edge-top" x="1.2" y="0" width="37.6" height="1.2" fill="#2a2e33" />
+    <rect id="guide-5--edge-bottom" x="1.2" y="8.8" width="37.6" height="1.2" fill="#2a2e33" />
+    <rect id="guide-5--seam-left" x="3.5" y="1.2" width="0.4" height="7.6" fill="#23262a" />
+    <rect id="guide-5--seam-right" x="36.1" y="1.2" width="0.4" height="7.6" fill="#23262a" />
+  </g>
+</svg>

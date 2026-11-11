@@ -29,18 +29,22 @@ import {solidsOf, traysOf, legCrossings} from './solids.js';
 
 // How limp a cable is, by its family: 1 drapes onto a tray within a short
 // span, less is stiffer and lands further along. The families are the cable
-// types table's (#919).
-export const DRAPE = {fiber: 1, aoc: 1, copper: 0.5, dac: 0.35, power: 0.35};
+// types table's (#919). `ground` is limp as a power cord is; `stack` is
+// limp as a DAC is; `usb` and `console` as a copper patch lead is. These
+// three are estimates: no source held says how a wire or a cable of them lies.
+export const DRAPE = {fiber: 1, aoc: 1, copper: 0.5, dac: 0.35, power: 0.35, ground: 0.35, stack: 0.35, usb: 0.5, console: 0.5};
 // A Rack Builder media's family, and its installed minimum bend radius in mm
 // when the page gives none: spec/schemas/cable-types.yaml's figure for the
 // bare type of that id (fibre cords 25, Cat 6 four times 6.0, Cat 6A four
-// times 7.5, a DAC 23, an AOC ten times 3.0) and, for `power`, which no bare
-// type is named, its power-c13 cord's six times 7.1. A cable whose media is
-// not set is taken as copper, as its diameter is. test_rack_trays.py holds
-// both tables to the yaml.
+// times 7.5, a DAC 23, an AOC ten times 3.0, a ground wire eight times 6.3, a
+// stacking or console cable four times 6.0, a USB cable four times 4.0) and,
+// for `power`, which no bare type is named, its power-c13 cord's six times
+// 7.1. A cable whose media is not set is taken as copper, as its diameter is.
+// test_rack_trays.py holds both tables to the yaml.
 export const FAMILY = {os2: 'fiber', om3: 'fiber', om4: 'fiber', om5: 'fiber', cat6: 'copper', cat6a: 'copper',
-  dac: 'dac', aoc: 'aoc', power: 'power'};
-export const BEND = {os2: 25, om3: 25, om4: 25, om5: 25, cat6: 24, cat6a: 30, dac: 23, aoc: 30, power: 42.6};
+  dac: 'dac', aoc: 'aoc', power: 'power', ground: 'ground', stack: 'stack', usb: 'usb', console: 'console'};
+export const BEND = {os2: 25, om3: 25, om4: 25, om5: 25, cat6: 24, cat6a: 30, dac: 23, aoc: 30, power: 42.6,
+  ground: 50.4, stack: 24, usb: 16, console: 24};
 const UNSET_BEND = 24;
 
 // A cable's family: its type's in the cable types table when the page gives
@@ -55,12 +59,28 @@ export function familyOf(cable, ctx) {
   return typeof cable?.media === 'string' && Object.hasOwn(FAMILY, cable.media) ? FAMILY[cable.media] : 'copper';
 }
 export const drapeOf = (cable, ctx) => DRAPE[familyOf(cable, ctx)];
-export function bendOf(cable, ctx) {
+// The installed bend radius the page states for a cable (`ctx.bendOf`), or
+// null: no type, a type with no radius, no reader, or a reader that throws.
+export function statedBend(cable, ctx) {
   let r = null;
   try { r = typeof ctx?.bendOf === 'function' ? ctx.bendOf(cable) : null; } catch { r = null; }
-  if (typeof r === 'number' && Number.isFinite(r) && r > 0) return r;
+  return typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : null;
+}
+// The radius a cable is judged by: the page's, else its media's, else the
+// default of UNSET_BEND. The bundle bend check and a cable's own path both
+// read this one (#1132).
+export function bendOf(cable, ctx) {
+  const r = statedBend(cable, ctx);
+  if (r != null) return r;
   return typeof cable?.media === 'string' && Object.hasOwn(BEND, cable.media) ? BEND[cable.media] : UNSET_BEND;
 }
+// Whether bendOf gave the default for want of anything to go by: no radius
+// stated and no media of the table's. The messages say so (#1132).
+export const bendIsDefault = (cable, ctx) =>
+  statedBend(cable, ctx) == null && !(typeof cable?.media === 'string' && Object.hasOwn(BEND, cable.media));
+// Why, for a cable bendIsDefault is true of: it names no type, or the type it
+// names states no radius.
+export const defaultBecause = cable => (cable?.type ? 'its type states no bend radius' : 'it has no cable type');
 
 // THE SHAPE OF A SPAN: the catenary of cable-geometry.js, f(t) = (cosh(K(2t-1))
 // - cosh K) / (cosh K - 1), 0 at the ends and -1 mid-way.

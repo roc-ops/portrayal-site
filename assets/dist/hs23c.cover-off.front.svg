@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="88.9mm" viewBox="0 0 482.6 88.9" data-device="hs23c" data-view="front" data-shell="sheet" data-material="Steel" data-gauge="14" data-finish="Black Powder Coated" data-cover="Included, lift off" data-pass-through-holes="Standard" data-vertical-manager="VS Series" data-replacement-cover="HS2C">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Hubbell HS23C","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"hubbell/hs23c-finger@1":"1.0.1","hubbell/hs23c-floor@1":"1.0.1","hubbell/hs23c-plate@1":"1.0.0","hubbell/hs23c-tab@1":"1.0.1"},"source-sha256":"d6fed5e8af6841dd14205c8b9d2ada6d2adb645a7df4dd0a0eccbe6b2b43e8f6","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="HS23C" x="0" y="0" width="482.6" height="88.9" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="x" data-guide-finger-pitch="104" data-guide-finger-gap="80" x="0" y="1.9" width="482.6" height="85.1" fill="none" stroke="none" pointer-events="none" />
+  <g id="plate" data-path="plate" data-class="mechanical" data-ref="hubbell/hs23c-plate@1:1.0.0" data-depth="74.3" data-wall="#1b1d20" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the steel plate with its four windows and the flange along its foot">
+    <title>plate</title>
+    <path id="plate--plate" fill="#1b1d20" fill-rule="evenodd" d="     M0,0 H482.6 V88.9 H0 Z     M53.3,8.9 H117.3 Q125.3,8.9 125.3,16.9 V72 Q125.3,80 117.3,80 H53.3 Q45.3,80 45.3,72 V16.9 Q45.3,8.9 53.3,8.9 Z     M157.3,8.9 H221.3 Q229.3,8.9 229.3,16.9 V72 Q229.3,80 221.3,80 H157.3 Q149.3,80 149.3,72 V16.9 Q149.3,8.9 157.3,8.9 Z     M261.3,8.9 H325.3 Q333.3,8.9 333.3,16.9 V72 Q333.3,80 325.3,80 H261.3 Q253.3,80 253.3,72 V16.9 Q253.3,8.9 261.3,8.9 Z     M365.3,8.9 H429.3 Q437.3,8.9 437.3,16.9 V72 Q437.3,80 429.3,80 H365.3 Q357.3,80 357.3,72 V16.9 Q357.3,8.9 365.3,8.9 Z" data-path="plate/plate" data-class="bezel" />
+  </g>
+  <g id="floor" data-path="floor" data-class="mechanical" data-ref="hubbell/hs23c-floor@1:1.0.1" data-material="Steel" data-rel-pos="2" transform="translate(0.0,87.0)" data-group="body" data-group-role="furniture" data-description="the steel plate with its four windows and the flange along its foot" data-z-lift="-74.3" data-in="plate">
+    <title>floor</title>
+    <rect id="floor--floor" x="0" y="0" width="482.6" height="1.9" fill="#33383d" data-path="floor/floor" data-class="bezel" data-z-out="-1.9" data-z-color="#33383d" />
+  </g>
+  <g id="finger-1" data-path="finger-1" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-finger@1:1.0.1" data-material="Steel" data-rel-pos="1" transform="translate(21.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>finger-1</title>
+    <rect x="0" y="0" width="24" height="1.9" rx="0.5" fill="#3a3f45" />
+    <rect id="finger-1--finger" x="0.3" y="0.3" width="23.4" height="1.3" rx="0.4" fill="#8b949e" data-path="finger-1/finger" data-class="bezel" data-z-out="-1.9" data-z-color="#8b949e" />
+    <rect x="1.2" y="0.5" width="21.6" height="0.4" rx="0.2" fill="#c3cad1" />
+  </g>
+  <g id="finger-2" data-path="finger-2" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-finger@1:1.0.1" data-material="Steel" data-rel-pos="2" transform="translate(125.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>finger-2</title>
+    <rect x="0" y="0" width="24" height="1.9" rx="0.5" fill="#3a3f45" />
+    <rect id="finger-2--finger" x="0.3" y="0.3" width="23.4" height="1.3" rx="0.4" fill="#8b949e" data-path="finger-2/finger" data-class="bezel" data-z-out="-1.9" data-z-color="#8b949e" />
+    <rect x="1.2" y="0.5" width="21.6" height="0.4" rx="0.2" fill="#c3cad1" />
+  </g>
+  <g id="finger-3" data-path="finger-3" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-finger@1:1.0.1" data-material="Steel" data-rel-pos="3" transform="translate(229.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>finger-3</title>
+    <rect x="0" y="0" width="24" height="1.9" rx="0.5" fill="#3a3f45" />
+    <rect id="finger-3--finger" x="0.3" y="0.3" width="23.4" height="1.3" rx="0.4" fill="#8b949e" data-path="finger-3/finger" data-class="bezel" data-z-out="-1.9" data-z-color="#8b949e" />
+    <rect x="1.2" y="0.5" width="21.6" height="0.4" rx="0.2" fill="#c3cad1" />
+  </g>
+  <g id="finger-4" data-path="finger-4" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-finger@1:1.0.1" data-material="Steel" data-rel-pos="4" transform="translate(333.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>finger-4</title>
+    <rect x="0" y="0" width="24" height="1.9" rx="0.5" fill="#3a3f45" />
+    <rect id="finger-4--finger" x="0.3" y="0.3" width="23.4" height="1.3" rx="0.4" fill="#8b949e" data-path="finger-4/finger" data-class="bezel" data-z-out="-1.9" data-z-color="#8b949e" />
+    <rect x="1.2" y="0.5" width="21.6" height="0.4" rx="0.2" fill="#c3cad1" />
+  </g>
+  <g id="finger-5" data-path="finger-5" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-finger@1:1.0.1" data-material="Steel" data-rel-pos="5" transform="translate(437.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>finger-5</title>
+    <rect x="0" y="0" width="24" height="1.9" rx="0.5" fill="#3a3f45" />
+    <rect id="finger-5--finger" x="0.3" y="0.3" width="23.4" height="1.3" rx="0.4" fill="#8b949e" data-path="finger-5/finger" data-class="bezel" data-z-out="-1.9" data-z-color="#8b949e" />
+    <rect x="1.2" y="0.5" width="21.6" height="0.4" rx="0.2" fill="#c3cad1" />
+  </g>
+  <g id="tab-1" data-path="tab-1" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-tab@1:1.0.1" data-material="Steel" data-rel-pos="6" transform="translate(25.8,67.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>tab-1</title>
+    <rect x="0" y="0" width="15" height="20" rx="3" fill="#3a3f45" />
+    <rect id="tab-1--tab" x="0.4" y="0.4" width="14.2" height="19.2" rx="2.6" fill="#6f7882" data-path="tab-1/tab" data-class="bezel" data-z-out="-1.9" data-z-lift="70.5" data-z-color="#6f7882" />
+  </g>
+  <g id="tab-2" data-path="tab-2" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-tab@1:1.0.1" data-material="Steel" data-rel-pos="7" transform="translate(129.8,67.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>tab-2</title>
+    <rect x="0" y="0" width="15" height="20" rx="3" fill="#3a3f45" />
+    <rect id="tab-2--tab" x="0.4" y="0.4" width="14.2" height="19.2" rx="2.6" fill="#6f7882" data-path="tab-2/tab" data-class="bezel" data-z-out="-1.9" data-z-lift="70.5" data-z-color="#6f7882" />
+  </g>
+  <g id="tab-3" data-path="tab-3" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-tab@1:1.0.1" data-material="Steel" data-rel-pos="8" transform="translate(233.8,67.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>tab-3</title>
+    <rect x="0" y="0" width="15" height="20" rx="3" fill="#3a3f45" />
+    <rect id="tab-3--tab" x="0.4" y="0.4" width="14.2" height="19.2" rx="2.6" fill="#6f7882" data-path="tab-3/tab" data-class="bezel" data-z-out="-1.9" data-z-lift="70.5" data-z-color="#6f7882" />
+  </g>
+  <g id="tab-4" data-path="tab-4" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-tab@1:1.0.1" data-material="Steel" data-rel-pos="9" transform="translate(337.8,67.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>tab-4</title>
+    <rect x="0" y="0" width="15" height="20" rx="3" fill="#3a3f45" />
+    <rect id="tab-4--tab" x="0.4" y="0.4" width="14.2" height="19.2" rx="2.6" fill="#6f7882" data-path="tab-4/tab" data-class="bezel" data-z-out="-1.9" data-z-lift="70.5" data-z-color="#6f7882" />
+  </g>
+  <g id="tab-5" data-path="tab-5" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hs23c-tab@1:1.0.1" data-material="Steel" data-rel-pos="10" transform="translate(441.8,67.0)" data-group="fingers" data-group-role="furniture" data-description="the five fingers along the top of the plate, left to right, and the five tabs along the flange" data-z-lift="-74.3" data-in="plate" data-under="cover">
+    <title>tab-5</title>
+    <rect x="0" y="0" width="15" height="20" rx="3" fill="#3a3f45" />
+    <rect id="tab-5--tab" x="0.4" y="0.4" width="14.2" height="19.2" rx="2.6" fill="#6f7882" data-path="tab-5/tab" data-class="bezel" data-z-out="-1.9" data-z-lift="70.5" data-z-color="#6f7882" />
+  </g>
+  <g id="--passes" data-class="passes" pointer-events="none">
+    <rect id="pass--pass-through-1" data-class="pass" data-pass="pass-through-1" data-pass-shape="rect" data-pass-cover="open" x="45.3" y="8.9" width="80" height="71.1" fill="none" stroke="none" />
+    <rect id="pass--pass-through-2" data-class="pass" data-pass="pass-through-2" data-pass-shape="rect" data-pass-cover="open" x="149.3" y="8.9" width="80" height="71.1" fill="none" stroke="none" />
+    <rect id="pass--pass-through-3" data-class="pass" data-pass="pass-through-3" data-pass-shape="rect" data-pass-cover="open" x="253.3" y="8.9" width="80" height="71.1" fill="none" stroke="none" />
+    <rect id="pass--pass-through-4" data-class="pass" data-pass="pass-through-4" data-pass-shape="rect" data-pass-cover="open" x="357.3" y="8.9" width="80" height="71.1" fill="none" stroke="none" />
+  </g>
+</svg>

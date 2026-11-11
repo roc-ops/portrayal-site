@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="78.6mm" height="38.6mm" viewBox="0 0 78.6 38.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="7280cr3-fan" data-path="7280cr3-fan" data-class="fan" data-behaviour="fills" data-ref="arista/7280cr3-fan@1:1.0.0" data-wall="#3a3a36" data-airflow="front-to-back" data-role="fan" data-states="absent" transform="translate(0,0)">
+    <title>7280cr3-fan</title>
+    <defs>
+      <pattern id="7280cr3-fan--cr3-fan-mesh" width="3.4" height="5.89" patternUnits="userSpaceOnUse">
+        <path d="M 0.00 -1.66 L -1.44 -0.83 L -1.44 0.83 L 0.00 1.66 L 1.44 0.83 L 1.44 -0.83 Z" fill="#0d0c0a" />
+        <path d="M 3.40 -1.66 L 1.96 -0.83 L 1.96 0.83 L 3.40 1.66 L 4.84 0.83 L 4.84 -0.83 Z" fill="#0d0c0a" />
+        <path d="M 1.70 1.28 L 0.26 2.11 L 0.26 3.78 L 1.70 4.61 L 3.14 3.78 L 3.14 2.11 Z" fill="#0d0c0a" />
+        <path d="M 0.00 4.23 L -1.44 5.06 L -1.44 6.72 L 0.00 7.55 L 1.44 6.72 L 1.44 5.06 Z" fill="#0d0c0a" />
+        <path d="M 3.40 4.23 L 1.96 5.06 L 1.96 6.72 L 3.40 7.55 L 4.84 6.72 L 4.84 5.06 Z" fill="#0d0c0a" />
+      </pattern>
+    </defs>
+    <rect id="7280cr3-fan--body" x="0" y="0" width="78.6" height="38.6" rx="3.0" fill="#e0332e" stroke="#891f1c" stroke-width="0.4" data-fill-from="handle-finish" data-stroke-derive="handle-finish" />
+    <g id="7280cr3-fan--grille" data-path="7280cr3-fan/grille" data-class="vent" data-z-vent="14">
+      <rect id="7280cr3-fan--grille-back" x="3.0" y="3.2" width="72.6" height="29.4" rx="0.6" fill="#4a4538" />
+      <rect id="7280cr3-fan--grille-holes" x="3.0" y="3.2" width="72.6" height="29.4" fill="url(#7280cr3-fan--cr3-fan-mesh)" />
+      <rect x="3.0" y="3.2" width="72.6" height="29.4" rx="0.6" fill="none" stroke="#2a261e" stroke-width="0.3" />
+    </g>
+    <g id="7280cr3-fan--handle" data-path="7280cr3-fan/handle" data-class="handle" data-z-bar="3.0">
+      <rect id="7280cr3-fan--handle-tab" x="32.4" y="0.4" width="13.8" height="3.6" rx="0.5" fill="#c0262b" stroke="#7a1a1d" stroke-width="0.3" />
+      <rect id="7280cr3-fan--handle-rail" x="37.3" y="3.2" width="3.6" height="29.4" rx="0.6" fill="#b9bbbd" stroke="#7d8084" stroke-width="0.3" />
+      <rect id="7280cr3-fan--handle-slider" x="35.4" y="12.0" width="7.4" height="12.4" rx="1.0" fill="#dcdedf" stroke="#7d8084" stroke-width="0.3" />
+    </g>
+    <g id="7280cr3-fan--status" data-path="7280cr3-fan/status" data-class="led" data-states="off ok fault">
+      <circle cx="39.1" cy="35.0" r="2.5" fill="#b7babd" stroke="#6c7075" stroke-width="0.25" />
+      <circle id="7280cr3-fan--status-lens" cx="39.1" cy="35.0" r="1.2" fill="var(--led-color, #3fbf4d)" />
+    </g>
+  </g>
+</svg>

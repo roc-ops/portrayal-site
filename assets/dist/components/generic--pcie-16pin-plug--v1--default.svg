@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="20.85mm" height="11.7mm" viewBox="0 0 20.85 11.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="pcie-16pin-plug" data-path="pcie-16pin-plug" data-class="port" data-ref="generic/pcie-16pin-plug@1:1.0.0" data-connector="pcie-16pin" data-media="pcie-16pin" data-pins="16" data-pins-power="12" data-pins-sense="4" transform="translate(0,0)">
+    <title>pcie-16pin-plug</title>
+    <path id="pcie-16pin-plug--body" fill="#3a3e44" fill-rule="evenodd" stroke="#4a4d52" stroke-width="0.12" d="M 0 0 H 20.85 V 7.8 H 17.85 L 16.85 11.7 H 4 L 3 7.8 H 0 Z M 1.725 1.4 H 4.125 V 3.8 H 1.725 Z M 4.725 1.4 H 7.125 V 3.8 H 4.725 Z M 7.725 1.4 H 10.125 V 3.8 H 7.725 Z M 10.725 1.4 H 13.125 V 3.8 H 10.725 Z M 13.725 1.4 H 16.125 V 3.8 H 13.725 Z M 16.725 1.4 H 19.125 V 3.8 H 16.725 Z M 1.725 4.4 H 4.125 V 6.8 H 1.725 Z M 4.725 4.4 H 7.125 V 6.8 H 4.725 Z M 7.725 4.4 H 10.125 V 6.8 H 7.725 Z M 10.725 4.4 H 13.125 V 6.8 H 10.725 Z M 13.725 4.4 H 16.125 V 6.8 H 13.725 Z M 16.725 4.4 H 19.125 V 6.8 H 16.725 Z M 6.625 8.3 H 8.225 V 9.9 H 6.625 Z M 8.625 8.3 H 10.225 V 9.9 H 8.625 Z M 10.625 8.3 H 12.225 V 9.9 H 10.625 Z M 12.625 8.3 H 14.225 V 9.9 H 12.625 Z" data-z-out="5.0" data-z-color="#3a3e44" data-z-shape="1" />
+    <path id="pcie-16pin-plug--back" fill="#26282c" stroke="#4a4d52" stroke-width="0.12" d="M 0.05 0.05 H 20.8 V 7.75 H 17.81 L 16.81 11.65 H 4.04 L 3.04 7.75 H 0.05 Z" data-z-out="4.95" data-z-lift="2.5" data-z-color="#26282c" data-z-shape="1" />
+    <rect id="pcie-16pin-plug--latch-arm" x="5" y="-1.2" width="10.85" height="1.4" rx="0.3" fill="#2c3036" stroke="#4a4d52" stroke-width="0.1" data-z-out="4.9" data-z-lift="0.5" data-z-color="#2c3036" />
+    <rect id="pcie-16pin-plug--latch-hook" x="5.05" y="-2.2" width="10.75" height="1.05" rx="0.3" fill="#3a3e43" stroke="#4a4d52" stroke-width="0.1" data-z-out="2.5" data-z-lift="0.55" data-z-color="#3a3e43" />
+    <g>
+      <circle id="pcie-16pin-plug--wire-1" cx="2.925" cy="2.6" r="0.9" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-2" cx="5.925" cy="2.6" r="0.9" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-3" cx="8.925" cy="2.6" r="0.9" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-4" cx="11.925" cy="2.6" r="0.9" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-5" cx="14.925" cy="2.6" r="0.9" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-6" cx="17.925" cy="2.6" r="0.9" fill="#d9b22f" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-7" cx="2.925" cy="5.6" r="0.9" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-8" cx="5.925" cy="5.6" r="0.9" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-9" cx="8.925" cy="5.6" r="0.9" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-10" cx="11.925" cy="5.6" r="0.9" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-11" cx="14.925" cy="5.6" r="0.9" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--wire-12" cx="17.925" cy="5.6" r="0.9" fill="#1a1a1a" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--sense-wire-1" cx="7.425" cy="9.1" r="0.55" fill="#7a7f86" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--sense-wire-2" cx="9.425" cy="9.1" r="0.55" fill="#7a7f86" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--sense-wire-3" cx="11.425" cy="9.1" r="0.55" fill="#7a7f86" data-z-cyl="6.2" data-z-lift="4.9" />
+      <circle id="pcie-16pin-plug--sense-wire-4" cx="13.425" cy="9.1" r="0.55" fill="#7a7f86" data-z-cyl="6.2" data-z-lift="4.9" />
+    </g>
+    <path id="pcie-16pin-plug--comb" fill="#2a2c30" stroke="#4a4d52" stroke-width="0.1" d="M 0.8 0.8 H 20.05 V 7.0 H 17.4 L 16.5 10.9 H 4.35 L 3.45 7.0 H 0.8 Z" data-z-out="13.0" data-z-lift="11.0" data-z-color="#2a2c30" data-z-shape="1" />
+    <circle id="pcie-16pin-plug--stub" cx="10.425" cy="5.85" r="5.0" fill="#1c1c1c" stroke="#4a4d52" stroke-width="0.12" data-r-from="cable-od" data-fill-from="jacket-color" data-z-cyl="22.1" data-z-lift="12.9" />
+    <g data-cp="cable" data-cp-at="10.425 5.85" data-cp-dir="front" data-cp-on="pcie-16pin-plug--stub" />
+    <g data-cp="mate" data-cp-at="10.425 5.85" data-cp-dir="front" />
+  </g>
+</svg>

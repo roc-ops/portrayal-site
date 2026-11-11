@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="97.9mm" height="38.23mm" viewBox="0 0 97.9 38.23">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="rtx-4500-ada-tail" data-path="rtx-4500-ada-tail" data-class="mechanical" data-ref="nvidia/rtx-4500-ada-tail@1:1.0.0" data-media="gpu" transform="translate(0,0)">
+    <title>rtx-4500-ada-tail</title>
+    <rect id="rtx-4500-ada-tail--end-plate" x="0" y="0" width="97.9" height="38.23" fill="#18181a" />
+    <rect id="rtx-4500-ada-tail--backplate-edge" x="0" y="0" width="97.9" height="2.67" fill="#26272a" />
+    <g id="rtx-4500-ada-tail--aux-power" data-path="rtx-4500-ada-tail/aux-power" data-class="inlet" data-ref="std/12vhpwr-header@1:1.0.0" data-depth="9.0" data-wall="#2c3036" data-cavity="inlet-face" data-input="dc" data-media="pcie-12vhpwr" data-pins="16" data-pins-power="12" data-pins-sense="4" data-pitch-mm="3.0" data-power-rated-w="600" transform="translate(2.335,2.99) rotate(180 10.425 5.85)">
+      <title>rtx-4500-ada-tail--aux-power</title>
+      <path id="rtx-4500-ada-tail--aux-power--opening" fill="#23262b" d="M 0 0 H 20.85 V 7.8 H 17.85 L 16.85 11.7 H 4 L 3 7.8 H 0 Z" data-path="rtx-4500-ada-tail/aux-power/opening" data-class="cutout" />
+      <path id="rtx-4500-ada-tail--aux-power--plate" fill="#23262b" fill-rule="evenodd" d="M 0 0 H 20.85 V 7.8 H 17.85 L 16.85 11.7 H 4 L 3 7.8 H 0 Z M 1.755 1.43 L 4.095 1.43 L 4.095 3.77 L 1.755 3.77 Z M 4.755 1.43 L 7.095 1.43 L 7.095 3.77 L 4.755 3.77 Z M 7.755 1.43 L 10.095 1.43 L 10.095 3.77 L 7.755 3.77 Z M 10.755 1.43 L 13.095 1.43 L 13.095 3.77 L 10.755 3.77 Z M 13.755 1.43 L 16.095 1.43 L 16.095 3.77 L 13.755 3.77 Z M 16.755 1.43 L 19.095 1.43 L 19.095 3.77 L 16.755 3.77 Z M 1.755 4.43 L 4.095 4.43 L 4.095 6.77 L 1.755 6.77 Z M 4.755 4.43 L 7.095 4.43 L 7.095 6.77 L 4.755 6.77 Z M 7.755 4.43 L 10.095 4.43 L 10.095 6.77 L 7.755 6.77 Z M 10.755 4.43 L 13.095 4.43 L 13.095 6.77 L 10.755 6.77 Z M 13.755 4.43 L 16.095 4.43 L 16.095 6.77 L 13.755 6.77 Z M 16.755 4.43 L 19.095 4.43 L 19.095 6.77 L 16.755 6.77 Z M 6.655 8.33 L 8.195 8.33 L 8.195 9.87 L 6.655 9.87 Z M 8.655 8.33 L 10.195 8.33 L 10.195 9.87 L 8.655 9.87 Z M 10.655 8.33 L 12.195 8.33 L 12.195 9.87 L 10.655 9.87 Z M 12.655 8.33 L 14.195 8.33 L 14.195 9.87 L 12.655 9.87 Z" data-z-out="0.05" data-z-color="#23262b" data-z-shape="1" />
+      <path id="rtx-4500-ada-tail--aux-power--inlet-face" fill="#08090a" d="M 1.725 1.4 H 4.125 V 3.8 H 1.725 Z M 4.725 1.4 H 7.125 V 3.8 H 4.725 Z M 7.725 1.4 H 10.125 V 3.8 H 7.725 Z M 10.725 1.4 H 13.125 V 3.8 H 10.725 Z M 13.725 1.4 H 16.125 V 3.8 H 13.725 Z M 16.725 1.4 H 19.125 V 3.8 H 16.725 Z M 1.725 4.4 H 4.125 V 6.8 H 1.725 Z M 4.725 4.4 H 7.125 V 6.8 H 4.725 Z M 7.725 4.4 H 10.125 V 6.8 H 7.725 Z M 10.725 4.4 H 13.125 V 6.8 H 10.725 Z M 13.725 4.4 H 16.125 V 6.8 H 13.725 Z M 16.725 4.4 H 19.125 V 6.8 H 16.725 Z M 6.625 8.3 H 8.225 V 9.9 H 6.625 Z M 8.625 8.3 H 10.225 V 9.9 H 8.625 Z M 10.625 8.3 H 12.225 V 9.9 H 10.625 Z M 12.625 8.3 H 14.225 V 9.9 H 12.625 Z" />
+      <rect id="rtx-4500-ada-tail--aux-power--latch" x="9.925" y="-1.4" width="1" height="1.4" fill="#2c3036" stroke="#3a3e43" stroke-width="0.08" data-z-out="0.05" data-z-lift="-6.8" data-z-profile-y="0:-6.8,1.1:0.05,1.4:0.05" data-z-color="#2c3036" />
+      <g fill="#b9bfc6">
+        <rect id="rtx-4500-ada-tail--aux-power--pin-1" x="2.525" y="2.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-2" x="5.525" y="2.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-3" x="8.525" y="2.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-4" x="11.525" y="2.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-5" x="14.525" y="2.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-6" x="17.525" y="2.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-7" x="2.525" y="5.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-8" x="5.525" y="5.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-9" x="8.525" y="5.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-10" x="11.525" y="5.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-11" x="14.525" y="5.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--pin-12" x="17.525" y="5.2" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--sense-1" x="7.025" y="8.7" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--sense-2" x="9.025" y="8.7" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--sense-3" x="11.025" y="8.7" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+        <rect id="rtx-4500-ada-tail--aux-power--sense-4" x="13.025" y="8.7" width="0.8" height="0.8" rx="0.15" data-z-top="6.6" data-z-color="#b9bfc6" />
+      </g>
+      <g data-cp="mate" data-cp-at="10.425 5.85" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

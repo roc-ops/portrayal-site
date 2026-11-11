@@ -62,6 +62,13 @@
  "configurations": {
   "b2f": {
    "airflow": "back-to-front",
+   "attrs": {
+    "platform": {
+     "cpu": "Intel Xeon D-1627 4-core",
+     "memory": "16 GB DDR4 ECC (1 x 16 GB)",
+     "storage": "64 GB M.2 SSD"
+    }
+   },
    "description": "R4023-F9003-A0 - back-to-front airflow, 4-core Xeon D-1627, 1 x 16 GB DDR4, 64 GB SSD, two 1500 W AC supplies, seven fans. QSFP-DD power drops to 24 x 5 W + 8 x 12 W (ports 25-32). No held document shows whether the fans or supply latches change colour for this build, so the art is the f2b art (see the b2f-finish gap).",
    "kind": "orderable",
    "part-numbers": {
@@ -75,6 +82,13 @@
   },
   "b2f-2x16g-128g": {
    "airflow": "back-to-front",
+   "attrs": {
+    "platform": {
+     "cpu": "Intel Xeon D-1627 4-core",
+     "memory": "32 GB DDR4 ECC (2 x 16 GB)",
+     "storage": "128 GB M.2 SSD"
+    }
+   },
    "description": "R4023-F9004-A0 - back-to-front, 4-core Xeon D-1627, 2 x 16 GB DDR4, 128 GB SSD, two 1500 W AC supplies, seven fans.",
    "kind": "orderable",
    "part-numbers": {
@@ -88,6 +102,13 @@
   },
   "b2f-8c-256g": {
    "airflow": "back-to-front",
+   "attrs": {
+    "platform": {
+     "cpu": "Intel Xeon D-1649N 8-core",
+     "memory": "32 GB DDR4 ECC (2 x 16 GB)",
+     "storage": "256 GB M.2 SSD"
+    }
+   },
    "description": "R4023-F9005-A0 - back-to-front, 8-core Xeon D-1649N, 2 x 16 GB DDR4, 256 GB SSD, two 1500 W AC supplies, seven fans.",
    "kind": "orderable",
    "part-numbers": {
@@ -100,6 +121,13 @@
    }
   },
   "f2b": {
+   "attrs": {
+    "platform": {
+     "cpu": "Intel Xeon D-1627 4-core",
+     "memory": "16 GB DDR4 ECC (1 x 16 GB)",
+     "storage": "64 GB M.2 SSD"
+    }
+   },
    "default": true,
    "description": "R4023-F9102-A0 - front-to-back airflow, 4-core Xeon D-1627, 1 x 16 GB DDR4, 64 GB SSD, two 1500 W AC supplies and seven fans (guide What's in the Box, 'ASSY,TLA,DS4000,32X400GbE,4C D1627,1X16GB DDR4,64GB SSD,2X1500W AC PSU,7 FAN,F2B'). Drawn with the one-SFP+ front (M1 fitted, the M2 lanes routed as 10GBASE-KR - guide Figure 2), the build the DS4000 datasheet render shows; which front build each SKU ships with is not stated (see the front-build-sku gap).",
    "kind": "base",
@@ -117,6 +145,13 @@
    }
   },
   "f2b-2x16g-128g": {
+   "attrs": {
+    "platform": {
+     "cpu": "Intel Xeon D-1627 4-core",
+     "memory": "32 GB DDR4 ECC (2 x 16 GB)",
+     "storage": "128 GB M.2 SSD"
+    }
+   },
    "description": "R4023-F9103-A0 - front-to-back, 4-core Xeon D-1627, 2 x 16 GB DDR4, 128 GB SSD, two 1500 W AC supplies, seven fans. The control plane is the only difference from f2b, and nothing on the faces shows it.",
    "kind": "orderable",
    "part-numbers": {
@@ -126,6 +161,13 @@
    }
   },
   "f2b-8c-256g": {
+   "attrs": {
+    "platform": {
+     "cpu": "Intel Xeon D-1649N 8-core",
+     "memory": "32 GB DDR4 ECC (2 x 16 GB)",
+     "storage": "256 GB M.2 SSD"
+    }
+   },
    "description": "R4023-F9104-A0 - front-to-back, 8-core Xeon D-1649N, 2 x 16 GB DDR4, 256 GB SSD, two 1500 W AC supplies, seven fans.",
    "kind": "orderable",
    "part-numbers": {
@@ -305,7 +347,7 @@
   },
   "part-numbers": {
    "confidence": "datasheet",
-   "note": "Six chassis SKUs, from the guide's What's in the Box Table 1 (PDF rev 1.4.0): R4023-F9102/F9103/ F9104-A0 front-to-back and R4023-F9003/F9004/F9005-A0 back-to-front, differing within an airflow only in CPU (4C D1627 or 8C D1649N), memory (1 or 2 x 16 GB) and SSD (64, 128 or 256 GB). Each is its own orderable configuration with its own part-numbers entry, because the DCIM exporter makes one device type per configuration SKU and a configuration listing three would export one. The control-plane figures live in the descriptions: a configuration carries no attrs of its own (see the config-scoped-device-attrs gap on cisco/asr-9001) and a part-numbers entry holds only part and power-cord. The datasheet's ordering lines name only F9102 and F9003."
+   "note": "Six chassis SKUs, from the guide's What's in the Box Table 1 (PDF rev 1.4.0): R4023-F9102/F9103/ F9104-A0 front-to-back and R4023-F9003/F9004/F9005-A0 back-to-front, differing within an airflow only in CPU (4C D1627 or 8C D1649N), memory (1 or 2 x 16 GB) and SSD (64, 128 or 256 GB). Each is its own orderable configuration with its own part-numbers entry, because the DCIM exporter makes one device type per configuration SKU and a configuration listing three would export one. The control-plane figures are each configuration's own attrs (platform cpu, memory and storage, from the guide's What's in the Box Table 1) and stay in the descriptions too. The datasheet's ordering lines name only F9102 and F9003."
   },
   "port-leds": {
    "confidence": "measured",
@@ -354,7 +396,7 @@
    "url": "https://documentationportal.celestica.com/en/networking/ds4000ds4001/product-overview"
   }
  ],
- "version": "0.2.1",
+ "version": "0.2.3",
  "views": {
   "bottom": {
    "components": {

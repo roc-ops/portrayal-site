@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="79.2mm" height="18.42mm" viewBox="0 0 79.2 18.42">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="a2" data-path="a2" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/a2@1:1.0.0" data-body-depth="167.64" data-airflow="bidirectional; the heat sink takes system airflow either way along the card" data-board-sku="PG179 SKU 220, NVPN 699-2G179-0220-xxx" data-cooling="passive" data-eol="none-announced" data-form-factor="Half-height, half-length, single-slot (HHHL-SS), on a low profile bracket" data-memory="16 GB GDDR6, 128-bit, 200 GB/s" data-model="A2" data-nvlink="none" data-part-numbers="PNY NVA2TCGPU-KIT" data-pcie-connector="x8" data-pcie-generation="4" data-pcie-height="low" data-power-draw-max-w="60" data-power-input="host PCIe slot only" data-role="gpu" data-weight-kg="0.26" transform="translate(0,0)">
+    <title>a2</title>
+    <g id="a2--bracket" data-path="a2/bracket" data-class="bracket" data-ref="std/pcie-bracket-lp@1:1.2.1" data-wall="#8a9199" data-card-height-max="68.09" data-chassis-opening="65.34" data-material="0.86 mm (20 GA) low carbon steel, zinc plated" data-return-flange-depth="9.4" data-return-flange-length="21.59" data-tapped-hole-pitch="53.9" transform="translate(0,0)">
+      <title>a2--bracket</title>
+      <path d="M1.91 4.11 L7.74 4.11 L11.85 0 L70.33 0 L70.33 0.00 L77.93 0.00 A1.27 1.27 0 0 1 79.20 1.27 L79.20 15.14 A1.27 1.27 0 0 1 77.93 16.41 L70.33 16.41 L68.03 18.42 L11.85 18.42 L7.74 14.31 L1.91 14.31 A1.91 1.91 0 0 1 0 12.40 L0 6.02 A1.91 1.91 0 0 1 1.91 4.11 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+      <rect id="a2--bracket--opening" x="15.63" y="3.18" width="54.53" height="12.06" rx="1.0" fill="#1b1f22" stroke="#41474d" stroke-width="0.35" data-path="a2/bracket/opening" data-class="cutout" data-description="the connector opening, 54.53 by 12.06, sitting 3.18 in from each long edge" />
+      <path id="a2--bracket--flange-fold" d="M78.34 0.40 V16.01" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+      <path d="M5.08 4.41 V14.01" stroke="#5f666d" stroke-width="0.3" fill="none" />
+    </g>
+    <rect id="a2--plate" x="15.33" y="2.88" width="55.13" height="12.66" fill="#9aa1a8" />
+    <rect id="a2--window" x="22.0" y="4.2" width="46.0" height="10.0" rx="0.8" fill="#0d0e10" stroke="#8d9399" stroke-width="0.3" data-path="a2/window" data-class="vent" />
+    <g id="a2--fins" fill="#7b8187">
+      <rect x="23.2" y="4.7" width="0.4" height="9.0" />
+      <rect x="26.1" y="4.7" width="0.4" height="9.0" />
+      <rect x="29.0" y="4.7" width="0.4" height="9.0" />
+      <rect x="31.9" y="4.7" width="0.4" height="9.0" />
+      <rect x="34.8" y="4.7" width="0.4" height="9.0" />
+      <rect x="37.7" y="4.7" width="0.4" height="9.0" />
+      <rect x="40.6" y="4.7" width="0.4" height="9.0" />
+      <rect x="43.5" y="4.7" width="0.4" height="9.0" />
+      <rect x="46.4" y="4.7" width="0.4" height="9.0" />
+      <rect x="49.3" y="4.7" width="0.4" height="9.0" />
+      <rect x="52.2" y="4.7" width="0.4" height="9.0" />
+      <rect x="55.1" y="4.7" width="0.4" height="9.0" />
+      <rect x="58.0" y="4.7" width="0.4" height="9.0" />
+      <rect x="60.9" y="4.7" width="0.4" height="9.0" />
+      <rect x="63.8" y="4.7" width="0.4" height="9.0" />
+      <rect x="66.7" y="4.7" width="0.4" height="9.0" />
+    </g>
+    <g id="a2--screw-1" data-path="a2/screw-1" data-class="screw">
+      <circle cx="18.7" cy="9.3" r="1.5" fill="#b9bfc5" stroke="#5f666d" stroke-width="0.25" />
+      <circle cx="18.7" cy="9.3" r="0.55" fill="#4a4f55" />
+    </g>
+  </g>
+</svg>

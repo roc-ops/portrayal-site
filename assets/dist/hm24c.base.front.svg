@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="88.9mm" viewBox="0 0 482.6 88.9" data-device="hm24c" data-view="front" data-shell="sheet" data-material="Steel" data-wire-diameter-mm="5.715" data-finish="Black Powder Coated" data-cover="Included, hinged and removable" data-pass-through-holes="Standard" data-vertical-manager="VM Series" data-replacement-cover="HM2C">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Hubbell HM24C","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"hubbell/hm-plate-2u@1":"1.0.0","hubbell/hm-ring-2u@1":"1.0.1","hubbell/hm2c@1":"1.0.1"},"source-sha256":"0c6c52440793c86f7e71fd59e93a1f71d06aa244da786a5833b7129f05456c11","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="HM24C" x="0" y="0" width="482.6" height="88.9" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <g id="plate" data-path="plate" data-class="mechanical" data-ref="hubbell/hm-plate-2u@1:1.0.0" data-depth="101.6" data-wall="#1b1d20" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the steel centre plate with its four windows">
+    <title>plate</title>
+    <path id="plate--plate" fill="#1b1d20" fill-rule="evenodd" d="     M0,0 H482.6 V88.9 H0 Z     M46.3,11.1 H100.3 Q115.3,11.1 115.3,26.1 V62.8 Q115.3,77.8 100.3,77.8 H46.3 Q31.3,77.8 31.3,62.8 V26.1 Q31.3,11.1 46.3,11.1 Z     M158.3,11.1 H212.3 Q227.3,11.1 227.3,26.1 V62.8 Q227.3,77.8 212.3,77.8 H158.3 Q143.3,77.8 143.3,62.8 V26.1 Q143.3,11.1 158.3,11.1 Z     M270.3,11.1 H324.3 Q339.3,11.1 339.3,26.1 V62.8 Q339.3,77.8 324.3,77.8 H270.3 Q255.3,77.8 255.3,62.8 V26.1 Q255.3,11.1 270.3,11.1 Z     M382.3,11.1 H436.3 Q451.3,11.1 451.3,26.1 V62.8 Q451.3,77.8 436.3,77.8 H382.3 Q367.3,77.8 367.3,62.8 V26.1 Q367.3,11.1 382.3,11.1 Z" data-path="plate/plate" data-class="bezel" />
+  </g>
+  <g id="guide-1" data-path="guide-1" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-2u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="77.47 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="1" transform="translate(14.4425,0.0)" data-group="guides" data-group-role="furniture" data-description="the five wire rings in front of the plate, left to right" data-z-lift="-101.6" data-in="plate" data-under="cover">
+    <title>guide-1</title>
+    <rect id="guide-1--root" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#4b525a" data-path="guide-1/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="guide-1--post" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#59616a" data-path="guide-1/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="76.9" rx="0.65" fill="#9aa3ad" />
+    <rect id="guide-1--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-1/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="guide-1--bottom" x="0" y="83.185" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-1/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="guide-2" data-path="guide-2" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-2u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="77.47 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="2" transform="translate(126.4425,0.0)" data-group="guides" data-group-role="furniture" data-description="the five wire rings in front of the plate, left to right" data-z-lift="-101.6" data-in="plate" data-under="cover">
+    <title>guide-2</title>
+    <rect id="guide-2--root" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#4b525a" data-path="guide-2/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="guide-2--post" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#59616a" data-path="guide-2/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="76.9" rx="0.65" fill="#9aa3ad" />
+    <rect id="guide-2--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-2/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="guide-2--bottom" x="0" y="83.185" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-2/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="guide-3" data-path="guide-3" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-2u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="77.47 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="3" transform="translate(238.4425,0.0)" data-group="guides" data-group-role="furniture" data-description="the five wire rings in front of the plate, left to right" data-z-lift="-101.6" data-in="plate" data-under="cover">
+    <title>guide-3</title>
+    <rect id="guide-3--root" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#4b525a" data-path="guide-3/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="guide-3--post" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#59616a" data-path="guide-3/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="76.9" rx="0.65" fill="#9aa3ad" />
+    <rect id="guide-3--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-3/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="guide-3--bottom" x="0" y="83.185" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-3/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="guide-4" data-path="guide-4" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-2u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="77.47 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="4" transform="translate(350.4425,0.0)" data-group="guides" data-group-role="furniture" data-description="the five wire rings in front of the plate, left to right" data-z-lift="-101.6" data-in="plate" data-under="cover">
+    <title>guide-4</title>
+    <rect id="guide-4--root" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#4b525a" data-path="guide-4/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="guide-4--post" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#59616a" data-path="guide-4/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="76.9" rx="0.65" fill="#9aa3ad" />
+    <rect id="guide-4--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-4/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="guide-4--bottom" x="0" y="83.185" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-4/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="guide-5" data-path="guide-5" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm-ring-2u@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="77.47 90.17" data-guide-depth="5.715" data-material="Steel" data-rel-pos="5" transform="translate(462.4425,0.0)" data-group="guides" data-group-role="furniture" data-description="the five wire rings in front of the plate, left to right" data-z-lift="-101.6" data-in="plate" data-under="cover">
+    <title>guide-5</title>
+    <rect id="guide-5--root" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#4b525a" data-path="guide-5/root" data-class="bezel" data-z-bar="5.715" data-z-color="#4b525a" />
+    <rect id="guide-5--post" x="0" y="0" width="5.715" height="88.9" rx="2.8575" fill="#59616a" data-path="guide-5/post" data-class="bezel" data-z-lift="95.885" data-z-bar="5.715" data-z-color="#59616a" />
+    <rect x="1.2" y="6" width="1.3" height="76.9" rx="0.65" fill="#9aa3ad" />
+    <rect id="guide-5--top" x="0" y="0" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-5/top" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+    <rect id="guide-5--bottom" x="0" y="83.185" width="5.715" height="5.715" rx="2.8575" fill="#7d8791" data-path="guide-5/bottom" data-class="bezel" data-z-cyl="101.6" data-z-color="#59616a" />
+  </g>
+  <g id="cover" data-path="cover" data-class="mechanical" data-behaviour="mounts" data-ref="hubbell/hm2c@1:1.0.1" data-material="Steel" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="cover" data-group-role="furniture" data-description="the hinged, removable cover across the front rings" data-z-lift="-101.6" data-in="plate">
+    <title>cover</title>
+    <rect id="cover--plate" x="0" y="0" width="482.6" height="88.9" fill="#2a2d31" data-path="cover/plate" data-class="bezel" data-z-out="0" data-z-lift="100.1" data-z-color="#2a2d31" />
+    <rect id="cover--fold-top" x="0" y="0" width="482.6" height="6" fill="#3a3f45" data-path="cover/fold-top" data-class="bezel" />
+    <rect x="0" y="6" width="482.6" height="0.5" fill="#4b525a" />
+    <rect id="cover--fold-bottom" x="0" y="82.9" width="482.6" height="6" fill="#3a3f45" data-path="cover/fold-bottom" data-class="bezel" />
+    <rect x="0" y="82.4" width="482.6" height="0.5" fill="#1b1d20" />
+    <rect id="cover--name-plate" x="212.3" y="38.45" width="58" height="12" rx="1" fill="#34383d" stroke="#4b525a" stroke-width="0.3" data-path="cover/name-plate" data-class="label" />
+    <rect id="cover--logo-zone" x="212.3" y="38.45" width="58" height="12" fill="none" data-path="cover/logo-zone" data-class="label" />
+  </g>
+  <g id="--passes" data-class="passes" pointer-events="none">
+    <rect id="pass--pass-through-1" data-class="pass" data-pass="pass-through-1" data-pass-shape="rect" data-pass-cover="open" x="31.3" y="11.1" width="84" height="66.7" fill="none" stroke="none" />
+    <rect id="pass--pass-through-2" data-class="pass" data-pass="pass-through-2" data-pass-shape="rect" data-pass-cover="open" x="143.3" y="11.1" width="84" height="66.7" fill="none" stroke="none" />
+    <rect id="pass--pass-through-3" data-class="pass" data-pass="pass-through-3" data-pass-shape="rect" data-pass-cover="open" x="255.3" y="11.1" width="84" height="66.7" fill="none" stroke="none" />
+    <rect id="pass--pass-through-4" data-class="pass" data-pass="pass-through-4" data-pass-shape="rect" data-pass-cover="open" x="367.3" y="11.1" width="84" height="66.7" fill="none" stroke="none" />
+  </g>
+</svg>

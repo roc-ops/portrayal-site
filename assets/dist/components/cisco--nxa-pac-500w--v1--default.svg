@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96.8mm" height="38.6mm" viewBox="0 0 96.8 38.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/nxa-pac-500w@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='cisco/nxa-pac-500w@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="nxa-pac-500w" data-path="nxa-pac-500w" data-class="psu" data-behaviour="fills" data-ref="cisco/nxa-pac-500w@1:1.0.0" data-wall="#3a3e43" data-airflow="front-to-back" data-efficiency="Climate Savers Platinum Efficiency (80Plus Platinum certified)" data-inlet="c14" data-input="ac" data-input-current-max="5.7 A at 100 Vac" data-input-voltage="100 to 240 Vac nominal (range 90-264 Vac)" data-model="NXA-PAC-500W" data-power-output-w="500" data-weight-kg="1.1" data-states="absent" transform="translate(0,0)">
+    <title>nxa-pac-500w</title>
+    <rect id="nxa-pac-500w--body" x="0" y="0" width="96.8" height="38.6" rx="0.6" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+    <path id="nxa-pac-500w--warning-mark" d="M 4.2 4.4 L 7.3 9.8 L 1.1 9.8 Z" fill="#1b1d20" />
+    <rect x="3.95" y="6.1" width="0.5" height="2.1" fill="#e9ecef" />
+    <rect x="3.95" y="8.6" width="0.5" height="0.5" fill="#e9ecef" />
+    <circle id="nxa-pac-500w--fail" cx="3.9" cy="13.2" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="nxa-pac-500w/fail" data-class="led" data-states="off fault" />
+    <g id="nxa-pac-500w--input-mark" fill="none" stroke="#1b1d20" stroke-width="0.35">
+      <circle cx="4.2" cy="22.9" r="2.4" />
+      <path d="M 2.6 22.9 Q 3.4 21.3 4.2 22.9 T 5.8 22.9" />
+    </g>
+    <circle id="nxa-pac-500w--ok" cx="3.9" cy="29.3" r="1.4" fill="var(--led-color, #3a4046)" stroke="#5c6167" stroke-width="0.2" data-path="nxa-pac-500w/ok" data-class="led" data-states="off ok" />
+    <g id="nxa-pac-500w--fan" data-path="nxa-pac-500w/fan" data-class="rotor" data-z-vent="24">
+      <circle cx="30.2" cy="19.3" r="18.6" fill="#0d0f11" />
+      <path d="M 17.1 6.2 L 43.3 32.4 M 43.3 6.2 L 17.1 32.4" stroke="#c3c7cc" stroke-width="2.2" />
+      <circle cx="30.2" cy="19.3" r="10.0" fill="#5b8fd9" />
+      <circle cx="30.2" cy="19.3" r="8.0" fill="#f4f6f8" />
+    </g>
+    <g fill="#d5d9dd" stroke="#7a8087" stroke-width="0.3">
+      <circle cx="14.7" cy="4.0" r="2.4" />
+      <circle cx="45.7" cy="4.0" r="2.4" />
+      <circle cx="14.7" cy="34.6" r="2.4" />
+      <circle cx="45.7" cy="34.6" r="2.4" />
+    </g>
+    <g stroke="#5c6167" stroke-width="0.4">
+      <path d="M 13.3 4.0 H 16.1 M 14.7 2.6 V 5.4" />
+      <path d="M 44.3 4.0 H 47.1 M 45.7 2.6 V 5.4" />
+      <path d="M 13.3 34.6 H 16.1 M 14.7 33.2 V 36.0" />
+      <path d="M 44.3 34.6 H 47.1 M 45.7 33.2 V 36.0" />
+    </g>
+    <circle id="nxa-pac-500w--thumbscrew" cx="52.8" cy="4.3" r="2.6" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.3" />
+    <rect id="nxa-pac-500w--inlet-surround" x="65.4" y="4.0" width="23.0" height="29.6" rx="1.2" fill="#3a3e43" />
+    <rect id="nxa-pac-500w--handle" x="56.1" y="1.9" width="5.9" height="35.6" rx="2.9" fill="#1b1d20" data-path="nxa-pac-500w/handle" data-class="handle" data-z-uhandle="20.0" data-z-color="#1b1d20" />
+    <g id="nxa-pac-500w--latch" data-path="nxa-pac-500w/latch" data-class="latch" data-z-out="3.0">
+      <rect x="87.6" y="9.8" width="6.8" height="19.5" rx="1.2" fill="#ac2f54" stroke="#6e1c2c" stroke-width="0.3" data-fill-from="latch-finish" data-stroke-from="latch-edge" />
+      <rect x="90.2" y="14.6" width="1.4" height="7.2" rx="0.3" fill="#e9ecef" stroke="#5c6167" stroke-width="0.2" />
+    </g>
+    <g id="nxa-pac-500w--inlet" data-path="nxa-pac-500w/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.4.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(62.9,8.8) rotate(90 14.0 10.0)">
+      <title>nxa-pac-500w--inlet</title>
+      <rect id="nxa-pac-500w--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="nxa-pac-500w/inlet/opening" data-class="cutout" />
+      <path id="nxa-pac-500w--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="nxa-pac-500w--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <rect id="nxa-pac-500w--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <rect id="nxa-pac-500w--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="15.0" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

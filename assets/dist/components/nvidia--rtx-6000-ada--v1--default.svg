@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="41.91mm" viewBox="0 0 120.02 41.91">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="rtx-6000-ada" data-path="rtx-6000-ada" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/rtx-6000-ada@1:1.0.0" data-body-depth="266.7" data-wall="#a9a5a3" data-airflow="blower; it draws air from the card's broad side and exhausts toward the bracket" data-cooling="active" data-display-ports="4 x DisplayPort 1.4a on the bracket" data-form-factor="Full-height, full-length (FHFL) 4.4 in x 10.5 in, dual slot" data-memory="48 GB GDDR6, 384-bit, 960 GB/s" data-model="RTX 6000 Ada" data-nvlink="none" data-part-numbers="PNY VCNRTX6000ADA-PB (retail), VCNRTX6000ADA-SB (single bulk), VCNRTX6000ADA-BLK (bulk), VCNRTX6000ADA-EDU (education), VCNRTX6000ADASYNC-PB (with the Sync card); NVIDIA 900-5G133-2250-000" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="full" data-power-draw-max-w="300" data-power-input="host PCIe slot and one PCIe CEM5 16-pin (12VHPWR) auxiliary connector; a 2x PCIe 8-pin to 1x CEM5 16-pin adapter is in the box" data-role="gpu" transform="translate(0,0)">
+    <title>rtx-6000-ada</title>
+    <path id="rtx-6000-ada--plate" d="M1.9 7.24 L7.27 7.24 L9.5 5.23 L20.3 5.23 L21.3 3.45 L119.2 3.45 L119.2 0.3 L120.02 0.3 L120.02 40.9 L119.2 40.9 L119.2 41.41 L21.3 41.41 L20.3 40.29 L10.8 40.29 L7.27 37.84 L1.9 37.84 A1.9 1.9 0 0 1 0 35.94 L0 29.46 A1.9 1.9 0 0 1 1.9 27.56 L7.27 27.56 L10.95 24.2 A2.4 2.4 0 0 0 10.95 20.9 L7.27 17.52 L1.9 17.52 A1.9 1.9 0 0 1 0 15.62 L0 9.14 A1.9 1.9 0 0 1 1.9 7.24 Z" fill="#a9a5a3" stroke="#5f5b59" stroke-width="0.4" stroke-linejoin="round" />
+    <path id="rtx-6000-ada--flange-fold" d="M119.6 0.6 V40.6" stroke="#5f5b59" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#a9a5a3" />
+    <g id="rtx-6000-ada--display-port-1" transform="translate(30.82 5.68)" data-path="rtx-6000-ada/display-port-1" data-class="connector">
+      <path d="M0.8 0 L17.8 0 A0.8 0.8 0 0 1 18.6 0.8 L18.6 3.9 L14.9 7.6 L0.8 7.6 A0.8 0.8 0 0 1 0 6.8 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c9c8c7" stroke="#6b6866" stroke-width="0.3" />
+      <path d="M1.0 1.0 L17.6 1.0 L17.6 3.6 L14.5 6.6 L1.0 6.6 Z" fill="#161718" />
+      <path d="M2.6 2.5 H16.0 M2.6 4.4 H13.9" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-6000-ada--display-port-2" transform="translate(52.25 5.68)" data-path="rtx-6000-ada/display-port-2" data-class="connector">
+      <path d="M0.8 0 L17.8 0 A0.8 0.8 0 0 1 18.6 0.8 L18.6 3.9 L14.9 7.6 L0.8 7.6 A0.8 0.8 0 0 1 0 6.8 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c9c8c7" stroke="#6b6866" stroke-width="0.3" />
+      <path d="M1.0 1.0 L17.6 1.0 L17.6 3.6 L14.5 6.6 L1.0 6.6 Z" fill="#161718" />
+      <path d="M2.6 2.5 H16.0 M2.6 4.4 H13.9" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-6000-ada--display-port-3" transform="translate(73.35 5.68)" data-path="rtx-6000-ada/display-port-3" data-class="connector">
+      <path d="M0.8 0 L17.8 0 A0.8 0.8 0 0 1 18.6 0.8 L18.6 3.9 L14.9 7.6 L0.8 7.6 A0.8 0.8 0 0 1 0 6.8 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c9c8c7" stroke="#6b6866" stroke-width="0.3" />
+      <path d="M1.0 1.0 L17.6 1.0 L17.6 3.6 L14.5 6.6 L1.0 6.6 Z" fill="#161718" />
+      <path d="M2.6 2.5 H16.0 M2.6 4.4 H13.9" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-6000-ada--display-port-4" transform="translate(94.12 5.68)" data-path="rtx-6000-ada/display-port-4" data-class="connector">
+      <path d="M0.8 0 L17.8 0 A0.8 0.8 0 0 1 18.6 0.8 L18.6 3.9 L14.9 7.6 L0.8 7.6 A0.8 0.8 0 0 1 0 6.8 L0 0.8 A0.8 0.8 0 0 1 0.8 0 Z" fill="#c9c8c7" stroke="#6b6866" stroke-width="0.3" />
+      <path d="M1.0 1.0 L17.6 1.0 L17.6 3.6 L14.5 6.6 L1.0 6.6 Z" fill="#161718" />
+      <path d="M2.6 2.5 H16.0 M2.6 4.4 H13.9" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <rect id="rtx-6000-ada--bezel" x="29.24" y="14.84" width="87.26" height="25.01" rx="1.6" fill="none" stroke="#6b6866" stroke-width="0.35" />
+    <rect x="30.6" y="15.4" width="85.0" height="23.5" rx="1.0" fill="#0b0c0d" />
+    <rect id="rtx-6000-ada--vent" x="33.5" y="15.5" width="77.5" height="22.8" rx="0.8" fill="#0b0c0d" stroke="#3a3e43" stroke-width="0.3" data-path="rtx-6000-ada/vent" data-class="vent" />
+    <g id="rtx-6000-ada--fins" fill="#5a5d60">
+      <rect x="35.75" y="15.8" width="0.6" height="22.2" />
+      <rect x="40.09" y="15.8" width="0.6" height="22.2" />
+      <rect x="44.44" y="15.8" width="0.6" height="22.2" />
+      <rect x="48.79" y="15.8" width="0.6" height="22.2" />
+      <rect x="53.13" y="15.8" width="0.6" height="22.2" />
+      <rect x="57.48" y="15.8" width="0.6" height="22.2" />
+      <rect x="61.82" y="15.8" width="0.6" height="22.2" />
+      <rect x="66.17" y="15.8" width="0.6" height="22.2" />
+      <rect x="70.52" y="15.8" width="0.6" height="22.2" />
+      <rect x="74.86" y="15.8" width="0.6" height="22.2" />
+      <rect x="79.21" y="15.8" width="0.6" height="22.2" />
+      <rect x="83.56" y="15.8" width="0.6" height="22.2" />
+      <rect x="87.90" y="15.8" width="0.6" height="22.2" />
+      <rect x="92.25" y="15.8" width="0.6" height="22.2" />
+      <rect x="96.59" y="15.8" width="0.6" height="22.2" />
+      <rect x="100.94" y="15.8" width="0.6" height="22.2" />
+      <rect x="105.29" y="15.8" width="0.6" height="22.2" />
+      <rect x="109.63" y="15.8" width="0.6" height="22.2" />
+    </g>
+    <g id="rtx-6000-ada--fins-dim" fill="#3d4043">
+      <rect x="38.02" y="15.8" width="0.4" height="22.2" />
+      <rect x="42.37" y="15.8" width="0.4" height="22.2" />
+      <rect x="46.71" y="15.8" width="0.4" height="22.2" />
+      <rect x="51.06" y="15.8" width="0.4" height="22.2" />
+      <rect x="55.40" y="15.8" width="0.4" height="22.2" />
+      <rect x="59.75" y="15.8" width="0.4" height="22.2" />
+      <rect x="64.10" y="15.8" width="0.4" height="22.2" />
+      <rect x="68.44" y="15.8" width="0.4" height="22.2" />
+      <rect x="72.79" y="15.8" width="0.4" height="22.2" />
+      <rect x="77.14" y="15.8" width="0.4" height="22.2" />
+      <rect x="81.48" y="15.8" width="0.4" height="22.2" />
+      <rect x="85.83" y="15.8" width="0.4" height="22.2" />
+      <rect x="90.17" y="15.8" width="0.4" height="22.2" />
+      <rect x="94.52" y="15.8" width="0.4" height="22.2" />
+      <rect x="98.87" y="15.8" width="0.4" height="22.2" />
+      <rect x="103.21" y="15.8" width="0.4" height="22.2" />
+      <rect x="107.56" y="15.8" width="0.4" height="22.2" />
+    </g>
+    <g id="rtx-6000-ada--screw-1" data-path="rtx-6000-ada/screw-1" data-class="screw">
+      <circle cx="31.21" cy="17.74" r="2.2" fill="#6f6c6a" stroke="#2a2927" stroke-width="0.3" />
+      <circle cx="31.21" cy="17.74" r="0.9" fill="#1d1f21" />
+    </g>
+    <g id="rtx-6000-ada--screw-2" data-path="rtx-6000-ada/screw-2" data-class="screw">
+      <circle cx="113.43" cy="17.74" r="2.2" fill="#6f6c6a" stroke="#2a2927" stroke-width="0.3" />
+      <circle cx="113.43" cy="17.74" r="0.9" fill="#1d1f21" />
+    </g>
+    <g id="rtx-6000-ada--screw-3" data-path="rtx-6000-ada/screw-3" data-class="screw">
+      <circle cx="31.21" cy="36.5" r="2.2" fill="#6f6c6a" stroke="#2a2927" stroke-width="0.3" />
+      <circle cx="31.21" cy="36.5" r="0.9" fill="#1d1f21" />
+    </g>
+    <g id="rtx-6000-ada--screw-4" data-path="rtx-6000-ada/screw-4" data-class="screw">
+      <circle cx="113.43" cy="36.5" r="2.2" fill="#6f6c6a" stroke="#2a2927" stroke-width="0.3" />
+      <circle cx="113.43" cy="36.5" r="0.9" fill="#1d1f21" />
+    </g>
+  </g>
+</svg>

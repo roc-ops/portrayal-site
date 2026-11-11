@@ -219,7 +219,7 @@ test('a plug is the kit\'s straight run out of each port, by its reach', () => {
   assert.deepEqual(plugSpans([pts[0], pts[2], pts[5]]), {});
 });
 
-// A DEVICE'S SETBACK (S-0060): its faceplate stands that many mm behind its rail plane, into the rack, whichever
+// A DEVICE'S SETBACK: its faceplate stands that many mm behind its rail plane, into the rack, whichever
 // rail it is on. The front rail plane is z 0 and the rear one -railDepth, so a front device's faceplate is at
 // -setback and a rear device's at -railDepth + setback; the right pane draws depth back from the front rail plane
 // (X = -z) and the left pane the same mirrored (X = z).

@@ -118,6 +118,7 @@
     "accepts": [
      "juniper/mx304-psu-ac@1",
      "juniper/mx304-psu-dc@1",
+     "juniper/mx304-psu-dc@2",
      "juniper/mx304-psu-hvacdc@1"
     ],
     "at": [
@@ -138,6 +139,7 @@
     "accepts": [
      "juniper/mx304-psu-ac@1",
      "juniper/mx304-psu-dc@1",
+     "juniper/mx304-psu-dc@2",
      "juniper/mx304-psu-hvacdc@1"
     ],
     "at": [
@@ -411,7 +413,8 @@
      "generic/sfp-rj45@1",
      "generic/sfp-sc-key-up@1",
      "generic/sfp-sc@1",
-     "molex/sfp-plus-passive-dac@1"
+     "molex/sfp-plus-passive-dac@1",
+     "wetatronics/conx-sfp@1"
     ],
     "at": [
      92.85,
@@ -496,13 +499,14 @@
   "d": 610.0,
   "h": 88.9,
   "mount": "rack",
-  "power": null,
+  "power": "ac",
   "ru": 2,
   "w": 440.8
  },
  "configs": [
   {
    "airflow": null,
+   "attrs": {},
    "bays": {
     "lmic0": "juniper/jnp304-blnk@1",
     "lmic1": "juniper/jnp304-blnk@1"
@@ -522,25 +526,168 @@
    "names": {},
    "occupants": {},
    "part-numbers": {},
-   "power": [],
+   "power": [
+    "ac"
+   ],
    "slots": [],
-   "states": {},
+   "states": {
+    "fan-0/module": [
+     "absent"
+    ],
+    "fan-1/module": [
+     "absent"
+    ],
+    "fan-2/module": [
+     "absent"
+    ],
+    "led-fan-0": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-0/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-gm-ptp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "led-gm-ptp/lamp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "psu-0/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "psu-1/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "re0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re0/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re0/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ],
+    "re1-lmic2/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re1-lmic2/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re1-lmic2/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ]
+   },
    "views": {}
   },
   {
    "airflow": null,
+   "attrs": {},
    "bays": {
-    "psu-0": "juniper/mx304-psu-dc@1",
-    "psu-1": "juniper/mx304-psu-dc@1"
+    "psu-0": "juniper/mx304-psu-dc@2",
+    "psu-1": "juniper/mx304-psu-dc@2"
    },
+   "dc-ports": [
+    {
+     "awg": [
+      6
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-0/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-0/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-0/module/pole-rtn"
+      }
+     ],
+     "rating-a": 50,
+     "ref": "juniper/mx304-psu-dc@2",
+     "side": null,
+     "voltage": null
+    },
+    {
+     "awg": [
+      6
+     ],
+     "direction": "input",
+     "id": "input",
+     "path": "psu-1/module/input",
+     "poles": [
+      {
+       "role": "batt",
+       "slot": "psu-1/module/pole-batt"
+      },
+      {
+       "role": "rtn",
+       "slot": "psu-1/module/pole-rtn"
+      }
+     ],
+     "rating-a": 50,
+     "ref": "juniper/mx304-psu-dc@2",
+     "side": null,
+     "voltage": null
+    }
+   ],
    "description": "DC-powered chassis - two 2200 W DC PSUs, dual Routing Engines.",
    "files": {
-    "bottom": "mx304.base.bottom.svg",
-    "front": "mx304.dual-re-ac.front.svg",
-    "left": "mx304.base.left.svg",
+    "bottom": "mx304.dc.bottom.svg",
+    "front": "mx304.dc.front.svg",
+    "left": "mx304.dc.left.svg",
     "rear": "mx304.dc.rear.svg",
-    "right": "mx304.base.right.svg",
-    "top": "mx304.base.top.svg"
+    "right": "mx304.dc.right.svg",
+    "top": "mx304.dc.top.svg"
    },
    "kind": "orderable",
    "mount-points": [],
@@ -548,13 +695,120 @@
    "names": {},
    "occupants": {},
    "part-numbers": {},
-   "power": [],
+   "power": [
+    "dc"
+   ],
    "slots": [],
-   "states": {},
+   "states": {
+    "fan-0/module": [
+     "absent"
+    ],
+    "fan-1/module": [
+     "absent"
+    ],
+    "fan-2/module": [
+     "absent"
+    ],
+    "led-fan-0": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-0/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-gm-ptp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "led-gm-ptp/lamp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "lmic0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "lmic1/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "psu-0/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "psu-1/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "re0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re0/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re0/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ],
+    "re1-lmic2/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re1-lmic2/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re1-lmic2/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ]
+   },
    "views": {}
   },
   {
    "airflow": null,
+   "attrs": {},
    "bays": {},
    "description": "Two Routing Engines, two LMIC16s, AC power - the fully redundant configuration the guide photographs. 3.2 Tbps of installed capacity.",
    "files": {
@@ -571,25 +825,132 @@
    "names": {},
    "occupants": {},
    "part-numbers": {},
-   "power": [],
+   "power": [
+    "ac"
+   ],
    "slots": [],
-   "states": {},
+   "states": {
+    "fan-0/module": [
+     "absent"
+    ],
+    "fan-1/module": [
+     "absent"
+    ],
+    "fan-2/module": [
+     "absent"
+    ],
+    "led-fan-0": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-0/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-gm-ptp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "led-gm-ptp/lamp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "lmic0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "lmic1/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "psu-0/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "psu-1/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "re0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re0/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re0/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ],
+    "re1-lmic2/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re1-lmic2/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re1-lmic2/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ]
+   },
    "views": {}
   },
   {
    "airflow": null,
+   "attrs": {},
    "bays": {
     "psu-0": "juniper/mx304-psu-hvacdc@1",
     "psu-1": "juniper/mx304-psu-hvacdc@1"
    },
    "description": "High-voltage AC/DC universal power - two 2200 W HVAC/DC PSUs, dual Routing Engines.",
    "files": {
-    "bottom": "mx304.base.bottom.svg",
-    "front": "mx304.dual-re-ac.front.svg",
-    "left": "mx304.base.left.svg",
+    "bottom": "mx304.hvac-dc.bottom.svg",
+    "front": "mx304.hvac-dc.front.svg",
+    "left": "mx304.hvac-dc.left.svg",
     "rear": "mx304.hvac-dc.rear.svg",
-    "right": "mx304.base.right.svg",
-    "top": "mx304.base.top.svg"
+    "right": "mx304.hvac-dc.right.svg",
+    "top": "mx304.hvac-dc.top.svg"
    },
    "kind": "orderable",
    "mount-points": [],
@@ -597,13 +958,121 @@
    "names": {},
    "occupants": {},
    "part-numbers": {},
-   "power": [],
+   "power": [
+    "ac",
+    "hvdc"
+   ],
    "slots": [],
-   "states": {},
+   "states": {
+    "fan-0/module": [
+     "absent"
+    ],
+    "fan-1/module": [
+     "absent"
+    ],
+    "fan-2/module": [
+     "absent"
+    ],
+    "led-fan-0": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-0/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-gm-ptp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "led-gm-ptp/lamp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "lmic0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "lmic1/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "psu-0/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "psu-1/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "re0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re0/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re0/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ],
+    "re1-lmic2/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re1-lmic2/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re1-lmic2/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ]
+   },
    "views": {}
   },
   {
    "airflow": null,
+   "attrs": {},
    "bays": {
     "re1-lmic2": "juniper/mx304-lmic16@1"
    },
@@ -622,9 +1091,106 @@
    "names": {},
    "occupants": {},
    "part-numbers": {},
-   "power": [],
+   "power": [
+    "ac"
+   ],
    "slots": [],
-   "states": {},
+   "states": {
+    "fan-0/module": [
+     "absent"
+    ],
+    "fan-1/module": [
+     "absent"
+    ],
+    "fan-2/module": [
+     "absent"
+    ],
+    "led-fan-0": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-0/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-1/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-fan-2/lamp": [
+     "off",
+     "init",
+     "ok",
+     "fault"
+    ],
+    "led-gm-ptp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "led-gm-ptp/lamp": [
+     "off",
+     "link",
+     "beacon"
+    ],
+    "lmic0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "lmic1/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "psu-0/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "psu-1/module": [
+     "ok",
+     "fault",
+     "absent"
+    ],
+    "re0/module": [
+     "ok",
+     "fail",
+     "absent"
+    ],
+    "re0/module/mgmt/led-a": [
+     "off",
+     "activity"
+    ],
+    "re0/module/mgmt/led-b": [
+     "off",
+     "10-100",
+     "1000"
+    ],
+    "re1-lmic2/module": [
+     "ok",
+     "fail",
+     "absent"
+    ]
+   },
    "views": {}
   }
  ],
@@ -640,7 +1206,7 @@
     "lmics",
     "psus"
    ],
-   "wanted": "a mechanical drawing resolving the module envelopes against the drawn apertures - Table 22 states 203.5 mm module and 73.5 mm PSU envelopes while the photographed apertures measure 197.6 and 66.0; the bays and module faces are both drawn at the aperture and the envelopes live in each contract's attrs. That reconciliation is a judgement (rails hidden behind the panel), not a measurement, and this gap is its record.",
+   "wanted": "a mechanical drawing resolving the module envelopes against the drawn apertures - Table 22 states 203.5 mm module and 73.5 mm PSU envelopes while the photographed apertures measure 197.6 and 66.0; the bays and module faces are both drawn at the aperture and the envelopes live in each contract's attrs. That reconciliation is a judgement (rails hidden behind the panel), not a measurement, and this gap is its record. Re-read when the DC supply was redrawn as version 2 - its face is still drawn at the 66.0 aperture, so the gap still holds.",
    "what": "module-envelope-vs-aperture"
   },
   {
@@ -715,7 +1281,11 @@
  "model": "MX304",
  "options": {
   "airflow": [],
-  "power": []
+  "power": [
+   "ac",
+   "dc",
+   "hvdc"
+  ]
  },
  "pdu-class": null,
  "provenance": {

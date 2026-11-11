@@ -11,6 +11,7 @@
 // same code that has been running in the device viewer.
 
 import { paintFields, unpaintFields, paintAdjustments } from './fields.js';
+import { paintDisplays } from './displays.js';
 import { boundLamps, expandStates } from './states.js';
 
 let THREE, renderer, PXMM, FRU_PATHS;
@@ -93,7 +94,23 @@ export function cavityShell(c, INTO) {
   if (c.sheet) return {walls: false, floor: true, back: false, depth: Math.min(c.d, INTO - 2)};
   const open = !!(c.seeThrough || c.hollow);
   const depth = c.hollow ? Math.min(c.d, 6) : Math.min(c.d, INTO - 2);
+  // A WINDOW IN A THIN PLATE (`pocket: {depth, wall}`, render.py's
+  // `data-wall-depth`) has walls only as deep as the plate. Below the plate's
+  // back face the sides are open to the inside of the part, so a cage near the
+  // window's end may run back under the plate's edge. The floor and back stay
+  // where `depth` puts them. A wall at or past the floor is no wall: it builds
+  // as a plain pocket, as does a passage, which has no floor to be open above.
+  if (!open && c.wallDepth > 0 && c.wallDepth < depth)
+    return {walls: true, floor: true, back: true, depth, wallDepth: c.wallDepth};
   return {walls: true, floor: !open, back: !open, depth};
+}
+// WHERE A CAVITY'S WALLS STAND, in the face's z: from its mouth down to the
+// plate's back face when it states one, else all the way to the floor.
+// `openBelow` says the sides are open between the wall and the floor.
+export function wallSpan(c, INTO) {
+  const s = cavityShell(c, INTO);
+  const depth = s.wallDepth || s.depth;
+  return {top: c.lift, bottom: c.lift - depth, depth, openBelow: depth < s.depth};
 }
 
 // A CAVITY'S WALLS FOLLOW ITS OUTLINE. A cavity that names its outline node
@@ -164,7 +181,7 @@ export function sheetShell(chassis) {
 // is the width the front DRAWING declares, which is how an ear-wide face is
 // known here - the R740xd's 482.6 mm front has its ears in it already. Null
 // where the device gets none: not a `rack` device, a sheet body, ears stated
-// `behind`, a face as wide as the rack, or a flange too narrow to draw.
+// `behind` or `none`, a face as wide as the rack, or a flange too narrow to draw.
 // The numbers are ears.py's, and spec/tests/test_generic_ears.py holds the two
 // to the same plan for the same chassis, colour included. ears2d.js draws this plan over a
 // published face in 2D, as render.py `--with ears` would have drawn it.
@@ -184,7 +201,7 @@ export function genericEars(chassis, faceW) {
   if (!chassis || (chassis.mount || 'rack') !== 'rack' || chassis.shell) return null;
   const ears = chassis.ears && typeof chassis.ears === 'object' ? chassis.ears
              : chassis.ears === 'behind' ? {behind: true} : {};
-  if (ears.behind === true) return null;
+  if (ears.behind === true || ears.none === true) return null;
   const w = Number(faceW || chassis.w), hBody = Number(chassis.h);
   if (!w || !hBody || w >= EAR.EAR_WIDE) return null;
   const flange = r4((EAR.RACK_FACE - w) / 2);
@@ -419,6 +436,18 @@ export function emptyHeightAt(o, x, y) {
   if (!k) return 0;
   return x > k.x && x < k.x + k.w && y > k.y && y < k.y + k.h ? k.floor : k.mouth;
 }
+// WHERE THE PLATE ENDS BESIDE A SUNK FACET, for a pocket that states its wall:
+// the z below which what is beside face point (x, y) is open interior and not
+// plate. Outside the pocket's box the plate is solid from the mouth down to its
+// back face (mouth - wall); inside the box it is open pocket, which
+// emptyHeightAt already answers. null where there is no such edge: no wall
+// stated, a proud facet, or a point inside the box.
+export function openBelowAt(o, x, y) {
+  const k = o.pocket;
+  if (!(o.facet && (o.lift || 0) < 0) || !k || !(k.wall > 0)) return null;
+  const inside = x > k.x && x < k.x + k.w && y > k.y && y < k.y + k.h;
+  return inside ? null : k.mouth - k.wall;
+}
 export function skirtIsInterior(o, others, p, q, depthAt) {
   if (!others.length) return false;
   const pr = _skirtProbe(o, p, q);
@@ -464,25 +493,50 @@ export function profileSkirt(o, xs, ys, depthAt, others = []) {
     const pr = _skirtProbe(o, p, q);
     const beside = pr ? outHeightAt(others, pr[0], pr[1], 0, emptyHeightAt(o, ...pr)) : -Infinity;
     const base = Math.max(o.lift, beside);
-    if (Math.max(zp, zq) <= base + 0.01) continue;
-    // the quad p-top, q-top, q-base, p-base, kept where z >= base
+    // the quad p-top, q-top, q-base, p-base
     const quad = [[p[0], p[1], zp], [q[0], q[1], zq], [q[0], q[1], o.lift], [p[0], p[1], o.lift]];
-    const poly = [];
-    for (let i = 0; i < 4; i++) {
-      const a = quad[i], b = quad[(i + 1) % 4], ia = a[2] >= base, ib = b[2] >= base;
-      if (ia) poly.push(a);
-      if (ia !== ib) {
-        const t = (base - a[2]) / (b[2] - a[2]);
-        poly.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), base]);
+    // ...kept where z >= base
+    if (Math.max(zp, zq) > base + 0.01) {
+      const poly = clipZ(quad, base, true);
+      if (poly.length >= 3) {
+        const i0 = pts.length;
+        pts.push(...poly);
+        for (let i = 1; i + 1 < poly.length; i++) idx.push(i0, i0 + i, i0 + i + 1);
+        segs.push({k, base});
       }
     }
-    if (poly.length < 3) continue;
-    const i0 = pts.length;
-    pts.push(...poly);
-    for (let i = 1; i + 1 < poly.length; i++) idx.push(i0, i0 + i, i0 + i + 1);
-    segs.push({k, base});
+    // BESIDE A WALLED POCKET'S PLATE, the side is open below the plate's back
+    // face: the band from the base (or a neighbour's top) up to that face is
+    // seen from inside the card, and is built too. The plate itself, between
+    // its back face and the mouth, is solid and takes no skirt.
+    const under = pr ? openBelowAt(o, ...pr) : null;
+    if (under !== null) {
+      const lo = Math.max(o.lift, outHeightAt(others, pr[0], pr[1], 0, -Infinity));
+      if (under > lo + 0.01 && Math.max(zp, zq) > lo + 0.01) {
+        const poly = clipZ(clipZ(quad, lo, true), under, false);
+        if (poly.length >= 3) {
+          const i0 = pts.length;
+          pts.push(...poly);
+          for (let i = 1; i + 1 < poly.length; i++) idx.push(i0, i0 + i, i0 + i + 1);
+          segs.push({k, base: lo, under: true, verts: poly.map(v => v[2])});
+        }
+      }
+    }
   }
   return {ring, pts, idx, segs};
+}
+// a polygon clipped to z >= z0 (`above`) or z <= z0, its edges cut where they cross z0
+function clipZ(quad, z0, above) {
+  const keep = z => (above ? z >= z0 : z <= z0), poly = [];
+  for (let i = 0; i < quad.length; i++) {
+    const a = quad[i], b = quad[(i + 1) % quad.length], ia = keep(a[2]), ib = keep(b[2]);
+    if (ia) poly.push(a);
+    if (ia !== ib) {
+      const t = (z0 - a[2]) / (b[2] - a[2]);
+      poly.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), z0]);
+    }
+  }
+  return poly;
 }
 // WHICH FACET A NODE STANDS ON: the nearest `[data-tilt-on]` group at or above
 // it (render.py writes it on a part `on` a facet and on every occupant seated in
@@ -605,14 +659,21 @@ export function sunkIn(o, c, tol = 0.5) {
 // THE POCKET A SUNK FACET STANDS IN, as emptyHeightAt reads it: the smallest
 // untilted cavity with a floor it is sunk in, {x, y, w, h, floor, mouth}, the
 // floor at the cavity's lift less its built depth (`depthOf`). null if none.
-export function pocketOf(o, cavities, depthOf = c => c.d) {
+// `wallOf` answers the depth of the plate's back face where the cavity states
+// one (cavityShell's wallDepth); the pocket then carries `wall`, and what is
+// beside a tooth below it is open (openBelowAt). Without it nothing changes.
+export function pocketOf(o, cavities, depthOf = c => c.d, wallOf = () => null) {
   let best = null;
   for (const c of cavities) {
     if (c.tilt || c.hollow || c.seeThrough || !sunkIn(o, c)) continue;
     if (!best || c.w * c.h < best.w * best.h) best = c;
   }
-  return best && {x: best.x, y: best.y, w: best.w, h: best.h,
-                  floor: (best.lift || 0) - depthOf(best), mouth: best.lift || 0};
+  if (!best) return best;
+  const k = {x: best.x, y: best.y, w: best.w, h: best.h,
+             floor: (best.lift || 0) - depthOf(best), mouth: best.lift || 0};
+  const wall = wallOf(best);
+  if (wall > 0) k.wall = wall;
+  return k;
 }
 // WHERE A TILTED WELL CROSSES THE SLAB zlo..zhi (face mm): its true box, x/y
 // as built and z from its lift back `d`, carried by tiltFrame; each of the
@@ -941,7 +1002,8 @@ export function bodyBoxes(body, faceW, faceH) {
       // only when stated, so a plain box resolves to exactly what it always did
       ...(b.shape && b.shape !== 'box' ? {shape: b.shape, axis: b.axis || 'y'} : {}),
       ...(b.shape === 'ring' ? {wall: b.wall} : {}),
-      ...(b.shows && b.shows.length ? {shows: [...b.shows]} : {})}));
+      ...(b.shows && b.shows.length ? {shows: [...b.shows]} : {}),
+      ...(b.when ? {when: {...b.when}} : {})}));
   }
   const fp = body.footprint || {at: [0, 0], size: [faceW, faceH]};
   return [{id: 'body', x: fp.at[0], y: fp.at[1], w: fp.size[0], h: fp.size[1],
@@ -965,20 +1027,80 @@ export function bodyBoxes(body, faceW, faceH) {
 //   rear  down the drawing is down the face.
 // `b` is a resolved box (bodyBoxes) in the part's own frame; `faceW` the
 // part's face width; `dw`/`dh` the drawing's size in mm.
-export function pieceArtCrop(b, which, faceW, dw, dh) {
+//
+// THE FOUR SIDES (`left`, `right`, `top`, `bottom`) come from the part's
+// `skins/body-<side>.svg`, each that side of the whole body seen from outside,
+// in the frames the one-box body has always read them in (bodyBoxMesh):
+//   right   across: mm behind the face plane      down: the face's y
+//   left    across: depth less mm behind the face  down: the face's y
+//   top     across: the face's x                  down: depth less mm behind
+//   bottom  across: face width less the face's x  down: depth less mm behind
+// `depth` is body.depth. A side drawing covers the patch of the body its
+// viewBox names, and `at` is that viewBox's origin: a card whose top edge
+// stands past its bracket (face x 126 on a 120 face) has a bottom drawing
+// that starts at -6, so nothing has to be drawn from a zero it does not have.
+export function pieceArtCrop(b, which, faceW, dw, dh, {at = [0, 0], depth = 0} = {}) {
   if (which === 'plan')
     return {repeat: [-b.w / dw, -(b.z1 - b.z0) / dh],
             offset: [(faceW - b.x) / dw, 1 - b.z0 / dh]};
-  return {repeat: [b.w / dw, b.h / dh],
-          offset: [(faceW - b.x - b.w) / dw, 1 - (b.y + b.h) / dh]};
+  if (which === 'rear')
+    return {repeat: [b.w / dw, b.h / dh],
+            offset: [(faceW - b.x - b.w) / dw, 1 - (b.y + b.h) / dh]};
+  // drawing mm -> texture u, v (three's canvas v is up)
+  const U = x => (x - at[0]) / dw, V = y => 1 - (y - at[1]) / dh, d = b.z1 - b.z0;
+  // BoxGeometry's +x and -x faces run u toward the back and toward the front,
+  // with v up; its +y face has v up toward the back, its -y face toward the
+  // front - so only the bottom, which reads both ways round, needs a negative
+  if (which === 'right') return {repeat: [d / dw, b.h / dh], offset: [U(b.z0), V(b.y + b.h)]};
+  if (which === 'left') return {repeat: [d / dw, b.h / dh], offset: [U(depth - b.z1), V(b.y + b.h)]};
+  if (which === 'top') return {repeat: [b.w / dw, d / dh], offset: [U(b.x), V(depth - b.z0)]};
+  return {repeat: [-b.w / dw, -d / dh], offset: [U(faceW - b.x), V(depth - b.z1)]};
+}
+
+// IS THIS PIECE FITTED? A piece with `when` stands only while its part's
+// drawing shows a node for one of the options it lists - an extender bolted to
+// a card's far end is there when the card's `extender` field says so, and not
+// otherwise. The drawing is the one place a field's value is settled: render.py
+// hides a SHOW node a configuration did not choose, fields.js does the same at
+// runtime, and an unset field leaves the skin's own default showing, so the
+// piece follows whatever the face follows. `shown` is shownOptions' entry for
+// the part: {field: [options a node shows]}. Pure, so it is checked under node.
+export function pieceFitted(b, shown) {
+  if (!b.when) return true;
+  return Object.entries(b.when).every(([k, opts]) =>
+    [].concat(opts).some(o => ((shown || {})[k] || []).includes(String(o))));
+}
+
+// WHICH OPTIONS EACH PART'S DRAWING SHOWS, by the part's path: every
+// `data-show-from` node still drawn - not removed, not `display="none"` on it
+// or on anything round it - counted for the nearest part above it. A part
+// alone (a component preview) is keyed by its own path all the same, which is
+// its name. A projection is another face's picture of a part, not the part.
+export function shownOptions(root) {
+  const out = {};
+  for (const n of root.querySelectorAll('[data-show-from]')) {
+    if (n.closest('[data-projection]')) continue;
+    let hidden = false;
+    for (let a = n; a && a.getAttribute && !hidden; a = a.parentNode)
+      hidden = a.getAttribute('display') === 'none';
+    if (hidden) continue;
+    const part = n.closest('[data-path]');
+    const path = part ? part.getAttribute('data-path') : '';
+    const k = n.getAttribute('data-show-from');
+    const opts = ((out[path] ||= {})[k] ||= []);
+    for (const o of (n.getAttribute('data-show') || '').split(/\s+/).filter(Boolean))
+      if (!opts.includes(o)) opts.push(o);
+  }
+  return out;
 }
 
 // ONE PIECE OF A BODY, as something to add to a scene: a box, or - where the
 // piece says so - a cylinder or a ring standing on `axis`, fitted into the
 // same `w` x `h` x `d` envelope the box would fill. `w` and `h` are passed in
 // because the callers have already taken them through the module's frame.
-// `art` is {plan, rear}: a material for the top and for the back, from
-// pieceArt. The caller positions the result at the envelope's centre.
+// `art` is {plan, rear, left, right, top, bottom}: a material for each side
+// that carries a drawing, from pieceArt. The caller positions the result at
+// the envelope's centre.
 //
 // A ROUND PIECE IS A UNIT SOLID, SCALED. Its envelope need not be square, so
 // a ring in a 60 x 58 envelope comes out very slightly oval, with its wall
@@ -1008,8 +1130,9 @@ export function pieceMesh(b, w, h, d, art = {}) {
     return solid;
   }
   // BoxGeometry's faces: +x, -x, +y (top), -y, +z (toward the face), -z (back)
-  const mats = art.plan || art.rear
-    ? [plain(), plain(), art.plan || plain(), plain(), plain(), art.rear || plain()]
+  const mats = Object.keys(art).length
+    ? [art.right || plain(), art.left || plain(), art.top || art.plan || plain(),
+       art.bottom || plain(), plain(), art.rear || plain()]
     : plain();
   return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats);
 }
@@ -1021,17 +1144,27 @@ export function pieceMesh(b, w, h, d, art = {}) {
 // tilts it, they do not: a box's top is no longer the part's top and a ring's
 // `y` is no longer up - so such a piece is built as the plain box it would
 // have been before either key existed, rather than as a confident wrong one.
+//
+// A FACE DRAWN FLIPPED IS MIRRORED TOO, AND `m` DOES NOT SAY SO. `flip` is the
+// face's [flipLX, flipLY]: they mirror where the face places what it holds,
+// after the module's own transform, so an unturned occupant on such a face
+// reads as straight from `m` alone and is placed mirrored.
 // Pure, so it is checked under node.
-export function pieceIsStraight(m, tilt) {
-  if (tilt) return false;
+export function pieceIsStraight(m, tilt, flip) {
+  if (tilt || (flip && (flip[0] || flip[1]))) return false;
   if (!m) return true;
   return Math.abs(m.b) < 1e-9 && Math.abs(m.c) < 1e-9 && m.a > 0 && m.d > 0;
 }
+// (`when` is kept: whether a piece is fitted does not turn with its host)
 export const plainPiece = b => { const {shape, axis, wall, shows, ...box} = b; return box; };
+// the sides a piece can carry from the part's body-<side>.svg (pieceArtCrop)
+export const SIDES = ['left', 'right', 'top', 'bottom'];
 
 // THE DRAWINGS A PIECE SHOWS, rasterised once per drawing and cropped per
 // piece. `body.drawings` is the index's: {plan|rear: {file, w, h}}, the
-// part's own `faces`, and `body.face` its face size. `dist` is the same
+// part's own `faces`, and {left|right|top|bottom: {file, w, h, at}}, its
+// `body-<side>.svg` with the viewBox's origin; `body.face` is its face size
+// and `body.depth` the depth the sides measure back from. `dist` is the same
 // path -> URL function (or bare base) the back pass uses. A piece that names
 // a drawing the part does not have, or that is not a box, gets none - L71
 // says so at lint time, so here it is simply plain.
@@ -1043,8 +1176,20 @@ export const plainPiece = b => { const {shape, axis, wall, shows, ...box} = b; r
 // each piece takes a clone, which shares the upload and carries its own crop.
 //
 // A DRAWING THAT WILL NOT LOAD COSTS THE ART, NOT THE FACE. A plain box could
-// never fail to build, so a failed fetch or decode leaves the piece plain,
-// says so once, and is not remembered.
+// never fail to build, so a failed fetch or decode leaves the piece plain and
+// says so once for the build: the cache keeps the failure, so each piece that
+// shows the drawing is plain without rasterising it again or saying so again.
+// The next build asks afresh.
+//
+// A SHOWN DRAWING IS PAINTED AS THE KIT'S OTHER CANVAS MATERIALS ARE, with
+// `transparent` and `alphaTest`: a plan or rear with clear regions is a map
+// whose clear texels would otherwise come out black.
+//
+// THE CROP IS READ UNDER THE DEFAULT CLAMP. A negative repeat with an offset
+// inside 0..1 reads backwards without wrapping, so repeat wrapping is not
+// needed - and with it a crop that reaches the drawing's edge bleeds the
+// opposite edge in under linear filtering. L71 asks a piece's patch to lie
+// inside the drawing, so nothing is cropped from outside it.
 export async function pieceArt(body, b, dist, scope, cache) {
   const out = {};
   if (!b.shows || b.shape || !body.drawings || !dist) return out;
@@ -1052,23 +1197,34 @@ export async function pieceArt(body, b, dist, scope, cache) {
     const dr = body.drawings[which];
     if (!dr) continue;
     const url = typeof dist === 'function' ? dist(dr.file) : dist + dr.file;
-    if (cache && !cache.has(url))
-      cache.set(url, svgCanvas(url, dr.w, dr.h, false, false, scope).then(canvasTex));
+    // A SIDE DRAWING IS READ CLOSE. Its printing is a couple of millimetres
+    // tall (a card's "A100" is 1.8) and its ribs a couple apart, which the
+    // face density of 4 px/mm smears; it is rasterised at twice that, at least 8.
+    const px = SIDES.includes(which) ? Math.max(2 * _px(scope), 8) : undefined;
+    const raster = () => svgCanvas(url, dr.w, dr.h, false, false, scope, px).then(canvasTex);
+    if (cache && !cache.has(url)) cache.set(url, raster());
+    const pending = cache ? cache.get(url) : null;
     let base;
     try {
-      base = await (cache ? cache.get(url)
-                          : svgCanvas(url, dr.w, dr.h, false, false, scope).then(canvasTex));
+      base = await (cache ? pending : raster());
     } catch (err) {
-      if (cache) cache.delete(url);
-      console.warn(`[portrayal] a body piece's ${which} drawing did not load (${dr.file}); built plain`, err);
+      // the first piece to meet the failure says so and leaves a settled
+      // answer for the rest; one already waiting on the same load finds it
+      if (!cache || cache.get(url) === pending) {
+        if (cache) cache.set(url, Promise.resolve(null));
+        console.warn(`[portrayal] a body piece's ${which} drawing did not load (${dr.file}); built plain`, err);
+      }
       continue;
     }
+    if (!base) continue;
     const tex = cache ? base.clone() : base;
-    const {repeat, offset} = pieceArtCrop(b, which, (body.face || [dr.w])[0], dr.w, dr.h);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;   // a negative repeat reads backwards, inside 0..1
+    const {repeat, offset} = pieceArtCrop(b, which, (body.face || [dr.w])[0], dr.w, dr.h,
+                                          {at: dr.at || [0, 0], depth: body.depth || 0});
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.repeat.set(...repeat); tex.offset.set(...offset);
     tex.needsUpdate = true;
-    out[which] = new THREE.MeshBasicMaterial({map: tex});
+    out[which] = new THREE.MeshBasicMaterial(
+      {map: tex, transparent: true, alphaTest: 0.1, alphaToCoverage: true});
   }
   return out;
 }
@@ -1461,7 +1617,7 @@ const SVG_CACHE = new Map();
 // Passing no scope uses the default one, which is what every existing caller
 // does and what this module did before - so nothing had to change to keep working.
 export function createReliefScope(deps = {}) {
-  return {overrides: new Map(), states: new Map(), pulled: new Set(), lampBinds: new Map(),
+  return {overrides: new Map(), states: new Map(), pulled: new Set(), pulledIn: new Map(), lampBinds: new Map(),
           pxmm: deps.PXMM, fruPaths: deps.FRU_PATHS};
 }
 const DEFAULT_SCOPE = createReliefScope();
@@ -1581,6 +1737,28 @@ export function setNodeFields(map, scope) {
     if (vals && Object.keys(vals).length) st.set(path, {...vals});
 }
 export function nodeFields(scope) { return new Map(_sc(scope).fields || []); }
+
+// WHAT A DISPLAY SHOWS (docs/display-content-design.md). A rack file's
+// `displays` is a map of the path of a display to its content, and it lands in
+// the TEXT a texture is painted from, the route a state and a field take:
+// repaint, never re-shape. The picture or the lines go into the face as a group
+// next to the window's own node (displays.js paintDisplays, shared with the 2D
+// drawing); they are flat, so they add no relief and leave the batching of
+// the relief meshes as it was. The digits of a segment display are a state on
+// each cell and ride the same rule.
+export function setNodeDisplays(map, scope) {
+  const st = _sc(scope).displays || (_sc(scope).displays = new Map());
+  st.clear();
+  for (const [path, content] of map instanceof Map ? map : Object.entries(map || {}))
+    if (path && content && typeof content === 'object') st.set(path, structuredClone(content));
+}
+export function nodeDisplays(scope) { return new Map(_sc(scope).displays || []); }
+/** Paint the registered displays onto a parsed document, taking what was painted before out first. */
+export function applyNodeDisplays(root, scope) {
+  if (!root) return root;
+  paintDisplays(root, Object.fromEntries(_sc(scope).displays || []));
+  return root;
+}
 // COLOURS ARE PUT BACK FIRST, over the whole document, for the reason
 // applyNodeStates clears first: the registry is the whole truth, and a part
 // taken OUT of it arrives as a path that is no longer there. A repaint that
@@ -1718,13 +1896,32 @@ export function applyNodeLampColors(root, scope) {
 // NESTED PARTS COME WITH IT. Pulling a supply takes its lamps and its ports,
 // because they are on it - a tree row pointing at geometry that is no longer
 // drawn is exactly the dangling selection this was reported for.
-export function setPulled(paths, scope) {
-  const s = _sc(scope).pulled;
+//
+// OF THE VIEW IT IS ON. Two views can place one id (the DIN rail's left and
+// right both place `screw-upper`), so `views` - optional, one view for every
+// path or a list beside `paths` - says which face a path is off on. A path with
+// no view is off on every face that has it, as it always was; one with a view
+// is off on that face only.
+export function setPulled(paths, scope, views) {
+  const sc = _sc(scope), s = sc.pulled, at = sc.pulledIn;
   s.clear();
-  for (const p of paths || []) if (p) s.add(String(p));
+  at.clear();
+  (paths || []).forEach((p, i) => {
+    if (!p) return;
+    const v = Array.isArray(views) ? views[i] : views;
+    if (v == null) { s.add(String(p)); return; }
+    if (!at.has(String(v))) at.set(String(v), new Set());
+    at.get(String(v)).add(String(p));
+  });
 }
-export function clearPulled(scope) { _sc(scope).pulled.clear(); }
-export function pulledPaths(scope) { return new Set(_sc(scope).pulled); }
+export function clearPulled(scope) { _sc(scope).pulled.clear(); _sc(scope).pulledIn.clear(); }
+/** Every path that is off, on whichever view. */
+export function pulledPaths(scope) {
+  const sc = _sc(scope);
+  return new Set([...sc.pulled, ...[...sc.pulledIn.values()].flatMap(s => [...s])]);
+}
+/** The paths off on one view alone: the ones named for it, no more. */
+export function pulledOn(view, scope) { return new Set(_sc(scope).pulledIn.get(String(view)) || []); }
 
 /** Is `path` the pulled part itself, or something sitting on it? */
 function _isPulled(path, pulled) {
@@ -1733,23 +1930,47 @@ function _isPulled(path, pulled) {
   return false;
 }
 
-/** Hide what this viewer has taken off, in a parsed document. */
-export function applyPulled(root, scope) {
+/** Is `path`, drawn on `view`, off: by name for every view, or for this one? */
+export function isPulledOn(path, view, scope) {
+  const sc = _sc(scope);
+  return _isPulled(path, sc.pulled)
+    || (view != null && sc.pulledIn.has(String(view)) && _isPulled(path, sc.pulledIn.get(String(view))));
+}
+
+/** Hide what this viewer has taken off, in the scene under `o`. A mesh is on the
+ *  face whose group it hangs under (`userData.portrayalView`, set where the face's
+ *  group is made), so a part pulled on one face stays on the other that places the
+ *  same id. `view` is the face `o` is already known to be on. */
+export function hidePulled(o, scope, view = null) {
+  const v = (o.userData && o.userData.portrayalView) || view;
+  const p = o.userData && o.userData.portrayalPath;
+  if (p) o.visible = !isPulledOn(p, v, scope);
+  for (const c of o.children || []) hidePulled(c, scope, v);
+}
+
+/** Hide what this viewer has taken off, in a parsed document. `view` is the face
+ *  the document is; without it only what was taken off for every view is hidden. */
+export function applyPulled(root, scope, view) {
   if (!root) return root;
   for (const el of root.querySelectorAll("[data-portrayal-pulled]")) {
     el.removeAttribute("data-portrayal-pulled");
     el.removeAttribute("display");
   }
-  const pulled = _sc(scope).pulled;
-  if (!pulled.size) return root;
-  for (const el of root.querySelectorAll("[data-path]"))
-    if (_isPulled(el.getAttribute("data-path"), pulled)) {
-      el.setAttribute("data-portrayal-pulled", "");
-      el.setAttribute("display", "none");
-    }
-  // a part's projections on other faces go with it
+  const sc = _sc(scope);
+  const pulled = view != null && sc.pulledIn.has(String(view))
+    ? new Set([...sc.pulled, ...sc.pulledIn.get(String(view))]) : sc.pulled;
+  // a part's projections on other faces go with it, whichever face it was taken
+  // off on: the projection is the same part seen through another face
+  const anywhere = pulledPaths(scope);
+  if (!anywhere.size) return root;
+  if (pulled.size)
+    for (const el of root.querySelectorAll("[data-path]"))
+      if (_isPulled(el.getAttribute("data-path"), pulled)) {
+        el.setAttribute("data-portrayal-pulled", "");
+        el.setAttribute("display", "none");
+      }
   for (const el of root.querySelectorAll("[data-projection][data-of]"))
-    if (_isPulled(el.getAttribute("data-of"), pulled)) {
+    if (_isPulled(el.getAttribute("data-of"), anywhere)) {
       el.setAttribute("data-portrayal-pulled", "");
       el.setAttribute("display", "none");
     }
@@ -1776,16 +1997,19 @@ export function applyNodeStates(root, scope) {
 // and never re-shapes, so a texture can be redrawn from the text it was built
 // from without re-extracting any geometry - which is the whole reason clicking a
 // state chip does not cost a rebuild.
-export function restyleText(text, scope) {
+// `view` is the face the text is, for what was taken off on that face alone.
+export function restyleText(text, scope, view) {
   if (!text) return text;
   const div = document.createElement('div');
   div.innerHTML = text;
   applyNodeStates(div, scope);
   applyNodeFields(div, scope);
+  // what a display shows goes in after the states, whose glyph classes it sets
+  applyNodeDisplays(div, scope);
   // a face keeps its members where the registry puts them through a repaint
   applyNodeAdjustments(div, scope);
   applyNodeLampColors(div, scope);
-  applyPulled(div, scope);
+  applyPulled(div, scope, view);
   return div.innerHTML;
 }
 
@@ -1863,12 +2087,10 @@ function _cssInfo(css) {
   _CSS_INFO.set(css, info);
   return info;
 }
-export function rasterKey(text) {
-  text = String(text ?? '');
-  const css = [...text.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
-  const info = _cssInfo(css);
-  const refs = new Set(info.ids);
-  for (const m of text.matchAll(/(?:url\(\s*['"]?#|href\s*=\s*["']#)([^)'"\s]+)/g)) refs.add(m[1]);
+const _STYLES = /<style\b[^>]*>([\s\S]*?)<\/style>/g;
+const _URL_REFS = /(?:url\(\s*['"]?#|href\s*=\s*["']#)([^)'"\s]+)/g;
+const _cssOf = text => [...text.matchAll(_STYLES)].map(m => m[1]).join('\n');
+function _normText(text, info, refs) {
   // Inside start tags only, and never inside a <style>: a stylesheet or a
   // run of text keeps every character it has.
   const tag = t => t.replace(/(\s)(id|data-[\w.:-]+)="([^"]*)"/g, (all, sp, name, val) => {
@@ -1880,6 +2102,118 @@ export function rasterKey(text) {
     : part.replace(/<[a-zA-Z][^>]*>/g, tag)
           // the words go, the element stays: a selector may count it
           .replace(/(<title\b[^>]*>)([^<]+)(<\/title>)/g, '$1.$3')).join('');
+}
+/** The whole text, normalised: the reference for what `rasterKey` tells apart. */
+export function rasterKeyText(text) {
+  text = String(text ?? '');
+  const info = _cssInfo(_cssOf(text));
+  const refs = new Set(info.ids);
+  for (const m of text.matchAll(_URL_REFS)) refs.add(m[1]);
+  return _normText(text, info, refs);
+}
+
+// THE SHARED PREFIX IS NORMALISED ONCE. A node's text is the face's whole
+// `<style>` and `<defs>` (nodeSvg's `shared`), then `<!--art-->`, then its own
+// art, so the same tens of kilobytes (up to a megabyte) came to rasterKey for
+// every feature and were split, rewritten and joined each time, and each
+// kept raster held the whole text as its key. Here the prefix is rewritten
+// once per distinct prefix, given a short number, and a key is that number,
+// the ids of the prefix that only the art refers to (the one thing the art
+// can change in the prefix's rewrite) and the art's own rewrite. Texts that
+// `rasterKeyText` tells apart never share a key; a text that does not split
+// cleanly (no marker, a stylesheet or an open tag across it) is keyed from
+// its whole text.
+const _MARK = '<!--art-->';
+const _PIDS = new Map();
+let _pfxChars = 0, _pfxN = 0, _pidN = 0;
+// (Never a Map keyed by a long text: V8 hashes a string over 16,383
+// characters by its length alone, so every text of one length collides and
+// each lookup compares them in full.)
+function _prefixOf(p) {
+  const info = _cssInfo(_cssOf(p));
+  const refs = new Set(info.ids);
+  for (const m of p.matchAll(_URL_REFS)) refs.add(m[1]);
+  // each id value, with the places (by order among the prefix's ids) it stands at
+  const ids = new Map();
+  let nth = 0;
+  for (const m of p.matchAll(/\sid="([^"]*)"/g)) {
+    const at = ids.get(m[1]);
+    if (at) at.push(nth++); else ids.set(m[1], [nth++]);
+  }
+  // it splits cleanly: ends between tags, and every <style> in it is closed
+  const ok = p.lastIndexOf('<') < p.lastIndexOf('>') && p.lastIndexOf('<style') <= p.lastIndexOf('</style>')
+    && p.split('<style').length === p.split('</style>').length;
+  if (_pfxChars + p.length > 32e6 || _pfxN >= 256) { _BY_SIG.clear(); _pfxChars = _pfxN = 0; }
+  _pfxChars += p.length;
+  _pfxN++;
+  return {p, ok, info, refs, ids, id: undefined};
+}
+// The prefix's number: its rewrite against its own references. What the art
+// refers to in it is named beside the number (rasterKey), never rewritten in.
+function _prefixId(e) {
+  if (e.id === undefined) {
+    const out = _normText(e.p, e.info, e.refs);
+    let id = _PIDS.get(out);
+    if (id === undefined) {
+      if (_PIDS.size >= 256) _PIDS.clear();
+      id = ++_pidN;      // never reused: a cleared number only costs a draw, never a wrong share
+      _PIDS.set(out, id);
+    }
+    e.id = id;
+  }
+  return e.id;
+}
+// A prefix is found by its length and its two ends, then confirmed by
+// comparing the text against it, rather than cutting and hashing tens of
+// kilobytes for every ask.
+const _BY_SIG = new Map();
+function _prefixFor(text, at) {
+  const sig = `${at}|${text.slice(0, 32)}|${text.slice(at - 32, at)}`;
+  const list = _BY_SIG.get(sig);
+  const p = text.slice(0, at);         // `===` of two flat strings is a memcmp; `startsWith` is a loop, 40 times slower
+  if (list) for (const e of list) if (e.p === p) return e;
+  const e = _prefixOf(p);
+  const kept = _BY_SIG.get(sig);       // _prefixOf may have cleared the index
+  if (kept) kept.push(e); else _BY_SIG.set(sig, [e]);
+  return e;
+}
+// The keys of the last two texts, so a text asked again at once (the same
+// string, most often: a cavity's outline is asked for the punch and again for
+// the plate) is a comparison and no work. Two, not a Map (see above) and not
+// more: texts of one face share their start, so a different one is compared
+// as far as it goes.
+const _RING = [{text: null, key: ''}, {text: null, key: ''}];
+let _ringAt = 0;
+export function rasterKey(text) {
+  text = String(text ?? '');
+  for (const e of _RING) if (e.text === text) return e.key;
+  const key = _rasterKey(text);
+  _RING[_ringAt] = {text, key};
+  _ringAt ^= 1;
+  return key;
+}
+function _rasterKey(text) {
+  const at = text.indexOf(_MARK);
+  if (at > 0) {
+    const e = _prefixFor(text, at);
+    const r = text.slice(at);
+    if (e.ok && !r.includes('<style')) {
+      const refs = new Set();
+      for (const m of r.matchAll(_URL_REFS)) refs.add(m[1]);
+      const all = {has: v => refs.has(v) || e.refs.has(v)};
+      // an id of the prefix that only the art names stays in the prefix's
+      // rewrite, so it is part of the key; a stylesheet that reads `id` keeps all
+      let named = '';
+      if (refs.size && !e.info.anyId) {
+        const ids = [];
+        // the name and where it stands: two prefixes of one rewrite may hold it on different elements
+        for (const v of refs) if (e.ids.has(v) && !e.refs.has(v)) ids.push(`${v}@${e.ids.get(v)}`);
+        if (ids.length) named = '\u0002' + ids.sort().join('\u0002');
+      }
+      return `${_prefixId(e)}${named}\u0001${_normText(r, e.info, all)}`;
+    }
+  }
+  return rasterKeyText(text);
 }
 
 // THE KEPT RASTERS, oldest first, bounded by pixels rather than by count:
@@ -1951,11 +2285,15 @@ function _copyOf(src) {
   return cv;
 }
 
-export async function svgCanvas(url, wmm, hmm, flipX = false, flipYax = false, scope) {
+export async function svgCanvas(url, wmm, hmm, flipX = false, flipYax = false, scope, pxmm) {
   const text = await svgSource(url, scope);
-  const px = _px(scope);
-  const cv = _copyOf(await _rasterShared(text, Math.round(wmm * px), Math.round(hmm * px), flipX, flipYax));
-  cv._svgText = text;      // kept for adaptive re-rasterisation (see LOD below)
+  // `pxmm` only where a caller needs more than the face density (pieceArt)
+  const px = pxmm || _px(scope);
+  // The kept raster itself, not a copy: every caller makes a texture of it and
+  // draws nothing on it. A caller that draws on its canvas takes `rasterize`.
+  const cv = await _rasterShared(text, Math.round(wmm * px), Math.round(hmm * px), flipX, flipYax);
+  cv._svgText ??= text;    // kept for adaptive re-rasterisation (see LOD below); an equal text draws the same
+
   return cv;
 }
 // A face canvas is inevitably non-power-of-two (a 548x44mm side is 2192x176 at
@@ -2324,7 +2662,7 @@ export function markPositionFields(root) {
   return root;
 }
 
-export async function extractRelief(url, scope, {back = false} = {}) {
+export async function extractRelief(url, scope, {back = false, view = null} = {}) {
   const div = document.createElement('div');
   div.style.cssText = 'position:absolute;left:-10000px;top:0;width:1000px;visibility:hidden';
   div.innerHTML = await svgSource(url, scope);
@@ -2344,6 +2682,8 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // while the registry still said the value was set, and a repeated setFields
   // would see nothing changed and never put it back
   applyNodeFields(svg, scope);
+  // and what each display shows, flat on its window: no relief, the same texture
+  applyNodeDisplays(svg, scope);
   // and the position of each part that slides, before anything is measured:
   // the depth of a well and the lift of what stands in it are read below
   applyNodeAdjustments(svg, scope);
@@ -2355,7 +2695,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // has to put it back. Left as display:none it would measure 0x0 and extrude a
   // degenerate feature instead of none at all - a cover that is off should leave
   // no geometry behind, not a flat one.
-  applyPulled(svg, scope);
+  applyPulled(svg, scope, view);
   for (const el of [...q("[data-portrayal-pulled]")]) el.remove();
   // AND A NODE A POSITION HIDES, for the same reason (docs/switch-positions-
   // design.md section 6): a breaker's off flag is not drawn while it is on, and
@@ -2366,6 +2706,9 @@ export async function extractRelief(url, scope, {back = false} = {}) {
   // never rebuild to show it (#874).
   markPositionFields(svg);
   for (const el of [...q('[data-show-from][display="none"]')]) el.remove();
+  // what is left is what each part shows, which says which of its fitted
+  // pieces stand (pieceFitted)
+  const shown = shownOptions(svg);
   const {ctmOf, mmRect, shared, liftOf, ownerOf, nodeSvg} = nodeTools(svg, {back});
   // TILTED FACETS (docs/tilted-facets-design.md).
   // A node under a `[data-tilt-on]` group is measured foreshortened; it is
@@ -2500,6 +2843,9 @@ export async function extractRelief(url, scope, {back = false} = {}) {
       }));
       const e = {...rect, owner: ownerOf(el), d: +el.dataset.depth, wall: el.dataset.wall || '#a7adb4',
               wallsInside: el.dataset.walls === 'inside',
+              // a window in a thin plate (render.py `data-wall-depth`, from
+              // `pocket: {depth, wall}`): the walls stop at the plate's back face
+              wallDepth: +el.dataset.wallDepth || 0,
               // A HOLE A BAY IS SEEN THROUGH (render.py's `rear:`) is a passage
               // to the front of the chassis. Whatever the bay holds stands in it
               // as its own body, back painted, and leaves with it when pulled;
@@ -2765,7 +3111,7 @@ export async function extractRelief(url, scope, {back = false} = {}) {
     el.style.display = 'none';
   const cleanText = svg.outerHTML;
   div.remove();
-  return {cavities, outs, domes, vents, apertures, frus, subBodies, flatLifted, cleanText};
+  return {cavities, outs, domes, vents, apertures, frus, subBodies, flatLifted, cleanText, shown};
 }
 
 // The commonest opaque colour in a raster, which is what a part is MADE of - as
@@ -3165,7 +3511,7 @@ export async function buildFaceRelief(F, ctx) {
     const restyle = ctx.restyle || [];
     // `anim` - the material and its mm size - is what lets the viewer redraw
     // the same texture at several instants of a CSS animation (see lamps.js)
-    const reg = (svgText, run, anim = null) => { if (svgText) restyle.push({svgText, run, anim}); };
+    const reg = (svgText, run, anim = null) => { if (svgText) restyle.push({svgText, run, anim, view: F.view}); };
     // what a restyle will change, kept whole by the batch pass; with no
     // `ctx.restyle` nothing ever runs a restyle, so nothing is live
     const live = new Set();
@@ -3188,7 +3534,7 @@ export async function buildFaceRelief(F, ctx) {
       return;
     }
     const {cavities, outs, domes, vents, apertures = [], frus, subBodies = [], flatLifted = [],
-           cleanText} = await extractRelief(src, ctx.scope, {back: !!ctx.back});
+           cleanText, shown} = await extractRelief(src, ctx.scope, {back: !!ctx.back, view: F.view});
     if (ctx.apertures) ctx.apertures[F.view] = apertures;
     // A MODULE PREVIEW IS THE PART'S SIZE BOX HERE. A part that declares
     // `head:` publishes a preview whose viewBox also holds the head and its
@@ -3258,6 +3604,9 @@ export async function buildFaceRelief(F, ctx) {
     faceSvg[F.view] = faceText;   // LOD re-rasterises from this; keep it squared
     facePunch[F.view] = [];
     const grp = new THREE.Group();
+    // the face this group is, so a pulled part is hidden on its own face and not
+    // on the other that places the same id (setPulled's `views`)
+    grp.userData.portrayalView = F.view;
     grp.position.set(...F.pos());
     grp.rotation.set(...F.rot);
     // A FACE MAY BE AUTHORED MIRRORED and the underside is - a bottom view is drawn
@@ -3384,6 +3733,9 @@ export async function buildFaceRelief(F, ctx) {
       // rear drive bays - ended at a flat plane.
       const shell = cavityShell(c, INTO);
       if (!shell.walls && !shell.floor) continue;
+      // THE WALLS STOP AT THE PLATE WHEN THE POCKET SAYS HOW THICK IT IS: the
+      // floor and the back stay at `d`, the sides below the plate are open
+      const wd = wallSpan(c, INTO).depth;
       const wallMat = new THREE.MeshLambertMaterial({color: c.wall,
         side: c.wallsInside ? THREE.BackSide : THREE.DoubleSide});
       const backMat = new THREE.MeshLambertMaterial({color: 0x23262b, side: THREE.DoubleSide});
@@ -3391,7 +3743,7 @@ export async function buildFaceRelief(F, ctx) {
       if (!shell.walls) {
         // a sheet's well: its floor, below, and nothing round it
       } else if (c.rings) {
-        const g = outlineWalls(c.rings, (x, y) => [LX(x, 0), LY(y, 0)], c.lift, c.lift - d);
+        const g = outlineWalls(c.rings, (x, y) => [LX(x, 0), LY(y, 0)], c.lift, c.lift - wd);
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.Float32BufferAttribute(g.pos, 3));
         geo.setIndex(g.idx);
@@ -3399,18 +3751,18 @@ export async function buildFaceRelief(F, ctx) {
         walls = new THREE.Mesh(geo, wallMat);
       } else if (c.round) {
         walls = new THREE.Mesh(
-          new THREE.CylinderGeometry(c.w / 2, c.w / 2, d, 24, 1, true), wallMat);
+          new THREE.CylinderGeometry(c.w / 2, c.w / 2, wd, 24, 1, true), wallMat);
         walls.rotation.x = Math.PI / 2;
       } else {
         const noFace = new THREE.MeshBasicMaterial({visible: false});
-        walls = new THREE.Mesh(new THREE.BoxGeometry(c.w, c.h, d),
+        walls = new THREE.Mesh(new THREE.BoxGeometry(c.w, c.h, wd),
           [wallMat, wallMat, wallMat, wallMat, noFace, noFace]);
       }
       // A NON-FINITE POSITION IS NOT A DRAWING ERROR, IT IS A DISAPPEARANCE.
       // Three.js culls a mesh whose matrix holds a NaN rather than complaining,
       // so the failure looks exactly like geometry nobody wrote - which is how
       // seven see-through slits survived in a shipped drawing. Say it out loud.
-      const zc = c.lift - d / 2;
+      const zc = c.lift - wd / 2;
       if (!Number.isFinite(zc) || !Number.isFinite(LX(c.x, c.w)) || !Number.isFinite(LY(c.y, c.h)))
         console.error('relief: cavity has a non-finite position and will not render',
                       {owner: c.owner, x: c.x, y: c.y, d, lift: c.lift});
@@ -3420,7 +3772,7 @@ export async function buildFaceRelief(F, ctx) {
       // a box well whose sides are the chassis: a side against another face
       // shows that face's vents (ventWellWalls, once every face is read)
       if (walls && ctx.wells && c.wallsInside && !c.rings && !c.round && !c.tilt) {
-        ctx.wells.push({view: F.view, mesh: walls, well: c, d});
+        ctx.wells.push({view: F.view, mesh: walls, well: c, d: wd});
         held.add(walls);
       }
       if (!shell.floor) continue;
@@ -3536,7 +3888,7 @@ export async function buildFaceRelief(F, ctx) {
       m.position.set(LX(dm.x, dm.w), LY(dm.y, dm.h), (dm.lift || 0) - 0.15);
       addTo(m);
       liveMat(m.material);
-      reg(dm.svgText, async text => remap(m.material, await rasterize(text, dm.w, dm.h, PX)),
+      reg(dm.svgText, async text => remap(m.material, await rasterSource(text, dm.w, dm.h, PX)),
           {mat: m.material, w: dm.w, h: dm.h, path: dm.owner});
     }
     for (const o of outs) {   // protrusions: bezel plates, handles, studs, tubes
@@ -3544,7 +3896,8 @@ export async function buildFaceRelief(F, ctx) {
       curTilt = o.tilt || null;
       // the pocket a sunk facet stands in, for what its skirt stands beside
       // (profileSkirt, emptyHeightAt); a proud facet has none
-      if (o.facet && (o.lift || 0) < 0) o.pocket = pocketOf(o, cavities, builtDepth);
+      if (o.facet && (o.lift || 0) < 0)
+        o.pocket = pocketOf(o, cavities, builtDepth, c => cavityShell(c, INTO).wallDepth);
       if (o.facet) {
         // the wedge covers its footprint: clear the flat face under it (facetPunch)
         const fp = facetPunch(o);
@@ -4047,9 +4400,10 @@ export async function buildFaceRelief(F, ctx) {
         // riser's PCB and connectors come out with its plate. Side art is
         // for the one-box form; a PCB is a colour.
         for (const b of bodyBoxes(meta.body, f.w, f.h)) {
+          if (!pieceFitted(b, shown[f.path])) continue;
           // toFace is the drawn (foreshortened) frame; a tilted box is unprojected
           const r = f.tilt ? unproject(localToFace(f.toFace, b), f.tilt) : localToFace(f.toFace, b);
-          const pb = pieceIsStraight(f.toFace, f.tilt) ? b : plainPiece(b);
+          const pb = pieceIsStraight(f.toFace, f.tilt, [F.flipLX, F.flipLY]) ? b : plainPiece(b);
           const m = pieceMesh(pb, r.w, r.h, b.z1 - b.z0,
                               await pieceArt(meta.body, pb, ctx.dist, ctx.scope, pieceTex));
           m.position.set(LX(r.x, r.w), LY(r.y, r.h),
@@ -4156,8 +4510,9 @@ export async function buildFaceRelief(F, ctx) {
       if (!body || !body.boxes) continue;
       const into = s.tilt ? tiltGroupFor(s.tilt, fruGroups[s.owner] || grp) : fruGroups[s.owner] || grp;
       for (const b of bodyBoxes(body, 0, 0)) {
+        if (!pieceFitted(b, shown[s.path])) continue;
         const r = s.tilt ? unproject(localToFace(s.toFace, b), s.tilt) : localToFace(s.toFace, b);
-        const pb = pieceIsStraight(s.toFace, s.tilt) ? b : plainPiece(b);
+        const pb = pieceIsStraight(s.toFace, s.tilt, [F.flipLX, F.flipLY]) ? b : plainPiece(b);
         const m = pieceMesh(pb, r.w, r.h, b.z1 - b.z0,
                             await pieceArt(body, pb, ctx.dist, ctx.scope, pieceTex));
         m.position.set(LX(r.x, r.w), LY(r.y, r.h),

@@ -15,6 +15,7 @@ import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from '../.
 import {earHoles} from './ear-holes.js';
 import {configuredFace, earPlanFor, zeroUModuleEnds} from './face.js';
 import {svgEl, importDrawingNode} from './dom.js';
+import {paintFace} from './settable.js';
 import {uLabel, zeroUOf, zeroUBottomMm} from '../../vendor/rack/model.js';
 import {isRackMount} from '../../vendor/rack/export-data.js';
 import {itemBox} from '../../vendor/rack/fit.js';
@@ -248,6 +249,8 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
         if (kid.nodeName === 'style') { if (zStyled) continue; zStyled = true; }
         gz.append(importDrawingNode(kid) ?? []);
       }
+      // WHAT IT IS SET TO AND SHOWS (settable.js), as the item below
+      paintFace(gz, z.paint);
       // The whole part takes a click: its backing rect, under its drawing.
       gz.prepend(svgEl('rect', {x: 0, y: 0, width: w, height: h, fill: 'transparent', 'data-zerou-hit': z.id}));
       // THE OUTLETS A CORD LANDS ON (kit 0.36.0, Portrayal #1068: ports.js cableEndPaths of the part), for
@@ -388,6 +391,11 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
       if (kid.nodeName === 'style') { if (styled) continue; styled = true; }
       g.append(importDrawingNode(kid) ?? []);
     }
+    // WHAT IT IS SET TO AND SHOWS (settable.js): the lamps and digits the rack
+    // sets and the text or picture a display holds, painted into this
+    // device's own drawing, as the fields are (the item's `paint`, which the
+    // page reads for the rack as it is: none for a rack that sets nothing)
+    paintFace(g, it.paint);
     out.append(g);
     // A manager is mostly air: a click on its tray or ears is meant for the
     // host behind it, or the empty U on the far face. This holds on either

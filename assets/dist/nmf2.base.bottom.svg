@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.83mm" height="157.0mm" viewBox="0 0 444.83 157.0" data-device="nmf2" data-view="bottom" data-shell="sheet" data-weight-kg="0.73" data-material="ABS" data-cover-material="PVC" data-color="Black" data-mounting-hardware="#12-24 mounting screws, as shipped with the cover" data-cable-capacity="67" data-cable-capacity-basis="Cat 6 24 AWG, 0.235 in (5.97 mm), at the 30% recommended fill of the front channel's 9.8 sq in usable area; 112 at the 50% maximum fill - Panduit Space-Saving Cable Management Rack Systems bulletin RKCB46, Cable Capacity Charts" data-cable-capacity-media="cat6" data-operating-temp="60 C maximum" data-storage-temp="65 C maximum" data-rohs="RoHS Compliant" data-ul="UL 2416" data-csa="CSA C22.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit NMF2","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"56be43f118757e5059e702f5a5411320e9926593ad767d5d0a27fb9270c56e29","view":"bottom"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NMF2" x="0" y="0" width="444.83" height="157" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate" data-kind="base" x="0" y="0" width="444.83" height="17.3" rx="0.6" fill="#232527" data-groove="0.05" />
+    <rect id="ear-plane" data-kind="fold" x="0" y="16.7" width="444.83" height="0.6" rx="0.6" fill="#121315" />
+    <rect id="stem-1" data-kind="finger-wall" x="27.81" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-2" data-kind="finger-wall" x="62.74" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-3" data-kind="finger-wall" x="97.66" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-4" data-kind="finger-wall" x="132.59" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-5" data-kind="finger-wall" x="167.51" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-6" data-kind="finger-wall" x="202.44" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-7" data-kind="finger-wall" x="237.36" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-8" data-kind="finger-wall" x="272.29" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-9" data-kind="finger-wall" x="307.21" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-10" data-kind="finger-wall" x="342.14" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-11" data-kind="finger-wall" x="377.06" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="stem-12" data-kind="finger-wall" x="411.99" y="17.3" width="5" height="100" rx="0.6" fill="#26282a" />
+    <rect id="bar-1" data-kind="finger-wall" x="15.56" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-2" data-kind="finger-wall" x="50.49" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-3" data-kind="finger-wall" x="85.41" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-4" data-kind="finger-wall" x="120.34" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-5" data-kind="finger-wall" x="155.26" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-6" data-kind="finger-wall" x="190.19" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-7" data-kind="finger-wall" x="225.11" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-8" data-kind="finger-wall" x="260.04" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-9" data-kind="finger-wall" x="294.96" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-10" data-kind="finger-wall" x="329.89" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-11" data-kind="finger-wall" x="364.81" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+    <rect id="bar-12" data-kind="finger-wall" x="399.74" y="117.3" width="29.5" height="6" rx="0.6" fill="#2c2f31" />
+  </g>
+</svg>

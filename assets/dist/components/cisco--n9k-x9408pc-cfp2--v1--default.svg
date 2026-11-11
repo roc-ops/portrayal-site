@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="431.8mm" height="44.45mm" viewBox="0 0 431.8 44.45">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/n9k-x9408pc-cfp2@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-x9408pc-cfp2@'] .state-amber { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-x9408pc-cfp2@'] .state-blue { --led-color: #2a7de1; }
+    g[data-ref^='cisco/n9k-x9408pc-cfp2@'] .state-blue { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/n9k-x9408pc-cfp2@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-x9408pc-cfp2@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='cisco/n9k-x9408pc-cfp2@'] .state-red { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="n9k-x9408pc-cfp2" data-path="n9k-x9408pc-cfp2" data-class="line-card" data-behaviour="fills" data-ref="cisco/n9k-x9408pc-cfp2@1:1.0.0" data-body-depth="419.1" data-cfp2="8" data-chassis="Nexus 9504, Nexus 9508, Nexus 9516" data-eol="unknown" data-hot-swappable="True" data-media="CFP2, 100 Gigabit Ethernet" data-model="N9K-X9408PC-CFP2" data-power-draw-max-w="432" data-power-draw-typical-w="310" data-role="line-card" data-weight-kg="5.92" transform="translate(0,0)">
+    <title>n9k-x9408pc-cfp2</title>
+    <rect id="n9k-x9408pc-cfp2--plate" x="0.4" y="0.4" width="431.0" height="43.65" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <g id="n9k-x9408pc-cfp2--ejector-left">
+      <rect x="1.5" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="n9k-x9408pc-cfp2--release-left" x="4" y="17" width="4" height="10" rx="1" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--ejector-right">
+      <rect x="421.3" y="3" width="9" height="38.5" rx="1.5" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <rect id="n9k-x9408pc-cfp2--release-right" x="423.8" y="17" width="4" height="10" rx="1" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="0.3" />
+    </g>
+    <rect id="n9k-x9408pc-cfp2--vent-top" x="21" y="1.6" width="392" height="2.4" rx="0.8" fill="#34373a" />
+    <rect id="n9k-x9408pc-cfp2--vent-bottom" x="21" y="40.4" width="392" height="2.4" rx="0.8" fill="#34373a" />
+    <circle id="n9k-x9408pc-cfp2--bcn" cx="14" cy="13.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="n9k-x9408pc-cfp2/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, at the left of the face." />
+    <circle id="n9k-x9408pc-cfp2--sts" cx="14" cy="26.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="n9k-x9408pc-cfp2/sts" data-class="led" data-states="green red amber off" data-description="STS lamp, at the left of the face." />
+    <rect id="n9k-x9408pc-cfp2--logo-zone" x="413.5" y="18" width="8" height="8" fill="none" data-path="n9k-x9408pc-cfp2/logo-zone" data-class="mechanical" data-description="The maker's mark, reserved and not drawn." />
+    <g id="n9k-x9408pc-cfp2--silkscreen">
+      <text x="14" y="18.6" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">BCN</text>
+      <text x="14" y="31.6" font-family="sans-serif" font-size="2.1" text-anchor="middle" fill="#231f20">STS</text>
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-1" data-path="n9k-x9408pc-cfp2/port-1" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(45,4.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-1</title>
+      <rect id="n9k-x9408pc-cfp2--port-1--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-1/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-1--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-1--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-2" data-path="n9k-x9408pc-cfp2/port-2" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(45,26.15) rotate(180 20.75 7.15)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-2</title>
+      <rect id="n9k-x9408pc-cfp2--port-2--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-2/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-2--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-2--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-3" data-path="n9k-x9408pc-cfp2/port-3" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(135,4.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-3</title>
+      <rect id="n9k-x9408pc-cfp2--port-3--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-3/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-3--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-3--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-4" data-path="n9k-x9408pc-cfp2/port-4" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(135,26.15) rotate(180 20.75 7.15)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-4</title>
+      <rect id="n9k-x9408pc-cfp2--port-4--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-4/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-4--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-4--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-5" data-path="n9k-x9408pc-cfp2/port-5" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(225,4.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-5</title>
+      <rect id="n9k-x9408pc-cfp2--port-5--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-5/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-5--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-5--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-6" data-path="n9k-x9408pc-cfp2/port-6" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(225,26.15) rotate(180 20.75 7.15)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-6</title>
+      <rect id="n9k-x9408pc-cfp2--port-6--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-6/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-6--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-6--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-7" data-path="n9k-x9408pc-cfp2/port-7" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(315,4.0)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-7</title>
+      <rect id="n9k-x9408pc-cfp2--port-7--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-7/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-7--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-7--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--port-8" data-path="n9k-x9408pc-cfp2/port-8" data-class="port" data-ref="std/cfp2@2:2.0.0" data-depth="87.5" data-wall="#aab0b7" data-cavity="cavity" data-media="cfp2" transform="translate(315,26.15) rotate(180 20.75 7.15)" data-group="ports" data-group-role="traffic">
+      <title>n9k-x9408pc-cfp2--port-8</title>
+      <rect id="n9k-x9408pc-cfp2--port-8--opening" x="0" y="0" width="41.5" height="14.3" rx="0.5" fill="#17191c" data-path="n9k-x9408pc-cfp2/port-8/opening" data-class="cutout" />
+      <rect id="n9k-x9408pc-cfp2--port-8--cavity" x="0" y="0.95" width="41.5" height="12.4" rx="0.5" fill="#0a0c0e" />
+      <rect id="n9k-x9408pc-cfp2--port-8--module-slot" x="2.0" y="5.75" width="37.5" height="2.8" rx="0.4" fill="#000000" />
+      <path id="n9k-x9408pc-cfp2--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 41.4 v 14.2 h -41.4 z M 0.6 0.6 h 40.3 v 13.1 h -40.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="20.75 7.15" data-cp-dir="front" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-1" data-path="n9k-x9408pc-cfp2/link-1" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(59,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-1</title>
+      <path id="n9k-x9408pc-cfp2--link-1--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-1/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-2" data-path="n9k-x9408pc-cfp2/link-2" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(69,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-2</title>
+      <path id="n9k-x9408pc-cfp2--link-2--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-2/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-3" data-path="n9k-x9408pc-cfp2/link-3" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(149,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-3</title>
+      <path id="n9k-x9408pc-cfp2--link-3--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-3/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-4" data-path="n9k-x9408pc-cfp2/link-4" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(159,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-4</title>
+      <path id="n9k-x9408pc-cfp2--link-4--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-4/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-5" data-path="n9k-x9408pc-cfp2/link-5" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(239,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-5</title>
+      <path id="n9k-x9408pc-cfp2--link-5--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-5/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-6" data-path="n9k-x9408pc-cfp2/link-6" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(249,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-6</title>
+      <path id="n9k-x9408pc-cfp2--link-6--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-6/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-7" data-path="n9k-x9408pc-cfp2/link-7" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(329,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-7</title>
+      <path id="n9k-x9408pc-cfp2--link-7--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-7/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+    <g id="n9k-x9408pc-cfp2--link-8" data-path="n9k-x9408pc-cfp2/link-8" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-led-states="green (port active), orange (port disabled or not initialising), flashing orange (beacon on the port, or the port is faulty and disabled), off (port not active, link not connected)" transform="translate(339,20.2)" data-group="link-leds" data-group-role="indicator">
+      <title>n9k-x9408pc-cfp2--link-8</title>
+      <path id="n9k-x9408pc-cfp2--link-8--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="n9k-x9408pc-cfp2/link-8/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.83mm" height="10mm" viewBox="0 0 444.83 10">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="nm-fingers" data-path="nm-fingers" data-class="mechanical" data-ref="panduit/nm-fingers@1:1.0.0" data-material="ABS" transform="translate(0,0)">
+    <title>nm-fingers</title>
+    <rect id="nm-fingers--b1" x="15.56" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b1" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b2" x="50.49" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b2" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b3" x="85.41" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b3" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b4" x="120.34" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b4" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b5" x="155.26" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b5" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b6" x="190.19" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b6" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b7" x="225.11" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b7" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b8" x="260.04" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b8" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b9" x="294.96" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b9" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b10" x="329.89" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b10" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b11" x="364.81" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b11" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--b12" x="399.74" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="nm-fingers/b12" data-class="bezel" data-z-out="106" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="nm-fingers--s1" x="27.81" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s1" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s2" x="62.74" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s2" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s3" x="97.66" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s3" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s4" x="132.59" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s4" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s5" x="167.51" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s5" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s6" x="202.44" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s6" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s7" x="237.36" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s7" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s8" x="272.29" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s8" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s9" x="307.21" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s9" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s10" x="342.14" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s10" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s11" x="377.06" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s11" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+    <rect id="nm-fingers--s12" x="411.99" y="0" width="5" height="10" fill="#393d40" data-path="nm-fingers/s12" data-class="bezel" data-z-out="100" data-z-color="#26282a" />
+  </g>
+</svg>

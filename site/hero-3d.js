@@ -26,7 +26,8 @@ import {hangPoints3d, LEAD, WIDTH, clearOf, colorOfJacket, plugColorOf} from './
 import {guard3d} from './webgl.js';
 
 const REF = 's9600-72xc';
-const STILL = `assets/dist/${REF}.front.svg`;
+// by its plain name, one of the few faces the site keeps under it (tools/pack-assets.py KEEP_PLAIN)
+const STILL = 'assets/dist/s9600-72xc.front.svg';
 
 // HIGHER CONNECTORS REACH FURTHER OUT before they bend, so a lead from a
 // higher port hangs in front of the ones below it - the showcase's stage 4

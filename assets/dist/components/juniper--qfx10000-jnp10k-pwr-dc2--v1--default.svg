@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="91.4mm" height="88.9mm" viewBox="0 0 91.4 88.9">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/qfx10000-jnp10k-pwr-dc2@'] .state-fault { --led-color: #ef4444; }
+    g[data-ref^='juniper/qfx10000-jnp10k-pwr-dc2@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/qfx10000-jnp10k-pwr-dc2@'] .state-warning { --led-color: #f59e0b; }
+    g[data-ref^='juniper/qfx10000-jnp10k-pwr-dc2@'] .state-warning { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="qfx10000-jnp10k-pwr-dc2" data-path="qfx10000-jnp10k-pwr-dc2" data-class="psu" data-behaviour="fills" data-ref="juniper/qfx10000-jnp10k-pwr-dc2@1:1.0.0" data-body-depth="407.7" data-airflow="front-to-back" data-hot-swap="yes" data-inlet="dc-terminal" data-input-feeds="4" data-input-voltage="-40 to -72 VDC, -48 VDC nominal" data-model="JNP10K-PWR-DC2" data-power-output-w="5500" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(0,0)">
+    <title>qfx10000-jnp10k-pwr-dc2</title>
+    <defs>
+      <pattern id="qfx10000-jnp10k-pwr-dc2--hex" x="0" y="0" width="4.6" height="3.98" patternUnits="userSpaceOnUse">
+        <polygon points="2.0,0.995 1.575,1.73 0.725,1.73 0.3,0.995 0.725,0.26 1.575,0.26" fill="#3a3e43" />
+        <polygon points="4.3,0.995 3.875,1.73 3.025,1.73 2.6,0.995 3.025,0.26 3.875,0.26" fill="#3a3e43" />
+        <polygon points="0.85,2.985 0.425,3.72 -0.425,3.72 -0.85,2.985 -0.425,2.25 0.425,2.25" fill="#3a3e43" />
+        <polygon points="3.15,2.985 2.725,3.72 1.875,3.72 1.45,2.985 1.875,2.25 2.725,2.25" fill="#3a3e43" />
+        <polygon points="5.45,2.985 5.025,3.72 4.175,3.72 3.75,2.985 4.175,2.25 5.025,2.25" fill="#3a3e43" />
+      </pattern>
+    </defs>
+    <rect id="qfx10000-jnp10k-pwr-dc2--face" x="0" y="0" width="91.4" height="88.9" rx="0.8" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
+    <g id="qfx10000-jnp10k-pwr-dc2--vents">
+      <rect x="53.0" y="26.0" width="36.8" height="50.0" fill="url(#qfx10000-jnp10k-pwr-dc2--hex)" />
+    </g>
+    <g id="qfx10000-jnp10k-pwr-dc2--lugs">
+      <rect x="1.4" y="1.4" width="36.2" height="86.1" rx="1.2" fill="#44484d" stroke="#2b2e32" stroke-width="0.4" />
+      <g fill="#17191c">
+        <circle cx="6.9" cy="19.8" r="4.2" />
+        <circle cx="6.9" cy="35.9" r="4.2" />
+        <circle cx="6.9" cy="52.5" r="4.2" />
+        <circle cx="6.9" cy="69.6" r="4.2" />
+        <circle cx="23.2" cy="19.8" r="4.2" />
+        <circle cx="23.2" cy="35.9" r="4.2" />
+        <circle cx="23.2" cy="52.5" r="4.2" />
+        <circle cx="23.2" cy="69.6" r="4.2" />
+      </g>
+      <g fill="#8a8f95">
+        <circle cx="6.9" cy="19.8" r="2.4" />
+        <circle cx="6.9" cy="35.9" r="2.4" />
+        <circle cx="6.9" cy="52.5" r="2.4" />
+        <circle cx="6.9" cy="69.6" r="2.4" />
+        <circle cx="23.2" cy="19.8" r="2.4" />
+        <circle cx="23.2" cy="35.9" r="2.4" />
+        <circle cx="23.2" cy="52.5" r="2.4" />
+        <circle cx="23.2" cy="69.6" r="2.4" />
+      </g>
+    </g>
+    <rect id="qfx10000-jnp10k-pwr-dc2--handle" x="41.6" y="20.8" width="9.3" height="49.1" rx="4.65" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" data-path="qfx10000-jnp10k-pwr-dc2/handle" data-class="handle" />
+    <g id="qfx10000-jnp10k-pwr-dc2--dip">
+      <rect x="54.7" y="5.1" width="13.1" height="10.0" rx="0.4" fill="#e8eaec" stroke="#17191c" stroke-width="0.3" />
+      <rect x="56.0" y="6.4" width="3.4" height="1.7" fill="#17191c" />
+      <rect x="56.0" y="9.0" width="3.4" height="1.7" fill="#17191c" />
+      <rect x="56.0" y="11.6" width="3.4" height="1.7" fill="#17191c" />
+    </g>
+    <path id="qfx10000-jnp10k-pwr-dc2--heat" d="M 71.5 4.6 L 74.3 9.2 L 68.7 9.2 Z" fill="none" stroke="#e8eaec" stroke-width="0.35" />
+    <g id="qfx10000-jnp10k-pwr-dc2--screw">
+      <circle cx="43.1" cy="78.8" r="5.0" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+      <circle cx="43.1" cy="78.8" r="3.3" fill="#8a8f95" />
+    </g>
+    <rect id="qfx10000-jnp10k-pwr-dc2--nameplate" x="59.7" y="78.5" width="28.3" height="3.7" rx="0.6" fill="#44484d" stroke="#2b2e32" stroke-width="0.3" />
+    <g id="qfx10000-jnp10k-pwr-dc2--rocker">
+      <rect x="75.3" y="5.3" width="13.5" height="18.5" rx="1.0" fill="#2b2e32" stroke="#17191c" stroke-width="0.4" />
+      <rect x="77.1" y="7.1" width="9.9" height="14.9" rx="0.8" fill="#0b0c0d" />
+    </g>
+    <circle id="qfx10000-jnp10k-pwr-dc2--led-fault" cx="60.9" cy="22.3" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="qfx10000-jnp10k-pwr-dc2/led-fault" data-class="led" data-states="off fault" />
+    <circle id="qfx10000-jnp10k-pwr-dc2--led-ok" cx="60.9" cy="30.4" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="qfx10000-jnp10k-pwr-dc2/led-ok" data-class="led" data-states="off ok warning" />
+    <circle id="qfx10000-jnp10k-pwr-dc2--led-in-2" cx="60.9" cy="38.4" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="qfx10000-jnp10k-pwr-dc2/led-in-2" data-class="led" data-states="off ok warning" />
+    <circle id="qfx10000-jnp10k-pwr-dc2--led-in-1" cx="60.9" cy="46.3" r="1.5" fill="var(--led-color, #0f1113)" stroke="#33373c" stroke-width="0.25" data-path="qfx10000-jnp10k-pwr-dc2/led-in-1" data-class="led" data-states="off ok warning" />
+    <g id="qfx10000-jnp10k-pwr-dc2--silkscreen">
+      <text x="57.2" y="23.2" font-family="sans-serif" font-size="2.4" fill="#e8eaec" text-anchor="middle">!</text>
+      <text x="57.0" y="31.3" font-family="sans-serif" font-size="1.6" fill="#e8eaec" text-anchor="middle">OK</text>
+      <text x="57.6" y="39.3" font-family="sans-serif" font-size="1.6" fill="#e8eaec" text-anchor="middle">2</text>
+      <text x="57.6" y="47.2" font-family="sans-serif" font-size="1.6" fill="#e8eaec" text-anchor="middle">1</text>
+      <text x="52.4" y="7.2" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="end">H/L</text>
+      <text x="52.4" y="9.6" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="end">IP1</text>
+      <text x="52.4" y="12.0" font-family="sans-serif" font-size="1.3" fill="#e8eaec" text-anchor="end">IP0</text>
+      <text x="55.8" y="13.9" font-family="sans-serif" font-size="1.0" fill="#17191c" text-anchor="middle">ON</text>
+      <text x="82.0" y="12.4" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">I</text>
+      <text x="82.0" y="19.0" font-family="sans-serif" font-size="2.2" fill="#e8eaec" text-anchor="middle">O</text>
+    </g>
+  </g>
+</svg>

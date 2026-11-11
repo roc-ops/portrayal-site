@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="177.8mm" viewBox="0 0 482.6 177.8" data-device="35441-x04" data-view="front" data-shell="sheet" data-weight-kg="3.2" data-material="Steel, aluminum and plastic T-shaped cable guides" data-finish="Black or Glacier White powder coat paint" data-cable-capacity="403" data-cable-capacity-basis="Cat 6 (0.250 in OD) at the maximum fill the maker's cable fill table gives (the 50% fill of the usable area, 39.6 sq in); its recommended fill for the same cable is 202" data-cable-capacity-media="cat6" data-environment="Indoor use only, in environmentally controlled areas">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Chatsworth Products 35441-X04","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"chatsworth/evolution-hcm-base-ports-4u@1":"1.0.1","chatsworth/evolution-hcm-door-4u@1":"1.0.1","chatsworth/evolution-hcm-finger-end@1":"1.0.1","chatsworth/evolution-hcm-finger@1":"1.0.1"},"source-sha256":"03dc25c89bb8bcb5b7ac57a8cdb695ffa9d0def85eba874a4c63d75f00904c56","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="35441-X04" data-sku="35441-704" data-part-number="35441-704" x="0" y="0" width="482.6" height="177.8" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="x" data-guide-finger-pitch="45" data-guide-finger-gap="24" x="16.3" y="11.4" width="450" height="155" fill="none" stroke="none" pointer-events="none" />
+  <g id="base" data-path="base" data-class="mechanical" data-ref="chatsworth/evolution-hcm-base-ports-4u@1:1.0.1" data-depth="206.0" data-wall="#232527" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the steel back plate with its ears">
+    <title>base</title>
+    <path id="base--floor" fill="#232527" fill-rule="evenodd" data-fill-from="finish" d="M0.00,0.00 H482.60 V177.80 H0.00 Z M124.30,48.90 A40.00,40.00 0 1 1 124.30,128.90 A40.00,40.00 0 1 1 124.30,48.90 Z M358.30,48.90 A40.00,40.00 0 1 1 358.30,128.90 A40.00,40.00 0 1 1 358.30,48.90 Z" data-path="base/floor" data-class="bezel" />
+    <path id="base--floor-lit" fill="#fff" fill-opacity="0.12" fill-rule="evenodd" d="M0.00,0.00 H482.60 V177.80 H0.00 Z M124.30,48.90 A40.00,40.00 0 1 1 124.30,128.90 A40.00,40.00 0 1 1 124.30,48.90 Z M358.30,48.90 A40.00,40.00 0 1 1 358.30,128.90 A40.00,40.00 0 1 1 358.30,48.90 Z" />
+  </g>
+  <g id="finger-upper-1" data-path="finger-upper-1" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger-end@1:1.0.1" data-material="Plastic" data-rel-pos="1" transform="translate(16.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-1</title>
+    <rect id="finger-upper-1--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-1/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-1--stem" x="0" y="0" width="33" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-1/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-1--tip" x="0" y="0" width="41" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-1/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-1--slot-shade" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-1--head-lit" x="0" y="0" width="41" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-1--head-rim" x="0.5" y="0.5" width="40" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-2" data-path="finger-upper-2" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="2" transform="translate(61.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-2</title>
+    <rect id="finger-upper-2--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-2/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-2--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-2/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-2--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-2/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-2--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-2--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-2--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-2--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-3" data-path="finger-upper-3" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="3" transform="translate(106.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-3</title>
+    <rect id="finger-upper-3--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-3/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-3--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-3/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-3--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-3/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-3--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-3--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-3--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-3--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-4" data-path="finger-upper-4" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="4" transform="translate(151.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-4</title>
+    <rect id="finger-upper-4--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-4/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-4--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-4/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-4--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-4/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-4--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-4--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-4--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-4--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-5" data-path="finger-upper-5" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="5" transform="translate(196.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-5</title>
+    <rect id="finger-upper-5--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-5/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-5--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-5/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-5--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-5/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-5--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-5--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-5--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-5--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-6" data-path="finger-upper-6" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="6" transform="translate(241.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-6</title>
+    <rect id="finger-upper-6--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-6/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-6--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-6/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-6--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-6/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-6--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-6--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-6--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-6--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-7" data-path="finger-upper-7" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="7" transform="translate(286.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-7</title>
+    <rect id="finger-upper-7--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-7/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-7--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-7/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-7--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-7/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-7--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-7--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-7--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-7--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-8" data-path="finger-upper-8" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="8" transform="translate(331.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-8</title>
+    <rect id="finger-upper-8--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-8/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-8--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-8/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-8--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-8/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-8--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-8--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-8--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-8--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-9" data-path="finger-upper-9" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="9" transform="translate(376.3,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-9</title>
+    <rect id="finger-upper-9--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-9/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-9--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-9/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-9--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-9/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-9--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-9--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-9--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-9--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-upper-10" data-path="finger-upper-10" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger-end@1:1.0.1" data-material="Plastic" data-rel-pos="10" transform="translate(421.3,0.0) rotate(180 22.5 5.7)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-upper-10</title>
+    <rect id="finger-upper-10--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-upper-10/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-upper-10--stem" x="0" y="0" width="33" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-upper-10/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-upper-10--tip" x="0" y="0" width="41" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-upper-10/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-upper-10--slot-shade" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-upper-10--head-lit" x="0" y="0" width="41" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-upper-10--head-rim" x="0.5" y="0.5" width="40" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-1" data-path="finger-lower-1" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger-end@1:1.0.1" data-material="Plastic" data-rel-pos="11" transform="translate(16.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-1</title>
+    <rect id="finger-lower-1--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-1/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-1--stem" x="0" y="0" width="33" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-1/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-1--tip" x="0" y="0" width="41" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-1/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-1--slot-shade" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-1--head-lit" x="0" y="0" width="41" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-1--head-rim" x="0.5" y="0.5" width="40" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-2" data-path="finger-lower-2" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="12" transform="translate(61.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-2</title>
+    <rect id="finger-lower-2--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-2/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-2--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-2/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-2--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-2/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-2--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-2--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-2--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-2--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-3" data-path="finger-lower-3" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="13" transform="translate(106.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-3</title>
+    <rect id="finger-lower-3--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-3/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-3--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-3/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-3--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-3/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-3--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-3--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-3--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-3--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-4" data-path="finger-lower-4" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="14" transform="translate(151.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-4</title>
+    <rect id="finger-lower-4--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-4/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-4--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-4/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-4--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-4/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-4--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-4--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-4--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-4--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-5" data-path="finger-lower-5" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="15" transform="translate(196.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-5</title>
+    <rect id="finger-lower-5--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-5/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-5--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-5/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-5--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-5/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-5--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-5--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-5--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-5--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-6" data-path="finger-lower-6" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="16" transform="translate(241.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-6</title>
+    <rect id="finger-lower-6--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-6/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-6--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-6/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-6--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-6/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-6--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-6--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-6--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-6--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-7" data-path="finger-lower-7" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="17" transform="translate(286.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-7</title>
+    <rect id="finger-lower-7--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-7/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-7--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-7/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-7--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-7/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-7--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-7--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-7--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-7--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-8" data-path="finger-lower-8" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="18" transform="translate(331.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-8</title>
+    <rect id="finger-lower-8--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-8/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-8--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-8/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-8--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-8/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-8--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-8--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-8--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-8--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-9" data-path="finger-lower-9" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger@1:1.0.1" data-material="Plastic" data-rel-pos="19" transform="translate(376.3,166.4)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-9</title>
+    <rect id="finger-lower-9--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-9/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-9--stem" x="12" y="0" width="21" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-9/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-9--tip" x="4" y="0" width="37" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-9/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-9--slot-shade-left" x="0" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-9--slot-shade-right" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-9--head-lit" x="4" y="0" width="37" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-9--head-rim" x="4.5" y="0.5" width="36" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="finger-lower-10" data-path="finger-lower-10" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-finger-end@1:1.0.1" data-material="Plastic" data-rel-pos="20" transform="translate(421.3,166.4) rotate(180 22.5 5.7)" data-group="fingers" data-group-role="furniture" data-description="the two rows of fingers, ten a row, upper row first" data-z-lift="-206" data-in="base" data-under="door">
+    <title>finger-lower-10</title>
+    <rect id="finger-lower-10--root" x="0" y="0" width="45" height="11.4" fill="#17181a" data-fill-from="finish" data-path="finger-lower-10/root" data-class="bezel" data-z-out="-186" />
+    <rect id="finger-lower-10--stem" x="0" y="0" width="33" height="11.4" fill="#1b1c1e" data-fill-from="finish" data-path="finger-lower-10/stem" data-class="bezel" data-z-out="-22" />
+    <rect id="finger-lower-10--tip" x="0" y="0" width="41" height="11.4" fill="#1f2022" data-fill-from="finish" data-path="finger-lower-10/tip" data-class="bezel" data-z-out="-16" data-z-lift="184.0" />
+    <rect id="finger-lower-10--slot-shade" x="41" y="0" width="4" height="11.4" fill="#000" fill-opacity="0.5" />
+    <rect id="finger-lower-10--head-lit" x="0" y="0" width="41" height="11.4" fill="#fff" fill-opacity="0.1" />
+    <rect id="finger-lower-10--head-rim" x="0.5" y="0.5" width="40" height="10.4" rx="1" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="0.8" />
+  </g>
+  <g id="door" data-path="door" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/evolution-hcm-door-4u@1:1.0.1" data-material="Steel" data-rel-pos="1" transform="translate(16.3,0.0)" data-group="door" data-group-role="furniture" data-description="the snap-on front door over the finger heads" data-z-lift="-206" data-in="base">
+    <title>door</title>
+    <rect id="door--plate" x="0" y="0" width="450" height="177.8" rx="0.8" fill="#1b1c1e" data-fill-from="finish" data-path="door/plate" data-class="bezel" data-z-out="0" data-z-lift="204.0" data-z-profile-y="0:-1,7:0,170.8:0,177.8:-1" />
+    <rect id="door--bevel-top" x="0" y="1.5" width="450" height="7" fill="#fff" fill-opacity="0.1" />
+    <rect id="door--bevel-top-edge" x="0" y="8.5" width="450" height="0.6" fill="#fff" fill-opacity="0.22" />
+    <rect id="door--bevel-bottom" x="0" y="169.3" width="450" height="7" fill="#000" fill-opacity="0.3" />
+    <rect id="door--bevel-bottom-edge" x="0" y="169.3" width="450" height="0.6" fill="#000" fill-opacity="0.35" />
+    <rect id="door--groove" x="0" y="84.4" width="450" height="9" fill="#000" fill-opacity="0.4" />
+    <rect id="door--strip" x="0" y="85.9" width="450" height="6" fill="#98a1a9" data-path="door/strip" data-class="bezel" data-z-out="0.8" data-z-lift="206.0" />
+    <rect id="door--strip-lit" x="0" y="85.9" width="450" height="1" fill="#fff" fill-opacity="0.6" />
+    <rect id="door--strip-shade" x="0" y="90.9" width="450" height="1" fill="#000" fill-opacity="0.3" />
+    <rect id="door--lip-top" x="0" y="0" width="450" height="1.5" fill="#26282a" data-fill-from="finish" data-path="door/lip-top" data-class="bezel" data-z-out="0" data-z-lift="190.0" />
+    <rect id="door--lip-bottom" x="0" y="176.3" width="450" height="1.5" fill="#121315" data-fill-from="finish" data-path="door/lip-bottom" data-class="bezel" data-z-out="0" data-z-lift="190.0" />
+  </g>
+</svg>

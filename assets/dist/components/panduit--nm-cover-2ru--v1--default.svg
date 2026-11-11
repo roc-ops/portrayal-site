@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.83mm" height="88mm" viewBox="0 0 444.83 88">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="nm-cover-2ru" data-path="nm-cover-2ru" data-class="mechanical" data-behaviour="mounts" data-ref="panduit/nm-cover-2ru@1:1.0.1" data-material="PVC" transform="translate(0,0)">
+    <title>nm-cover-2ru</title>
+    <rect id="nm-cover-2ru--plate" x="0" y="0" width="444.83" height="88" rx="2" fill="#2d3033" data-path="nm-cover-2ru/plate" data-class="bezel" data-z-out="138.2" data-z-lift="136.2" data-z-color="#2d3033" />
+    <rect id="nm-cover-2ru--rim-left" x="0" y="1.5" width="4" height="85" fill="#3a3d40" data-path="nm-cover-2ru/rim-left" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--rim-right" x="440.83" y="1.5" width="4" height="85" fill="#3a3d40" data-path="nm-cover-2ru/rim-right" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--lip-top" x="0" y="0" width="444.83" height="1.5" fill="#333639" data-path="nm-cover-2ru/lip-top" data-class="bezel" data-z-out="139.7" data-z-lift="127.1" data-z-color="#333639" />
+    <rect id="nm-cover-2ru--lip-bottom" x="0" y="86.5" width="444.83" height="1.5" fill="#333639" data-path="nm-cover-2ru/lip-bottom" data-class="bezel" data-z-out="139.7" data-z-lift="127.1" data-z-color="#333639" />
+    <rect id="nm-cover-2ru--knuckle-top-1" x="22.48" y="1.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-top-1" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-top-2" x="111.45" y="1.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-top-2" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-top-3" x="200.41" y="1.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-top-3" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-top-4" x="289.38" y="1.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-top-4" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-top-5" x="378.35" y="1.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-top-5" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-bottom-1" x="22.48" y="81.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-bottom-1" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-bottom-2" x="111.45" y="81.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-bottom-2" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-bottom-3" x="200.41" y="81.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-bottom-3" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-bottom-4" x="289.38" y="81.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-bottom-4" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+    <rect id="nm-cover-2ru--knuckle-bottom-5" x="378.35" y="81.5" width="44" height="5" fill="#3a3d40" data-path="nm-cover-2ru/knuckle-bottom-5" data-class="bezel" data-z-out="139.7" data-z-lift="136.2" data-z-color="#3a3d40" />
+  </g>
+</svg>

@@ -23,6 +23,7 @@ import {itemsWithU, heightOf} from '../../vendor/rack/fit.js';
 import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
+import {exportText} from '../exports-pack.js';
 import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, managerNotes, isRackMount,
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
@@ -40,7 +41,7 @@ import {anchorsOf, strapTexts} from '../../vendor/rack/bundles.js';
 import {looseIn} from './spare.js';
 import {mergeSeats, endKey, endName, portPathOf} from '../../vendor/rack/cable-rules.js';
 import {dcimOf, zeroUOf} from '../../vendor/rack/model.js';
-import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from '../../vendor/rack/dcim-rules.js';
+import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT, nautobotModuleFile} from '../../vendor/rack/dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {sheetBundleNotes} from './bundle-view.js';
 import {COLORS, colorOf} from './cables.js';
@@ -466,8 +467,14 @@ function fetchText(url) {
   return TEXT.get(url);
 }
 const fetchJson = async url => JSON.parse(await fetchText(url));
-// index.json and files.json paths already start with the target folder.
-const exportUrl = path => EXPORTS_BASE + path.split('/').map(encodeURIComponent).join('/');
+// A type file's text, from the pack it lives in. index.json and files.json paths
+// already start with the target folder. A pack that cannot be read, or that lacks
+// the path, fails this one file, as a file that could not be fetched did.
+const typeText = async path => {
+  const text = await exportText(path);
+  if (text === null) throw new Error(`${path}: not in its pack`);
+  return text;
+};
 
 // What a face has SEATED: a bay's module or a cage's occupant. Default
 // parts carry data-ref exactly as swapped ones do, so this is the rack as
@@ -548,7 +555,7 @@ export async function dcimContext(rack, chassisOf, target) {
   const notes = [...besideNotes(rack, chassisOf), ...mountNotes(rails, chassisOf, rack.frame)];
   const types = new Map();
   const readType = path => (probeFail.type && path.includes(probeFail.type)
-    ? Promise.reject(new Error('probe: this type file cannot be read')) : fetchText(exportUrl(path)));
+    ? Promise.reject(new Error('probe: this type file cannot be read')) : typeText(path));
   for (const it of items) {
     const manufacturer = chassisOf(it.ref)?.manufacturer;
     const m = matchDeviceType({cfg: it.cfg, manufacturer, paths: index[it.ref]?.[target] || []});
@@ -657,8 +664,10 @@ const scriptHref = () => {
 // in the order they are imported, with a README.txt that says what to do with
 // each, what must already exist, and everything the kit could not carry.
 //   NetBox:   types/…, 1-rack.csv, 2-devices.csv, 3-modules.csv, 4-cables.csv
-//   Nautobot: types/…, 1-devices.csv, 2-modules.csv, 3-cables.csv and
-//             import_cables.py, which creates the cables from that file
+//   Nautobot: types/…, 1-devices.csv, 2-modules.csv, 2b-modules-depth-1.csv
+//             (and one more for each deeper level of modules in modules, only
+//             when the rack has one), 3-cables.csv and import_cables.py,
+//             which creates the cables from that file
 // Every CSV is written verbatim (no formula guard: an importer reads it
 // literally) and is in the zip even with no rows. A device's name is
 // uniqueNames' and its U is positionOf, the same in every file. A row the
@@ -682,7 +691,7 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
     .concat(ctx.modules.map(m => m.path).filter(Boolean))).sort();
   let typeFiles = 0;
   for (const p of paths) {
-    try { entries.push({name: `types/${p.split('/').slice(1).join('/')}`, bytes: enc.encode(await fetchText(exportUrl(p)))}); typeFiles++; }
+    try { entries.push({name: `types/${p.split('/').slice(1).join('/')}`, bytes: enc.encode(await typeText(p))}); typeFiles++; }
     catch { left.push(`${p} couldn't be fetched, so it is not in this zip.`); }
   }
   const manufacturers = uniq([...[...ctx.types.values()].filter(Boolean).map(t => t.manufacturer),
@@ -708,6 +717,9 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
                                unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
 
   const rows = {devices: dev.rows.length, modules: mod.rows.length, cables: cab.rows.length};
+  // Nautobot: a module in a bay of a module is a file for each depth, after the modules file (`deeper`, outermost first).
+  const deeper = mod.deeper ?? [];
+  if (nautobot) rows.modulesIn = deeper.map(s => s.rows.length);
   const rackLeft = [];
   if (!nautobot) {
     // A RACK THE KIT SCREENS OUT (kit 0.22.0: a name NetBox would refuse) gives
@@ -721,6 +733,7 @@ export async function dcimKit(asStored, chassisOf, target, {date = new Date()} =
   }
   add(F.devices, toCsv(dev.columns, dev.rows));
   add(F.modules, toCsv(mod.columns, mod.rows));
+  for (const s of deeper) add(nautobotModuleFile(s.depth), toCsv(s.columns, s.rows));
   add(F.cables, toCsv(cab.columns, cab.rows));
   let script = false;
   if (nautobot) {

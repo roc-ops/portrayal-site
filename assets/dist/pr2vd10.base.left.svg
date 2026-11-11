@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="526.4mm" height="2130.4mm" viewBox="0 0 526.4 2130.4" data-device="pr2vd10" data-view="left" data-shell="sheet" data-weight-kg="27.74" data-material="steel" data-finger-material="ABS" data-cover-material="steel doors with ABS ends and knobs" data-color="Black" data-mounting-hardware="hardware kit, as shipped" data-cable-capacity="569" data-cable-capacity-basis="front channel: Cat 6 24 AWG, 0.235 in (5.97 mm), at the 30% recommended fill of its 82.31 sq in usable area; 948 at the 50% maximum fill - Panduit Space-Saving Cable Management Rack Systems bulletin RKCB46, Cable Capacity Charts" data-cable-capacity-media="cat6" data-cable-capacity-rear="361" data-cable-capacity-rear-basis="rear channel: Cat 6 24 AWG, 0.235 in (5.97 mm), at the 30% recommended fill of its 52.21 sq in usable area; 601 at the 50% maximum fill - the same bulletin" data-rohs="RoHS Compliant" data-ul="UL 2416" data-csa="CSA C22.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit PR2VD10","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"ee1dae7d74d3923475464c1ae01ed5c609ce14abe92da32c49afbc7c95ffabb1","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PR2VD10" x="0" y="0" width="526.4" height="2130.4" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="rear-fingers" data-kind="finger-wall" x="28" y="70.8" width="175" height="1988.8" rx="0.6" fill="#26282a" />
+    <rect id="backbone" data-kind="base" x="203" y="0" width="20.4" height="2130.4" rx="0.6" fill="#232527" data-groove="0.05" />
+    <rect id="fingers" data-kind="finger-wall" x="223.4" y="70.8" width="260" height="1988.8" rx="0.6" fill="#26282a" />
+  </g>
+</svg>

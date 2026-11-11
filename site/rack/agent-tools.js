@@ -1,7 +1,7 @@
 // site/rack/agent-tools.js
 // THE RACK BUILDER'S AGENT TOOLS (spec 2026-10-07-rack-agent-tools-design.md,
 // round 2 in 2026-10-08-rack-agent-tools-2-design.md): the kit's editor and
-// queries, handed to an agent as ten WebMCP tools. Pure
+// queries, handed to an agent as eleven WebMCP tools. Pure
 // apart from what it is handed - no DOM, no fetch - so it is tested in Node and
 // registered by the page (site/agent/webmcp.js).
 
@@ -10,6 +10,8 @@ import {newRack, dcimOf, bundlesOf} from '../../vendor/rack/model.js';
 import {MAX_WINDOW} from '../../vendor/rack/queries.js';
 import {LIMIT, fit, ranges, clip, cutList, runs, freeLine, windowLines, inspectText, cableText, zeroUText, bundleText, INSPECT_SECTIONS} from './agent-text.js';
 import {portPathOf} from '../../vendor/rack/cable-rules.js';
+import {frameProducts, frameName, railRange} from '../../vendor/rack/frames.js';
+import {formsOf} from './frame-forms.js';
 import {spareFor, spareText, needsText} from './spare.js';
 import {projectionIdRefusal} from './part-path.js';
 import {refsFor, routes, SELECTABLE, expandSelectors, reached, editResult, touchedCables, findingNotes} from './agent-edit.js';
@@ -33,6 +35,7 @@ const ARG_WORDS = {
   holes: 'The rail holes: {style, thread}: square or tapped, and the thread of tapped holes.',
   swaps: 'Replaces every swap: {slot path: part ref}. To change one slot, use fit.',
   fields: 'Replaces every field: {part path: {key: value}}. To set one, use field.',
+  content: 'What it shows: {text: [lines]}, {digits: "04"} or {image: data URL or library path}; null clears.',
 };
 const ARG_WORDS_BY_OP = {
   // kit 0.22.0 (rack file version 4): a held device is kept and freed; none can be put on a host yet
@@ -48,6 +51,10 @@ const ARG_WORDS_BY_OP = {
   },
   'bundle.peel': {
     at: "A waypoint on the bundle's route where the cable leaves it: {item, via} or {lane, ru}. When left out, it leaves the bundle altogether.",
+  },
+  // rack products (Portrayal #1131): the ref comes from this site's find_rack_products
+  'frame.apply': {
+    ref: 'The rack product, as find_rack_products lists it: vendor/name@major, e.g. apc/ar203a@1.',
   },
   'cable.update': {
     a: 'Moves end a to another port: {item, path, view}. The cable keeps its id, media, label and length.',
@@ -134,9 +141,10 @@ const UNTRUSTED = {readOnlyHint: true, untrustedContentHint: true};
 // `context(rack, refs, {route})` is the kit's per-call context, read by the
 // page: the parts lists of `refs` and of everything in the rack (loadSlots),
 // the cabled ends' facts, and, with route, the routing context and the cable
-// types' diameters. `library` is the page's New path (new_rack).
+// types' diameters. `library` is the page's New path (new_rack). `frames` is the
+// catalogue's rack products (rack.json), which find_rack_products searches.
 export function rackTools({ed, chassisOf, queries, runExport, commands = COMMANDS,
-                           context = async () => ({}), library = null}) {
+                           context = async () => ({}), library = null, frames = {}}) {
   const table = commands;
   const tool = (name, title, description, properties, required, annotations, run) => ({
     name, title, description, annotations,
@@ -199,11 +207,11 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         }
       }),
     tool('inspect', 'Inspect a device or cable',
-      'Read one thing in full. A device: its configs, bays and cages with what each holds and takes, editable fields and cables. A cable: its ends, media, length, routed length, stock size and spare, route, the waypoints it can take, its bundle, and why an end is loose. A bundle: its cables, trunk, size and straps. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
+      'Read one thing in full. A device: its configs, bays and cages with what each holds and takes, editable fields, what state.set and display.set take, and cables. A cable: its ends, media, length, routed length, stock size and spare, route, the waypoints it can take, its bundle, and why an end is loose. A bundle: its cables, trunk, size and straps. Send id for something in the rack, or ref for a device from find_devices. A long answer comes in pages; its first line says what to send next.',
       {id: {type: 'string', description: 'A device or cable id from describe_rack, e.g. i3 or c7.'},
        ref: {type: 'string', description: 'A device from find_devices, to read it before placing it.'},
        cfg: {type: 'string', description: 'With ref: which configuration to read; its default when left out.'},
-       section: {type: 'string', enum: INSPECT_SECTIONS, description: 'Where a page starts: bays, cages, fields or cables. The start when left out.'},
+       section: {type: 'string', enum: INSPECT_SECTIONS, description: 'Where a page starts: bays, cages, fields, settable, displays or cables. The start when left out.'},
        offset: {type: 'integer', minimum: 0, description: 'Where in section the page starts; 0 when left out.'}},
       [], UNTRUSTED,
       async ({id, ref, cfg, section, offset}) => {
@@ -263,6 +271,23 @@ export function rackTools({ed, chassisOf, queries, runExport, commands = COMMAND
         const page = windowLines(all.slice(start, start + 20).map(line), 0, LIMIT - 120);
         const end = start + page.length;
         return say([`${word}, showing ${start + 1}-${end}.${end < n ? ` Next: offset ${end}.` : ''}`, ...page].join('\n'));
+      }),
+    tool('find_rack_products', 'Find rack products',
+      'Search the rack products a frame can be set from (edit_rack frame.apply): by words in the maker, name, part number, alias or ref, or by form. Each result gives the ref, height in U, form and rail depth. The first line counts the matches.',
+      {text: {type: 'string', description: 'Words to look for, e.g. "apc" or a part number.'},
+       form: {type: 'string', ...(formsOf(frames).length ? {enum: formsOf(frames)} : {}), description: 'Only this form of rack.'}},
+      [], READ,
+      async ({text, form}) => {
+        const all = frameProducts(frames, {text, form});
+        if (!all.length) return say('0 matches. Try fewer words, or none, or another form.');
+        const depth = row => {
+          const r = railRange(row);
+          return !r ? 'rail depth not stated' : r.fixed ? `rail depth fixed at ${r.min} mm`
+            : `rail depth ${r.min}-${r.max} mm${r.step ? ` in steps of ${r.step}` : ''}`;
+        };
+        const line = r => clip(`${r.ref} | ${frameName(r)} | ${r.ru}U | ${r.form} | ${depth(r)}`, 300);
+        const n = all.length;
+        return say([`${n} match${n === 1 ? '' : 'es'}.`, ...windowLines(all.map(line), 0, LIMIT - 120)].join('\n'));
       }),
     tool('check_fit', 'Check where a device fits',
       'Ask whether a device fits at a U on a face, and why not if it does not. Leave out ru to list every U it fits at, in the same numbers place takes.',

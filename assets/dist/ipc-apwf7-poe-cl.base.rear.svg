@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="245.0mm" height="245.0mm" viewBox="0 0 245.0 245.0" data-device="ipc-apwf7-poe-cl" data-view="rear" data-weight-kg="2.0" data-overall-dimensions="245 x 245 x 67 mm (datasheet)" data-wifi-rates="802.11be 24.436 Gbps, 802.11ax 20.363 Gbps, 802.11ac 10.401 Gbps, 802.11n 2.4 Gbps" data-power-self-max-w="60" data-power-input="54 V DC / 1.25 A over a 2.5 mm / 5.5 mm centre-positive connector, or PoE+/PoE++ 802.3at/bt over WAN 1 (50-57 V). DC is preferred when both are present" data-poe-pd-standard="802.3bt" data-poe-pd-standard-min="802.3at" data-poe-pd-max-w="72.95" data-poe-budget-w="12.95" data-poe-budget-scope="LAN 1, 48 V" data-operating-temp-c="0 to 40" data-operating-humidity="5 to 95 percent noncondensing" data-wifi="802.11n/ac/ax/be (WiFi 7), radios 2.4 GHz 4x4, 5 GHz 4x4 twice, 6 GHz 4x4 and an AI radio 2x2" data-bluetooth="5.3" data-optics-sfp-plus="datasheet: the SFP+ cage is compatible with 10GE, 2.5GE and 1GE modules; the sheet lists no vendor optics" data-interfaces="ReadyView cloud; Ethernet/Fiber in-band; Ethernet/Fiber out-of-band" data-button-functions="factory reset" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"ReadyLinks IPC-APWF7-POE-CL","device-version":"1.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/dc-barrel@1":"1.0.2","common/rj45-eth@1":"1.2.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.1"},"source-sha256":"ca6c7fc3d252c37dd5323369e0cc81e276cd563695b0737e7f8b89c68acf606b","view":"rear"}</metadata>
+  <path id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="IPC-APWF7-POE-CL" data-sku="IPC-APWF7-POE-CL" data-part-number="" fill="#f9f9f8" stroke="#d3d6d9" stroke-width="0.5" d="M0.000,43.000 L0.826,34.611 L3.273,26.545 L7.247,19.110 L12.594,12.594 L19.110,7.247 L26.545,3.273 L34.611,0.826 L43.000,0.000 L202.000,0.000 L210.389,0.826 L218.455,3.273 L225.890,7.247 L232.406,12.594 L237.753,19.110 L241.727,26.545 L244.174,34.611 L245.000,43.000 L245.000,202.000 L244.174,210.389 L241.727,218.455 L237.753,225.890 L232.406,232.406 L225.890,237.753 L218.455,241.727 L210.389,244.174 L202.000,245.000 L43.000,245.000 L34.611,244.174 L26.545,241.727 L19.110,237.753 L12.594,232.406 L7.247,225.890 L3.273,218.455 L0.826,210.389 L0.000,202.000 Z" />
+  <defs>
+    <pattern id="portrayal-ribs" width="7.2" height="6" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="4.8" height="6" fill="#e8eaed" />
+      <rect x="5.4" y="0" width="1.8" height="6" fill="#6a7075" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="ribs-field-0" data-kind="ribs-field" x="8" y="8" width="229" height="229" rx="35" fill="url(#portrayal-ribs)" />
+    <rect id="plate-0" data-kind="plate" x="50.5" y="44" width="146" height="125" rx="3" fill="#f4f5f6" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="62.8" y="82.1" width="12" height="13" fill="#101214" id="cutout--dc-in" data-path="cutout:dc-in" data-class="cutout" />
+    <rect x="80.75" y="83.6" width="14.5" height="10" fill="#101214" id="cutout--wan-2-sfp" data-path="cutout:wan-2-sfp" data-class="cutout" />
+    <rect x="101.5" y="82" width="15.8" height="13.2" fill="#101214" id="cutout--wan-1" data-path="cutout:wan-1" data-class="cutout" />
+    <rect x="125" y="82" width="15.8" height="13.2" fill="#101214" id="cutout--wan-2" data-path="cutout:wan-2" data-class="cutout" />
+    <rect x="145.8" y="82" width="15.8" height="13.2" fill="#101214" id="cutout--lan-1" data-path="cutout:lan-1" data-class="cutout" />
+    <rect x="165.1" y="82" width="15.8" height="13.2" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="68.8" y="78.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#4a4f55" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="dc-in">DC 54V</text>
+    <text x="88" y="78.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#4a4f55" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="wan-2-sfp">SFP+</text>
+    <text x="109.4" y="78.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#4a4f55" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="wan-1">WAN 1/10G/PoE</text>
+    <text x="132.9" y="78.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#4a4f55" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="wan-2">WAN 2/10G</text>
+    <text x="153.7" y="78.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#4a4f55" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lan-1">LAN 1/IoT</text>
+    <text x="173" y="78.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#4a4f55" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">Console</text>
+  </g>
+  <g id="dc-in" data-path="dc-in" data-class="inlet" data-ref="common/dc-barrel@1:1.0.2" data-current-max-a="1.25" data-input="dc" data-input-voltage="54 VDC" data-rel-pos="1" transform="translate(62.8,82.1)" data-group="inlets" data-group-role="service">
+    <title>dc-in</title>
+    <rect id="dc-in--body" x="0" y="0" width="12" height="13" rx="0.8" fill="#c9cdd1" />
+    <rect id="dc-in--inlet" x="1.5" y="2" width="9" height="9" rx="1" fill="#17191c" stroke="#5c6167" stroke-width="0.3" data-path="dc-in/inlet" data-class="inlet" />
+    <circle id="dc-in--inlet-bore" cx="6" cy="6.5" r="3.1" fill="#000000" />
+    <circle id="dc-in--inlet-pin" cx="6" cy="6.5" r="0.9" fill="#8a9099" />
+    <g data-cp="mate" data-cp-at="6 6.5" data-cp-dir="front" />
+    <g data-cp="power" data-cp-at="6 6.5" data-cp-dir="front" />
+  </g>
+  <g id="wan-2-sfp" data-path="wan-2-sfp" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" data-rel-pos="1" transform="translate(80.75,83.6)" data-group="sfp-plus" data-group-role="traffic" data-description="the 10GbE SFP+ cage, shared with WAN 2; one or the other carries traffic">
+    <title>wan-2-sfp</title>
+    <rect id="wan-2-sfp--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="wan-2-sfp/opening" data-class="cutout" />
+    <rect id="wan-2-sfp--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="wan-2-sfp--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="wan-2-sfp--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="wan-2-sfp--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="wan-1" data-path="wan-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-poe="802.3at/bt PD (in)" data-speed="10g" data-rel-pos="1" transform="translate(101.5,82.0)" data-group="wan" data-group-role="traffic" data-description="WAN 1, the 10GbE PoE-in port, and WAN 2, the 10GbE RJ45 shared with the SFP+ cage">
+    <title>wan-1</title>
+    <g id="wan-1--jack" data-path="wan-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>wan-1--jack</title>
+      <path id="wan-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="wan-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="wan-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="wan-1/jack/opening" data-class="cutout" />
+      <g id="wan-1--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="wan-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="wan-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="wan-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="wan-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="wan-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="wan-2" data-path="wan-2" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="10g" data-rel-pos="2" transform="translate(125.0,82.0)" data-group="wan" data-group-role="traffic" data-description="WAN 1, the 10GbE PoE-in port, and WAN 2, the 10GbE RJ45 shared with the SFP+ cage">
+    <title>wan-2</title>
+    <g id="wan-2--jack" data-path="wan-2/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>wan-2--jack</title>
+      <path id="wan-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="wan-2--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="wan-2--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="wan-2/jack/opening" data-class="cutout" />
+      <g id="wan-2--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="wan-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="wan-2--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="wan-2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="wan-2--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="wan-2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="lan-1" data-path="lan-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-poe="48 V / 12.95 W (out)" data-speed="1g" data-rel-pos="1" transform="translate(145.8,82.0)" data-group="lan" data-group-role="traffic" data-description="the GbE port, LAN 1, which hands on 48 V PoE">
+    <title>lan-1</title>
+    <g id="lan-1--jack" data-path="lan-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>lan-1--jack</title>
+      <path id="lan-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="lan-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="lan-1/jack/opening" data-class="cutout" />
+      <g id="lan-1--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="lan-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="lan-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="lan-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="lan-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(165.1,82.0)" data-group="console" data-group-role="management">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+</svg>

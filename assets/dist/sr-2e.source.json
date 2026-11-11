@@ -56,17 +56,28 @@
     "psu-6": "nokia/sr-e-psu-ac@1"
    },
    "description": "The same build on AC supplies (3HE09549AA) in place of the DC ones; AC and DC may also be mixed (p62).",
-   "kind": "orderable"
+   "kind": "orderable",
+   "power": "ac"
   },
   "base": {
    "default": true,
    "description": "The chassis as the SR-e guide draws it - both control pairs, every IOM-e, a ME10-10GB-SFP+ in every MDA-e slot, six -48/-60 VDC supplies and two PSU impedance panels, and the fan tray.",
-   "kind": "base"
+   "kind": "base",
+   "power": "dc"
   }
  },
  "description": "The 10RU Nokia 7750 SR-2e service router (800 Gb/s half-duplex, 2 forwarding complexes), one of the three 7750 SR-e chassis that share a midplane design, cards and power supplies. Front: a horizontal card cage at the left under the PSU-shelf air intake - two CCM-e slots (A, B) then 8 MDA-e slots numbered 1/1 to 2/4 - with the integrated cable-management tray beside it and the hinged grill over the air filter at the right. Rear: the PSU shelf across the top (8 slots), the CPM-e slots A and B and 2 IOM-e slots at the left, and the chassis-specific fan tray standing in the vertical slot at the right. Every card lies horizontally, as the guide draws it, so no card bay rotates; the six vertical PSU slots seat the horizontally authored supplies at rotate 90.",
  "format": 1,
  "gaps": [
+  {
+   "note": "The guide gives the thread of the two chassis ground studs, 10-32, and their spacing, 0.625 in. (p122, p124 Figure 33), and nothing of a stud's length or colour: its figures are black and white line art and no photograph of an SR-e rear is held. The pair is common/ground-stud-pair-5-8-10-32, two bare studs drawn brass-coloured, 4.826 across and 12 mm out, with no nut (the nuts ship with the lug, Table 46 key 2); the colour and the length are estimates. The lug the guide supplies (p122, p123 Figure 32) is a two-hole lug with a 45-degree tongue; the library's two-hole lug is straight and mates the same pair.",
+   "reason": "needs-photo",
+   "scope": [
+    "ground-studs"
+   ],
+   "wanted": "a photograph of the rear ground studs of an SR-e chassis, or a drawing that gives their length and finish",
+   "what": "ground-stud-appearance"
+  },
   {
    "note": "Every figure used is vendor line art. Colour, finish and the printing on the cable-tray links are assumed; PUBLIC-SOURCES lists straight-on product photographs that are not staged.",
    "reason": "needs-photo",
@@ -110,7 +121,7 @@
    "term": "Fan Tray"
   },
   "grounding": {
-   "description": "the rear ESD strap receptacle",
+   "description": "the rear ESD strap receptacle and the chassis ground studs",
    "index-origin": 1,
    "role": "furniture",
    "term": "Point"
@@ -179,7 +190,11 @@
   },
   "ground": {
    "confidence": "drawing",
-   "note": "p122: two 10-32 ground studs \"located at the back of all 7750 SR-e chassis at the bottom-left\"; p124 Figure 33 dimensions them 0.625 in (15.86 mm) apart; the drawn studs are 15.85 apart at x 16.0, y 343 and 358.85, on a plate under an earth symbol. Drawn as panel decor (a stud plate is chassis metalwork with no part number; no library part draws a two-stud earth point without its own symbol)."
+   "note": "p122: two 10-32 ground studs \"located at the back of all 7750 SR-e chassis at the bottom-left\"; p124 Figure 33 dimensions them 0.625 in (15.86 mm) apart. They are the placed common/ground-stud-pair-5-8-10-32 (`ground-studs`), centred on the midpoint of the studs the figure draws (x 16.0, y 350.925), on a plate under an earth symbol. Each stud is a brass-coloured end 4.826 across (the 10-32 thread's nominal size), 12 mm out of the plate and with no nut; the colour and the length are estimates (gap ground-stud-appearance)."
+  },
+  "ground-stud-size": {
+   "confidence": "datasheet",
+   "note": "p122 and p124 Figure 33: two 10-32 ground studs, and Table 46 key 2 (p124): two 10-32 Keps nuts for the ground lug. This is the `stud-size` of ground-studs, the pair."
   },
   "intake-door": {
    "confidence": "drawing",
@@ -196,6 +211,10 @@
   "power": {
    "confidence": "datasheet",
    "note": "SR-e guide p82 Table 25: worst-case total power 2762 W (9424.22 BTU/hr), \"with worst-case total power including optical components\"; worst case is 100 percent line rate at 55 C (p83). Carried as the vendor's system figure. The per-module figures (p84 Table 27) live on the module contracts; this figure is not reconciled against them."
+  },
+  "power-feed": {
+   "confidence": "datasheet",
+   "note": "Each build states the feed of the supplies it seats. base seats the -48/-60 VDC PSU (3HE09548AA) and ac the universal AC PSU (3HE09549AA), the two supplies of SR-e Table 15 p62; DC input is -48/-60 VDC with an operating range of -40 to -72 VDC (Table 24 p81) and AC input is 100-120/220-240 VAC, 90-127/200-264 VAC (p82). The guide says the chassis can take a mix of AC and DC supplies (p62); no build here mixes them, so each states one feed. base is the library's drawn default and not a vendor bundle."
   },
   "psu-shelf": {
    "confidence": "drawing",
@@ -224,7 +243,7 @@
    "title": "Nokia 7750 SR-1e, SR-2e, and SR-3e Chassis Installation Guide 21.10, 3HE 17927 AAAA TQZZA Edition 03"
   }
  ],
- "version": "0.1.4",
+ "version": "0.3.1",
  "views": {
   "bottom": {
    "empty": "No staged document draws the underside of the 7750 SR-2e; the SR-e guide's rack figures (p89, p116, p118) show it only edge-on.",
@@ -1871,6 +1890,21 @@
       "id": "esd-rear",
       "ref": "common/esd-jack@1",
       "rel-pos": 1
+     },
+     {
+      "at": [
+       5.6495,
+       348.512
+      ],
+      "attrs": {
+       "stud-size": "10-32"
+      },
+      "for": "chassis",
+      "group": "grounding",
+      "id": "ground-studs",
+      "ref": "common/ground-stud-pair-5-8-10-32@1",
+      "rel-pos": 2,
+      "rotate": 90
      }
     ]
    },
@@ -2213,38 +2247,6 @@
        57
       ],
       "source": "p48 key \"Chassis ground point\"; p124 Figure 33: two 10-32 studs, 0.625 in (15.9 mm) apart"
-     },
-     {
-      "at": [
-       13.6,
-       340.6
-      ],
-      "confidence": "estimated",
-      "fill": "#b8a06a",
-      "kind": "ground-stud",
-      "out": 12,
-      "rx": 2.4,
-      "size": [
-       4.8,
-       4.8
-      ],
-      "source": "p122: #10 (10-32) studs; stud length not documented"
-     },
-     {
-      "at": [
-       13.6,
-       356.45
-      ],
-      "confidence": "estimated",
-      "fill": "#b8a06a",
-      "kind": "ground-stud",
-      "out": 12,
-      "rx": 2.4,
-      "size": [
-       4.8,
-       4.8
-      ],
-      "source": "p122: #10 (10-32) studs; stud length not documented"
      }
     ]
    },

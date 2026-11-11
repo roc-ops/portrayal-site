@@ -32,8 +32,8 @@ function modulesFor(key) {
 /**
  * Every drawing a device has, as {path, url}.
  *
- * A device is compiled once per CONFIGURATION - `as5912-54x.ac-f2b.front.svg`
- * alongside a bare `as5912-54x.front.svg` for the default - so "all
+ * A device is compiled once per CONFIGURATION - `as5912-54x.ac-f2b.front.svg`,
+ * and the zip also names the default's as a bare `as5912-54x.front.svg` - so "all
  * configurations" is roughly four times the bytes of the default one. The
  * config index is the authority on which exist; guessing filenames would ship a
  * zip full of 404s.
@@ -51,7 +51,7 @@ async function filesFor(dev, faces, everyConfig) {
   const out = [];
   for (const face of faces) {
     out.push({path: `devices/${dev.name}/${dev.name}.${face}.svg`,
-              url: `${DIST}${dev.name}.${face}.svg`,
+              url: DIST + faceFile(cfg || {device: dev.name}, cfg?.default, face),
               device: dev.name, version: dev.version ?? null,
               config: cfg?.default ?? null, face});
     // One entry per distinct FILE: since Portrayal #670 configurations that

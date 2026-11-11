@@ -42,5 +42,5 @@ test('the page runs the kit\'s editor directly, with no site command layer', () 
       `${name} still names the site's zero-U command layer`);
   }
   const page = readFileSync(files[0][1], 'utf8');
-  assert.match(page, /\bed = createRackEditor\(\{doc, chassisOf\}\);/, 'the page does not run the kit\'s editor as it is');
+  assert.match(page, /\bed = createRackEditor\(\{doc, chassisOf, frameOf\}\);/, 'the page does not run the kit\'s editor as it is');
 });

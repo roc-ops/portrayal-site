@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="54.7mm" height="41.8mm" viewBox="0 0 54.7 41.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ez-sysfan" data-path="ez-sysfan" data-class="fan" data-behaviour="fills" data-ref="digi/ez-sysfan@1:1.0.0" data-wall="#17191b" transform="translate(0,0)">
+    <title>ez-sysfan</title>
+    <rect id="ez-sysfan--body" x="0" y="0" width="54.7" height="41.8" rx="0.6" fill="#1b1d20" stroke="#0d0f11" stroke-width="0.3" />
+    <g id="ez-sysfan--grille" data-path="ez-sysfan/grille" data-class="vent" data-z-vent="20.0">
+      <circle cx="27.3" cy="20.9" r="18.7" fill="#0d0f11" />
+      <circle cx="27.3" cy="20.9" r="13.5" fill="#3a4258" />
+      <circle cx="27.3" cy="20.9" r="13.5" fill="none" stroke="#6b7390" stroke-width="2.2" stroke-dasharray="1.4 1.2" />
+      <circle cx="27.3" cy="20.9" r="16.5" fill="none" stroke="#2b2f33" stroke-width="2.6" stroke-dasharray="1.8 1.2" />
+    </g>
+    <g id="ez-sysfan--screw-top" data-path="ez-sysfan/screw-top" data-class="fastener" data-z-cyl="6.2">
+      <circle cx="4.5" cy="4.7" r="4.5" fill="#2b2f33" stroke="#0d0f11" stroke-width="0.3" />
+      <circle cx="4.5" cy="4.7" r="3.0" fill="#aeb3b9" stroke="#6e7378" stroke-width="0.25" />
+      <path d="M 2.9 3.1 L 6.1 6.3 M 6.1 3.1 L 2.9 6.3" stroke="#4a4f55" stroke-width="0.5" />
+    </g>
+    <g id="ez-sysfan--screw-mid" data-path="ez-sysfan/screw-mid" data-class="fastener" data-z-cyl="6.2">
+      <circle cx="50.2" cy="16.4" r="4.5" fill="#2b2f33" stroke="#0d0f11" stroke-width="0.3" />
+      <circle cx="50.2" cy="16.4" r="3.0" fill="#aeb3b9" stroke="#6e7378" stroke-width="0.25" />
+      <path d="M 48.6 14.8 L 51.8 18.0 M 51.8 14.8 L 48.6 18.0" stroke="#4a4f55" stroke-width="0.5" />
+    </g>
+    <g id="ez-sysfan--screw-low" data-path="ez-sysfan/screw-low" data-class="fastener" data-z-cyl="6.2">
+      <circle cx="50.2" cy="37.1" r="4.5" fill="#2b2f33" stroke="#0d0f11" stroke-width="0.3" />
+      <circle cx="50.2" cy="37.1" r="3.0" fill="#aeb3b9" stroke="#6e7378" stroke-width="0.25" />
+      <path d="M 48.6 35.5 L 51.8 38.7 M 51.8 35.5 L 48.6 38.7" stroke="#4a4f55" stroke-width="0.5" />
+    </g>
+  </g>
+</svg>

@@ -25,12 +25,15 @@ const SOURCES = {
   device:    {url: 'assets/schemas/device.schema.json',    label: 'one piece of hardware'},
   component: {url: 'assets/schemas/component.schema.json', label: 'a reusable part it places'},
   // A NOS vendor LISTS the hardware it supports (Portrayal #677, listing.schema.json);
-  // before that a NOS was an overlay on the hardware (overlay.schema.json). The
-  // page offers whichever of the two the vendored schemas carry - see `present`.
+  // before that a NOS was an overlay on the hardware, a schema that is no longer vendored.
   listing:   {url: 'assets/schemas/listing.schema.json',   label: 'a NOS vendor listing the hardware it supports'},
   // A LAB: placements in a rack, rack-face parts on a host (Portrayal #852, lab.schema.json).
   lab:       {url: 'assets/schemas/lab.schema.json',       label: 'a lab of devices placed in a rack'},
-  overlay:   {url: 'assets/schemas/overlay.schema.json',   label: "an operating system's naming"},
+  // A RACK AS A MAKER SELLS IT: the frame or cabinet the library models, not the rack someone built.
+  // Keyed by its file's name, as every tab is, so ?doc= names the file.
+  'rack-product': {url: 'assets/schemas/rack-product.schema.json', label: 'a rack or cabinet as a maker sells it'},
+  // A SITE: buildings, floors and spaces, the racks in them, and the cables between racks.
+  site:      {url: 'assets/schemas/site.schema.json',      label: 'a site of buildings, spaces, racks and cables'},
   // The Rack Builder's file. Portrayal's since the rack core moved into the kit
   // (@portrayal/kit 0.3.0, spec/schemas/rack.schema.json), so vendored like the rest.
   rack:      {url: 'assets/schemas/rack.schema.json',      label: 'a rack built in the Rack Builder'},

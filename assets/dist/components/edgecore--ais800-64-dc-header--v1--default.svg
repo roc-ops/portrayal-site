@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="26.79mm" height="22.19mm" viewBox="0 0 26.79 22.19">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ais800-64-dc-header" data-path="ais800-64-dc-header" data-class="inlet" data-ref="edgecore/ais800-64-dc-header@1:1.0.0" data-connector="DC power connector" data-positions="6" transform="translate(0,0)">
+    <title>ais800-64-dc-header</title>
+    <rect id="ais800-64-dc-header--body" x="0" y="0" width="26.79" height="22.19" rx="1.2" fill="#6e747b" />
+    <path id="ais800-64-dc-header--web" d="M 4.49 7.41 h 22.27 v 6.40 h -22.27 z" fill="#1b1f23" />
+    <g id="ais800-64-dc-header--socket-1">
+      <circle cx="7.48" cy="4.00" r="3.83" fill="#101315" stroke="#4d5359" stroke-width="0.30" />
+      <path d="M 6.43 7.35 h 2.10 v 1.45 h -2.10 z" fill="#101315" stroke="#4d5359" stroke-width="0.22" />
+      <circle cx="7.48" cy="4.00" r="1.95" fill="#2b3035" stroke="#575d64" stroke-width="0.22" />
+      <rect x="6.03" y="3.72" width="2.90" height="0.56" rx="0.12" fill="#8d939a" />
+    </g>
+    <g id="ais800-64-dc-header--socket-2">
+      <circle cx="15.55" cy="4.00" r="3.83" fill="#101315" stroke="#4d5359" stroke-width="0.30" />
+      <path d="M 14.50 7.35 h 2.10 v 1.45 h -2.10 z" fill="#101315" stroke="#4d5359" stroke-width="0.22" />
+      <circle cx="15.55" cy="4.00" r="1.95" fill="#2b3035" stroke="#575d64" stroke-width="0.22" />
+      <rect x="14.10" y="3.72" width="2.90" height="0.56" rx="0.12" fill="#8d939a" />
+    </g>
+    <g id="ais800-64-dc-header--socket-3">
+      <circle cx="23.63" cy="4.00" r="3.83" fill="#101315" stroke="#4d5359" stroke-width="0.30" />
+      <path d="M 22.58 7.35 h 2.10 v 1.45 h -2.10 z" fill="#101315" stroke="#4d5359" stroke-width="0.22" />
+      <circle cx="23.63" cy="4.00" r="1.95" fill="#2b3035" stroke="#575d64" stroke-width="0.22" />
+      <rect x="22.18" y="3.72" width="2.90" height="0.56" rx="0.12" fill="#8d939a" />
+    </g>
+    <g id="ais800-64-dc-header--socket-4">
+      <circle cx="7.48" cy="18.13" r="3.83" fill="#101315" stroke="#4d5359" stroke-width="0.30" />
+      <path d="M 6.43 21.48 h 2.10 v 1.45 h -2.10 z" fill="#101315" stroke="#4d5359" stroke-width="0.22" />
+      <circle cx="7.48" cy="18.13" r="1.95" fill="#2b3035" stroke="#575d64" stroke-width="0.22" />
+      <rect x="6.03" y="17.85" width="2.90" height="0.56" rx="0.12" fill="#8d939a" />
+    </g>
+    <g id="ais800-64-dc-header--socket-5">
+      <circle cx="15.55" cy="18.13" r="3.83" fill="#101315" stroke="#4d5359" stroke-width="0.30" />
+      <path d="M 14.50 21.48 h 2.10 v 1.45 h -2.10 z" fill="#101315" stroke="#4d5359" stroke-width="0.22" />
+      <circle cx="15.55" cy="18.13" r="1.95" fill="#2b3035" stroke="#575d64" stroke-width="0.22" />
+      <rect x="14.10" y="17.85" width="2.90" height="0.56" rx="0.12" fill="#8d939a" />
+    </g>
+    <g id="ais800-64-dc-header--socket-6">
+      <circle cx="23.63" cy="18.13" r="3.83" fill="#101315" stroke="#4d5359" stroke-width="0.30" />
+      <path d="M 22.58 21.48 h 2.10 v 1.45 h -2.10 z" fill="#101315" stroke="#4d5359" stroke-width="0.22" />
+      <circle cx="23.63" cy="18.13" r="1.95" fill="#2b3035" stroke="#575d64" stroke-width="0.22" />
+      <rect x="22.18" y="17.85" width="2.90" height="0.56" rx="0.12" fill="#8d939a" />
+    </g>
+    <g data-cp="mate" data-cp-at="13.395 11.095" data-cp-dir="front" />
+  </g>
+</svg>

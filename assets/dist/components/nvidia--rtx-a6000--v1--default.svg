@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="41.91mm" viewBox="0 0 120.02 41.91">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="rtx-a6000" data-path="rtx-a6000" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/rtx-a6000@1:1.0.0" data-body-depth="266.7" data-wall="#2b2d30" data-airflow="blower; it draws air from the card's broad side and exhausts toward the bracket" data-cooling="active" data-display-ports="4 x DisplayPort 1.4a on the bracket" data-form-factor="Full-height, full-length (FHFL) 4.4 in x 10.5 in, dual slot" data-memory="48 GB GDDR6, 384-bit, 768 GB/s" data-model="RTX A6000" data-nvlink="one connector on the top edge; one bridge connects two RTX A6000, 112.5 GB/s bidirectional" data-part-numbers="PNY VCNRTXA6000-PB (retail), VCNRTXA6000-SB (single bulk), VCNRTXA6000-BLK (bulk), VCNRTXA6000-EDU (education), VCNRTXA6000-TAA" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="full" data-power-draw-max-w="300" data-power-input="host PCIe slot and one CPU 8-pin (EPS12V) auxiliary connector; a 2x PCIe 8-pin to 1x CPU 8-pin cable is in the box" data-role="gpu" transform="translate(0,0)">
+    <title>rtx-a6000</title>
+    <path id="rtx-a6000--plate" d="M1.9 7.4 L7.27 7.4 L9.57 5.1 L20.0 5.1 L21.0 4.1 L119.2 4.1 L119.2 0.3 L120.02 0.3 L120.02 40.9 L119.2 40.9 L119.2 41.2 L10.8 41.2 L7.27 37.68 L1.9 37.68 A1.9 1.9 0 0 1 0 35.78 L0 29.63 A1.9 1.9 0 0 1 1.9 27.73 L7.27 27.73 L10.95 24.22 A2.4 2.4 0 0 0 10.95 20.88 L7.27 17.35 L1.9 17.35 A1.9 1.9 0 0 1 0 15.45 L0 9.3 A1.9 1.9 0 0 1 1.9 7.4 Z" fill="#2b2d30" stroke="#0e0f10" stroke-width="0.4" stroke-linejoin="round" />
+    <path id="rtx-a6000--flange-fold" d="M119.6 0.6 V40.6" stroke="#0e0f10" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#2b2d30" />
+    <g id="rtx-a6000--display-port-1" data-path="rtx-a6000/display-port-1" data-class="connector">
+      <path d="M32.4 6.1 L48.4 6.1 A0.8 0.8 0 0 1 49.2 6.9 L49.2 10.0 L46.0 13.2 L32.4 13.2 A0.8 0.8 0 0 1 31.6 12.4 L31.6 6.9 A0.8 0.8 0 0 1 32.4 6.1 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M32.5 7.1 L48.3 7.1 L48.3 9.7 L45.8 12.2 L32.5 12.2 Z" fill="#18191b" />
+      <path d="M34.0 8.5 H46.7 M34.0 10.4 H44.7" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-a6000--display-port-2" data-path="rtx-a6000/display-port-2" data-class="connector">
+      <path d="M53.8 6.1 L69.8 6.1 A0.8 0.8 0 0 1 70.6 6.9 L70.6 10.0 L67.4 13.2 L53.8 13.2 A0.8 0.8 0 0 1 53.0 12.4 L53.0 6.9 A0.8 0.8 0 0 1 53.8 6.1 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M53.9 7.1 L69.7 7.1 L69.7 9.7 L67.2 12.2 L53.9 12.2 Z" fill="#18191b" />
+      <path d="M55.4 8.5 H68.1 M55.4 10.4 H66.1" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-a6000--display-port-3" data-path="rtx-a6000/display-port-3" data-class="connector">
+      <path d="M75.2 6.1 L91.2 6.1 A0.8 0.8 0 0 1 92.0 6.9 L92.0 10.0 L88.8 13.2 L75.2 13.2 A0.8 0.8 0 0 1 74.4 12.4 L74.4 6.9 A0.8 0.8 0 0 1 75.2 6.1 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M75.3 7.1 L91.1 7.1 L91.1 9.7 L88.6 12.2 L75.3 12.2 Z" fill="#18191b" />
+      <path d="M76.8 8.5 H89.5 M76.8 10.4 H87.5" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-a6000--display-port-4" data-path="rtx-a6000/display-port-4" data-class="connector">
+      <path d="M96.6 6.1 L112.6 6.1 A0.8 0.8 0 0 1 113.4 6.9 L113.4 10.0 L110.2 13.2 L96.6 13.2 A0.8 0.8 0 0 1 95.8 12.4 L95.8 6.9 A0.8 0.8 0 0 1 96.6 6.1 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M96.7 7.1 L112.5 7.1 L112.5 9.7 L110.0 12.2 L96.7 12.2 Z" fill="#18191b" />
+      <path d="M98.2 8.5 H110.9 M98.2 10.4 H108.9" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <rect id="rtx-a6000--vent" x="36.0" y="15.5" width="75.8" height="23.1" rx="0.8" fill="#0b0c0d" stroke="#3a3e43" stroke-width="0.3" data-path="rtx-a6000/vent" data-class="vent" />
+    <g id="rtx-a6000--fins" fill="#41454a">
+      <rect x="37.8" y="15.8" width="0.6" height="22.5" />
+      <rect x="42.26" y="15.8" width="0.6" height="22.5" />
+      <rect x="46.72" y="15.8" width="0.6" height="22.5" />
+      <rect x="51.18" y="15.8" width="0.6" height="22.5" />
+      <rect x="55.64" y="15.8" width="0.6" height="22.5" />
+      <rect x="60.1" y="15.8" width="0.6" height="22.5" />
+      <rect x="64.56" y="15.8" width="0.6" height="22.5" />
+      <rect x="69.02" y="15.8" width="0.6" height="22.5" />
+      <rect x="73.48" y="15.8" width="0.6" height="22.5" />
+      <rect x="77.94" y="15.8" width="0.6" height="22.5" />
+      <rect x="82.4" y="15.8" width="0.6" height="22.5" />
+      <rect x="86.86" y="15.8" width="0.6" height="22.5" />
+      <rect x="91.32" y="15.8" width="0.6" height="22.5" />
+      <rect x="95.78" y="15.8" width="0.6" height="22.5" />
+      <rect x="100.24" y="15.8" width="0.6" height="22.5" />
+      <rect x="104.7" y="15.8" width="0.6" height="22.5" />
+      <rect x="109.16" y="15.8" width="0.6" height="22.5" />
+    </g>
+    <g id="rtx-a6000--screw-1" data-path="rtx-a6000/screw-1" data-class="screw">
+      <circle cx="32.4" cy="17.9" r="2.4" fill="#5a5e63" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="32.4" cy="17.9" r="0.9" fill="#1d1f21" />
+    </g>
+    <g id="rtx-a6000--screw-2" data-path="rtx-a6000/screw-2" data-class="screw">
+      <circle cx="114.7" cy="17.9" r="2.4" fill="#5a5e63" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="114.7" cy="17.9" r="0.9" fill="#1d1f21" />
+    </g>
+    <g id="rtx-a6000--screw-3" data-path="rtx-a6000/screw-3" data-class="screw">
+      <circle cx="32.4" cy="36.0" r="2.4" fill="#5a5e63" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="32.4" cy="36.0" r="0.9" fill="#1d1f21" />
+    </g>
+    <g id="rtx-a6000--screw-4" data-path="rtx-a6000/screw-4" data-class="screw">
+      <circle cx="114.7" cy="36.0" r="2.4" fill="#5a5e63" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="114.7" cy="36.0" r="0.9" fill="#1d1f21" />
+    </g>
+  </g>
+</svg>

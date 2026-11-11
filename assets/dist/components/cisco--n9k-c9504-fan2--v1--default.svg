@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128.27mm" height="269.24mm" viewBox="0 0 128.27 269.24">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-blue { --led-color: #2a7de1; }
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/n9k-c9504-fan2@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="n9k-c9504-fan2" data-path="n9k-c9504-fan2" data-class="fan" data-behaviour="fills" data-ref="cisco/n9k-c9504-fan2@1:1.0.0" data-body-depth="138.94" data-airflow="port-side intake" data-eol="unknown" data-hot-swappable="True" data-model="N9K-C9504-FAN2" data-power-draw-max-w="600" data-power-draw-typical-w="105" data-role="fan-tray" data-weight-kg="3.45" transform="translate(0,0)">
+    <title>n9k-c9504-fan2</title>
+    <rect id="n9k-c9504-fan2--plate" x="0.5" y="0.5" width="127.27" height="268.24" rx="1" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.4" />
+    <rect id="n9k-c9504-fan2--vent" x="8" y="22" width="112.27" height="204" rx="1" fill="#34373a" />
+    <g id="n9k-c9504-fan2--handle-upper">
+      <path d="M 22 110 L 104 50" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+    </g>
+    <g id="n9k-c9504-fan2--handle-lower">
+      <path d="M 22 200 L 104 140" stroke="#f2f2f2" stroke-width="7" stroke-linecap="round" fill="none" />
+    </g>
+    <g id="n9k-c9504-fan2--screw-top-l">
+      <circle cx="20" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="20" cy="10" r="1.7" fill="#6d7379" />
+    </g>
+    <g id="n9k-c9504-fan2--screw-top-r">
+      <circle cx="108.27" cy="10" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="108.27" cy="10" r="1.7" fill="#6d7379" />
+    </g>
+    <g id="n9k-c9504-fan2--screw-bot-l">
+      <circle cx="20" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="20" cy="259" r="1.7" fill="#6d7379" />
+    </g>
+    <g id="n9k-c9504-fan2--screw-bot-r">
+      <circle cx="108.27" cy="259" r="4" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="108.27" cy="259" r="1.7" fill="#6d7379" />
+    </g>
+    <circle id="n9k-c9504-fan2--bcn" cx="101.5" cy="239.5" r="1.5" fill="var(--led-color, #2a7de1)" stroke="#9aa0a6" stroke-width="0.25" data-path="n9k-c9504-fan2/bcn" data-class="led" data-states="blue off" data-description="BCN lamp, lower right." />
+    <circle id="n9k-c9504-fan2--fan" cx="109.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="n9k-c9504-fan2/fan" data-class="led" data-states="green red off" data-description="FAN lamp. Green when the tray is operational, red when a fan has failed." />
+    <circle id="n9k-c9504-fan2--fab" cx="117.5" cy="239.5" r="1.5" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="n9k-c9504-fan2/fab" data-class="led" data-states="green amber off" data-description="FAB lamp. Green when the fabric modules behind the tray are operational, amber when one is not." />
+    <g id="n9k-c9504-fan2--silkscreen">
+      <text x="101.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">BCN</text>
+      <text x="109.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAN</text>
+      <text x="117.5" y="247" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#231f20">FAB</text>
+    </g>
+  </g>
+</svg>

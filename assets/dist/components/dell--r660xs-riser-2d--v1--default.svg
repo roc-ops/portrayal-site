@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="170.1mm" height="19.8mm" viewBox="0 0 170.1 19.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="r660xs-riser-2d" data-path="r660xs-riser-2d" data-class="riser" data-behaviour="fills" data-ref="dell/r660xs-riser-2d@1:1.0.0" data-appears-in="riser configuration 5" data-power-absent="not-published" data-riser="2d" data-slot-2="x8, low profile, half length, processor 1, PCIe Gen5" transform="translate(0,0)">
+    <title>r660xs-riser-2d</title>
+    <g id="r660xs-riser-2d--cover-3" data-path="r660xs-riser-2d/cover-3" data-class="bay">
+      <rect id="r660xs-riser-2d--cover-3--opening" x="84.80" y="1.92" width="79.20" height="18.42" fill="none" stroke="none" />
+      <g id="r660xs-riser-2d--cover-3--module" data-path="r660xs-riser-2d/cover-3/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-lp-16g@1:1.0.1" transform="translate(84.8,1.92)">
+        <title>r660xs-riser-2d--cover-3--module</title>
+        <path id="r660xs-riser-2d--cover-3--module--plate" d="M7.74 0.15 H78.45 Q79.05 0.15 79.05 0.75 V17.67 Q79.05 18.27 78.45 18.27 H7.74 Z" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+        <g id="r660xs-riser-2d--cover-3--module--vents">
+          <rect x="18.82" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="18.82" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="24.30" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="24.30" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="29.78" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="29.78" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="35.26" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="35.26" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="40.74" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="40.74" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="46.22" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="46.22" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="51.70" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="51.70" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="57.18" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="57.18" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="62.66" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="62.66" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+        </g>
+      </g>
+    </g>
+    <g id="r660xs-riser-2d--slot-2" data-path="r660xs-riser-2d/slot-2" data-class="bay">
+      <rect id="r660xs-riser-2d--slot-2--opening" x="12.80" y="1.92" width="79.20" height="18.42" fill="none" stroke="none" />
+      <g id="r660xs-riser-2d--slot-2--module" data-path="r660xs-riser-2d/slot-2/module" data-class="blank" data-behaviour="fills" data-ref="dell/pcie-filler-lp-16g@1:1.0.1" transform="translate(12.8,1.92)">
+        <title>r660xs-riser-2d--slot-2--module</title>
+        <path id="r660xs-riser-2d--slot-2--module--plate" d="M7.74 0.15 H78.45 Q79.05 0.15 79.05 0.75 V17.67 Q79.05 18.27 78.45 18.27 H7.74 Z" fill="#d9dcdf" stroke="#9aa1a8" stroke-width="0.25" />
+        <g id="r660xs-riser-2d--slot-2--module--vents">
+          <rect x="18.82" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="18.82" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="24.30" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="24.30" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="29.78" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="29.78" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="35.26" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="35.26" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="40.74" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="40.74" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="46.22" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="46.22" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="51.70" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="51.70" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="57.18" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="57.18" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="62.66" y="4.46" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+          <rect x="62.66" y="9.95" width="4.0" height="4.0" rx="0.4" fill="#16191c" />
+        </g>
+      </g>
+    </g>
+    <g id="r660xs-riser-2d--plate" data-path="r660xs-riser-2d/plate" data-class="riser" data-ref="dell/r660xs-riser-2-cage@1:1.0.0" data-power-absent="not-applicable" transform="translate(0,0)">
+      <title>r660xs-riser-2d--plate</title>
+      <path id="r660xs-riser-2d--plate--plate" fill-rule="evenodd" d="M0.30 0.30 H169.80 V19.50 H0.30 Z M30.70 1.92 H85.50 V19.50 H30.70 Z M103.60 1.92 H156.00 V19.50 H103.60 Z" fill="#cfd3d7" stroke="#9aa1a8" stroke-width="0.25" />
+      <rect x="10.70" y="2.60" width="4.20" height="4.20" rx="0.3" fill="#16191c" />
+      <rect x="16.90" y="2.60" width="4.20" height="4.20" rx="0.3" fill="#16191c" />
+      <rect x="10.70" y="9.80" width="4.20" height="4.20" rx="0.3" fill="#16191c" />
+      <rect x="163.80" y="0.60" width="4.80" height="18.60" rx="0.3" fill="#aeb4ba" />
+      <g id="r660xs-riser-2d--plate--silkscreen">
+        <g id="r660xs-riser-2d--plate--psu-1-mark" fill="#2b2f33" stroke="none">
+          <rect x="164.30" y="11.40" width="2.63" height="2.63" fill="none" stroke="#2b2f33" stroke-width="0.20" />
+          <path d="M 165.85 11.82 L 165.15 12.85 H 165.63 L 165.38 13.62 L 166.12 12.52 H 165.64 Z" />
+          <text x="165.62" y="9.60" font-family="sans-serif" font-size="3.50" text-anchor="middle">1</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

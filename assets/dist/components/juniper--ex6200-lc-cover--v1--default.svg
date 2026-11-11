@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="392.1mm" height="38.1mm" viewBox="0 0 392.1 38.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ex6200-lc-cover" data-path="ex6200-lc-cover" data-class="blank" data-behaviour="fills" data-ref="juniper/ex6200-lc-cover@1:1.0.0" data-role="slot-blank" data-states="absent" transform="translate(0,0)">
+    <title>ex6200-lc-cover</title>
+    <rect id="ex6200-lc-cover--face" x="0" y="0" width="392.1" height="38.1" rx="1.6" fill="#c9ccd0" stroke="#7d8186" stroke-width="0.4" />
+    <g id="ex6200-lc-cover--stiffener">
+      <rect x="30.0" y="31.8" width="332.1" height="2.6" rx="1.3" fill="#b4b8bd" />
+    </g>
+    <g id="ex6200-lc-cover--screw-left" data-path="ex6200-lc-cover/screw-left" data-class="screw">
+      <circle cx="8.6" cy="20.2" r="2.2" fill="#aeb2b7" stroke="#6b6f75" stroke-width="0.35" />
+      <path d="M 6.9 20.2 H 10.3 M 8.6 18.5 V 21.9" stroke="#6b6f75" stroke-width="0.4" />
+    </g>
+    <g id="ex6200-lc-cover--screw-right" data-path="ex6200-lc-cover/screw-right" data-class="screw">
+      <circle cx="386.9" cy="20.2" r="2.2" fill="#aeb2b7" stroke="#6b6f75" stroke-width="0.35" />
+      <path d="M 385.2 20.2 H 388.6 M 386.9 18.5 V 21.9" stroke="#6b6f75" stroke-width="0.4" />
+    </g>
+  </g>
+</svg>

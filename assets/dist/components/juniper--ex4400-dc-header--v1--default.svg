@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="10.1mm" height="36.0mm" viewBox="0 0 10.1 36.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ex4400-dc-header" data-path="ex4400-dc-header" data-class="inlet" data-ref="juniper/ex4400-dc-header@1:1.0.0" data-connector="D-sub 3W3 DC power connector" data-positions="3" transform="translate(0,0)">
+    <title>ex4400-dc-header</title>
+    <polygon id="ex4400-dc-header--standoff-top" points="3.3,0 6.7,0 8.4,2.8 6.7,4.8 3.3,4.8 1.6,2.8" fill="#cfd0d2" stroke="#9a9b9d" stroke-width="0.3" />
+    <polygon id="ex4400-dc-header--standoff-bottom" points="3.3,30.4 6.7,30.4 8.4,33.2 6.7,36.0 3.3,36.0 1.6,33.2" fill="#cfd0d2" stroke="#9a9b9d" stroke-width="0.3" />
+    <path id="ex4400-dc-header--shell" d="M 0.9 4.9 H 9.2 Q 10.1 4.9 10.1 5.8 V 29.3 Q 10.1 30.2 9.2 30.2 H 0.9 Q 0 30.2 0 29.3 V 5.8 Q 0 4.9 0.9 4.9 Z" fill="#17181a" stroke="#b9babc" stroke-width="0.5" />
+    <circle id="ex4400-dc-header--contact-top" cx="5.0" cy="10.6" r="1.6" fill="#d9b13a" />
+    <circle id="ex4400-dc-header--contact-middle" cx="5.0" cy="17.4" r="2.3" fill="#d9b13a" />
+    <circle id="ex4400-dc-header--contact-middle-bore" cx="5.0" cy="17.4" r="1.4" fill="#2a2415" />
+    <circle id="ex4400-dc-header--contact-bottom" cx="5.0" cy="24.0" r="1.6" fill="#d9b13a" />
+    <g data-cp="mate" data-cp-at="5 17.4" data-cp-dir="front" />
+  </g>
+</svg>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="97.9mm" height="16.04mm" viewBox="0 0 97.9 16.04">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="a10-tail" data-path="a10-tail" data-class="mechanical" data-ref="nvidia/a10-tail@1:1.0.0" data-media="gpu" transform="translate(0,0)">
+    <title>a10-tail</title>
+    <rect id="a10-tail--end-plate" x="0" y="0" width="97.9" height="16.04" fill="#202326" />
+    <g id="a10-tail--aux-power" data-path="a10-tail/aux-power" data-class="inlet" data-ref="std/pcie-8pin-header@1:1.0.0" data-depth="9.9" data-wall="#2c3036" data-cavity="inlet-face" data-input="dc" data-media="pcie-8pin" data-pins="8" data-pins-12v="3" data-pins-ground="5" data-pitch-mm="4.2" data-power-rated-w="150" transform="translate(5.21,-1.13) rotate(270 6.3 9.0)">
+      <title>a10-tail--aux-power</title>
+      <rect id="a10-tail--aux-power--opening" x="0" y="0" width="12.6" height="18" rx="0.6" fill="#23262b" data-path="a10-tail/aux-power/opening" data-class="cutout" />
+      <path id="a10-tail--aux-power--plate" fill="#23262b" fill-rule="evenodd" d="M 0.6 0 H 12 A 0.6 0.6 0 0 1 12.6 0.6 V 17.4 A 0.6 0.6 0 0 1 12 18 H 0.6 A 0.6 0.6 0 0 1 0 17.4 V 0.6 A 0.6 0.6 0 0 1 0.6 0 Z M 2.53 1.23 L 5.87 1.23 L 5.87 4.17 L 2.53 4.17 Z M 6.73 1.23 L 10.07 1.23 L 10.07 4.17 L 6.73 4.17 Z M 2.53 5.43 L 5.87 5.43 L 5.87 8.37 L 2.53 8.37 Z M 6.73 5.43 L 10.07 5.43 L 10.07 8.37 L 6.73 8.37 Z M 2.53 9.63 L 5.87 9.63 L 5.87 12.57 L 2.53 12.57 Z M 6.73 9.63 L 10.07 9.63 L 10.07 12.57 L 6.73 12.57 Z M 2.53 13.83 L 5.87 13.83 L 5.87 16.77 L 2.53 16.77 Z M 6.73 13.83 L 10.07 13.83 L 10.07 15.588 L 8.888 16.77 L 6.73 16.77 Z" data-z-out="0.05" data-z-color="#23262b" data-z-shape="1" />
+      <path id="a10-tail--aux-power--inlet-face" fill="#08090a" d="M 2.5 1.2 H 5.9 V 4.2 H 2.5 Z M 6.7 1.2 H 10.1 V 4.2 H 6.7 Z M 2.5 5.4 H 5.9 V 8.4 H 2.5 Z M 6.7 5.4 H 10.1 V 8.4 H 6.7 Z M 2.5 9.6 H 5.9 V 12.6 H 2.5 Z M 6.7 9.6 H 10.1 V 12.6 H 6.7 Z M 2.5 13.8 H 5.9 V 16.8 H 2.5 Z M 6.7 13.8 H 10.1 V 15.6 L 8.9 16.8 H 6.7 Z" />
+      <rect id="a10-tail--aux-power--latch" x="-1.4" y="8.1" width="1.4" height="1.8" fill="#2c3036" stroke="#3a3e43" stroke-width="0.1" data-z-out="0.05" data-z-lift="-8.0" data-z-profile="0:-8,1.1:0.05,1.4:0.05" data-z-color="#2c3036" />
+      <g fill="#b9bfc6">
+        <rect id="a10-tail--aux-power--pin-1" x="3.4" y="1.9" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+        <rect id="a10-tail--aux-power--pin-2" x="7.6" y="1.9" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+        <rect id="a10-tail--aux-power--pin-3" x="3.4" y="6.1" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+        <rect id="a10-tail--aux-power--pin-4" x="7.6" y="6.1" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+        <rect id="a10-tail--aux-power--pin-5" x="3.4" y="10.3" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+        <rect id="a10-tail--aux-power--pin-6" x="7.6" y="10.3" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+        <rect id="a10-tail--aux-power--pin-7" x="3.4" y="14.5" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+        <rect id="a10-tail--aux-power--pin-8" x="7.6" y="14.5" width="1.6" height="1.6" rx="0.2" data-z-top="7.5" data-z-color="#b9bfc6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.3 9" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

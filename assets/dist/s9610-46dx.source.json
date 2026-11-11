@@ -61,6 +61,12 @@
   "color": "#3c3c3c",
   "depth": 762,
   "height": 87.7,
+  "kits": [
+   {
+    "ref": "ufispace/adjustable-rail-771-kit@1",
+    "supply": "in-box"
+   }
+  ],
   "ru": 2,
   "weight-kg": 22.64,
   "width": 436
@@ -81,9 +87,14 @@
    "power": "ac"
   },
   "dc": {
+   "attrs": {
+    "power": {
+     "power-max-w": "1524"
+    }
+   },
    "bays": {
-    "psu-0": "ufispace/psu-202-dc@1",
-    "psu-1": "ufispace/psu-202-dc@1"
+    "psu-0": "ufispace/psu-202-dc@2",
+    "psu-1": "ufispace/psu-202-dc@2"
    },
    "component-attrs": {
     "fan-808012": {
@@ -105,6 +116,15 @@
  "description": "UfiSpace S9610-46DX 100G/400G open aggregation router - 2RU white box on Broadcom Qumran2c+ at 7.2 Tbps with an 8 GB deep buffer and a Broadcom OP2 BCM16K external TCAM, 40x QSFP28 40/100G in two blocks of five four-high columns, 6x QSFP-DD 100/400G with 400ZR/OpenZR+ in one 3x2 assembly in the middle, 4x SFP28/SFP-DD 1/10/25G that share in-band with 100GE port 0, and a separate quad of 10G SFP+ management ports; a full timing block (GNSS on SMA, 10MHz and 1PPS on SMB, ToD on RJ45 and BITS on RJ48) with a Stratum 3E OCXO and Class C 1588v2, MACsec on all ports; four hot-swap fans (3+1) and dual 2000 W PSUs (1+1) at the rear, orderable AC or DC, exhaust airflow",
  "format": 1,
  "gaps": [
+  {
+   "note": "The height of the pair of screws of each DC pole off the supply's face is an estimate. The S9600-56DX Hardware Installation Guide draws the block in isometric only (Figures 25 and 26), with no scale and no elevation, and no held document gives the height.",
+   "reason": "needs-drawing",
+   "scope": [
+    "ufispace/psu-202-dc@2"
+   ],
+   "wanted": "a side elevation of the DC supply's terminal block with its height off the face, or a photograph taken square to the block from the side",
+   "what": "dc-terminal-height"
+  },
   {
    "note": "HIG section 10 tables the six front-panel lamps (SYNC, SYS, FAN, PS0, PS1, ID), the PSU FRU lamp and the Fan FRU lamp, and gives no table at all for the port lamps. Each of the fifty-four traffic and management ports carries exactly one lamp - in the printed band above or below its block, in its own blue light-pipe strip, or in the grey band between the SFP+ management rows - and nothing states what any of them means. The lamp-to-port pairing written here is read off the printed legend (the up-arrow's lamp is the upper port's) and is solid; the STATES are not, so every lamp keeps the component default of off/on rather than an invented link/activity vocabulary.",
    "reason": "vendor-silent",
@@ -316,7 +336,7 @@
   },
   "power": {
    "confidence": "datasheet",
-   "note": "datasheet 'Typical Power: 626 W (no transceiver)' - the vendor's own scope, so power-envelope is bare. The HIG's Connecting Power sections state the maximum FOUR times, twice per build, and the pairs are different SCOPES rather than a conflict: DC is 1220 W 'under 400G optics MSA standards' and 1524 W 'with OpenZR+ transceivers (on selected ports)'; AC is 1263 W and 1534 W for the same two optic loadings. All four are qualified in a note printed beside them - 'Temperature: 45C, Optics: full populated, Traffic: 100% load'. power-max-w carries 1534, which is the highest of the four and therefore what max means; the other three are recorded in this sentence rather than as a disagreement, because they are four measurements of four different loadings. Note that power-envelope therefore describes the TYPICAL figure's scope and not the maximum's, which is fully-configured and says so here. These are the vendor's figures as the vendor states them and are NOT reconciled against the module set: the fans publish no draw at all, so any total built from the modelled modules is a floor. PSU rating 2000 W per supply from the datasheet's ordering lines; on a single 110 VAC feed the HIG derates each supply to 1000 W."
+   "note": "datasheet 'Typical Power: 626 W (no transceiver)' - the vendor's own scope, so power-envelope is bare. The HIG's Connecting Power sections state the maximum FOUR times, twice per build, and the pairs are different SCOPES rather than a conflict: DC is 1220 W 'under 400G optics MSA standards' and 1524 W 'with OpenZR+ transceivers (on selected ports)'; AC is 1263 W and 1534 W for the same two optic loadings. All four are qualified in a note printed beside them - 'Temperature: 45C, Optics: full populated, Traffic: 100% load'. power-max-w carries 1534, which is the highest of the four and therefore what max means; the other three are recorded in this sentence rather than as a disagreement, because they are four measurements of four different loadings; the dc configuration states its own 1524, the highest of its two. Note that power-envelope therefore describes the TYPICAL figure's scope and not the maximum's, which is fully-configured and says so here. These are the vendor's figures as the vendor states them and are NOT reconciled against the module set: the fans publish no draw at all, so any total built from the modelled modules is a floor. PSU rating 2000 W per supply from the datasheet's ordering lines; on a single 110 VAC feed the HIG derates each supply to 1000 W."
   },
   "printed-bands": {
    "note": "ONLY THE TOP OF THE PANEL IS PAINTED, and that was measured rather than carried over from the S9600-56DX, which has a green band above AND below its port blocks. Sampling the figure between the lamps at y 229 and 231 px returns neutral grey (52,52,52 and 55,55,55) all the way across both blocks - the same value as the bare faceplate - so the lower run of arrows, numerals and lamps sits on bare metal and no lower band is drawn. The upper run does sit on paint: at y 38 the strip reads yellow (202,200,78) from px 185 to 298, a grey gap where the circled 'Or' sits, orange (188,119,34) from 316 to 346, and olive green (86,103,69) from 347 to 660 and again from 961 to 1306. Those four runs are the four decor rectangles on this face, and the datasheet's empty-cage product render shows the same four."
@@ -368,7 +388,7 @@
    "title": "UfiSpace S9610-46DX Hardware Installation Guide"
   }
  ],
- "version": "4.0.8",
+ "version": "4.1.2",
  "views": {
   "bottom": {
    "components": {
@@ -4145,7 +4165,8 @@
      {
       "accepts": [
        "ufispace/psu-202-ac@1",
-       "ufispace/psu-202-dc@1"
+       "ufispace/psu-202-dc@1",
+       "ufispace/psu-202-dc@2"
       ],
       "at": [
        369.35,
@@ -4163,7 +4184,8 @@
      {
       "accepts": [
        "ufispace/psu-202-ac@1",
-       "ufispace/psu-202-dc@1"
+       "ufispace/psu-202-dc@1",
+       "ufispace/psu-202-dc@2"
       ],
       "at": [
        369.35,

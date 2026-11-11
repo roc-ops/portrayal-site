@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="62.23mm" viewBox="0 0 120.02 62.23">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="rtx-4090-fe" data-path="rtx-4090-fe" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/rtx-4090-fe@1:1.0.0" data-body-depth="304" data-wall="#b9bcbf" data-airflow="axial fan on the broad side; a flow-through heat sink exhausts through the second side and the top edge" data-cooling="active" data-display-ports="3 x DisplayPort and 1 x HDMI on the bracket" data-edition="Founders Edition" data-form-factor="Full-height, three-slot (61 mm), 304 mm x 137 mm" data-memory="24 GB GDDR6X, 384-bit" data-model="RTX 4090" data-pcie-connector="x16" data-pcie-height="full" data-power-draw-max-w="450" data-power-input="host PCIe slot and one 16-pin 12VHPWR connector; an adapter from three PCIe 8-pin cables is in the box" data-role="gpu" transform="translate(0,0)">
+    <title>rtx-4090-fe</title>
+    <path id="rtx-4090-fe--plate" d="M1.9 7.4 L7.27 7.4 L9.57 5.1 L20.0 5.1 L21.0 4.1 L119.2 4.1 L119.2 0.3 L120.02 0.3 L120.02 61.22 L119.2 61.22 L119.2 61.52 L10.8 61.52 L7.27 58 L1.9 58 A1.9 1.9 0 0 1 0 56.1 L0 49.95 A1.9 1.9 0 0 1 1.9 48.05 L7.27 48.05 L10.95 44.54 A2.4 2.4 0 0 0 10.95 41.2 L7.27 37.67 L1.9 37.67 A1.9 1.9 0 0 1 0 35.78 L0 29.63 A1.9 1.9 0 0 1 1.9 27.73 L7.27 27.73 L10.95 24.22 A2.4 2.4 0 0 0 10.95 20.88 L7.27 17.35 L1.9 17.35 A1.9 1.9 0 0 1 0 15.46 L0 9.31 A1.9 1.9 0 0 1 1.9 7.41 L7.27 7.41 Z" fill="#b9bcbf" stroke="#4a4e52" stroke-width="0.4" stroke-linejoin="round" />
+    <path id="rtx-4090-fe--flange-fold" d="M119.6 0.6 V60.92" stroke="#4a4e52" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#b9bcbf" />
+    <g id="rtx-4090-fe--display-port-1" data-path="rtx-4090-fe/display-port-1" data-class="connector">
+      <path d="M96.5 6.1 L111.3 6.1 A0.8 0.8 0 0 1 112.1 6.9 L112.1 10.0 L108.9 13.2 L96.5 13.2 A0.8 0.8 0 0 1 95.7 12.4 L95.7 6.9 A0.8 0.8 0 0 1 96.5 6.1 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M96.6 7.1 L111.2 7.1 L111.2 9.7 L108.7 12.2 L96.6 12.2 Z" fill="#18191b" />
+      <path d="M98.1 8.5 H110 M98.1 10.4 H108" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-4090-fe--display-port-2" data-path="rtx-4090-fe/display-port-2" data-class="connector">
+      <path d="M78.8 6.1 L93.6 6.1 A0.8 0.8 0 0 1 94.4 6.9 L94.4 10.0 L91.2 13.2 L78.8 13.2 A0.8 0.8 0 0 1 78 12.4 L78 6.9 A0.8 0.8 0 0 1 78.8 6.1 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M78.9 7.1 L93.5 7.1 L93.5 9.7 L91 12.2 L78.9 12.2 Z" fill="#18191b" />
+      <path d="M80.4 8.5 H92.3 M80.4 10.4 H90.3" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-4090-fe--display-port-3" data-path="rtx-4090-fe/display-port-3" data-class="connector">
+      <path d="M60.7 6.1 L75.5 6.1 A0.8 0.8 0 0 1 76.3 6.9 L76.3 10.0 L73.1 13.2 L60.7 13.2 A0.8 0.8 0 0 1 59.9 12.4 L59.9 6.9 A0.8 0.8 0 0 1 60.7 6.1 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M60.8 7.1 L75.4 7.1 L75.4 9.7 L72.9 12.2 L60.8 12.2 Z" fill="#18191b" />
+      <path d="M62.3 8.5 H74.2 M62.3 10.4 H72.2" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <g id="rtx-4090-fe--hdmi" data-path="rtx-4090-fe/hdmi" data-class="connector">
+      <path d="M42.25 6.4 L56.75 6.4 L56.75 10.4 L55.15 12.4 L43.85 12.4 L42.25 10.4 Z" fill="#c9cbcc" stroke="#6f7378" stroke-width="0.3" />
+      <path d="M43.15 7.3 L55.85 7.3 L55.85 9.9 L54.65 11.5 L44.35 11.5 L43.15 9.9 Z" fill="#18191b" />
+      <path d="M44.75 9.3 H54.25" stroke="#7d8288" stroke-width="0.7" stroke-dasharray="0.5 0.45" fill="none" />
+    </g>
+    <defs>
+      <pattern id="rtx-4090-fe--slits" patternUnits="userSpaceOnUse" width="1.1" height="1.1">
+        <rect width="1.1" height="1.1" fill="#0d0e0f" />
+        <rect width="0.55" height="1.1" fill="#6c7176" />
+      </pattern>
+    </defs>
+    <rect id="rtx-4090-fe--vent-1" x="25" y="15.3" width="20.2" height="44" rx="0.8" fill="url(#rtx-4090-fe--slits)" stroke="#3a3e43" stroke-width="0.3" data-path="rtx-4090-fe/vent-1" data-class="vent" />
+    <rect id="rtx-4090-fe--vent-2" x="46.7" y="15.3" width="20.2" height="44" rx="0.8" fill="url(#rtx-4090-fe--slits)" stroke="#3a3e43" stroke-width="0.3" data-path="rtx-4090-fe/vent-2" data-class="vent" />
+    <rect id="rtx-4090-fe--vent-3" x="68.4" y="15.3" width="20.2" height="44" rx="0.8" fill="url(#rtx-4090-fe--slits)" stroke="#3a3e43" stroke-width="0.3" data-path="rtx-4090-fe/vent-3" data-class="vent" />
+    <rect id="rtx-4090-fe--vent-4" x="90.1" y="15.3" width="20.2" height="44" rx="0.8" fill="url(#rtx-4090-fe--slits)" stroke="#3a3e43" stroke-width="0.3" data-path="rtx-4090-fe/vent-4" data-class="vent" />
+    <g id="rtx-4090-fe--screw-1" data-path="rtx-4090-fe/screw-1" data-class="screw">
+      <circle cx="36.5" cy="22" r="2.4" fill="#8f9397" stroke="#2c2f32" stroke-width="0.3" />
+      <path d="M36.5 23.1 h2.2 M37.6 22 v2.2" stroke="#2c2f32" stroke-width="0.5" transform="translate(-1.1 -1.1)" />
+    </g>
+    <g id="rtx-4090-fe--screw-2" data-path="rtx-4090-fe/screw-2" data-class="screw">
+      <circle cx="36.5" cy="42" r="2.4" fill="#8f9397" stroke="#2c2f32" stroke-width="0.3" />
+      <path d="M36.5 43.1 h2.2 M37.6 42 v2.2" stroke="#2c2f32" stroke-width="0.5" transform="translate(-1.1 -1.1)" />
+    </g>
+    <g id="rtx-4090-fe--screw-3" data-path="rtx-4090-fe/screw-3" data-class="screw">
+      <circle cx="36.5" cy="58" r="2.4" fill="#8f9397" stroke="#2c2f32" stroke-width="0.3" />
+      <path d="M36.5 59.1 h2.2 M37.6 58 v2.2" stroke="#2c2f32" stroke-width="0.5" transform="translate(-1.1 -1.1)" />
+    </g>
+  </g>
+</svg>

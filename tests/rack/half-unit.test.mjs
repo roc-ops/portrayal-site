@@ -34,10 +34,10 @@ test('the site has no body-position module of its own, and none of the retired k
   for (const f of ['unitsOf', 'itemUnits', 'spanOf', 'itemBox', 'spanText', 'spansMeet']) assert.equal(typeof F[f], 'function', f);
 });
 
-test('the library\'s three devices that are no whole number of units, and what the kit makes of each', () => {
+test('the library\'s four devices that are no whole number of units, and what the kit makes of each', () => {
   const odd = Object.keys(devices).filter(n => devices[n].ru != null && !Number.isInteger(Number(devices[n].ru))).sort();
-  assert.deepEqual(odd, ['mx104', 'tm-7124s', 'xcu']);
-  assert.deepEqual(odd.map(n => F.unitsOf(devices[n])), [3.5, 1.5, 0.5]);
+  assert.deepEqual(odd, ['cmhookmw', 'mx104', 'tm-7124s', 'xcu']);
+  assert.deepEqual(odd.map(n => F.unitsOf(devices[n])), [1.5, 3.5, 1.5, 0.5]);
   assert.ok(Object.keys(devices).length > 200, 'the catalogue was read');
 });
 

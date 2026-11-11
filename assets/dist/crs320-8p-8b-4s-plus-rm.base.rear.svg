@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="44.4mm" viewBox="0 0 444.5 44.4" data-device="crs320-8p-8b-4s-plus-rm" data-view="rear" data-power-max-w="600" data-power-max-with-additional-psu="1150 W (brochure: &quot;600 W (1150 W with additional PSU)&quot;)" data-power-envelope="fully-configured" data-power-without-attachments-w="36" data-poe-budget-w="963" data-poe-standard="IEEE 802.3af/at (Ether1-8), 802.3bt (Ether9-16)" data-poe-current-limit="560 mA (af/at) / 1667 mA (bt) per port at input above 30 V; 17.82 A total" data-power-input="100 - 240 V AC, 50-60 Hz, one input, two supply slots" data-power-current="nominal 10.35 A, maximum 11 A (brochure)" data-power-rating-label="100-240 V ~9 A MAX, 50/60 Hz (printed on the rear)" data-cooling="3 fans (product page)" data-operating-temp-c="-10 to 50" data-cpu="Dual-Core 800 MHz, ARM 32 bit" data-switch-chip="98DX226S" data-ram="256 MB DDR3" data-storage="32 MB flash" data-os="RouterOS v7 only, level 5" data-smart-poe="Controller" data-optics-sfp-plus="brochure: the four SFP+ ports support 1G, 2.5G and 10G speeds depending on the module; none is included" data-certification="CE, EAC, RoHS" data-ip-class="IP20" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"MikroTik CRS320-8P-8B-4S+RM","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"683c04c7912a17afbefe3c73904b5a938b148ab2cb35b742ac346f196bfa3731","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CRS320-8P-8B-4S+RM" data-sku="CRS320-8P-8B-4S+RM" data-part-number="" x="0" y="0" width="444.5" height="44.4" rx="1.2" fill="#dedad3" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="rear-vent" data-kind="vent-field" data-aperture="air" x="48.6" y="3.6" width="101.8" height="38.3" rx="0.6" fill="url(#portrayal-vent)" data-vent="1" />
+    <rect id="slot-2-cover" data-kind="blank-cover" x="272.6" y="0.5" width="79.8" height="43" rx="1" fill="#bdbab5" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="268.9" y="25" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2b2b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">2▸</text>
+    <text x="355" y="25" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2b2b" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1▸</text>
+    <text x="252.5" y="37.1" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#2b2b2b" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">POWER 2 / POWER 1</text>
+    <text x="252.5" y="40.4" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#2b2b2b" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">100-240 V ~9 A MAX, 50/60 Hz</text>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="supply-slots" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="357.6" y="1" width="74.7" height="41.9" fill="#101214" data-depth="200" data-wall="#2a2e31" />
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="supply-slots" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="275.5" y="1" width="74.7" height="41.9" fill="#101214" data-depth="200" data-wall="#2a2e31" />
+  </g>
+</svg>

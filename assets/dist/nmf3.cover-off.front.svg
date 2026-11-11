@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.83mm" height="133.0mm" viewBox="0 0 444.83 133.0" data-device="nmf3" data-view="front" data-shell="sheet" data-weight-kg="0.998" data-material="ABS" data-cover-material="PVC" data-color="Black" data-mounting-hardware="#12-24 mounting screws, as shipped with the cover" data-cable-capacity="119" data-cable-capacity-basis="Cat 6 24 AWG, 0.235 in (5.97 mm), at the 30% recommended fill of the front channel's 17.3 sq in usable area; 199 at the 50% maximum fill - Panduit Space-Saving Cable Management Rack Systems bulletin RKCB46, Cable Capacity Charts" data-cable-capacity-media="cat6" data-operating-temp="60 C maximum" data-storage-temp="65 C maximum" data-rohs="RoHS Compliant" data-ul="UL 2416" data-csa="CSA C22.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit NMF3","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"panduit/nm-base-3ru@1":"1.0.0","panduit/nm-fingers@1":"1.0.0"},"source-sha256":"8bb86f97506266ce56e4980bee8ee4ad13b58e14d1c29398be16af142be2db41","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NMF3" x="0" y="0" width="444.83" height="133" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="x" data-guide-finger-pitch="34.925" data-guide-finger-gap="5.4" x="0" y="10" width="444.83" height="113" fill="none" stroke="none" pointer-events="none" />
+  <g id="base" data-path="base" data-class="mechanical" data-ref="panduit/nm-base-3ru@1:1.0.0" data-depth="139.7" data-wall="#232527" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the moulded plate and channel between the ears">
+    <title>base</title>
+    <path id="base--floor" fill="#232527" fill-rule="evenodd" d="     M0,0 H444.83 V133 H0 Z     M71.45,24 H153.95 A8,8 0 0 1 161.95,32 V101 A8,8 0 0 1 153.95,109 H71.45 A8,8 0 0 1 63.45,101 V32 A8,8 0 0 1 71.45,24 Z     M290.85,24 H373.35 A8,8 0 0 1 381.35,32 V101 A8,8 0 0 1 373.35,109 H290.85 A8,8 0 0 1 282.85,101 V32 A8,8 0 0 1 290.85,24 Z" data-path="base/floor" data-class="bezel" />
+  </g>
+  <g id="fingers-upper" data-path="fingers-upper" data-class="mechanical" data-ref="panduit/nm-fingers@1:1.0.0" data-material="ABS" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="fingers" data-group-role="furniture" data-description="the two walls of twelve T fingers, upper first" data-z-lift="-139.7" data-in="base" data-under="cover">
+    <title>fingers-upper</title>
+    <rect id="fingers-upper--b1" x="15.56" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b1" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b2" x="50.49" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b2" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b3" x="85.41" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b3" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b4" x="120.34" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b4" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b5" x="155.26" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b5" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b6" x="190.19" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b6" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b7" x="225.11" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b7" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b8" x="260.04" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b8" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b9" x="294.96" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b9" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b10" x="329.89" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b10" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b11" x="364.81" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b11" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--b12" x="399.74" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-upper/b12" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-upper--s1" x="27.81" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s1" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s2" x="62.74" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s2" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s3" x="97.66" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s3" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s4" x="132.59" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s4" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s5" x="167.51" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s5" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s6" x="202.44" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s6" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s7" x="237.36" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s7" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s8" x="272.29" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s8" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s9" x="307.21" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s9" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s10" x="342.14" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s10" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s11" x="377.06" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s11" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-upper--s12" x="411.99" y="0" width="5" height="10" fill="#393d40" data-path="fingers-upper/s12" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+  </g>
+  <g id="fingers-lower" data-path="fingers-lower" data-class="mechanical" data-ref="panduit/nm-fingers@1:1.0.0" data-material="ABS" data-rel-pos="2" transform="translate(0.0,123.0)" data-group="fingers" data-group-role="furniture" data-description="the two walls of twelve T fingers, upper first" data-z-lift="-139.7" data-in="base" data-under="cover">
+    <title>fingers-lower</title>
+    <rect id="fingers-lower--b1" x="15.56" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b1" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b2" x="50.49" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b2" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b3" x="85.41" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b3" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b4" x="120.34" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b4" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b5" x="155.26" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b5" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b6" x="190.19" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b6" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b7" x="225.11" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b7" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b8" x="260.04" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b8" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b9" x="294.96" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b9" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b10" x="329.89" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b10" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b11" x="364.81" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b11" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--b12" x="399.74" y="0" width="29.5" height="10" rx="2" fill="#4d5256" data-path="fingers-lower/b12" data-class="bezel" data-z-out="-33.7" data-z-lift="100" data-z-color="#2c2f31" />
+    <rect id="fingers-lower--s1" x="27.81" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s1" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s2" x="62.74" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s2" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s3" x="97.66" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s3" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s4" x="132.59" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s4" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s5" x="167.51" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s5" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s6" x="202.44" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s6" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s7" x="237.36" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s7" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s8" x="272.29" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s8" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s9" x="307.21" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s9" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s10" x="342.14" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s10" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s11" x="377.06" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s11" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+    <rect id="fingers-lower--s12" x="411.99" y="0" width="5" height="10" fill="#393d40" data-path="fingers-lower/s12" data-class="bezel" data-z-out="-39.7" data-z-color="#26282a" />
+  </g>
+  <g id="--passes" data-class="passes" pointer-events="none">
+    <rect id="pass--pass-through-1" data-class="pass" data-pass="pass-through-1" data-pass-shape="rect" data-pass-cover="open" x="63.45" y="24" width="98.5" height="85" fill="none" stroke="none" />
+    <rect id="pass--pass-through-2" data-class="pass" data-pass="pass-through-2" data-pass-shape="rect" data-pass-cover="open" x="282.85" y="24" width="98.5" height="85" fill="none" stroke="none" />
+  </g>
+</svg>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="444.5mm" height="88.1mm" viewBox="0 0 444.5 88.1" data-device="49253-2cm" data-view="front" data-shell="sheet" data-material="16-gauge steel, black powder coated" data-color="Black" data-mounting-hardware="Four" data-cable-capacity="31" data-cable-capacity-basis="6AS10 patch cords (0.240 in OD) at the 30 percent recommended practical maximum fill of one ring's 4.8 sq in usable area (2.75 x 1.75 in); 53 at 50 percent and 26 at 25 percent - Leviton application note NS-AN-23-006-05-30-23, page 14. A ring's count" data-standards="c(UL)us, RoHS, EIA 310.E">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Leviton 49253-2CM","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"leviton/49253-2cm-panel@1":"1.0.0","leviton/49253-2cm-ring@1":"1.0.1","leviton/49253-2cv@1":"1.0.1"},"source-sha256":"e56dea730b336d8ef3dd7c79873edb8070a1de06a611c745cf447a2a0baa5c51","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="49253-2CM" x="0" y="0" width="444.5" height="88.1" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <g id="panel" data-path="panel" data-class="mechanical" data-ref="leviton/49253-2cm-panel@1:1.0.0" data-depth="50.8" data-wall="#1b1d20" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the flat steel panel and its folded edges">
+    <title>panel</title>
+    <rect id="panel--plate" x="0" y="0" width="444.5" height="88.1" fill="#1b1d20" data-path="panel/plate" data-class="bezel" />
+  </g>
+  <g id="guide-1" data-path="guide-1" data-class="mechanical" data-ref="leviton/49253-2cm-ring@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="69.85 31.75" data-guide-depth="9.5" data-finish="black powder coat" data-material="steel" data-rel-pos="1" transform="translate(2.3,5.95)" data-group="guides" data-group-role="furniture" data-description="five steel distribution rings, cables passing through along the panel" data-z-lift="-50.8" data-in="panel" data-under="cover">
+    <title>guide-1</title>
+    <rect id="guide-1--back" x="0" y="0" width="9.5" height="76.2" rx="1.17" fill="#40454c" data-path="guide-1/back" data-class="bezel" data-z-out="-47.625" data-z-color="#111315" />
+    <rect id="guide-1--bar-top" x="0" y="0" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-1/bar-top" data-class="bezel" data-z-out="-12.7" data-z-color="#111315" />
+    <rect id="guide-1--bar-bottom" x="0" y="73.025" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-1/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-1--leg-inner" x="0" y="0" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-1/leg-inner" data-class="bezel" data-z-out="-12.7" data-z-lift="34.925" data-z-color="#0d0f10" />
+    <rect id="guide-1--leg-outer" x="0" y="31.75" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-1/leg-outer" data-class="bezel" data-z-out="0" data-z-lift="47.625" data-z-color="#101214" />
+    <rect id="guide-1--edge-left" x="0" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-1--edge-right" x="8.33" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-1--edge-top" x="0" y="0" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-1--edge-bottom" x="0" y="75.03" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-1--seam-top" x="1.17" y="5.59" width="7.16" height="0.5" fill="#23262a" />
+    <rect id="guide-1--seam-bottom" x="1.17" y="70.11" width="7.16" height="0.5" fill="#23262a" />
+  </g>
+  <g id="guide-2" data-path="guide-2" data-class="mechanical" data-ref="leviton/49253-2cm-ring@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="69.85 31.75" data-guide-depth="9.5" data-finish="black powder coat" data-material="steel" data-rel-pos="2" transform="translate(109.9,5.95)" data-group="guides" data-group-role="furniture" data-description="five steel distribution rings, cables passing through along the panel" data-z-lift="-50.8" data-in="panel" data-under="cover">
+    <title>guide-2</title>
+    <rect id="guide-2--back" x="0" y="0" width="9.5" height="76.2" rx="1.17" fill="#40454c" data-path="guide-2/back" data-class="bezel" data-z-out="-47.625" data-z-color="#111315" />
+    <rect id="guide-2--bar-top" x="0" y="0" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-2/bar-top" data-class="bezel" data-z-out="-12.7" data-z-color="#111315" />
+    <rect id="guide-2--bar-bottom" x="0" y="73.025" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-2/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-2--leg-inner" x="0" y="0" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-2/leg-inner" data-class="bezel" data-z-out="-12.7" data-z-lift="34.925" data-z-color="#0d0f10" />
+    <rect id="guide-2--leg-outer" x="0" y="31.75" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-2/leg-outer" data-class="bezel" data-z-out="0" data-z-lift="47.625" data-z-color="#101214" />
+    <rect id="guide-2--edge-left" x="0" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-2--edge-right" x="8.33" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-2--edge-top" x="0" y="0" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-2--edge-bottom" x="0" y="75.03" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-2--seam-top" x="1.17" y="5.59" width="7.16" height="0.5" fill="#23262a" />
+    <rect id="guide-2--seam-bottom" x="1.17" y="70.11" width="7.16" height="0.5" fill="#23262a" />
+  </g>
+  <g id="guide-3" data-path="guide-3" data-class="mechanical" data-ref="leviton/49253-2cm-ring@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="69.85 31.75" data-guide-depth="9.5" data-finish="black powder coat" data-material="steel" data-rel-pos="3" transform="translate(217.5,5.95)" data-group="guides" data-group-role="furniture" data-description="five steel distribution rings, cables passing through along the panel" data-z-lift="-50.8" data-in="panel" data-under="cover">
+    <title>guide-3</title>
+    <rect id="guide-3--back" x="0" y="0" width="9.5" height="76.2" rx="1.17" fill="#40454c" data-path="guide-3/back" data-class="bezel" data-z-out="-47.625" data-z-color="#111315" />
+    <rect id="guide-3--bar-top" x="0" y="0" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-3/bar-top" data-class="bezel" data-z-out="-12.7" data-z-color="#111315" />
+    <rect id="guide-3--bar-bottom" x="0" y="73.025" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-3/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-3--leg-inner" x="0" y="0" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-3/leg-inner" data-class="bezel" data-z-out="-12.7" data-z-lift="34.925" data-z-color="#0d0f10" />
+    <rect id="guide-3--leg-outer" x="0" y="31.75" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-3/leg-outer" data-class="bezel" data-z-out="0" data-z-lift="47.625" data-z-color="#101214" />
+    <rect id="guide-3--edge-left" x="0" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-3--edge-right" x="8.33" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-3--edge-top" x="0" y="0" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-3--edge-bottom" x="0" y="75.03" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-3--seam-top" x="1.17" y="5.59" width="7.16" height="0.5" fill="#23262a" />
+    <rect id="guide-3--seam-bottom" x="1.17" y="70.11" width="7.16" height="0.5" fill="#23262a" />
+  </g>
+  <g id="guide-4" data-path="guide-4" data-class="mechanical" data-ref="leviton/49253-2cm-ring@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="69.85 31.75" data-guide-depth="9.5" data-finish="black powder coat" data-material="steel" data-rel-pos="4" transform="translate(325.1,5.95)" data-group="guides" data-group-role="furniture" data-description="five steel distribution rings, cables passing through along the panel" data-z-lift="-50.8" data-in="panel" data-under="cover">
+    <title>guide-4</title>
+    <rect id="guide-4--back" x="0" y="0" width="9.5" height="76.2" rx="1.17" fill="#40454c" data-path="guide-4/back" data-class="bezel" data-z-out="-47.625" data-z-color="#111315" />
+    <rect id="guide-4--bar-top" x="0" y="0" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-4/bar-top" data-class="bezel" data-z-out="-12.7" data-z-color="#111315" />
+    <rect id="guide-4--bar-bottom" x="0" y="73.025" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-4/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-4--leg-inner" x="0" y="0" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-4/leg-inner" data-class="bezel" data-z-out="-12.7" data-z-lift="34.925" data-z-color="#0d0f10" />
+    <rect id="guide-4--leg-outer" x="0" y="31.75" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-4/leg-outer" data-class="bezel" data-z-out="0" data-z-lift="47.625" data-z-color="#101214" />
+    <rect id="guide-4--edge-left" x="0" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-4--edge-right" x="8.33" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-4--edge-top" x="0" y="0" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-4--edge-bottom" x="0" y="75.03" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-4--seam-top" x="1.17" y="5.59" width="7.16" height="0.5" fill="#23262a" />
+    <rect id="guide-4--seam-bottom" x="1.17" y="70.11" width="7.16" height="0.5" fill="#23262a" />
+  </g>
+  <g id="guide-5" data-path="guide-5" data-class="mechanical" data-ref="leviton/49253-2cm-ring@1:1.0.1" data-guide="ring" data-guide-run="x" data-guide-aperture="69.85 31.75" data-guide-depth="9.5" data-finish="black powder coat" data-material="steel" data-rel-pos="5" transform="translate(432.7,5.95)" data-group="guides" data-group-role="furniture" data-description="five steel distribution rings, cables passing through along the panel" data-z-lift="-50.8" data-in="panel" data-under="cover">
+    <title>guide-5</title>
+    <rect id="guide-5--back" x="0" y="0" width="9.5" height="76.2" rx="1.17" fill="#40454c" data-path="guide-5/back" data-class="bezel" data-z-out="-47.625" data-z-color="#111315" />
+    <rect id="guide-5--bar-top" x="0" y="0" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-5/bar-top" data-class="bezel" data-z-out="-12.7" data-z-color="#111315" />
+    <rect id="guide-5--bar-bottom" x="0" y="73.025" width="9.5" height="3.175" rx="1.17" fill="#40454c" data-path="guide-5/bar-bottom" data-class="bezel" data-z-out="0" data-z-color="#0d0f10" />
+    <rect id="guide-5--leg-inner" x="0" y="0" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-5/leg-inner" data-class="bezel" data-z-out="-12.7" data-z-lift="34.925" data-z-color="#0d0f10" />
+    <rect id="guide-5--leg-outer" x="0" y="31.75" width="9.5" height="44.45" rx="1.17" fill="#40454c" data-path="guide-5/leg-outer" data-class="bezel" data-z-out="0" data-z-lift="47.625" data-z-color="#101214" />
+    <rect id="guide-5--edge-left" x="0" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-5--edge-right" x="8.33" y="1.17" width="1.17" height="73.86" fill="#2a2e33" />
+    <rect id="guide-5--edge-top" x="0" y="0" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-5--edge-bottom" x="0" y="75.03" width="9.5" height="1.17" rx="0.6" fill="#2a2e33" />
+    <rect id="guide-5--seam-top" x="1.17" y="5.59" width="7.16" height="0.5" fill="#23262a" />
+    <rect id="guide-5--seam-bottom" x="1.17" y="70.11" width="7.16" height="0.5" fill="#23262a" />
+  </g>
+  <g id="cover" data-path="cover" data-class="mechanical" data-behaviour="mounts" data-ref="leviton/49253-2cv@1:1.0.1" data-finish="black powder coat" data-material="steel" data-rel-pos="1" transform="translate(0.9,0.0)" data-group="cover" data-group-role="furniture" data-description="the separately sold metal cover that hooks over the two outer rings" data-z-lift="-50.8" data-in="panel">
+    <title>cover</title>
+    <rect id="cover--hook-left" x="0" y="11.55" width="37.03" height="65" fill="#25272a" data-path="cover/hook-left" data-class="bezel" data-z-out="-5.03" data-z-color="#25272a" />
+    <rect id="cover--hook-right" x="405.67" y="11.55" width="37.03" height="65" fill="#25272a" data-path="cover/hook-right" data-class="bezel" data-z-out="-5.03" data-z-color="#25272a" />
+    <rect id="cover--fold-left" x="0" y="11.55" width="1.22" height="65" fill="#25272a" data-path="cover/fold-left" data-class="bezel" data-z-out="-1.12" data-z-color="#25272a" />
+    <rect id="cover--fold-right" x="441.48" y="11.55" width="1.22" height="65" fill="#25272a" data-path="cover/fold-right" data-class="bezel" data-z-out="-1.12" data-z-color="#25272a" />
+    <rect id="cover--lip-left" x="0" y="11.55" width="1.98" height="65" rx="0.99" fill="#3a3d42" data-path="cover/lip-left" data-class="bezel" data-z-out="0.1" data-z-lift="49.68" data-z-color="#3a3d42" />
+    <rect id="cover--lip-right" x="440.72" y="11.55" width="1.98" height="65" rx="0.99" fill="#3a3d42" data-path="cover/lip-right" data-class="bezel" data-z-out="0.1" data-z-lift="49.68" data-z-color="#3a3d42" />
+    <rect id="cover--plate" x="1.98" y="0" width="438.74" height="88.1" rx="3.175" fill="#2a2c2f" data-path="cover/plate" data-class="bezel" data-z-out="0.1" data-z-lift="49.68" data-z-color="#2a2c2f" />
+  </g>
+</svg>

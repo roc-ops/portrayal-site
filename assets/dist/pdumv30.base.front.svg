@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="55mm" height="1617.44mm" viewBox="0 0 55 1617.44" data-device="pdumv30" data-view="front" data-length-mm="1617.44" data-weight-kg="3.63" data-construction="aluminium" data-input-ac="120 V single-phase, 24 A continuous (agency de-rated, 30 A maximum capacity), 50/60 Hz" data-input-plug="other" data-input-cord="fixed" data-input-phase="single" data-input-voltage-v="120" data-input-current-a="24" data-plug-rating-a="30" data-capacity-kw="2.88" data-capacity-scope="the load the PDU can hand on (SKU, &quot;2.88kW (120V) / 24A total capacity&quot;); it is not what the PDU draws itself, which no document held states" data-output-voltage="120 V" data-output-rating="24 A total; 20 A per load bank; 16 A per outlet" data-breakers="two 20 A, one per load bank" data-frequency="50/60 Hz" data-operating-temp="0 to 40 C (32 to 104 F)" data-storage-temp="-30 to 50 C (-22 to 122 F)" data-humidity="0 to 95 % non-condensing" data-altitude="0 to 3000 m (0 to 10000 ft)" data-metering-scope="branch" data-outlet-switching="false" data-metering="load current in amps for each bank, on the two meters" data-certifications="UL 62368-1; NOM; RETIE" data-product-compliance="RoHS; FCC Class A" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-0 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-0 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-0 [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-0 [data-seg='d'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-0 [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-0 [data-seg='f'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-0 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-1 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-1 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-1 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-1 [data-seg='d'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-1 [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-1 [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-1 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-2 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-2 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-2 [data-seg='g'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-2 [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-2 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-2 [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-2 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-3 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-3 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-3 [data-seg='g'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-3 [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-3 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-3 [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-3 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-4 [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-4 [data-seg='g'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-4 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-4 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-4 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-4 [data-seg='d'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-4 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-5 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-5 [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-5 [data-seg='g'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-5 [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-5 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-5 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-5 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-6 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-6 [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-6 [data-seg='g'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-6 [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-6 [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-6 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-6 [data-seg='b'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-7 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-7 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-7 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-7 [data-seg='d'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-7 [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-7 [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-7 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-8 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-8 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-8 [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-8 [data-seg='d'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-8 [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-8 [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-8 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-9 [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-9 [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-9 [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-9 [data-seg='d'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-9 [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-9 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-9 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='eaton/tripplite-bank-meter@'] .state-blank [data-seg='a'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-blank [data-seg='b'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-blank [data-seg='c'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-blank [data-seg='d'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-blank [data-seg='e'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-blank [data-seg='f'] ,g[data-ref^='eaton/tripplite-bank-meter@'] .state-blank [data-seg='g'] { opacity: 0; }
+</style>
+  <metadata>{"device":"Eaton PDUMV30","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/breaker-push-reset@1":"1.0.0","eaton/tripplite-bank-meter@1":"1.0.0","eaton/tripplite-cord-l5-30p@1":"1.0.0","std/nema-5-20r@1":"1.1.0"},"source-sha256":"bb15110a75b53c3fe143e04ac8e472e434d8febdcdd2df93d1129e7c48279711","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PDUMV30" data-sku="PDUMV30" data-part-number="" x="0" y="0" width="55" height="1617.44" rx="1.2" fill="#2e2f31" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="moulding-1" data-kind="outlet-moulding" x="13.8" y="39.2" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-2" data-kind="outlet-moulding" x="13.8" y="80.15" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-3" data-kind="outlet-moulding" x="13.8" y="121.1" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-4" data-kind="outlet-moulding" x="13.8" y="162.05" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-5" data-kind="outlet-moulding" x="13.8" y="203" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-6" data-kind="outlet-moulding" x="13.8" y="243.95" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-7" data-kind="outlet-moulding" x="13.8" y="284.9" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-8" data-kind="outlet-moulding" x="13.8" y="325.85" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-9" data-kind="outlet-moulding" x="13.8" y="366.8" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-10" data-kind="outlet-moulding" x="13.8" y="407.75" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-11" data-kind="outlet-moulding" x="13.8" y="448.7" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-12" data-kind="outlet-moulding" x="13.8" y="489.65" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-13" data-kind="outlet-moulding" x="13.8" y="762.4" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-14" data-kind="outlet-moulding" x="13.8" y="803.35" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-15" data-kind="outlet-moulding" x="13.8" y="844.3" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-16" data-kind="outlet-moulding" x="13.8" y="885.25" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-17" data-kind="outlet-moulding" x="13.8" y="926.2" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-18" data-kind="outlet-moulding" x="13.8" y="967.15" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-19" data-kind="outlet-moulding" x="13.8" y="1008.1" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-20" data-kind="outlet-moulding" x="13.8" y="1049.05" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-21" data-kind="outlet-moulding" x="13.8" y="1090" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-22" data-kind="outlet-moulding" x="13.8" y="1130.95" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-23" data-kind="outlet-moulding" x="13.8" y="1171.9" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="moulding-24" data-kind="outlet-moulding" x="13.8" y="1212.85" width="28.4" height="28.4" rx="1" fill="#262729" />
+    <rect id="breaker-plate-2" data-kind="breaker-plate" x="8.1" y="1472" width="39.2" height="43.3" rx="1.5" fill="#1d1e20" />
+    <rect id="breaker-plate-1" data-kind="breaker-plate" x="8.1" y="1517.3" width="39.2" height="42.6" rx="1.5" fill="#1d1e20" />
+    <rect id="screw-1" data-kind="screw-head" x="13.55" y="1248.8" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="screw-2" data-kind="screw-head" x="34.5" y="1248.8" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="screw-3" data-kind="screw-head" x="13.55" y="1342.9" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="screw-4" data-kind="screw-head" x="34.5" y="1342.9" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="screw-5" data-kind="screw-head" x="13.55" y="1353.7" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="screw-6" data-kind="screw-head" x="34.5" y="1353.7" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="screw-7" data-kind="screw-head" x="13.55" y="1447.8" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="screw-8" data-kind="screw-head" x="34.5" y="1447.8" width="7.4" height="7.4" rx="3.7" fill="#1f2022" />
+    <rect id="plate-screw-1" data-kind="screw-head" x="7.2" y="542.9" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="plate-screw-2" data-kind="screw-head" x="43.5" y="542.9" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="plate-screw-3" data-kind="screw-head" x="7.2" y="732.5" width="5" height="5" rx="2.5" fill="#1f2022" />
+    <rect id="plate-screw-4" data-kind="screw-head" x="43.5" y="732.5" width="5" height="5" rx="2.5" fill="#1f2022" />
+  </g>
+  <rect id="region--bank-2" data-path="region:bank-2" data-class="region" x="14.2" y="39.2" width="28.4" height="491" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--bank-1" data-path="region:bank-1" data-class="region" x="14.2" y="762.4" width="28.4" height="491" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="outlet-1" data-path="outlet-1" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="1" transform="translate(14.5,39.9) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-1</title>
+    <rect id="outlet-1--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-1/face" data-class="inlet" />
+    <path id="outlet-1--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-1--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-1--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-2" data-path="outlet-2" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="2" transform="translate(14.5,80.85) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-2</title>
+    <rect id="outlet-2--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-2/face" data-class="inlet" />
+    <path id="outlet-2--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-2--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-2--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-3" data-path="outlet-3" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="3" transform="translate(14.5,121.8) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-3</title>
+    <rect id="outlet-3--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-3/face" data-class="inlet" />
+    <path id="outlet-3--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-3--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-3--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-4" data-path="outlet-4" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="4" transform="translate(14.5,162.75) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-4</title>
+    <rect id="outlet-4--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-4/face" data-class="inlet" />
+    <path id="outlet-4--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-4--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-4--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-5" data-path="outlet-5" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="5" transform="translate(14.5,203.7) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-5</title>
+    <rect id="outlet-5--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-5/face" data-class="inlet" />
+    <path id="outlet-5--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-5--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-5--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-6" data-path="outlet-6" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="6" transform="translate(14.5,244.65) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-6</title>
+    <rect id="outlet-6--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-6/face" data-class="inlet" />
+    <path id="outlet-6--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-6--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-6--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-7" data-path="outlet-7" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="7" transform="translate(14.5,285.6) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-7</title>
+    <rect id="outlet-7--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-7/face" data-class="inlet" />
+    <path id="outlet-7--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-7--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-7--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-8" data-path="outlet-8" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="8" transform="translate(14.5,326.55) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-8</title>
+    <rect id="outlet-8--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-8/face" data-class="inlet" />
+    <path id="outlet-8--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-8--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-8--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-9" data-path="outlet-9" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="9" transform="translate(14.5,367.5) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-9</title>
+    <rect id="outlet-9--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-9/face" data-class="inlet" />
+    <path id="outlet-9--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-9--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-9--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-10" data-path="outlet-10" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="10" transform="translate(14.5,408.45) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-10</title>
+    <rect id="outlet-10--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-10/face" data-class="inlet" />
+    <path id="outlet-10--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-10--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-10--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-11" data-path="outlet-11" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="11" transform="translate(14.5,449.4) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-11</title>
+    <rect id="outlet-11--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-11/face" data-class="inlet" />
+    <path id="outlet-11--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-11--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-11--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-12" data-path="outlet-12" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="12" transform="translate(14.5,490.35) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-12</title>
+    <rect id="outlet-12--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-12/face" data-class="inlet" />
+    <path id="outlet-12--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-12--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-12--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-13" data-path="outlet-13" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="13" transform="translate(14.5,763.1) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-13</title>
+    <rect id="outlet-13--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-13/face" data-class="inlet" />
+    <path id="outlet-13--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-13--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-13--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-14" data-path="outlet-14" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="14" transform="translate(14.5,804.05) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-14</title>
+    <rect id="outlet-14--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-14/face" data-class="inlet" />
+    <path id="outlet-14--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-14--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-14--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-15" data-path="outlet-15" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="15" transform="translate(14.5,845.0) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-15</title>
+    <rect id="outlet-15--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-15/face" data-class="inlet" />
+    <path id="outlet-15--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-15--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-15--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-16" data-path="outlet-16" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="16" transform="translate(14.5,885.95) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-16</title>
+    <rect id="outlet-16--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-16/face" data-class="inlet" />
+    <path id="outlet-16--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-16--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-16--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-17" data-path="outlet-17" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="17" transform="translate(14.5,926.9) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-17</title>
+    <rect id="outlet-17--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-17/face" data-class="inlet" />
+    <path id="outlet-17--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-17--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-17--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-18" data-path="outlet-18" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="18" transform="translate(14.5,967.85) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-18</title>
+    <rect id="outlet-18--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-18/face" data-class="inlet" />
+    <path id="outlet-18--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-18--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-18--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-19" data-path="outlet-19" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="19" transform="translate(14.5,1008.8) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-19</title>
+    <rect id="outlet-19--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-19/face" data-class="inlet" />
+    <path id="outlet-19--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-19--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-19--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-20" data-path="outlet-20" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="20" transform="translate(14.5,1049.75) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-20</title>
+    <rect id="outlet-20--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-20/face" data-class="inlet" />
+    <path id="outlet-20--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-20--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-20--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-21" data-path="outlet-21" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="21" transform="translate(14.5,1090.7) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-21</title>
+    <rect id="outlet-21--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-21/face" data-class="inlet" />
+    <path id="outlet-21--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-21--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-21--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-22" data-path="outlet-22" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="22" transform="translate(14.5,1131.65) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-22</title>
+    <rect id="outlet-22--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-22/face" data-class="inlet" />
+    <path id="outlet-22--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-22--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-22--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-23" data-path="outlet-23" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="23" transform="translate(14.5,1172.6) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-23</title>
+    <rect id="outlet-23--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-23/face" data-class="inlet" />
+    <path id="outlet-23--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-23--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-23--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-24" data-path="outlet-24" data-class="inlet" data-ref="std/nema-5-20r@1:1.1.0" data-wall="#1a1b1d" data-accepts="5-15P, 5-20P" data-media="ac" data-outlet="nema-5-20r" data-rating-a="20" data-rel-pos="24" transform="translate(14.5,1213.55) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic">
+    <title>outlet-24</title>
+    <rect id="outlet-24--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-24/face" data-class="inlet" />
+    <path id="outlet-24--hole-earth" d="M 8.25 4.47 H 13.53 V 7.14 A 2.64 2.64 0 0 1 8.25 7.14 Z" fill="#050505" data-depth="21" data-wall="#1a1b1d" />
+    <rect id="outlet-24--slot-line" x="3.42" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <path id="outlet-24--slot-neutral" d="M 16.02 14.77 H 18.24 V 18.0 H 23.43 V 20.2 H 18.24 V 23.37 H 16.02 Z" fill="#050505" data-depth="17" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="10.89 19" data-cp-dir="front" />
+  </g>
+  <g id="meter-2" data-path="meter-2" data-class="display" data-ref="eaton/tripplite-bank-meter@1:1.0.0" data-rel-pos="1" transform="translate(16.9,584.4)" data-group="meters" data-group-role="indicator" data-description="the load meter of bank 2 (the upper bank)" data-for="chassis">
+    <title>meter-2</title>
+    <circle id="meter-2--screw-top" cx="10.8" cy="3.3" r="2.4" fill="#1f2022" stroke="#4a4d51" stroke-width="0.2" />
+    <circle id="meter-2--screw-bottom" cx="10.8" cy="28.5" r="2.4" fill="#1f2022" stroke="#4a4d51" stroke-width="0.2" />
+    <rect id="meter-2--outline" x="0.15" y="7.15" width="21.3" height="17.5" rx="0.6" fill="#2c2d2f" stroke="#3d3f42" stroke-width="0.3" />
+    <rect id="meter-2--window" x="2.4" y="9.6" width="16.8" height="12.9" rx="0.4" fill="#0e0f10" stroke="#3a3c3f" stroke-width="0.25" data-path="meter-2/window" data-class="display" data-characters="2" data-description="the readout window, two seven-segment cells that show the load of one bank in amps" />
+    <g id="meter-2--ghost" fill="#1d211c">
+      <rect x="5.4" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect x="4.4" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="9.0" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="5.4" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect x="4.4" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="9.0" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="5.4" y="20.8" width="3.6" height="0.9" rx="0.2" />
+      <rect x="12.6" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect x="11.6" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="16.2" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="12.6" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect x="11.6" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="16.2" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="12.6" y="20.8" width="3.6" height="0.9" rx="0.2" />
+    </g>
+    <g id="meter-2--digit-1" fill="#70be44" data-path="meter-2/digit-1" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the left digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="5.4" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="f" opacity="0" x="4.4" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="b" opacity="0" x="9.0" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="g" opacity="0" x="5.4" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="e" opacity="0" x="4.4" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="c" opacity="0" x="9.0" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="d" opacity="0" x="5.4" y="20.8" width="3.6" height="0.9" rx="0.2" />
+    </g>
+    <g id="meter-2--digit-2" fill="#70be44" data-path="meter-2/digit-2" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the right digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="12.6" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="f" opacity="0" x="11.6" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="b" opacity="0" x="16.2" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="g" opacity="0" x="12.6" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="e" opacity="0" x="11.6" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="c" opacity="0" x="16.2" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="d" opacity="0" x="12.6" y="20.8" width="3.6" height="0.9" rx="0.2" />
+    </g>
+  </g>
+  <g id="meter-1" data-path="meter-1" data-class="display" data-ref="eaton/tripplite-bank-meter@1:1.0.0" data-rel-pos="2" transform="translate(16.9,663.6)" data-group="meters" data-group-role="indicator" data-description="the load meter of bank 1 (the lower bank)" data-for="chassis">
+    <title>meter-1</title>
+    <circle id="meter-1--screw-top" cx="10.8" cy="3.3" r="2.4" fill="#1f2022" stroke="#4a4d51" stroke-width="0.2" />
+    <circle id="meter-1--screw-bottom" cx="10.8" cy="28.5" r="2.4" fill="#1f2022" stroke="#4a4d51" stroke-width="0.2" />
+    <rect id="meter-1--outline" x="0.15" y="7.15" width="21.3" height="17.5" rx="0.6" fill="#2c2d2f" stroke="#3d3f42" stroke-width="0.3" />
+    <rect id="meter-1--window" x="2.4" y="9.6" width="16.8" height="12.9" rx="0.4" fill="#0e0f10" stroke="#3a3c3f" stroke-width="0.25" data-path="meter-1/window" data-class="display" data-characters="2" data-description="the readout window, two seven-segment cells that show the load of one bank in amps" />
+    <g id="meter-1--ghost" fill="#1d211c">
+      <rect x="5.4" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect x="4.4" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="9.0" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="5.4" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect x="4.4" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="9.0" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="5.4" y="20.8" width="3.6" height="0.9" rx="0.2" />
+      <rect x="12.6" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect x="11.6" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="16.2" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect x="12.6" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect x="11.6" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="16.2" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect x="12.6" y="20.8" width="3.6" height="0.9" rx="0.2" />
+    </g>
+    <g id="meter-1--digit-1" fill="#70be44" data-path="meter-1/digit-1" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the left digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="5.4" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="f" opacity="0" x="4.4" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="b" opacity="0" x="9.0" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="g" opacity="0" x="5.4" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="e" opacity="0" x="4.4" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="c" opacity="0" x="9.0" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="d" opacity="0" x="5.4" y="20.8" width="3.6" height="0.9" rx="0.2" />
+    </g>
+    <g id="meter-1--digit-2" fill="#70be44" data-path="meter-1/digit-2" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 blank" data-characters="1" data-description="the right digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle.">
+      <rect data-seg="a" opacity="0" x="12.6" y="11.2" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="f" opacity="0" x="11.6" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="b" opacity="0" x="16.2" y="12.1" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="g" opacity="0" x="12.6" y="16.0" width="3.6" height="0.9" rx="0.2" />
+      <rect data-seg="e" opacity="0" x="11.6" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="c" opacity="0" x="16.2" y="16.9" width="1.0" height="3.9" rx="0.2" />
+      <rect data-seg="d" opacity="0" x="12.6" y="20.8" width="3.6" height="0.9" rx="0.2" />
+    </g>
+  </g>
+  <g id="breaker-2" data-path="breaker-2" data-class="breaker" data-ref="common/breaker-push-reset@1:1.0.0" data-rel-pos="1" transform="translate(19.45,1486.45)" data-group="breakers" data-group-role="service" data-description="the 20 A push-to-reset breaker of bank 2 (the upper bank)">
+    <title>breaker-2</title>
+    <g id="breaker-2--nut" data-z-out="2.5" data-z-color="#989192">
+      <path d="M 0.05 7.15 L 4.15 0.05 L 12.35 0.05 L 16.45 7.15 L 12.35 14.25 L 4.15 14.25 Z" fill="#989192" stroke="#5f5a5b" stroke-width="0.25" />
+      <circle cx="8.25" cy="7.15" r="6.6" fill="none" stroke="#7c7677" stroke-width="0.2" />
+    </g>
+    <g id="breaker-2--bushing" data-z-cyl="5.0" data-z-color="#aaa3a4">
+      <circle cx="8.25" cy="7.15" r="5.0" fill="#aaa3a4" stroke="#5f5a5b" stroke-width="0.25" />
+      <circle cx="8.25" cy="7.15" r="4.45" fill="none" stroke="#7c7677" stroke-width="0.2" />
+    </g>
+    <circle id="breaker-2--plunger" cx="8.25" cy="7.15" r="3.95" fill="#2a2e35" stroke="#0e0f11" stroke-width="0.25" data-path="breaker-2/plunger" data-class="breaker" data-states="on off" data-z-cyl="6.5" data-z-color="#2a2e35" />
+  </g>
+  <g id="breaker-1" data-path="breaker-1" data-class="breaker" data-ref="common/breaker-push-reset@1:1.0.0" data-rel-pos="2" transform="translate(19.45,1531.15)" data-group="breakers" data-group-role="service" data-description="the 20 A push-to-reset breaker of bank 1 (the lower bank)">
+    <title>breaker-1</title>
+    <g id="breaker-1--nut" data-z-out="2.5" data-z-color="#989192">
+      <path d="M 0.05 7.15 L 4.15 0.05 L 12.35 0.05 L 16.45 7.15 L 12.35 14.25 L 4.15 14.25 Z" fill="#989192" stroke="#5f5a5b" stroke-width="0.25" />
+      <circle cx="8.25" cy="7.15" r="6.6" fill="none" stroke="#7c7677" stroke-width="0.2" />
+    </g>
+    <g id="breaker-1--bushing" data-z-cyl="5.0" data-z-color="#aaa3a4">
+      <circle cx="8.25" cy="7.15" r="5.0" fill="#aaa3a4" stroke="#5f5a5b" stroke-width="0.25" />
+      <circle cx="8.25" cy="7.15" r="4.45" fill="none" stroke="#7c7677" stroke-width="0.2" />
+    </g>
+    <circle id="breaker-1--plunger" cx="8.25" cy="7.15" r="3.95" fill="#2a2e35" stroke="#0e0f11" stroke-width="0.25" data-path="breaker-1/plunger" data-class="breaker" data-states="on off" data-z-cyl="6.5" data-z-color="#2a2e35" />
+  </g>
+  <g id="input" data-path="input" data-class="inlet" data-ref="eaton/tripplite-cord-l5-30p@1:1.0.0" data-cord-length-ft="10" data-plug="nema-l5-30p" data-rel-pos="1" transform="translate(15.8,1581.0)" data-group="power-input" data-group-role="service">
+    <title>input</title>
+    <rect id="input--relief" x="0.15" y="0.15" width="19.1" height="26.7" rx="9.5" fill="#1d1e20" stroke="#4a4946" stroke-width="0.3" data-path="input/relief" data-class="inlet" />
+    <rect x="3.4" y="3.4" width="12.6" height="20.2" rx="6.3" fill="#121212" stroke="#3a3936" stroke-width="0.3" />
+    <circle id="input--cord" cx="9.7" cy="13.5" r="4.4" fill="#0a0a0a" stroke="#3c3b38" stroke-width="0.3" />
+  </g>
+</svg>
