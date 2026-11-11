@@ -25049,6 +25049,81 @@ def check_rack_kept_notices_follow_edits(page, base):
     return bad
 
 
+# A SLOT WHOSE STORED PART THE LIBRARY NO LONGER HOLDS (#183): the slot draws its default, and the side panel says
+# so for as long as it is true. The choice stays in the document. A major the library retired leaves no file, so
+# the issue's own example ref is used, after the check has proved the library does not hold it.
+GONE_REF = "juniper/dpc-r-4xge-xfp@2"
+GONE_FIXTURE = {
+    "format": "portrayal-rack", "version": 3, "id": "doc-gone-part",
+    "racks": [{"id": "r1", "name": "Gone part",
+               "frame": {"kind": "four-post", "heightRU": 45, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                         "railDepth": 740, "usableDepth": 1000, "ref": None},
+               "items": [{"id": "i1", "ref": "mx960", "cfg": "base", "label": "edge-1", "ru": 10, "face": "front", "turned": False,
+                          "swaps": {"fpc0": GONE_REF, "scb0": "juniper/scb-mx@3"}, "fields": {}}],
+               "zeroU": [], "cables": []}]}
+
+
+@extra("rack.html: a slot whose stored part is not in the library is said in the side panel for as long as it is true - the device, the slot and the ref, that the slot shows its default and that the choice stays in the file - and the document keeps the ref through a redraw, an edit and a save")
+def check_rack_missing_ref_said(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base, GONE_FIXTURE)
+    held = page.evaluate("""async r => { const j = await (await fetch('/assets/dist/components.json')).json();
+      return (j.components || []).some(c => `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}` === r); }""", GONE_REF)
+    if held:
+        return bad + [f"fixture: the library holds {GONE_REF} again, so it no longer stands for a retired part"]
+    line = lambda: page.evaluate("() => document.querySelector('#side #missingRefs')?.textContent ?? null")
+    stored = lambda: page.evaluate("() => window.__rack.doc().racks[0].items[0].swaps.fpc0")
+    try:
+        wait_fn(page, "missing: the panel says so", "() => !!document.querySelector('#side #missingRefs')", timeout=15000)
+    except RuntimeError:
+        return bad + ["a slot that names a ref the library lacks raised no line in the side panel"]
+    said = line()
+    for part in ("edge-1", "fpc0", GONE_REF, "not in the library", "shows its default", "stays in the file"):
+        if part not in said:
+            bad.append(f"the line lacks {part!r}: {said!r}")
+    for part in ("scb0", "scb-mx"):
+        if part in said:
+            bad.append(f"the line names {part!r}, a part the library holds: {said!r}")
+    if page.evaluate("() => document.querySelector('#side #missingRefs').getAttribute('role')") != "status":
+        bad.append("the line is not a status")
+    if stored() != GONE_REF:
+        bad.append(f"the document's fpc0 is {stored()!r}, not the stored ref")
+    # it stands through a redraw and an edit, and the document still holds the choice
+    page.evaluate("() => window.__rack.redraw()")
+    err = page.evaluate("c => { const r = window.__rack.apply(c); return r.error ?? null; }", {"op": "patch", "id": "i1", "label": "edge-2"})
+    if err:
+        return bad + [f"the label edit was refused: {err}"]
+    try:
+        wait_fn(page, "missing: the line names the new label", "() => document.querySelector('#side #missingRefs')?.textContent.includes('edge-2')", timeout=15000)
+    except RuntimeError:
+        bad.append(f"after a redraw and an edit the panel says {line()!r}")
+    if stored() != GONE_REF:
+        bad.append(f"after an edit the document's fpc0 is {stored()!r}")
+    if GONE_REF not in pathlib.Path(export_file(page, "json").path()).read_text(encoding="utf-8"):
+        bad.append("Save as .json does not hold the ref the library lacks")
+    # a slot that names a part the library holds: the line goes, and comes back with undo
+    err = page.evaluate("c => { const r = window.__rack.apply(c); return r.error ?? null; }",
+                        {"op": "patch", "id": "i1", "swaps": {"fpc0": "juniper/mx-dpc-blank@2", "scb0": "juniper/scb-mx@3"}})
+    if err:
+        return bad + [f"the swaps edit was refused: {err}"]
+    try:
+        wait_fn(page, "missing: the line goes", "() => !document.querySelector('#side #missingRefs')", timeout=15000)
+    except RuntimeError:
+        bad.append(f"with every ref held the panel still says {line()!r}")
+    page.evaluate("() => window.__rack.undo()")
+    try:
+        wait_fn(page, "missing: undo brings it back", "() => !!document.querySelector('#side #missingRefs')", timeout=15000)
+    except RuntimeError:
+        bad.append("undoing the swaps edit did not bring the line back")
+    # a rack with no swaps says nothing
+    open_fixture(page, base, KEPT_FIXTURE)
+    page.wait_for_timeout(800)
+    if line() is not None:
+        bad.append(f"a rack with no swaps says {line()!r}")
+    return bad
+
+
 # LAMPS, DIGITS, OUTLETS, BREAKERS AND DISPLAYS: the page's control and the assistant's tool set the same thing
 # and give the same document and the same drawing (kit 0.45.0, 0.47.0; R-0027). The public test rack is built
 # from library parts: a switch with LEDs, a device with seven-segment status digits and a beacon, two PDUs with
