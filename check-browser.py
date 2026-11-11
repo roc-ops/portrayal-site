@@ -19363,6 +19363,137 @@ def check_rack_agent_relay(page, base):
     return bad
 
 
+# ANNOTATE'S TOOLS (site/annotate/agent-tools.js): registered with the browser's
+# WebMCP, called as an agent would, over the page's own window.portrayalAnnotate.
+@extra("annotate.html: an assistant describes the marks, edits them, is refused in words, and undoes and redoes, the page's own step among them")
+def check_annotate_agent_tools(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate agent: settled", f"() => {api} && {api}.settled")
+    wait_fn(page, "annotate agent: four tools registered", "() => Object.keys(window.__tools).length === 4")
+    names = page.evaluate("() => Object.keys(window.__tools).sort()")
+    if names != ["describe_marks", "edit_marks", "redo", "undo"]:
+        bad.append(f"annotate agent: the tools are {names}")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if not hint.get("registered") or sorted(hint.get("tools", [])) != names or "Start with describe_marks." not in (page.text_content("#webmcp-hint-text") or ""):
+        bad.append(f"annotate agent: with the tools registered the page hint says {hint}")
+    page.evaluate(f"""() => {api}.setDoc({{device: 's9510-28dc', config: 'dc', view: 'front'}})""")
+    page.wait_for_selector("#stage svg [data-path='port-0']", state="attached", timeout=READY_MS)
+    say = lambda name, args: agent_call(page, name, args)["content"][0]["text"]
+    read = say("describe_marks", {})
+    if not read.startswith("s9510-28dc, config dc, front.") or "Nothing to undo." not in read or "No marks." not in read:
+        bad.append(f"annotate agent: describe_marks on a fresh drawing reads {read!r}")
+    # an edit: a mark that reaches a part, and one that reaches nothing
+    out = agent_call(page, "edit_marks", {"commands": [
+        {"op": "mark.add", "select": "[data-path='port-0']", "color": "#ff2d95", "as": "p0"},
+        {"op": "mark.add", "select": ".does-not-exist"}]})
+    text = out["content"][0]["text"]
+    if out.get("isError") or not text.startswith("Done: Added mark m1 on [data-path='port-0']. Added mark m2 on .does-not-exist. (p0 is m1)") \
+            or "m1 [data-path='port-0'], color #ff2d95: 1 part" not in text or "m2 .does-not-exist: matches nothing" not in text:
+        bad.append(f"annotate agent: edit_marks answered {out}")
+    wait_fn(page, "annotate agent: two rows", "() => document.querySelectorAll('#rows .mark').length === 2")
+    # a refusal changes nothing, and the answer says which command and why
+    before = page.evaluate(f"() => JSON.stringify({api}.getDoc())")
+    out = agent_call(page, "edit_marks", {"commands": [{"op": "mark.add", "select": ".a"}, {"op": "mark.remove", "mark": "nope"}]})
+    if not out.get("isError") or out["content"][0]["text"] != "Command 2 of 2 (mark.remove) was refused: There is no mark nope. Nothing was changed." \
+            or page.evaluate(f"() => JSON.stringify({api}.getDoc())") != before:
+        bad.append(f"annotate agent: a refused batch answered {out} or changed the document")
+    # dry_run says what would happen and does nothing
+    text = say("edit_marks", {"commands": [{"op": "marks.clear"}], "dry_run": True})
+    if text != "Would do: Cleared 2 marks." or page.evaluate(f"() => {api}.getDoc().marks.length") != 2:
+        bad.append(f"annotate agent: dry_run answered {text!r} or cleared the marks")
+    # the legend and the crop: the page shows them (the box), and a crop is cut to the drawing
+    say("edit_marks", {"commands": [{"op": "legend", "on": False}]})
+    wait_fn(page, "annotate agent: legend box follows", "() => !document.querySelector('#legend').checked")
+    out = agent_call(page, "edit_marks", {"commands": [{"op": "crop", "rect": {"x": -50, "y": -50, "w": 100, "h": 100}}]})
+    crop = page.evaluate(f"() => {api}.getDoc().crop")
+    if out.get("isError") or not crop or crop["w"] >= 100 or crop["h"] >= 100:
+        bad.append(f"annotate agent: a crop over the corner answered {out} and was kept as {crop}")
+    out = agent_call(page, "edit_marks", {"commands": [{"op": "crop", "rect": {"x": 100000, "y": 0, "w": 5, "h": 5}}]})
+    if not out.get("isError") or "outside the drawing" not in out["content"][0]["text"] or page.evaluate(f"() => {api}.getDoc().crop") != crop:
+        bad.append(f"annotate agent: a crop off the drawing answered {out}")
+    # undo and redo, the agent's step and then the page's own
+    text = say("undo", {})
+    if not text.startswith("Undid: Cropped to"):
+        bad.append(f"annotate agent: undo answered {text!r}")
+    text = say("redo", {})
+    if not text.startswith("Redid: Cropped to") or not page.evaluate(f"() => {api}.getDoc().crop"):
+        bad.append(f"annotate agent: redo answered {text!r}")
+    page.evaluate(f"() => {api}.apply({{op: 'mark.add', select: '.mine'}}, {{origin: 'ui'}})")
+    text = say("undo", {})
+    if not text.startswith("Undid your edit: Added mark m3 on .mine."):
+        bad.append(f"annotate agent: undoing the page's own step answered {text!r}")
+    wait_fn(page, "annotate agent: undone on the page", "() => document.querySelectorAll('#rows .mark').length === 2")
+    if page.evaluate(f"() => {api}.getDoc().device") != "s9510-28dc":
+        bad.append("annotate agent: undo took the drawing back")
+    # a tool called at once from a page that was still starting is answered, not hung
+    page.reload(wait_until="load")
+    wait_fn(page, "annotate agent: tools again", "() => Object.keys(window.__tools).length === 4")
+    first = page.evaluate("() => window.__tools.describe_marks.execute({}).then(r => r.content[0].text)")
+    if "No marks." not in first:
+        bad.append(f"annotate agent: describe_marks straight after a reload read {first!r}")
+    return bad
+
+
+@extra("annotate.html: Connect your AI - nothing loads until it is on, it remembers, it names the tools in the hint, it has no outline switch, and it fits at 375px")
+def check_annotate_agent_relay(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    mcpb = []
+    page.on("request", lambda r: mcpb.append(r.url) if "/vendor/mcp-b/" in r.url else None)
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate relay: settled", f"() => {api} && {api}.settled")
+    page.evaluate("() => { try { localStorage.removeItem('portrayal.agent.relay'); } catch {} }")
+    if mcpb:
+        bad.append(f"annotate relay: loaded before it was switched on: {mcpb[:2]}")
+    page.click("#agentMenu > summary")
+    panel = page.text_content("#agentSlot") or ""
+    origin = page.evaluate("() => location.origin")
+    for want in [f"--widget-origin {origin}", "Your AI runs on your computer and talks to this page directly.", "Which of my marks match nothing?"]:
+        if want not in panel:
+            bad.append(f"annotate relay: the panel does not say {want!r}")
+    if "Outline what my AI changes" in panel or page.query_selector("#agentMark"):
+        bad.append("annotate relay: the panel offers an outline switch the page cannot honour")
+    over = page.evaluate("() => document.documentElement.scrollWidth - innerWidth")
+    if over > 0:
+        bad.append(f"annotate relay: the panel makes the page {over}px wider than 375px")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if hint.get("registered") or hint.get("tools") or "Connect your AI" not in (page.text_content("#webmcp-hint-text") or ""):
+        bad.append(f"annotate relay: with nothing registered the page hint says {hint}")
+    page.check("#agentRelay")
+    try:
+        wait_fn(page, "annotate relay: the hint names the tools once the switch registers them",
+                "() => JSON.parse(document.getElementById('webmcp-hint').textContent).tools.length === 4")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        # The hint's snippet, as written, against the REAL vendored polyfill: a parseable answer.
+        text, err = page.evaluate(RUN_HOW_TO)
+        if err or "Legend" not in (text or ""):
+            bad.append(f"annotate relay: the page hint's snippet, run against the polyfill, answered {text!r}, {err}")
+        out = agent_exec(page, "edit_marks", {"commands": [{"op": "mark.add", "select": ".viaPolyfill"}]})
+        if out.get("isError") or not out["content"][0]["text"].startswith("Done: Added mark m1"):
+            bad.append(f"annotate relay: edit_marks through the polyfill answered {out}")
+    try:
+        wait_fn(page, "annotate relay: frame built", f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("annotate relay: switching on never built the relay frame")
+    page.uncheck("#agentRelay")
+    try:
+        wait_fn(page, "annotate relay: the relay frame removed", f"() => !document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("annotate relay: switching off left the relay frame in the page")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if hint.get("registered"):
+        bad.append(f"annotate relay: switching off left the hint naming the tools: {hint}")
+    return bad
+
+
 @extra("rack.html: when the cables' faces cannot be read, the rack still draws, no end is marked loose, and the panel says so; the answers are frozen")
 def check_rack_cable_facts_fallback(page, base):
     bad = []
