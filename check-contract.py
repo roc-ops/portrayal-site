@@ -2831,7 +2831,7 @@ _first_faults = [m for bad, m in [
                      "add the page to PAGES, or name it in _FIRST_NOT_SWEPT with the reason"),
     (_first_gone, f"{_first_gone} named in PAGES or _FIRST_NOT_SWEPT but not on disk: remove the name"),
     (_first_unread, f"{_first_unread} read as empty"),
-    (len(_first_read) != 19, f"{len(_first_read)} pages read, 19 expected: a page was added or removed - bump the count here"),
+    (len(_first_read) != 20, f"{len(_first_read)} pages read, 20 expected: a page was added or removed - bump the count here"),
     (_first_found != sorted(_FIRST_PAGES) or len(_first_found) != 9,
      f"the pages that open on a device are not the 9 named: new {sorted(set(_first_found) - set(_FIRST_PAGES))}, "
      f"gone {sorted(set(_FIRST_PAGES) - set(_first_found))}. A new page: have it ask site/featured.js, add it to "

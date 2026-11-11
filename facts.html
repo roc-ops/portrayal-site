@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — device facts</title>
+<meta name="description" content="Pick devices and read what the library states about them side by side: size, rack units, weight, ports, bays and the vendor's own attributes. A figure nobody has modelled says so.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="portrayal.dev">
+<meta property="og:url" content="https://portrayal.dev/facts">
+<meta property="og:title" content="Portrayal — device facts">
+<meta property="og:description" content="Pick devices and read what the library states about them side by side. A figure nobody has modelled says so.">
+<meta property="og:image" content="https://portrayal.dev/brand/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="An AS7726-32X faceplate compiled from its manifest, with a brass callout on port-12 reading qsfp28 · 100g · 4 lanes.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@portrayaldev">
+<meta name="twitter:title" content="Portrayal — device facts">
+<meta name="twitter:description" content="Pick devices and read what the library states about them side by side. A figure nobody has modelled says so.">
+<meta name="twitter:image" content="https://portrayal.dev/brand/og-card.png">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<!-- The rows below are drawn by a script from the device index and each
+     device's own files. Named here, as the page's data, so an agent that asks
+     for the page's Markdown copy (which has no rows) is pointed at it. -->
+<link rel="alternate" type="application/json" href="assets/dist/devices.json" title="Every device in the library">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/toolbar.css">
+<style>
+  body { font-family: system-ui, sans-serif; background: var(--pt-surface); color: var(--pt-ink); margin: 0.8rem 1.2rem; }
+  h1 { font-family: Archivo, system-ui, sans-serif; font-size: 1.4rem; margin: 1rem 0 0.3rem; }
+  h2 { font-family: Archivo, system-ui, sans-serif; font-size: 1.05rem; margin: 1.8rem 0 0.3rem; }
+  h3 { font-family: Archivo, system-ui, sans-serif; font-size: 0.92rem; margin: 1.2rem 0 0.2rem; }
+  .intro { max-width: 60rem; color: var(--pt-ink-dim, #565d64); font-size: 0.9rem; line-height: 1.5; }
+  .controls { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 1rem 0 0.4rem; }
+  .controls input { font: inherit; padding: 0.3rem 0.45rem; min-width: 18rem; }
+  .chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.4rem 0; padding: 0; list-style: none; }
+  .chips li { border: 1px solid var(--pt-rule, #c9cfd3); border-radius: 0.8rem; padding: 0.1rem 0.2rem 0.1rem 0.6rem; font-size: 0.85rem; }
+  .chips button { font: inherit; border: 0; background: none; cursor: pointer; padding: 0 0.4rem; }
+  /* a wide table scrolls inside its own box, never the page; the box takes the
+     keyboard (tabindex) and the row labels stay in view beside the figures */
+  [data-scroll] { overflow-x: auto; max-width: 100%; }
+  /* fixed layout: every table's columns line up under the same device */
+  table { border-collapse: collapse; width: 100%; min-width: 40rem; table-layout: fixed; font-size: 0.84rem; overflow-wrap: anywhere; }
+  thead th:first-child { width: min(14rem, 38vw); }
+  tbody th, thead th:first-child { position: sticky; left: 0; background: var(--pt-ground); }
+  th, td { text-align: left; vertical-align: top; padding: 0.25rem 0.8rem 0.25rem 0; border-bottom: 1px solid var(--pt-rule, #e3e6e8); }
+  th { font-weight: 500; color: var(--pt-ink-dim, #565d64); }
+  thead th { white-space: nowrap; }
+  /* a long label wraps inside its column instead of running under the figures */
+  tbody th { font-weight: 400; color: var(--pt-ink); overflow-wrap: anywhere; }
+  td .tag { display: block; color: var(--pt-ink-dim, #565d64); font-size: 0.72rem; }
+  /* A STATE IS A WORD, NOT A COLOUR: these print and screenshot in greyscale.
+     The unknown cell is also dashed and italic so it cannot be read as a value. */
+  td[data-state="unknown"] { font-style: italic; border-bottom-style: dashed; }
+  td[data-state="absent"] { font-style: italic; color: var(--pt-ink-dim, #565d64); }
+  td[data-state="unknown"] .tag::before { content: "\2205  "; }
+  td[data-state="derived"] .tag::before { content: "\25C6  "; }
+  td[data-state="stated"] .tag::before { content: "\25C7  "; }
+  td[data-state="absent"] .tag::before { content: "\2013  "; }
+  /* the empty-state line is a paragraph like the others; its link is the
+     site's own (site.css: brass, offset underline) */
+  .empty { max-width: 40rem; margin: 1.5rem 0; color: var(--pt-ink-dim, #565d64); font-size: 0.9rem; line-height: 1.5; }
+  .empty a { color: var(--pt-brass); text-underline-offset: 3px; }
+  .empty a:hover { color: var(--pt-brass-light); }
+  [hidden] { display: none; }
+</style>
+</head>
+<body class="doc">
+
+<div class="site-bar">
+  <a class="brand" href="index.html">
+    <img src="brand/portrayal-mark.svg" alt="" width="20" height="20">
+    <span>portrayal<span class="tld">.dev</span></span>
+  </a>
+  <nav>
+    <a href="index.html#showcase">Showcase</a>
+    <a href="explorer.html">Explorer</a>
+    <a href="rack.html">Rack Builder</a>
+    <a href="components.html">Components</a>
+    <a href="annotate.html">Annotate</a>
+    <details class="navmenu">
+      <summary>Export</summary>
+      <div class="navmenu-items">
+        <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+        <a href="drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
+        <a href="drawio.html#omnigraffle">OmniGraffle export<span class="hint">stencils with named ports</span></a>
+        <a href="drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
+      </div>
+    </details>
+    <details class="navmenu" data-docs>
+      <summary>Docs</summary>
+      <div class="navmenu-items">
+        <a href="schema.html">Schema<span class="hint">the manifest, component and listing contracts</span></a>
+        <a href="lint.html">Lint rules<span class="hint">what the linter checks, and why</span></a>
+        <a href="kit.html">Using the kit<span class="hint">2D, 3D and export in your own pages</span></a>
+        <a href="contribute.html">Contributing<span class="hint">add a device, request one, fix the tools</span></a>
+      </div>
+    </details>
+    <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
+  </nav>
+</div>
+
+<h1>Device facts</h1>
+<p class="intro" data-counts></p>
+<p class="intro">Pick devices to read what the library states about them side by side. Every
+cell says where its figure comes from: <b>derived</b> is counted or measured off the drawing or
+the chassis, <b>stated</b> is read from the model. A figure nobody has put in the model reads
+<b>not modelled</b>; that is not zero, and it is not a statement that the device lacks it.</p>
+
+<div class="controls">
+  <label for="add">Add a device</label>
+  <input id="add" list="devices" placeholder="name, model or manufacturer" autocomplete="off">
+  <datalist id="devices"></datalist>
+</div>
+<ul class="chips" id="chips"></ul>
+
+<p class="empty" id="empty" hidden>No device chosen yet. Add two or more, or start from
+<a href="facts.html?devices=as7726-32x,hlx-tgv">an Edgecore switch and a desktop box</a>.</p>
+
+<div id="out" hidden>
+  <h2>Counted and measured</h2>
+  <p class="intro">Read off each device's chassis and its default front and rear drawings.
+  Ports are counted per drawn port element, by media and speed.</p>
+  <div data-scroll tabindex="0" role="region" aria-label="Counted and measured facts, one column per device"><table id="t1"></table></div>
+
+  <h2>Authored attributes</h2>
+  <p class="intro">The model's own sections, keys sorted within each. Values are the vendor's
+  words with their units, so nothing is added up or divided here, and two keys line up only
+  when their names are the same.</p>
+  <div id="t2"></div>
+</div>
+
+<script type="module">
+import { jdist } from './vendor/dist.js';
+import { defaultFaces } from './site/faces.js';
+import { deviceFacts, alignFacts, authoredSections, factText, devicesFromSearch, STATE_TAG } from './site/facts.js';
+
+const DIST = 'assets/dist/';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+
+const [{devices: INDEX}, RACK, FACES] = await Promise.all([
+  jdist(`${DIST}devices.json`), jdist(`${DIST}rack.json`).then(r => r.devices), defaultFaces(DIST)]);
+const NAMES = INDEX.map(d => d.name);
+$('devices').innerHTML = INDEX.map(d => `<option value="${esc(d.name)}">${esc(`${d.manufacturer} ${d.model}`)}</option>`).join('');
+document.querySelector('[data-counts]').textContent = `${INDEX.length} devices in the library.`;
+
+// One fetch of a device's own files, kept for the life of the page. A face that
+// cannot be read is null, which the model prints as not modelled, rather than
+// an error that hides the other devices.
+const text = url => fetch(url).then(r => r.ok ? r.text() : null).catch(() => null);
+const LOADED = new Map();
+async function load(name) {
+  if (!LOADED.has(name)) {
+    LOADED.set(name, (async () => {
+      const [source, configs, front, rear] = await Promise.all([
+        jdist(`${DIST}${name}.source.json`).catch(() => null),
+        jdist(`${DIST}${name}.configs.json`).catch(() => null),
+        FACES[name]?.front ? text(DIST + FACES[name].front) : null,
+        FACES[name]?.rear ? text(DIST + FACES[name].rear) : null]);
+      return {name, rack: RACK[name] ?? null, source, configs, faces: {front, rear}, attrs: source?.attrs ?? null};
+    })());
+  }
+  return LOADED.get(name);
+}
+
+let chosen = devicesFromSearch(location.search, NAMES);
+function remember() {
+  const q = chosen.length ? `?devices=${chosen.join(',')}` : '';
+  history.replaceState(history.state, '', `${location.pathname}${q}${location.hash}`);
+}
+
+const cell = f => `<td data-state="${f.state}"><span class="v">${esc(factText(f))}</span><span class="tag">${esc(STATE_TAG[f.state])}${f.detail ? ` · ${esc(f.detail)}` : ''}</span></td>`;
+const head = devs => `<thead><tr><th></th>${devs.map(d => `<th scope="col">${esc(d.name)}</th>`).join('')}</tr></thead>`;
+
+async function render() {
+  const devs = await Promise.all(chosen.map(load));
+  $('chips').innerHTML = chosen.map(n => `<li data-device="${esc(n)}">${esc(n)}<button type="button" aria-label="Remove ${esc(n)}" data-remove="${esc(n)}">&times;</button></li>`).join('');
+  $('empty').hidden = chosen.length > 0;
+  $('out').hidden = !chosen.length;
+  if (!chosen.length) return;
+  const rows = alignFacts(devs.map(deviceFacts));
+  $('t1').innerHTML = `${head(devs)}<tbody>${rows.map(r =>
+    `<tr data-fact="${esc(r.key)}"><th scope="row">${esc(r.label)}</th>${r.cells.map(cell).join('')}</tr>`).join('')}</tbody>`;
+  $('t2').innerHTML = authoredSections(devs).map(s => `<h3 data-section="${esc(s.section)}">${esc(s.section)}${s.missingIn.length ? ` <span class="tag">(none recorded for ${esc(s.missingIn.join(', '))})</span>` : ''}</h3>
+    <div data-scroll tabindex="0" role="region" aria-label="${esc(s.section)} attributes, one column per device"><table>${head(devs)}<tbody>${s.rows.map(r =>
+      `<tr data-attr="${esc(s.section)}.${esc(r.key)}"><th scope="row">${esc(r.key)}</th>${r.cells.map(c =>
+        `<td data-state="${c.state}"><span class="v">${esc(c.text)}</span><span class="tag">${esc(STATE_TAG[c.state])}</span></td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('');
+}
+
+function add() {
+  const v = $('add').value.trim();
+  const hit = NAMES.includes(v) ? v : INDEX.find(d => `${d.manufacturer} ${d.model}`.toLowerCase() === v.toLowerCase())?.name;
+  if (!hit) return;
+  $('add').value = '';
+  if (!chosen.includes(hit)) { chosen = [...chosen, hit]; remember(); render(); }
+}
+$('add').addEventListener('change', add);
+$('chips').addEventListener('click', e => {
+  const n = e.target.closest('[data-remove]')?.dataset.remove;
+  if (n) { chosen = chosen.filter(x => x !== n); remember(); render(); }
+});
+await render();
+document.documentElement.dataset.ready = '1';
+</script>
+<script>
+// Close the export menu on Escape or on a click outside it.
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
+</script>
+</body>
+</html>

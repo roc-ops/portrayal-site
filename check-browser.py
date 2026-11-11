@@ -60,7 +60,7 @@ PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
          "schema.html", "lint.html", "entities.html", "kit.html", "schematic.html", "marks-harness.html",
          "viewer3d-harness.html", "rack.html", "contribute.html",
-         "components/catalog.html"]
+         "components/catalog.html", "facts.html"]
 
 # REQUESTS THAT ARE MEANT TO MISS. compare.html overlays a photograph on a
 # drawing and asks for one per view; this repository has never shipped any, and
@@ -2396,6 +2396,164 @@ def check_components_catalog(page, base):
             return box ? box.scrollWidth > box.clientWidth : false; }""")
         if not reach:
             bad.append(f"catalog at {w}px: the table is not in a box the reader can scroll")
+    page.set_viewport_size({"width": 1280, "height": 900})
+    return bad
+
+
+@extra("the facts page puts chosen devices side by side, counts what the drawings show, and says 'not modelled' where the library has no figure")
+def check_facts_page(page, base):
+    # THE POINT OF THE PAGE (portrayal-site#15): a figure the library lacks must
+    # never read as a blank or a zero next to one it has. So this opens a switch
+    # that has every figure and a desktop box that lacks its weight and its
+    # management section, and holds the cells to the vendored files read here
+    # independently, not to the page's own model.
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/facts.html?devices=as7726-32x,hlx-tgv,not-a-device", wait_until="load")
+    page.wait_for_selector("html[data-ready='1']", state="attached", timeout=READY_MS)
+    page.wait_for_selector("#t1 tbody tr", timeout=READY_MS)
+    heads = page.eval_on_selector_all("#t1 thead th[scope='col']", "ts => ts.map(t => t.textContent)")
+    if heads != ["as7726-32x", "hlx-tgv"]:
+        bad.append(f"facts: the columns are {heads}, expected the two named devices and not the unknown one")
+
+    def cell(fact, col):
+        return page.evaluate(
+            """([fact, col]) => { const td = document.querySelectorAll(`#t1 tr[data-fact="${fact}"] td`)[col];
+                 return td ? {state: td.dataset.state, text: td.querySelector('.v').textContent, tag: td.querySelector('.tag').textContent} : null; }""",
+            [fact, col])
+
+    if (c := cell("size.width", 0)) is None or c["text"] != "438.4 mm" or c["state"] != "derived":
+        bad.append(f"facts: the switch's width reads {c}")
+    if (c := cell("size.width", 1)) is None or c["text"] != "172 mm":
+        bad.append(f"facts: the desktop box's width reads {c}")
+    # No cell is blank, and every cell carries a state word beside its figure.
+    blank = page.eval_on_selector_all(
+        "#t1 tbody td", "ts => ts.filter(t => !t.querySelector('.v').textContent.trim() || !t.querySelector('.tag').textContent.trim()).length")
+    if blank:
+        bad.append(f"facts: {blank} cells in the counted table are blank or carry no state word")
+    # The box has no weight in the library: not modelled, and not zero.
+    if (c := cell("physical.weight-kg", 1)) is None or c["state"] != "unknown" or c["text"] != "not modelled":
+        bad.append(f"facts: a missing weight reads {c}, expected 'not modelled' in the unknown state")
+    if (c := cell("mount.ru", 1)) is None or c["text"] != "not rack mounted":
+        bad.append(f"facts: the desktop box's rack units read {c}")
+    # The switch's port total is the number of port elements in the default
+    # front and rear drawings, counted here from the drawings.
+    want = page.evaluate("""async () => {
+        const f = await (await fetch('/assets/dist/default-faces.json')).json(); let n = 0;
+        for (const v of ['front', 'rear']) {
+          const doc = new DOMParser().parseFromString(await (await fetch('/assets/dist/' + f['as7726-32x'][v])).text(), 'image/svg+xml');
+          n += doc.querySelectorAll('[data-class="port"]:not([data-inner])').length;
+        }
+        return n; }""")
+    if (c := cell("ports.total", 0)) is None or c["text"] != str(want) or want < 30:
+        bad.append(f"facts: the switch's ports read {c}, the drawings show {want}")
+
+    # AUTHORED ATTRIBUTES: the switch's sections, sorted; the box lacks management and says so.
+    secs = page.eval_on_selector_all("#t2 h3[data-section]", "hs => hs.map(h => h.dataset.section)")
+    attrs = page.evaluate("""async () => Object.keys((await (await fetch('/assets/dist/as7726-32x.source.json')).json()).attrs)""")
+    if secs != sorted(set(attrs) | {"features", "platform"}):
+        bad.append(f"facts: the attribute sections are {secs}")
+    lacking = page.eval_on_selector_all(
+        "#t2 tr[data-attr^='management.'] td:nth-child(3) .v", "ts => [...new Set(ts.map(t => t.textContent))]")
+    if lacking != ["no management attributes recorded"]:
+        bad.append(f"facts: the box's missing management section reads {lacking}")
+    # Near names stay two rows (weight against weight-configured-kg, where both exist).
+    rows = page.eval_on_selector_all("#t2 tr[data-attr]", "rs => rs.map(r => r.dataset.attr)")
+    if len(rows) != len(set(rows)) or any(r.endswith(".") for r in rows):
+        bad.append("facts: an attribute row is repeated or has no key")
+
+    # ADD AND REMOVE a device, and the address follows.
+    page.fill("#add", "ap7821b")
+    page.dispatch_event("#add", "change")
+    page.wait_for_function("() => document.querySelectorAll('#t1 thead th[scope=col]').length === 3", timeout=READY_MS)
+    if "devices=as7726-32x,hlx-tgv,ap7821b" not in page.url:
+        bad.append(f"facts: the address after adding is {page.url}")
+    page.click("[data-remove='as7726-32x']")
+    page.wait_for_function("() => document.querySelectorAll('#t1 thead th[scope=col]').length === 2", timeout=READY_MS)
+    if "devices=hlx-tgv,ap7821b" not in page.url:
+        bad.append(f"facts: the address after removing is {page.url}")
+
+    # NO DEVICE: a prompt, no table.
+    page.goto(f"{base}/facts.html", wait_until="load")
+    page.wait_for_selector("html[data-ready='1']", state="attached", timeout=READY_MS)
+    if page.is_hidden("#empty") or page.is_visible("#out"):
+        bad.append("facts: with no device chosen the page should offer a way in and show no table")
+
+    # A PHONE: the table scrolls inside its box, not the page.
+    page.goto(f"{base}/facts.html?devices=as7726-32x,hlx-tgv,ap7821b", wait_until="load")
+    page.wait_for_selector("#t1 tbody tr", timeout=READY_MS)
+    for w in (360, 375):
+        page.set_viewport_size({"width": w, "height": 800})
+        page.wait_for_timeout(200)
+        sw = page.evaluate("document.documentElement.scrollWidth")
+        if sw > w:
+            bad.append(f"facts at {w}px scrolls the page sideways to {sw}px")
+    page.set_viewport_size({"width": 1280, "height": 900})
+    return bad
+
+
+@extra("the facts page keeps a long row label off the figures, scrolls its tables inside their own boxes, and styles its empty-state line like the site's paragraphs and links")
+def check_facts_page_layout(page, base):
+    # Three faults found on the live page: a long label ran under the first
+    # figure, the narrow-window table was not reachable by keyboard or kept its
+    # labels in view, and the empty-state line and link were the browser's own.
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    url = f"{base}/facts.html?devices=as7726-32x,hlx-tgv,ap7821b"
+
+    for w in (1280, 375):
+        page.set_viewport_size({"width": w, "height": 800})
+        page.goto(url, wait_until="load")
+        page.wait_for_selector("html[data-ready='1']", state="attached", timeout=READY_MS)
+        page.wait_for_selector("#t1 tbody tr", timeout=READY_MS)
+        # (1) no label's text reaches into its row's first figure cell.
+        over = page.evaluate("""() => [...document.querySelectorAll('table tbody tr')].flatMap(tr => {
+            const r = document.createRange(); r.selectNodeContents(tr.querySelector('th'));
+            const right = r.getBoundingClientRect().right, left = tr.querySelector('td').getBoundingClientRect().left;
+            return right > left + 0.5 ? [`${tr.querySelector('th').textContent} (text right ${right.toFixed(1)}px, first figure left ${left.toFixed(1)}px)`] : [];
+          })""")
+        if over:
+            bad.append(f"facts at {w}px: {len(over)} row labels run into the first figure: {over[:3]}")
+
+    # (3) at 375 px the page does not scroll sideways; each table scrolls in its own box.
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.wait_for_timeout(200)
+    sw = page.evaluate("document.documentElement.scrollWidth")
+    if sw > 375:
+        bad.append(f"facts at 375px scrolls the page sideways to {sw}px")
+    boxes = page.evaluate("""() => [...document.querySelectorAll('table')].map(t => {
+        const box = t.closest('[data-scroll]');
+        if (!box) return null;
+        box.scrollLeft = box.scrollWidth;
+        const last = [...t.querySelectorAll('thead th')].pop().getBoundingClientRect().right;
+        return {sw: box.scrollWidth, cw: box.clientWidth, last, boxRight: box.getBoundingClientRect().right,
+                label: t.querySelector('tbody th').getBoundingClientRect().left, boxLeft: box.getBoundingClientRect().left,
+                keyboard: box.tabIndex === 0 && box.getAttribute('role') === 'region' && !!box.getAttribute('aria-label')};
+      })""")
+    if not boxes:
+        bad.append("facts at 375px: no table on the page")
+    for i, b in enumerate(boxes):
+        if b is None:
+            bad.append(f"facts at 375px: table {i} is not in a scrolling box")
+        elif b["sw"] <= b["cw"]:
+            bad.append(f"facts at 375px: table {i}'s box does not scroll inside itself (scrollWidth {b['sw']}px, clientWidth {b['cw']}px)")
+        elif b["last"] > b["boxRight"] + 1:
+            bad.append(f"facts at 375px: table {i}'s last device column ends at {b['last']:.0f}px, past its box's right edge {b['boxRight']:.0f}px at full scroll")
+        elif b["label"] < b["boxLeft"] - 1:
+            bad.append(f"facts at 375px: table {i}'s row labels scroll out of view (label left {b['label']:.0f}px, box left {b['boxLeft']:.0f}px at full scroll)")
+        elif not b["keyboard"]:
+            bad.append(f"facts at 375px: table {i}'s box is not a focusable, labelled region")
+
+    # (2) no device: the line and its link are the site's, not the browser's.
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto(f"{base}/facts.html", wait_until="load")
+    page.wait_for_selector("html[data-ready='1']", state="attached", timeout=READY_MS)
+    st = page.evaluate("""() => { const s = el => { const c = getComputedStyle(el); return {size: c.fontSize, color: c.color}; };
+        return {link: s(document.querySelector('#empty a')), para: s(document.querySelector('p.intro'))}; }""")
+    if st["link"]["color"] == "rgb(0, 0, 238)":
+        bad.append(f"facts: the empty-state link is the browser's default colour {st['link']['color']}")
+    if st["link"]["size"] != st["para"]["size"]:
+        bad.append(f"facts: the empty-state link is {st['link']['size']}, the page's paragraphs are {st['para']['size']}")
     page.set_viewport_size({"width": 1280, "height": 900})
     return bad
 
