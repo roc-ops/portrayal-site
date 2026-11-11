@@ -1203,6 +1203,7 @@ KIT_NOT_DOCUMENTED_YET = {
     "zones": "the ports and bays of a face in mm, for the diagram exports; no recipe yet",
     "camera-fit": "the 3D viewer's opening view, fitted to the whole box; viewer3d uses it, and no recipe calls it on its own",
     "drawio": "draw.io export; the draw.io page (drawio.html) is where the site shows it, with no kit recipe yet",
+    "section": "the 3D body of a housing that states chassis.section (kit 0.51.0); viewer3d builds it, and no recipe calls it on its own",
     "omnigraffle": "OmniGraffle export; shown on drawio.html#omnigraffle, with no kit recipe yet",
     "redirects": "a part the library replaced (kit 0.32.0): the Explorer lens hands it on so a saved rack keeps a replaced holder; the page has no recipe for it yet",
     "rack/ports": "the ports of what is seated in a bay, read from the catalogue (kit 0.23.0); the rack modules use it, and no page here calls it yet",
