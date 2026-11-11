@@ -22828,7 +22828,7 @@ def check_rack_3d_large_once(page, base):
     return bad
 
 
-ANGLED_FIXTURE = HERE / "tests" / "rack" / "fixtures" / "angled-setback-rack.json"
+ANGLED_FIXTURE = HERE / "tests" / "rack" / "angled" / "angled-setback-rack.json"
 
 # THE ANGLED ENDS OF THE ANGLED FIXTURE, measured off the built scene. Each asks for a cable's first end
 # (the shelf's), the facet its cage stands on, the optic seated in it and how to find the optic's mating point:
