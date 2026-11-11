@@ -110,6 +110,21 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-1.63.0-chromium-${{ runner.os }}-${{ runner.arch }}
 
+      # The runners' default Ubuntu mirror stopped resolving, which failed every
+      # job that runs apt. Use the main Ubuntu archive instead, and try each
+      # download again. Runners without sudo are left as they are.
+      - name: use the main Ubuntu archive for apt
+        run: |
+          if sudo -n true 2>/dev/null; then
+            for f in /etc/apt/sources.list /etc/apt/sources.list.d/* /etc/apt/apt-mirrors.txt; do
+              if [ -f "$f" ]; then
+                sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' "$f"
+              fi
+            done
+            echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-apt-retries
+            grep -rhs 'ubuntu\.com' /etc/apt/sources.list /etc/apt/sources.list.d /etc/apt/apt-mirrors.txt || true
+          fi
+
       # PLAYWRIGHT IS PINNED to 1.63.0, the version the checks were last
       # measured on. Unpinned, a new release's Chromium would arrive in the
       # middle of a pull request and change what the pixel-sized checks see.
