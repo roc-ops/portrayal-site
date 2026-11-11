@@ -55,6 +55,25 @@
 .rk-panes[data-covers="on"] :is([data-in-front], [data-covers-front]) [data-front="cover"] { opacity: 1; }
 .rk-panes[data-covers="off"] :is([data-in-front], [data-covers-front]) [data-front="cover"],
 .rk-panes[data-covers="off"] :is([data-zerou-id], [data-item-id]) :is([data-group="cover"][data-class="mechanical"], [data-kind="cover"]) { visibility: hidden; }
+/* SHOW: WHICH LAYERS THE PANES DRAW (#197, rack/layers.js): a menu of five
+   presets and five layer toggles. The panes carry the layers that are off in
+   data-hide, and what each layer holds carries data-layer; a hidden layer is
+   display: none, which also takes it out of the pointer's way. What is selected
+   (rk-selected) stays shown, and a cable the reader picked from the list (on)
+   with it. Never in a file: a sheet is not in the panes. */
+#layers { min-width: 22rem; }
+.rk-layers-row { display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: center; }
+.rk-layers-label { width: 4rem; font-family: system-ui, sans-serif; font-size: 0.78rem; color: var(--pt-ink-muted); }
+#layers button { font: inherit; font-family: system-ui, sans-serif; font-size: 0.78rem; background: var(--control); color: var(--ink);
+  border: 1px solid var(--control-line); border-radius: 6px; padding: 0.26rem 0.5rem; cursor: pointer; white-space: nowrap; text-align: center; }
+#layers button:hover { background: var(--control-hover); border-color: var(--control-line); }
+#layers button.on { background: var(--on-bg); border-color: var(--accent); color: var(--on-ink); }
+#layers button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
+.rk-panes[data-hide~="data"] [data-layer="data"]:not(.on, .rk-selected),
+.rk-panes[data-hide~="power"] [data-layer="power"]:not(.on, .rk-selected),
+.rk-panes[data-hide~="bundles"] [data-layer="bundles"]:not(.on, .rk-selected),
+.rk-panes[data-hide~="managers"] [data-layer="managers"]:not(.rk-selected),
+.rk-panes[data-hide~="pdus"] [data-layer="pdus"]:not(.rk-selected) { display: none; }
 #stagebg { display: flex; align-items: center; gap: 0.25rem; }
 #stagebg .sw { width: 0.95rem; height: 0.95rem; border-radius: 3px; cursor: pointer; padding: 0;
   min-width: 0; border: 1px solid var(--control-line); }
