@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="origin-trial" content="Amdycj0Hm1F0BFOJdkxk/Iz+qBnChZzK4o+lOvdLiIo9OUbBRWYopD7bJRu/awgvyIlLhwb/cXXlJSzu9CKQOAwAAABgeyJvcmlnaW4iOiJodHRwczovL3BvcnRyYXlhbC5kZXY6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTgwNjM2NDgwMCwiaXNTdWJkb21haW4iOnRydWV9">
 <title>Portrayal — annotate</title>
 <meta name="description" content="Select parts of a device, highlight them, set lamp states, and export the result as SVG, PNG, GIF, draw.io, OmniGraffle or a share URL.">
 <meta property="og:type" content="website">
@@ -234,9 +235,25 @@
   .node .pm { width:0.5rem; height:0.5rem; border-radius:50%; flex:none;
               margin-left:0.15rem; }
   :root { --bad:#ef4444; }
+  /* CONNECT YOUR AI (site/agent/relay.js): the switch and its commands, in the
+     marks panel. The class names are the Rack Builder's. */
+  #agentMenu summary { cursor:pointer; font-size:0.68rem; text-transform:uppercase;
+                       letter-spacing:0.06em; color:var(--dim); font-weight:600; }
+  .rk-agent { display:grid; gap:0.5rem; margin-top:0.4rem; font-size:0.74rem; }
+  .rk-agent p { margin:0; }
+  .rk-muted { color:var(--dim); }
+  .rk-agent-switch { display:flex; gap:0.5rem; align-items:center; }
+  .rk-agent-copy { display:grid; grid-template-columns:1fr auto; gap:0.25rem 0.5rem; align-items:start; }
+  .rk-agent-copy > span { grid-column:1 / -1; }
+  .rk-agent-copy code { white-space:pre-wrap; word-break:break-all; font-size:0.75rem; }
+  /* visually hidden, still in the page's text: the one-line hint for agents that read the page */
+  .rk-vh { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+           clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
 </style>
 </head>
-<body class="tool">
+<body class="tool" aria-describedby="webmcp-hint-text">
+<p class="rk-vh" id="webmcp-hint-text">This page has tools for AI agents, not yet registered in this browser: open the Connect your AI menu (#agentMenu) in the marks panel and tick "Let my desktop AI use this page", then call await document.modelContext.executeTool(tool, JSON.stringify(args)) with a tool from getTools(), and JSON.parse the string it answers. The JSON block #webmcp-hint has a snippet that runs as written.</p>
+<script type="application/json" id="webmcp-hint">{"webmcp":true,"registered":false,"howTo":"const mc = document.modelContext ?? navigator.modelContext; const t = (await mc.getTools()).find(t => t.name === 'describe_marks'); const result = JSON.parse(await mc.executeTool(t, JSON.stringify({}))); result.content[0].text","calling":"executeTool takes the tool object from getTools(), not its name, and the arguments as a JSON string (JSON.stringify(args)); it answers with a JSON string: JSON.parse it to get {content: [{type: 'text', text}], isError?}.","connect":"Not registered yet: open the Connect your AI menu (#agentMenu) in the marks panel and tick \"Let my desktop AI use this page\".","tools":[]}</script>
 
 <div class="site-bar">
   <a class="brand" href="index.html">
@@ -285,6 +302,10 @@ import { firstDevice } from './site/featured.js';
 import { docToScene, legendItems } from './site/annotate3d.js';
 import { createMarksEditor } from './site/annotate/editor.js';
 import { describe as describeMarks } from './site/annotate/describe.js';
+import { annotateTools } from './site/annotate/agent-tools.js';
+import { registerTools } from './site/agent/webmcp.js';
+import { relaySwitch } from './site/agent/relay.js';
+import { writeHint } from './site/rack/agent-hint.js';
 // The analysis of what a drawing says about its own lamps is not this page's -
 // the gaps register asks the same questions of the same drawings offline. What
 // stays here is the markup and the handlers that put it on screen.
@@ -489,6 +510,12 @@ panel.innerHTML = `
     <button id="clearall">clear all</button>
   </h2>
   <div id="rows"></div>
+</section>
+<section>
+  <details id="agentMenu">
+    <summary>Connect your AI</summary>
+    <div class="rk-agent" id="agentSlot"></div>
+  </details>
 </section>
 <section>
   <h2>export</h2>
@@ -1905,6 +1932,26 @@ try {
   });
   settled = true;
   markReady(boot);
+}
+
+// AGENTS: the page's API above, as WebMCP tools (site/annotate/agent-tools.js).
+// Registered now for a browser that has WebMCP; the Connect your AI switch
+// (site/agent/relay.js) registers them for one that doesn't. The page hint names
+// the tools only once they are registered (site/rack/agent-hint.js).
+{
+  const tools = annotateTools({api: window.portrayalAnnotate, reach: rect => marks.clampCrop(state.svg, rect)});
+  const names = tools.map(t => t.name);
+  const hint = {start: 'describe_marks', bar: 'the marks panel'};
+  let native = false;
+  writeHint(document, [], hint);
+  const registered = registerTools(tools)
+    .then(r => { native = r.registered > 0; if (native) writeHint(document, names, hint); })
+    .catch(err => console.warn('[portrayal] WebMCP registration', err));
+  relaySwitch({mount: $('#agentSlot'), tools, native: async () => { await registered; return native; }, highlight: false,
+    onTools: on => writeHint(document, on || native ? names : [], hint), examples: [
+    'Ring the PSU and the console port, and label them.',
+    'Which of my marks match nothing?',
+    'Crop the drawing to the left half and turn the legend off.']});
 }
 
 // A LINK OPENS IN ITS MODE: ?mode=3d beside the document, as the share button writes it.
