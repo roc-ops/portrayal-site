@@ -256,6 +256,10 @@ done
 # fetches the same path under assets/dumps/, so no name is rewritten. Only the
 # OpenConfig components tree is copied, because that is the one the join reads;
 # a dump a listing names that is not in the library stops the refresh.
+# Where they come from: each is a component dump taken from a running unit,
+# ArcOS by Arrcus on Edgecore hardware (arrcus/as7326-56x on edgecore/as7326-56x,
+# arrcus/as7726-32x on edgecore/as7726-32x), in the maintainers' own lab. It
+# carries runtime values and redacted identity fields.
 rm -rf "$HERE/assets/dumps"
 if [ -f "$SRC/dist/listings.json" ]; then
   python3 - "$SRC" "$HERE" <<'PY'
