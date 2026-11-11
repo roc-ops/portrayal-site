@@ -22589,6 +22589,193 @@ def check_rack_covers(page, base):
     return bad
 
 
+# What the panes named by `sel` (a selector for svgs) show of each layer: the cables, bundle envelopes and straps, and
+# the top-level part groups, each counted when neither it nor an ancestor is display: none; and how the parts and cables
+# are tagged (data-layer), what the menu's buttons say, and what is stored.
+LAYERS_SHOWN_JS = """sel => {
+  const svgs = [...document.querySelectorAll(sel)];
+  // (checkVisibility() does not see display: none on an svg node)
+  const drawn = n => { for (let e = n; e && e !== document.body; e = e.parentNode) if (getComputedStyle(e).display === 'none') return false; return true; };
+  const shown = css => [...new Set(svgs.flatMap(s => [...s.querySelectorAll(css)].filter(drawn).map(n => n.dataset.cableId ?? n.dataset.bundleId ?? n.dataset.strap ?? n.dataset.itemId ?? n.dataset.zerouId)))].sort();
+  const tag = css => Object.fromEntries(svgs.flatMap(s => [...s.querySelectorAll(css)].map(n => [n.dataset.cableId ?? n.dataset.itemId ?? n.dataset.zerouId, n.dataset.layer ?? null])));
+  const pressed = (a, key) => [...document.querySelectorAll(`#layers [${a}]`)].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset[key]);
+  const panes = document.getElementById('panes');
+  return {
+    cables: shown('[data-cables] [data-cable][data-cable-id]'),
+    bundles: shown('[data-cables] [data-bundle-id]'),
+    straps: shown('[data-strap]'),
+    parts: shown(':scope > [data-item-id], :scope > [data-zerou-id]'),
+    tagParts: tag(':scope > [data-item-id], :scope > [data-zerou-id]'),
+    tagCables: tag('[data-cables] [data-cable][data-cable-id]'),
+    hide: panes.dataset.hide ?? null,
+    presets: pressed('data-layers-preset', 'layersPreset'), layers: pressed('data-layers-set', 'layersSet'),
+    stored: localStorage.getItem('portrayal.rack.layers'), api: window.__rack.layers(), search: location.search,
+  };
+}"""
+
+
+@extra("rack.html: the Show menu - five presets and five layers (data, power, bundles, managers, PDUs) for the front, rear and left / right panes, everything to begin with and remembered in the browser, never in the rack or the URL; a layer that is off is not drawn, a selected thing or a cable picked from the list stays shown, and the menu is hidden and inert in 3D (#197)")
+def check_rack_layers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    # a router (i4), a PDU (i5), a power cord between them (c5) and a bundle of three of the data cables (b1)
+    res = page.evaluate("() => window.__rack.apply([{op: 'place', ref: 'mx150', face: 'front', ru: 10, label: 'mx'}, {op: 'place', ref: 'pdu12iec', face: 'front', ru: 5, label: 'pdu'}])")
+    if res.get("error") or res.get("created", {}).get("ids") != ["i4", "i5"]:
+        return bad + [f"fixture: the router and the PDU were not placed as i4 and i5: {res}"]
+    res = page.evaluate("() => window.__rack.apply({op: 'cable.add', a: {item: 'i4', path: 'inlet', view: 'rear'}, b: {item: 'i5', path: 'outlet-front-1', view: 'front'}, media: 'power', purpose: 'power'})")
+    if res.get("error") or res.get("created", {}).get("ids") != ["c5"]:
+        return bad + [f"fixture: the power cord was not added as c5: {res}"]
+    res = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack'})")
+    if res.get("error"):
+        return bad + [f"fixture: the bundle was refused: {res['error']}"]
+    wait_fn(page, "layers: the cord and the bundle are drawn", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"]') && document.querySelector('#paneFront [data-strap=\"b1\"]') && window.__rack.routesCurrent().current")
+    page.click("#zoomFit")
+    page.wait_for_timeout(400)
+    park_mouse(page)
+    FRONT, REAR, SIDES = "#paneFront svg", "#paneRear svg", "#panes svg[data-side]"
+    ALL = ["c1", "c2", "c3", "c4", "c5"]
+    PARTS = ["i1", "i2", "i3", "i4", "i5", "z1"]
+    doc0 = page.evaluate("() => JSON.stringify(window.__rack.doc())")
+    shown = lambda sel=FRONT: page.evaluate(LAYERS_SHOWN_JS, sel)
+    # (i) START: everything, nothing stored, every part and cable tagged
+    st = shown()
+    if st["hide"] is not None or st["presets"] != ["everything"] or sorted(st["layers"]) != sorted(["data", "power", "bundles", "managers", "pdus"]) or st["stored"] is not None:
+        bad.append(f"start: hide {st['hide']!r}, presets {st['presets']}, layers {st['layers']}, stored {st['stored']!r}; expected nothing hidden, Everything, five layers and nothing stored")
+    if st["tagParts"] != {"i1": None, "i2": "managers", "i3": None, "i4": None, "i5": "pdus", "z1": "managers"}:
+        bad.append(f"start: the parts are tagged {st['tagParts']}")
+    if st["tagCables"] != {"c1": "data", "c2": "data", "c3": "data", "c4": "data", "c5": "power"}:
+        bad.append(f"start: the cables are tagged {st['tagCables']}")
+    if st["cables"] != ALL or st["parts"] != PARTS or st["bundles"] != ["b1"] or not st["straps"]:
+        return bad + [f"fixture: at the start the front pane shows cables {st['cables']}, parts {st['parts']}, bundles {st['bundles']}, straps {st['straps']}"]
+    if page.locator("#layersMenu").get_attribute("open") is None:
+        page.click("#layersMenu > summary")
+    # (ii) EACH PRESET
+    want = {"elevation": ([], [], False, ["i1", "i2", "i3", "i4", "z1"]),
+            "equipment": ([], [], False, ["i1", "i3", "i4"]),
+            "data": (["c1", "c2", "c3", "c4"], ["b1"], True, ["i1", "i2", "i3", "i4", "z1"]),
+            "power": (["c5"], [], False, ["i1", "i3", "i4", "i5"]),
+            "everything": (ALL, ["b1"], True, PARTS)}
+    for preset in ("elevation", "equipment", "data", "power", "everything"):
+        page.click(f'#layers [data-layers-preset="{preset}"]')
+        cables, bundles, straps, parts = want[preset]
+        st = shown()
+        if (st["cables"], st["bundles"], bool(st["straps"]), st["parts"]) != (cables, bundles, straps, parts):
+            bad.append(f"{preset}: the front pane shows cables {st['cables']}, bundles {st['bundles']}, straps {st['straps']}, parts {st['parts']}; expected {cables}, {bundles}, straps {straps}, {parts}")
+        if st["presets"] != [preset]:
+            bad.append(f"{preset}: the pressed presets are {st['presets']}")
+        if st["stored"] != json.dumps(st["api"], separators=(",", ":")):
+            bad.append(f"{preset}: stored {st['stored']!r} is not the layers {st['api']}")
+        if page.evaluate("() => JSON.stringify(window.__rack.doc())") != doc0:
+            bad.append(f"{preset}: the choice changed the rack document")
+    # (iii) ONE LAYER AT A TIME
+    page.click('#layers [data-layers-preset="equipment"]')
+    page.click('#layers [data-layers-set="power"]')
+    st = shown()
+    if (st["cables"], st["parts"], st["presets"], st["layers"]) != (["c5"], ["i1", "i3", "i4"], [], ["power"]):
+        bad.append(f"power alone: cables {st['cables']}, parts {st['parts']}, pressed presets {st['presets']}, layers {st['layers']}; expected c5 alone, the three devices and no preset")
+    page.click('#layers [data-layers-preset="equipment"]')
+    page.click('#layers [data-layers-set="data"]')
+    page.click('#layers [data-layers-set="managers"]')
+    st = shown()
+    if (st["cables"], st["parts"], st["bundles"]) != (["c1", "c2", "c3", "c4"], ["i1", "i2", "i3", "i4", "z1"], []):
+        bad.append(f"data and managers: cables {st['cables']}, parts {st['parts']}, bundles {st['bundles']}")
+    # (iv) THE REAR PANE AND BOTH SIDE PANES OBEY THE SAME CONTROL
+    page.click('#layers [data-layers-preset="elevation"]')
+    st = shown(REAR)
+    if st["cables"] or "i5" in st["parts"]:
+        bad.append(f"elevation: the rear pane shows cables {st['cables']} and parts {st['parts']}")
+    page.click('#layers [data-layers-preset="everything"]')
+    to_sides(page, cables=0)
+    wait_fn(page, "layers: the side panes draw cables", "() => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelector('[data-cables] [data-cable-id]'))")
+    st = shown(SIDES)
+    if not st["cables"] or "c5" not in st["tagCables"]:
+        bad.append(f"sides: with everything the side panes show cables {st['cables']}, tagged {st['tagCables']}")
+    page.click('#layers [data-layers-preset="elevation"]')
+    st = shown(SIDES)
+    if st["cables"] or "i5" in st["parts"]:
+        bad.append(f"sides, elevation: the side panes show cables {st['cables']} and parts {st['parts']}")
+    page.click('#layers [data-layers-preset="everything"]')
+    to_faces(page)
+    wait_fn(page, "layers: the faces are drawn again", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"]') && window.__rack.routesCurrent().current")
+    # (v) SELECTION: a cable picked from the list, and a part that is selected, stay shown
+    page.click('#layers [data-layers-preset="data"]')
+    page.click('#cableList [data-cable-row="c5"]')
+    try:
+        wait_fn(page, "layers: the cord c5 is picked", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"].on')", timeout=8000)
+    except RuntimeError as e:
+        bad.append(str(e))
+    st = shown()
+    if "c5" not in st["cables"]:
+        bad.append(f"selection: the picked cord c5 is not shown with the power layer off: {st['cables']}")
+    page.keyboard.press("Escape")
+    pdu = page.evaluate("""() => { const g = document.querySelector('#paneFront > svg > [data-item-id="i5"], #paneFront svg > [data-item-id="i5"]');
+      const off = getComputedStyle(g).display; g.classList.add('rk-selected'); const on = getComputedStyle(g).display; g.classList.remove('rk-selected'); return [off, on]; }""")
+    if pdu[0] != "none" or pdu[1] == "none":
+        bad.append(f"selection: the PDU's group is display {pdu[0]!r} unselected and {pdu[1]!r} selected; expected none, then shown")
+    # (vi) REMEMBERED IN THE BROWSER, NOT IN THE RACK
+    page.click('#layers [data-layers-preset="power"]')
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    wait_fn(page, "layers: the panes after a reload", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"]') && window.__rack.routesCurrent().current")
+    st = shown()
+    if st["api"] != ["power", "pdus"] or st["cables"] != ["c5"] or st["presets"] != ["power"]:
+        bad.append(f"remembered: after a reload the layers are {st['api']}, the front pane shows {st['cables']}, pressed {st['presets']}")
+    if page.evaluate("() => JSON.stringify(window.__rack.doc())") != doc0 or "layers" in page.evaluate("() => JSON.stringify(window.__rack.doc())"):
+        bad.append("remembered: the rack document changed, or holds the layers")
+    if st["search"] != "?probe=1":
+        bad.append(f"remembered: the setting reached the URL: {st['search']!r}")
+    # (vii) IN 3D THE MENU IS HIDDEN AND INERT
+    menu = "() => { const m = document.getElementById('layersMenu'); return [getComputedStyle(m).visibility, m.inert]; }"
+    if page.evaluate(menu) != ["visible", False]:
+        bad.append(f"2D: the Show menu is {page.evaluate(menu)}")
+    if webgl_trouble(page):
+        print("[check_rack_layers] WebGL unavailable - 3D not exercised")
+    else:
+        page.click('#mode [data-mode="3d"]')
+        wait_fn(page, "layers: 3D is up", "() => document.getElementById('panes').hidden")
+        if page.evaluate(menu) != ["hidden", True]:
+            bad.append(f"3D: the Show menu is {page.evaluate(menu)}, expected hidden and inert")
+        page.click('#mode [data-mode="2d"]')
+        wait_fn(page, "layers: 2D is back", "() => !document.getElementById('panes').hidden")
+        if page.evaluate(menu) != ["visible", False]:
+            bad.append(f"back in 2D: the Show menu is {page.evaluate(menu)}, expected shown")
+    print("[check_rack_layers] five presets, one layer at a time, the rear and side panes, selection, a reload and 3D")
+    return bad
+
+
+MENU_IN_WINDOW_JS = """() => {
+  const panel = document.getElementById('layers'), r = panel.getBoundingClientRect(), w = window.innerWidth;
+  const out = [...panel.querySelectorAll('button')].map(b => [b.textContent, b.getBoundingClientRect()]).filter(([, q]) => q.left < 0 || q.right > w).map(([t]) => t);
+  return {left: r.left, right: r.right, width: w, outside: out, buttons: panel.querySelectorAll('[data-layers-preset]').length + ':' + panel.querySelectorAll('[data-layers-set]').length};
+}"""
+
+
+@extra("rack.html: the open Show menu stays inside the window at 1280 and 1100 px wide - its panel's right edge at or below the window's width, its left edge at or above 0, and each of the five presets and five layers inside it (#197)")
+def check_rack_layers_menu_in_window(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1280, "height": 800})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    park_mouse(page)
+    if page.locator("#layersMenu").get_attribute("open") is None:
+        page.click("#layersMenu > summary")
+    for width in (1280, 1100):
+        page.set_viewport_size({"width": width, "height": 800})
+        page.wait_for_timeout(300)
+        m = page.evaluate(MENU_IN_WINDOW_JS)
+        if m["buttons"] != "5:5":
+            bad.append(f"{width} px: the menu holds {m['buttons']} preset and layer buttons, expected 5:5")
+        if m["right"] > m["width"] or m["left"] < 0:
+            bad.append(f"{width} px: the open Show menu's panel runs from {m['left']:.1f} to {m['right']:.1f}, outside the window's {m['width']} px")
+        if m["outside"]:
+            bad.append(f"{width} px: these Show buttons are outside the window ({m['width']} px wide): {m['outside']}")
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    print("[check_rack_layers_menu_in_window] the open Show menu inside the window at 1280 and 1100 px")
+    return bad
+
 
 # THE DETAIL HELD BACK BY THE CHECK (rack3d.js startDetail): every scene the page starts building has its
 # startDetail wrapped to keep the detail from starting until `window.__goDetail()` is called. The scene is then
