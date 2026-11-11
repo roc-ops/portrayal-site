@@ -4404,6 +4404,55 @@ def first_device_faults(page_name, got):
     return bad
 
 
+@extra("Explorer: a part taken off is in the link (pulled=), a link opens with it off, an unknown part is ignored with a warning, and putting it back leaves the link")
+def check_explorer_pulled_link(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    warns = []
+    page.on("console", lambda m: warns.append(m.text) if m.type == "warning" else None)
+    off = "() => [...document.querySelectorAll('[data-portrayal-pulled]')].map(e => e.dataset.path)"
+    pulled_param = "() => new URLSearchParams(location.search).get('pulled')"
+    cfg = "sff24-rc5-1b2a3a"
+    tree = '#tree .node[data-path="bezel"] .pull'
+
+    # 1. A cover taken off by hand is written into the link, beside what the link already carried.
+    page.goto(f"{base}/explorer.html?device=r740xd&config={cfg}&view=front&keep=1", wait_until="load")
+    wait_sel(page, "pulled link: the bezel's pull handle", tree)
+    if page.evaluate(pulled_param) is not None:
+        bad.append(f"pulled link: a fresh link already carries pulled={page.evaluate(pulled_param)!r}")
+    page.click(tree)
+    wait_fn(page, "pulled link: the link carries the bezel", f"() => ({pulled_param})() === 'bezel@front'")
+    if "keep=1" not in page.evaluate("location.search"):
+        bad.append("pulled link: pulling dropped a parameter the page does not own")
+    link = page.evaluate("location.search")
+
+    # 2. That link, opened fresh, opens with the cover off and keeps the parameter.
+    page.goto("about:blank")
+    page.goto(f"{base}/explorer.html{link}", wait_until="load")
+    wait_fn(page, "pulled link: the cover is off on load", f"() => ({off})().includes('bezel')")
+    wait_fn(page, "pulled link: the chip reads one removed",
+            "() => { const c = document.querySelector('#pulled'); return !c.hidden && /1 removed/.test(c.textContent); }")
+    page.wait_for_timeout(500)
+    if page.evaluate(pulled_param) != "bezel@front":
+        bad.append(f"pulled link: the opened link was rewritten to pulled={page.evaluate(pulled_param)!r}")
+
+    # 3. Putting it back takes it out of the link.
+    page.click('#pulled')
+    wait_fn(page, "pulled link: the link lets go of the bezel", f"() => ({pulled_param})() === null")
+
+    # 4. A part that names nothing is ignored with a warning, and falls out of the link.
+    warns.clear()
+    page.goto("about:blank")
+    page.goto(f"{base}/explorer.html?device=r740xd&config={cfg}&view=front&pulled=no-such-part@front", wait_until="load")
+    wait_sel(page, "pulled link: the page opens", tree)
+    wait_fn(page, "pulled link: an unknown part leaves the link", f"() => ({pulled_param})() === null")
+    if page.evaluate(off):
+        bad.append(f"pulled link: an unknown part took off {page.evaluate(off)}")
+    if not any("no-such-part" in w for w in warns):
+        bad.append(f"pulled link: no console warning named the unknown part ({warns})")
+    return bad
+
+
 @extra("Explorer with no ?device= opens on a populated device, not an empty base chassis")
 def check_explorer_first_device(page, base):
     bad = []
