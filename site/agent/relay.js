@@ -53,7 +53,8 @@ const copyRow = (label, text) => {
 
 // `onTools(registered)` hears when this switch has registered the tools (true)
 // and when switching off took them back (false): the page's hint says so.
-export function relaySwitch({mount, tools, native, examples, onTools = () => {}}) {
+// `highlight: false` leaves out "Outline what my AI changes", for a page that has no outline to draw.
+export function relaySwitch({mount, tools, native, examples, onTools = () => {}, highlight = true}) {
   let ac = null;
   const status = el('p', {className: 'rk-muted', role: 'status'});
   // Only a change is written: the region would announce a repeat again.
@@ -139,7 +140,7 @@ export function relaySwitch({mount, tools, native, examples, onTools = () => {}}
     copyRow('Or add to Claude Desktop or Claude Code', relayConfig(location.origin)),
     el('p', {className: 'rk-muted', textContent: 'Try asking:'}),
     ...examples.map(x => copyRow('', x)),
-    el('label', {className: 'rk-agent-switch'}, markBox, " Outline what my AI changes"),
+    ...(highlight ? [el('label', {className: 'rk-agent-switch'}, markBox, " Outline what my AI changes")] : []),
   );
   if (relayBox.checked) on();
   return {dispose: off};

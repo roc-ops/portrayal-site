@@ -45,7 +45,7 @@ sys.path.insert(0, str(HERE / "tools"))
 from page_markdown import markdown, page_url  # noqa: E402
 
 PAGES = ["index.html", "explorer.html", "rack.html", "components.html", "annotate.html",
-         "exporter.html", "drawio.html", "drawings.html", "schema.html", "lint.html", "kit.html",
+         "exporter.html", "drawio.html", "drawings.html", "schema.html", "lint.html", "entities.html", "kit.html",
          "kit-frame.html", "contribute.html", "components/catalog.html",
          "facts.html"]
 DIRS = ["site", "brand", "assets", "vendor"]

@@ -18,6 +18,7 @@ import sys
 import tempfile
 import textwrap
 import unittest
+import unittest.mock
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -84,9 +85,15 @@ GIT_ENV = {
 }
 
 
+def clean_env():
+    """The caller's environment without its GIT_* variables: under a git hook
+    GIT_DIR names the repository being pushed and would override cwd."""
+    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+
 def git(cwd, *args, check=True):
     r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True,
-                       env={**os.environ, **GIT_ENV})
+                       env={**clean_env(), **GIT_ENV})
     if check and r.returncode:
         raise AssertionError(f"git {args}: {r.stderr}")
     return r.stdout.strip()
@@ -160,7 +167,7 @@ class Train(unittest.TestCase):
 
     def run_train(self, *args, env=None):
         self.state_path.write_text(json.dumps(self.state))
-        e = {**os.environ, **GIT_ENV,
+        e = {**clean_env(), **GIT_ENV,
              "PATH": f"{self.bin}{os.pathsep}{os.environ['PATH']}",
              "FAKE_GH_STATE": str(self.state_path), "FAKE_GH_CALLS": str(self.calls_path),
              "FAKE_GH_ORIGIN": str(self.origin),
@@ -449,6 +456,64 @@ class Train(unittest.TestCase):
         self.assertEqual(self.run_train("2").returncode, 0)
         self.assertEqual(git(self.work, "rev-parse", "--abbrev-ref", "HEAD"), "pr1")
         self.assertEqual(git(self.work, "status", "--porcelain"), before)
+
+
+class InheritedGitDir(unittest.TestCase):
+    """A git hook in a linked worktree runs with GIT_DIR set to the repository
+    being pushed. The git() helper must act on the directory it is given anyway."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        self.decoy = self.root / "decoy"
+        git(self.root, "init", "-q", "-b", "dev", str(self.decoy))
+        git(self.decoy, "commit", "-q", "--allow-empty", "-m", "decoy")
+        self.decoy_refs = git(self.decoy, "for-each-ref")
+        patcher = unittest.mock.patch.dict(os.environ, {"GIT_DIR": str(self.decoy / ".git")})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_the_git_helper_acts_on_the_directory_it_is_given(self):
+        own = self.root / "own"
+        own.mkdir()
+        git(own, "init", "-q", "-b", "main")
+        self.assertEqual(git(own, "rev-parse", "--absolute-git-dir"),
+                         str(own.resolve() / ".git"))
+        self.assertEqual(git(self.decoy, "for-each-ref"), self.decoy_refs)
+
+
+class TrainUnderAHook(Train):
+    """A few Train tests again, with GIT_DIR set the way a pre-push hook in a
+    linked worktree sets it: the setUp commit and push, and the script run_train()
+    starts as it merges, conflicts and pushes. A few, not all, to keep the run short."""
+
+    def setUp(self):
+        self._decoy_tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._decoy_tmp.cleanup)
+        self.decoy = Path(self._decoy_tmp.name) / "decoy"
+        git(self._decoy_tmp.name, "init", "-q", "-b", "dev", str(self.decoy))
+        git(self.decoy, "commit", "-q", "--allow-empty", "-m", "decoy")
+        self.decoy_refs = git(self.decoy, "for-each-ref")
+        patcher = unittest.mock.patch.dict(os.environ, {"GIT_DIR": str(self.decoy / ".git")})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        super().setUp()
+
+    def tearDown(self):
+        self.assertEqual(git(self.decoy, "for-each-ref"), self.decoy_refs,
+                         "the test wrote to the repository GIT_DIR named")
+
+
+# The Train tests that reach the commit and merge paths; a name set to None is not collected.
+_UNDER_A_HOOK = {
+    "test_dry_run_checks_and_merges_locally_but_pushes_and_dispatches_nothing",
+    "test_a_train_is_pushed_dispatched_waited_for_and_the_merge_lines_printed_in_order",
+    "test_a_conflict_stops_names_the_pr_and_the_file_and_pushes_nothing",
+}
+for _name in unittest.TestLoader().getTestCaseNames(Train):
+    if _name not in _UNDER_A_HOOK:
+        setattr(TrainUnderAHook, _name, None)
 
 
 if __name__ == "__main__":

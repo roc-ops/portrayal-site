@@ -7,6 +7,7 @@ import {newDoc, nextRackName, positionOf, dcimOf, zeroUById, zeroUOf, rollOf, en
 import {hostAt, managersOf} from '../vendor/rack/managers.js';
 import {managerRows, managerInspector} from './rack/manager-panel.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile, fileName, docNotes} from './rack/library.js';
+import {missingRefs, missingTexts} from './rack/missing-refs.js';
 import {drawElevation, uAtY, halfAtY, panelFor, zeroUDrawn} from './rack/elevation.js';
 import {frameName} from '../vendor/rack/frames.js';
 import {fits, fitsZeroU, isRackFace, isZeroUPart, isNarrow, reaches, availableDepth, itemsWithU, heightOf, spansMeet, spanOf, frameNotices} from '../vendor/rack/fit.js';
@@ -668,7 +669,7 @@ function onChange(ev) {
   // would loop. Neither changes what the page shows.
   if (ev.step) renderSoon();
   // what the rack keeps and the page does not draw is said for the rack as it is now
-  if (ev.step) sayKept();
+  if (ev.step) { sayKept(); sayMissing(); }
 }
 // A change the scene reads nothing of swaps the rack object under it. The scene
 // is kept and re-pointed at the new rack, but only if it was current for the
@@ -703,8 +704,8 @@ function setDoc(doc, notes = docNotes(doc)) {
   render();
   renderLibrary();
   if (S.mode === '3d') rebuild3d();
-  S.kept = []; S.keptLate = [];
-  sayKept();
+  S.kept = []; S.keptLate = []; S.missing = [];
+  sayKept(); sayMissing();
 }
 
 // WHAT THE RACK CARRIES THAT THIS PAGE KEEPS AND DOES NOT YET DRAW OR ACT ON
@@ -755,6 +756,26 @@ async function sayKept() {
 }
 // The sentences of sayKept, as they stand in the side panel: status, not alerts.
 const keptParagraphs = () => (S.kept ?? []).map(text => el('p', {class: 'rk-notice rk-muted', role: 'status', 'data-kept': '', text}));
+
+// A STORED PART THE LIBRARY DOES NOT HOLD (#183): a slot whose swap names a ref
+// that left the library draws its default. Said in the side panel (missingParagraph)
+// for as long as it is true, as sayKept does; the choice stays in the document
+// and nothing is written to it. Read through the one memoized components index.
+let missingRun = 0;
+async function sayMissing() {
+  const mine = ++missingRun, r = rack();
+  const show = list => { if (mine !== missingRun || rack() !== r) return;
+    if (JSON.stringify(list) !== JSON.stringify(S.missing ?? [])) { S.missing = list; renderSoon(); } };
+  const named = [...r.items, ...zeroUOf(r)].some(e => e.swaps && typeof e.swaps === 'object' &&
+    Object.values(e.swaps).some(v => typeof v === 'string' && v));
+  if (!named) { show([]); return; }
+  try {
+    const ctx = await loadSlots(DIST, []);
+    show(missingTexts(missingRefs(r, ctx)));
+  } catch (err) { console.warn('[portrayal] the stored parts could not be checked against the library', err); }
+}
+const missingParagraph = () => S.missing?.length
+  ? el('p', {id: 'missingRefs', class: 'rk-notice rk-warn', role: 'status', text: S.missing.join(' ')}) : null;
 
 // ── Cable mode (spec §9.2) ──────────────────────────────────────────────
 // A tool state beside 2D/3D: while it is on, a click in a pane picks a port
@@ -1939,6 +1960,8 @@ function renderSide() {
   if (failed) kids.push(failed);
   const unsaved = saveFailedLine();
   if (unsaved) kids.push(unsaved);
+  const missing = missingParagraph();
+  if (missing) kids.push(missing);
   const notice = noticeParagraph();
   if (notice) kids.push(notice);
   // what the rack keeps and the page does not draw, for as long as it is true (sayKept)

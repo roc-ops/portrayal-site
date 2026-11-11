@@ -149,6 +149,13 @@ export const byRef = ref => (components || []).find(
 // never resolve a component differently.
 export const loadSkin = faceLoadSkin;
 export const shortRef = ref => (ref || '(empty)').split('/').pop().replace(/@\d+$/, '');
+// The LC optic among whatever a cage accepts (cables and DACs joined the list
+// alongside it). Falls back to the first entry if a future library drop ever
+// drops the LC generic from `accepts`, so a caller still seats something.
+export function lcRef(cage) {
+  const accepts = cage?.accepts || [];
+  return accepts.find(r => r.startsWith('generic/qsfp-lc@')) || accepts[0] || null;
+}
 
 // ── 2D elevation ─────────────────────────────────────────────────────────
 // Rails and RU marks for heightRU units, then each device's compiled face at

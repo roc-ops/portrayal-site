@@ -24,7 +24,7 @@ import { faceFile } from './faces.js';
 import { applyFields, findComp } from './rack/face.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
-import { earHoles } from './rack/ear-holes.js';
+import { earHoles, earFlange } from './rack/ear-holes.js';
 import { itemBox, unitsOf } from '../vendor/rack/fit.js';
 
 // what fields.js paintFields stashes a node's drawn value under
@@ -715,13 +715,19 @@ export function createRackScene(container, opts = {}) {
       // The screw lands on the rail's own hole, not a second hand-derived x -
       // rail geometry lives only in rails.js.
       const holeX = SIDES.find(s => s.side === (side < 0 ? 'left' : 'right')).hole;
-      const earX = side * (halfW + 12);
       // no bracket where the ears are the device's own (earMat null): its
       // face draws them, and only the screws holding it to the rail are added
       if (earMat) {
-        const flange = new THREE.Mesh(new THREE.BoxGeometry(24, h, 3), earMat);
-        flange.position.set(earX, yMid, mountZ + dir * 1.5);
-        g.add(flange);
+        // the flange runs from the face's edge out to the rail hole and a little
+        // past it (#176), as the 2D elevation draws it - not a fixed 24 mm that
+        // left a narrow device's screws in the air
+        const span = earFlange(halfW, holeX);
+        if (span) {
+          const flange = new THREE.Mesh(new THREE.BoxGeometry(span.width, h, 3), earMat);
+          flange.name = 'ear-flange';
+          flange.position.set(side * span.centre, yMid, mountZ + dir * 1.5);
+          g.add(flange);
+        }
         const leg = new THREE.Mesh(new THREE.BoxGeometry(3, h, legLen), earMat);
         leg.position.set(side * (halfW + 1.5), yMid, mountZ - dir * legLen / 2);
         g.add(leg);

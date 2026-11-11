@@ -66,7 +66,8 @@ python3 check-browser.py --only <check>[,<check>]   # your change's own browser 
   shards cover every check, and the rest. It ends `contract: N checks passed`.
 - **`node --test tests/*/*.test.mjs`** runs the modules that need no browser:
   the rack model, Annotate's document model and commands, the agent tools, the
-  Worker. A new folder under `tests/` is picked up by the glob.
+  Worker. A new folder under `tests/` is picked up by the glob. `npm test`
+  runs the same command.
 - **`check-browser.py`** opens the pages in Chromium and fails on a 404, an
   uncaught exception, or a check of its own. Run the checks your change touches
   with `--only`, by function name; an unmatched name is an error, never an

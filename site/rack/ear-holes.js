@@ -21,6 +21,20 @@
 // that unit's two outer holes between them.
 import {RU, HOLE_DY, holesIn} from '../../vendor/rack/rails.js';
 
+/** mm a flange runs past the hole centre, so the screw head sits inside it. */
+export const EAR_OVERHANG = 3;
+
+/** THE FLANGE'S TWO ENDS across the rack, in mm from its centre, for one side:
+ *  from the face's own edge (`halfW`, half the face's width) out to the rail's
+ *  hole (`hole`, the magnitude of a SIDES hole) and EAR_OVERHANG past it. The
+ *  2D elevation draws these two ends; the 3D rack builds its flange from them.
+ *  null for a face that already reaches the hole, which has no flange to draw. */
+export function earFlange(halfW, hole) {
+  const outer = Math.abs(hole) + EAR_OVERHANG;
+  if (!(outer > halfW)) return null;
+  return {inner: halfW, outer, width: outer - halfW, centre: (halfW + outer) / 2};
+}
+
 /** The heights, in mm above the bottom of the rails, of the holes an ear over
  *  the span [lo, hi] is screwed at. */
 export function earHoles(lo, hi) {

@@ -58,7 +58,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 # list rather than quietly stop being checked.
 PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
-         "schema.html", "lint.html", "kit.html", "schematic.html", "marks-harness.html",
+         "schema.html", "lint.html", "entities.html", "kit.html", "schematic.html", "marks-harness.html",
          "viewer3d-harness.html", "rack.html", "contribute.html",
          "components/catalog.html", "facts.html"]
 
@@ -3026,6 +3026,105 @@ def check_docs_menu(page, base):
             if sw > w: bad.append(f"{name} at {w}px scrolls sideways to {sw}px")
     return bad
 
+# THE ENTITY MAP PAGE (portrayal-site#12) joins a listing's entity-map onto the
+# component names of the dump the listing names. Expected values are read from
+# those two files, so the check follows a refresh: the rows on the page are
+# exactly the names a rule claims, each with the id the rule gives it; the
+# names no rule claims are listed as unmapped; region targets are named as
+# regions; the device menu offers every listing and says so for one with no
+# entity-map; a dump that is not served is said plainly instead of an error;
+# and #<listing> opens on that listing.
+@extra("entities.html joins each entity-map onto its dump's component names, and says so for a device with none")
+def check_entities_page(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"entities: uncaught {e}"))
+    listings = json.loads((HERE / "assets" / "dist" / "listings.json").read_text())["listings"]
+    maps = sorted(k for k, l in listings.items() if l.get("entity-map"))
+    if len(maps) < 2:
+        return [f"entities: listings.json has an entity-map for only {maps}"]
+    ready = "body[data-entities-ready]"
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{base}/entities.html", wait_until="load")
+    page.wait_for_selector(ready, timeout=READY_MS)
+    page.wait_for_selector("#en-body [data-en=parts]", timeout=READY_MS)
+
+    # the menu offers every listing; the ones without a map say so
+    opts = page.eval_on_selector_all("#enDevice option", "os => os.map(o => [o.value, o.textContent])")
+    if sorted(v for v, _ in opts) != sorted(listings):
+        bad.append(f"entities: the menu offers {len(opts)} listings, listings.json has {len(listings)}")
+    for v, t in opts:
+        if (v in maps) == ("no entity-map" in t):
+            bad.append(f"entities: the menu label for {v} is {t!r}")
+
+    # each listing with a map: expected rows computed here, from the files, in Python
+    for key in maps:
+        page.goto(f"{base}/entities.html#{key}", wait_until="load")   # a hash change only: the page follows it
+        page.wait_for_selector(f'body[data-entities-shown="{key}"]', timeout=READY_MS)
+        page.wait_for_selector("#en-body [data-en=parts]", timeout=READY_MS)
+        l = listings[key]
+        rel = next(p for p in l["dumps"] if p.endswith("-openconfig-components.json"))
+        c = json.loads((HERE / "assets" / "dumps" / rel).read_text())["data"]["openconfig-platform:components"]
+        names = [x["name"] for x in c["component"]] + [x["name"] for x in c["arcos-platform-transceiver:transceivers"]["state"]["transceiver"]]
+        want, unmapped = {}, []
+        for n in names:
+            tos = set()
+            for r in l["entity-map"]:
+                pat = re.escape(r["match"]).replace(r"\{n\}", r"(\d+)")
+                m = re.fullmatch(pat, n)
+                if not m:
+                    continue
+                if r.get("range") and m.groups():
+                    lo, hi = map(int, r["range"].split("-"))
+                    if not lo <= int(m.group(1)) <= hi:
+                        continue
+                k = int(m.group(1)) if m.groups() else 0
+                tos.add(re.sub(r"\{n(?:([+-])(\d+))?\}", lambda g: str(k + (int(g.group(2)) * (1 if g.group(1) == "+" else -1) if g.group(1) else 0)), r["to"]))
+            if len(tos) == 1:
+                want[n] = tos.pop()
+            elif not tos:
+                unmapped.append(n)
+        got = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('#en-body tr[data-name][data-to]')]
+            .map(tr => [tr.dataset.name, tr.dataset.to]))""")
+        if got != want:
+            diff = sorted(set(got.items()) ^ set(want.items()))[:4]
+            bad.append(f"entities: {key} shows {len(got)} joined names, the files give {len(want)}; first difference {diff}")
+        shown_unmapped = page.eval_on_selector_all("#en-body [data-en=unmapped] code.sc-code", "ns => ns.map(n => n.textContent)")
+        shown_unmapped = [u for u in shown_unmapped if u != "unmapped NOS nodes are legal"]
+        if shown_unmapped != unmapped:
+            bad.append(f"entities: {key} lists {len(shown_unmapped)} unmapped names, the files give {len(unmapped)}")
+        regions = sorted(n for n, t in want.items() if t.startswith("region:"))
+        shown_regions = page.eval_on_selector_all("#en-body [data-en=regions] tr[data-name]", "ns => ns.map(n => n.dataset.name).sort()")
+        if shown_regions != regions:
+            bad.append(f"entities: {key} names regions for {shown_regions}, the files give {regions}")
+        if (page.text_content("#enIdentity") or "").strip() != f"{l.get('manufacturer', '')} {l.get('nos', '')}, on {l.get('hardware')}".strip():
+            bad.append(f"entities: {key} identity line is {page.text_content('#enIdentity')!r}")
+    # the part the join exists for: ports and the PSU offset, spelled out
+    page.goto(f"{base}/entities.html#arrcus/as7726-32x", wait_until="load")
+    page.wait_for_selector("#en-body [data-en=parts]", timeout=READY_MS)
+    for n, t in (("sfp1", "port-1"), ("sfp32", "port-32"), ("psu0", "psu-1"), ("psu1", "psu-2"), ("thermal0", "region:internal")):
+        if page.get_attribute(f"#en-body tr[data-name='{n}']", "data-to") != t:
+            bad.append(f"entities: as7726-32x {n} is not joined to {t}")
+
+    # a device with no entity-map is said plainly, not an error
+    none = [k for k in listings if k not in maps]
+    if none:
+        page.goto(f"{base}/entities.html#{none[0]}", wait_until="load")
+        page.wait_for_selector(f'body[data-entities-shown="{none[0]}"]', timeout=READY_MS)
+        say = page.text_content("#en-body [data-en-say]") or ""
+        if "no entity-map" not in say:
+            bad.append(f"entities: {none[0]} has no entity-map, the page says {say!r}")
+
+    # a dump that is not served is said, not thrown
+    page.route("**/assets/dumps/**", lambda r: r.fulfill(status=404, body="no"))
+    page.goto(f"{base}/entities.html#{maps[0]}", wait_until="load")
+    page.wait_for_selector(f'body[data-entities-shown="{maps[0]}"]', timeout=READY_MS)
+    say = page.text_content("#en-body [data-en-say]") or ""
+    if "not published" not in say:
+        bad.append(f"entities: with the dump missing the page says {say!r}")
+    page.unroute("**/assets/dumps/**")
+    return bad
+
+
 # THE LINT RULES PAGE (portrayal-site#159) renders assets/dist/lint-rules.json.
 # Everything expected here is read from that file, so the check follows a
 # refresh: every rule is on the page, in order, with its own words; every
@@ -4562,6 +4661,55 @@ def first_device_faults(page_name, got):
     return bad
 
 
+@extra("Explorer: a part taken off is in the link (pulled=), a link opens with it off, an unknown part is ignored with a warning, and putting it back leaves the link")
+def check_explorer_pulled_link(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    warns = []
+    page.on("console", lambda m: warns.append(m.text) if m.type == "warning" else None)
+    off = "() => [...document.querySelectorAll('[data-portrayal-pulled]')].map(e => e.dataset.path)"
+    pulled_param = "() => new URLSearchParams(location.search).get('pulled')"
+    cfg = "sff24-rc5-1b2a3a"
+    tree = '#tree .node[data-path="bezel"] .pull'
+
+    # 1. A cover taken off by hand is written into the link, beside what the link already carried.
+    page.goto(f"{base}/explorer.html?device=r740xd&config={cfg}&view=front&keep=1", wait_until="load")
+    wait_sel(page, "pulled link: the bezel's pull handle", tree)
+    if page.evaluate(pulled_param) is not None:
+        bad.append(f"pulled link: a fresh link already carries pulled={page.evaluate(pulled_param)!r}")
+    page.click(tree)
+    wait_fn(page, "pulled link: the link carries the bezel", f"() => ({pulled_param})() === 'bezel@front'")
+    if "keep=1" not in page.evaluate("location.search"):
+        bad.append("pulled link: pulling dropped a parameter the page does not own")
+    link = page.evaluate("location.search")
+
+    # 2. That link, opened fresh, opens with the cover off and keeps the parameter.
+    page.goto("about:blank")
+    page.goto(f"{base}/explorer.html{link}", wait_until="load")
+    wait_fn(page, "pulled link: the cover is off on load", f"() => ({off})().includes('bezel')")
+    wait_fn(page, "pulled link: the chip reads one removed",
+            "() => { const c = document.querySelector('#pulled'); return !c.hidden && /1 removed/.test(c.textContent); }")
+    page.wait_for_timeout(500)
+    if page.evaluate(pulled_param) != "bezel@front":
+        bad.append(f"pulled link: the opened link was rewritten to pulled={page.evaluate(pulled_param)!r}")
+
+    # 3. Putting it back takes it out of the link.
+    page.click('#pulled')
+    wait_fn(page, "pulled link: the link lets go of the bezel", f"() => ({pulled_param})() === null")
+
+    # 4. A part that names nothing is ignored with a warning, and falls out of the link.
+    warns.clear()
+    page.goto("about:blank")
+    page.goto(f"{base}/explorer.html?device=r740xd&config={cfg}&view=front&pulled=no-such-part@front", wait_until="load")
+    wait_sel(page, "pulled link: the page opens", tree)
+    wait_fn(page, "pulled link: an unknown part leaves the link", f"() => ({pulled_param})() === null")
+    if page.evaluate(off):
+        bad.append(f"pulled link: an unknown part took off {page.evaluate(off)}")
+    if not any("no-such-part" in w for w in warns):
+        bad.append(f"pulled link: no console warning named the unknown part ({warns})")
+    return bad
+
+
 @extra("Explorer with no ?device= opens on a populated device, not an empty base chassis")
 def check_explorer_first_device(page, base):
     bad = []
@@ -4655,6 +4803,70 @@ def check_showcase_first_device(page, base):
     # the file that loaded is that device's (the footer line is each stage's to rewrite)
     if not (got["src"] or "").startswith(f"{got['device']}."):
         bad.append(f"showcase: the boot drawing is {got['src']!r}, not one of {got['device']}'s")
+    return bad
+
+
+# A lit lamp over an empty cage is a contradiction: nothing is plugged in, so
+# nothing can be up. Read off the drawing the lens shows: which ports carry a
+# state-* class on any of their four lamps, and which hold a seated optic
+# (swap.js names it `<cage>-occupant`).
+STATE_OPTICS_JS = """() => {
+  const svg = document.querySelector('#stage2d svg');
+  const lit = [], seated = [];
+  for (let n = 1; n <= 32; n++) {
+    const on = [1, 2, 3, 4].some(i => [...(svg.querySelector(`[data-path="port-${n}/led-${i}"]`)?.classList || [])]
+      .some(c => c.startsWith('state-')));
+    if (on) lit.push(n);
+    if (svg.querySelector(`[data-path="port-${n}-occupant"]`)) seated.push(n);
+  }
+  const all = [...svg.querySelectorAll('[data-path$="-occupant"]')].map(e => e.getAttribute('data-path'));
+  return {lit, seated, other: all.filter(p => !/^port-([1-9]|[12]\\d|3[0-2])-occupant$/.test(p)).length,
+          total: all.length};
+}"""
+
+
+@extra("the showcase's Live state lens seats an optic in every cage with a lit lamp, and none in a dark one")
+def check_showcase_state_optics(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    page.click('.stage-rail button[data-stage="populate"]')
+    page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    page.click('#lookStrip [data-spoke-device="as7726-32x"][data-spoke-lens="state"]')
+    page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
+
+    def settled(label, want):
+        # the optics are seated after the lamps are lit: wait for them to agree
+        try:
+            wait_fn(page, label, f"() => {{ const r = ({STATE_OPTICS_JS})(); "
+                    "return r.lit.length === " + str(want) + " && r.seated.length === r.lit.length; }")
+        except RuntimeError:
+            pass
+        got = page.evaluate(STATE_OPTICS_JS)
+        if got["lit"] != got["seated"] or got["other"] or len(got["lit"]) != want:
+            bad.append(f"state optics {label}: lit {got['lit']}, seated {got['seated']}, "
+                       f"{got['other']} other occupant(s); expected {want} of each")
+
+    settled("on entry (mixed speeds)", 32)
+    for name, want in (("Healthy", 32), ("Fault", 32), ("All off", 0), ("Mixed speeds", 32)):
+        page.click(f'#sidePanel .ctl button:text-is("{name}")')
+        settled(name.lower(), want)
+
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click('#stageExport button')
+    text = pathlib.Path(dl.value.path()).read_text()
+    held = text.count('data-path="port-1-occupant"')
+    if held != 1:
+        bad.append(f"state optics download: {held} port-1 optic(s) in the saved SVG, expected 1")
+
+    # the optics leave with the lens
+    page.click('.spoke-crumb button')
+    page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    page.click('#lookStrip [data-spoke-device="as7726-32x"][data-spoke-lens="callouts"]')
+    page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
+    left = page.evaluate("() => document.querySelectorAll('#stage2d svg [data-path$=\"-occupant\"]').length")
+    if left:
+        bad.append(f"state optics: {left} optic(s) stayed in the drawing after leaving the lens")
     return bad
 
 
@@ -8204,6 +8416,81 @@ def check_rack_ears_meet_face(page, base):
     return bad
 
 
+# THE 3D FLANGE REACHES THE RAIL (#176). The 3D generic ear's flange was a fixed
+# 24 mm box beside the face while its screws sat on the rail's hole, so on a
+# narrow device (the 221 mm TM-340) the screw heads hung ~98 mm out in the air.
+# It runs from the body's own edge out to EAR_OVERHANG past the rail hole now,
+# the same ends the 2D flange has. Measured off the scene: each generic ear's
+# two `ear-flange` meshes against the body's half width and the rail hole, and
+# every screw head's x against the flange it must sit in. The FHD-CMP5DR is not
+# in the sample: it is a rack-face part and the 3D scene builds no ears for it.
+@extra("rack.html: the 3D generic ear flange runs from the device's edge to the rail hole, so a narrow device's screws sit in it (#176)")
+def check_rack_ears_meet_face_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if webgl_trouble(page):
+        print("[check_rack_ears_meet_face_3d] no WebGL here - the 3D flange was not checked")
+        return bad
+    sample = [("tm-340", 10), ("s9600-72xc", 20)]
+    rack = page.evaluate("""async sample => {
+      const M = await import('/vendor/rack/model.js'), C = await import('/vendor/rack/catalog.js');
+      const cat = (await C.loadCatalog('/assets/dist/')).devices;
+      let r = M.newRack({name: 'Ears meet 3D'});
+      for (const [ref, ru] of sample)
+        ({rack: r} = M.withItem(r, {ref, cfg: cat[ref].default, ru, face: 'front', label: ref}));
+      return r;
+    }""", sample)
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.click('#mode [data-mode="3d"]')
+    settle_scene(page, "3D: the ear-flange scene")
+    ids = {it["ref"]: it["id"] for it in rack["items"]}
+    got = page.evaluate(r"""async ids => {
+      const {SIDES} = await import('/vendor/rack/rails.js');
+      const {EAR_OVERHANG} = await import('/site/rack/ear-holes.js');
+      const w = window.__rack.scene().three.scene, out = {};
+      for (const [ref, id] of Object.entries(ids)) {
+        const g = w.getObjectByName(`device-${id}`), e = w.getObjectByName(`ears-${id}`);
+        const body = g && g.children.find(o => o.isMesh && o.geometry.type === 'BoxGeometry');
+        if (!body || !e) { out[ref] = null; continue; }
+        const flanges = [], heads = [];
+        e.traverse(o => { if (!o.isMesh) return;
+          if (o.name === 'ear-flange') flanges.push({x: o.position.x, width: o.geometry.parameters.width});
+          if (o.geometry.type === 'CylinderGeometry') heads.push(o.position.x); });
+        out[ref] = {kind: e.userData.ears ?? null, half: body.geometry.parameters.width / 2, flanges, heads};
+      }
+      return {items: out, hole: Math.abs(SIDES[1].hole), overhang: EAR_OVERHANG};
+    }""", ids)
+    want_outer = got["hole"] + got["overhang"]
+    for ref, _ in sample:
+        d = got["items"].get(ref)
+        if d is None:
+            bad.append(f"{ref}: its device or ears are not in the 3D scene")
+            continue
+        if d["kind"] != "generic":
+            bad.append(f"{ref}: its ears are {d['kind']!r}, expected generic")
+            continue
+        if len(d["flanges"]) != 2:
+            bad.append(f"{ref}: {len(d['flanges'])} ear flanges, expected 2")
+            continue
+        for f in d["flanges"]:
+            inner, outer = abs(f["x"]) - f["width"] / 2, abs(f["x"]) + f["width"] / 2
+            if abs(inner - d["half"]) > 0.05:
+                bad.append(f"{ref}: a flange starts {inner:.2f} mm from the centre, not at the body's edge {d['half']:.2f}")
+            if abs(outer - want_outer) > 0.05:
+                bad.append(f"{ref}: a flange ends {outer:.2f} mm from the centre, not {want_outer:.2f} (rail hole + overhang)")
+        outer = max(abs(f["x"]) + f["width"] / 2 for f in d["flanges"])
+        if not d["heads"]:
+            bad.append(f"{ref}: no screw heads found")
+        for hx in d["heads"]:
+            if not d["half"] <= abs(hx) <= outer:
+                bad.append(f"{ref}: a screw head at {hx:.2f} mm is outside the flange ({d['half']:.2f}..{outer:.2f})")
+    return bad
+
+
 # THE BUNDLES IN THE EXPORTS (Portrayal #923, kit 0.9.0): the cable schedule
 # names each member's bundle in its `bundle` column and carries the kit's line
 # for the bundle in its notes, measured with the page's routes, cable types and
@@ -8990,7 +9277,7 @@ HALF_U_3D_JS = """async () => {
     const body = g.children.find(o => o.isMesh && o.geometry.type === 'BoxGeometry');
     const flanges = [], heads = [];
     e?.traverse(o => { if (!o.isMesh) return;
-      if (o.geometry.type === 'BoxGeometry' && o.geometry.parameters.width === 24) flanges.push([o.position.y, o.geometry.parameters.height]);
+      if (o.name === 'ear-flange') flanges.push([o.position.y, o.geometry.parameters.height]);
       if (o.geometry.type === 'CylinderGeometry') heads.push(o.position.y); });
     out[id] = {y: g.position.y, h: body.geometry.parameters.height, flanges, heads};
   }
@@ -19521,6 +19808,137 @@ def check_rack_agent_relay(page, base):
     return bad
 
 
+# ANNOTATE'S TOOLS (site/annotate/agent-tools.js): registered with the browser's
+# WebMCP, called as an agent would, over the page's own window.portrayalAnnotate.
+@extra("annotate.html: an assistant describes the marks, edits them, is refused in words, and undoes and redoes, the page's own step among them")
+def check_annotate_agent_tools(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate agent: settled", f"() => {api} && {api}.settled")
+    wait_fn(page, "annotate agent: four tools registered", "() => Object.keys(window.__tools).length === 4")
+    names = page.evaluate("() => Object.keys(window.__tools).sort()")
+    if names != ["describe_marks", "edit_marks", "redo", "undo"]:
+        bad.append(f"annotate agent: the tools are {names}")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if not hint.get("registered") or sorted(hint.get("tools", [])) != names or "Start with describe_marks." not in (page.text_content("#webmcp-hint-text") or ""):
+        bad.append(f"annotate agent: with the tools registered the page hint says {hint}")
+    page.evaluate(f"""() => {api}.setDoc({{device: 's9510-28dc', config: 'dc', view: 'front'}})""")
+    page.wait_for_selector("#stage svg [data-path='port-0']", state="attached", timeout=READY_MS)
+    say = lambda name, args: agent_call(page, name, args)["content"][0]["text"]
+    read = say("describe_marks", {})
+    if not read.startswith("s9510-28dc, config dc, front.") or "Nothing to undo." not in read or "No marks." not in read:
+        bad.append(f"annotate agent: describe_marks on a fresh drawing reads {read!r}")
+    # an edit: a mark that reaches a part, and one that reaches nothing
+    out = agent_call(page, "edit_marks", {"commands": [
+        {"op": "mark.add", "select": "[data-path='port-0']", "color": "#ff2d95", "as": "p0"},
+        {"op": "mark.add", "select": ".does-not-exist"}]})
+    text = out["content"][0]["text"]
+    if out.get("isError") or not text.startswith("Done: Added mark m1 on [data-path='port-0']. Added mark m2 on .does-not-exist. (p0 is m1)") \
+            or "m1 [data-path='port-0'], color #ff2d95: 1 part" not in text or "m2 .does-not-exist: matches nothing" not in text:
+        bad.append(f"annotate agent: edit_marks answered {out}")
+    wait_fn(page, "annotate agent: two rows", "() => document.querySelectorAll('#rows .mark').length === 2")
+    # a refusal changes nothing, and the answer says which command and why
+    before = page.evaluate(f"() => JSON.stringify({api}.getDoc())")
+    out = agent_call(page, "edit_marks", {"commands": [{"op": "mark.add", "select": ".a"}, {"op": "mark.remove", "mark": "nope"}]})
+    if not out.get("isError") or out["content"][0]["text"] != "Command 2 of 2 (mark.remove) was refused: There is no mark nope. Nothing was changed." \
+            or page.evaluate(f"() => JSON.stringify({api}.getDoc())") != before:
+        bad.append(f"annotate agent: a refused batch answered {out} or changed the document")
+    # dry_run says what would happen and does nothing
+    text = say("edit_marks", {"commands": [{"op": "marks.clear"}], "dry_run": True})
+    if text != "Would do: Cleared 2 marks." or page.evaluate(f"() => {api}.getDoc().marks.length") != 2:
+        bad.append(f"annotate agent: dry_run answered {text!r} or cleared the marks")
+    # the legend and the crop: the page shows them (the box), and a crop is cut to the drawing
+    say("edit_marks", {"commands": [{"op": "legend", "on": False}]})
+    wait_fn(page, "annotate agent: legend box follows", "() => !document.querySelector('#legend').checked")
+    out = agent_call(page, "edit_marks", {"commands": [{"op": "crop", "rect": {"x": -50, "y": -50, "w": 100, "h": 100}}]})
+    crop = page.evaluate(f"() => {api}.getDoc().crop")
+    if out.get("isError") or not crop or crop["w"] >= 100 or crop["h"] >= 100:
+        bad.append(f"annotate agent: a crop over the corner answered {out} and was kept as {crop}")
+    out = agent_call(page, "edit_marks", {"commands": [{"op": "crop", "rect": {"x": 100000, "y": 0, "w": 5, "h": 5}}]})
+    if not out.get("isError") or "outside the drawing" not in out["content"][0]["text"] or page.evaluate(f"() => {api}.getDoc().crop") != crop:
+        bad.append(f"annotate agent: a crop off the drawing answered {out}")
+    # undo and redo, the agent's step and then the page's own
+    text = say("undo", {})
+    if not text.startswith("Undid: Cropped to"):
+        bad.append(f"annotate agent: undo answered {text!r}")
+    text = say("redo", {})
+    if not text.startswith("Redid: Cropped to") or not page.evaluate(f"() => {api}.getDoc().crop"):
+        bad.append(f"annotate agent: redo answered {text!r}")
+    page.evaluate(f"() => {api}.apply({{op: 'mark.add', select: '.mine'}}, {{origin: 'ui'}})")
+    text = say("undo", {})
+    if not text.startswith("Undid your edit: Added mark m3 on .mine."):
+        bad.append(f"annotate agent: undoing the page's own step answered {text!r}")
+    wait_fn(page, "annotate agent: undone on the page", "() => document.querySelectorAll('#rows .mark').length === 2")
+    if page.evaluate(f"() => {api}.getDoc().device") != "s9510-28dc":
+        bad.append("annotate agent: undo took the drawing back")
+    # a tool called at once from a page that was still starting is answered, not hung
+    page.reload(wait_until="load")
+    wait_fn(page, "annotate agent: tools again", "() => Object.keys(window.__tools).length === 4")
+    first = page.evaluate("() => window.__tools.describe_marks.execute({}).then(r => r.content[0].text)")
+    if "No marks." not in first:
+        bad.append(f"annotate agent: describe_marks straight after a reload read {first!r}")
+    return bad
+
+
+@extra("annotate.html: Connect your AI - nothing loads until it is on, it remembers, it names the tools in the hint, it has no outline switch, and it fits at 375px")
+def check_annotate_agent_relay(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    mcpb = []
+    page.on("request", lambda r: mcpb.append(r.url) if "/vendor/mcp-b/" in r.url else None)
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate relay: settled", f"() => {api} && {api}.settled")
+    page.evaluate("() => { try { localStorage.removeItem('portrayal.agent.relay'); } catch {} }")
+    if mcpb:
+        bad.append(f"annotate relay: loaded before it was switched on: {mcpb[:2]}")
+    page.click("#agentMenu > summary")
+    panel = page.text_content("#agentSlot") or ""
+    origin = page.evaluate("() => location.origin")
+    for want in [f"--widget-origin {origin}", "Your AI runs on your computer and talks to this page directly.", "Which of my marks match nothing?"]:
+        if want not in panel:
+            bad.append(f"annotate relay: the panel does not say {want!r}")
+    if "Outline what my AI changes" in panel or page.query_selector("#agentMark"):
+        bad.append("annotate relay: the panel offers an outline switch the page cannot honour")
+    over = page.evaluate("() => document.documentElement.scrollWidth - innerWidth")
+    if over > 0:
+        bad.append(f"annotate relay: the panel makes the page {over}px wider than 375px")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if hint.get("registered") or hint.get("tools") or "Connect your AI" not in (page.text_content("#webmcp-hint-text") or ""):
+        bad.append(f"annotate relay: with nothing registered the page hint says {hint}")
+    page.check("#agentRelay")
+    try:
+        wait_fn(page, "annotate relay: the hint names the tools once the switch registers them",
+                "() => JSON.parse(document.getElementById('webmcp-hint').textContent).tools.length === 4")
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        # The hint's snippet, as written, against the REAL vendored polyfill: a parseable answer.
+        text, err = page.evaluate(RUN_HOW_TO)
+        if err or "Legend" not in (text or ""):
+            bad.append(f"annotate relay: the page hint's snippet, run against the polyfill, answered {text!r}, {err}")
+        out = agent_exec(page, "edit_marks", {"commands": [{"op": "mark.add", "select": ".viaPolyfill"}]})
+        if out.get("isError") or not out["content"][0]["text"].startswith("Done: Added mark m1"):
+            bad.append(f"annotate relay: edit_marks through the polyfill answered {out}")
+    try:
+        wait_fn(page, "annotate relay: frame built", f"() => !!document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("annotate relay: switching on never built the relay frame")
+    page.uncheck("#agentRelay")
+    try:
+        wait_fn(page, "annotate relay: the relay frame removed", f"() => !document.querySelector({json.dumps(RELAY_FRAME)})")
+    except RuntimeError:
+        bad.append("annotate relay: switching off left the relay frame in the page")
+    hint = page.evaluate("() => JSON.parse(document.getElementById('webmcp-hint').textContent)")
+    if hint.get("registered"):
+        bad.append(f"annotate relay: switching off left the hint naming the tools: {hint}")
+    return bad
+
+
 @extra("rack.html: when the cables' faces cannot be read, the rack still draws, no end is marked loose, and the panel says so; the answers are frozen")
 def check_rack_cable_facts_fallback(page, base):
     bad = []
@@ -25204,6 +25622,81 @@ def check_rack_kept_notices_follow_edits(page, base):
     page.wait_for_timeout(500)
     if kept():
         bad.append(f"with every key taken off again, the panel still says {kept()}")
+    return bad
+
+
+# A SLOT WHOSE STORED PART THE LIBRARY NO LONGER HOLDS (#183): the slot draws its default, and the side panel says
+# so for as long as it is true. The choice stays in the document. A major the library retired leaves no file, so
+# the issue's own example ref is used, after the check has proved the library does not hold it.
+GONE_REF = "juniper/dpc-r-4xge-xfp@2"
+GONE_FIXTURE = {
+    "format": "portrayal-rack", "version": 3, "id": "doc-gone-part",
+    "racks": [{"id": "r1", "name": "Gone part",
+               "frame": {"kind": "four-post", "heightRU": 45, "numbering": "bottom-up", "holes": {"style": "square", "thread": None},
+                         "railDepth": 740, "usableDepth": 1000, "ref": None},
+               "items": [{"id": "i1", "ref": "mx960", "cfg": "base", "label": "edge-1", "ru": 10, "face": "front", "turned": False,
+                          "swaps": {"fpc0": GONE_REF, "scb0": "juniper/scb-mx@3"}, "fields": {}}],
+               "zeroU": [], "cables": []}]}
+
+
+@extra("rack.html: a slot whose stored part is not in the library is said in the side panel for as long as it is true - the device, the slot and the ref, that the slot shows its default and that the choice stays in the file - and the document keeps the ref through a redraw, an edit and a save")
+def check_rack_missing_ref_said(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base, GONE_FIXTURE)
+    held = page.evaluate("""async r => { const j = await (await fetch('/assets/dist/components.json')).json();
+      return (j.components || []).some(c => `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}` === r); }""", GONE_REF)
+    if held:
+        return bad + [f"fixture: the library holds {GONE_REF} again, so it no longer stands for a retired part"]
+    line = lambda: page.evaluate("() => document.querySelector('#side #missingRefs')?.textContent ?? null")
+    stored = lambda: page.evaluate("() => window.__rack.doc().racks[0].items[0].swaps.fpc0")
+    try:
+        wait_fn(page, "missing: the panel says so", "() => !!document.querySelector('#side #missingRefs')", timeout=15000)
+    except RuntimeError:
+        return bad + ["a slot that names a ref the library lacks raised no line in the side panel"]
+    said = line()
+    for part in ("edge-1", "fpc0", GONE_REF, "not in the library", "shows its default", "stays in the file"):
+        if part not in said:
+            bad.append(f"the line lacks {part!r}: {said!r}")
+    for part in ("scb0", "scb-mx"):
+        if part in said:
+            bad.append(f"the line names {part!r}, a part the library holds: {said!r}")
+    if page.evaluate("() => document.querySelector('#side #missingRefs').getAttribute('role')") != "status":
+        bad.append("the line is not a status")
+    if stored() != GONE_REF:
+        bad.append(f"the document's fpc0 is {stored()!r}, not the stored ref")
+    # it stands through a redraw and an edit, and the document still holds the choice
+    page.evaluate("() => window.__rack.redraw()")
+    err = page.evaluate("c => { const r = window.__rack.apply(c); return r.error ?? null; }", {"op": "patch", "id": "i1", "label": "edge-2"})
+    if err:
+        return bad + [f"the label edit was refused: {err}"]
+    try:
+        wait_fn(page, "missing: the line names the new label", "() => document.querySelector('#side #missingRefs')?.textContent.includes('edge-2')", timeout=15000)
+    except RuntimeError:
+        bad.append(f"after a redraw and an edit the panel says {line()!r}")
+    if stored() != GONE_REF:
+        bad.append(f"after an edit the document's fpc0 is {stored()!r}")
+    if GONE_REF not in pathlib.Path(export_file(page, "json").path()).read_text(encoding="utf-8"):
+        bad.append("Save as .json does not hold the ref the library lacks")
+    # a slot that names a part the library holds: the line goes, and comes back with undo
+    err = page.evaluate("c => { const r = window.__rack.apply(c); return r.error ?? null; }",
+                        {"op": "patch", "id": "i1", "swaps": {"fpc0": "juniper/mx-dpc-blank@2", "scb0": "juniper/scb-mx@3"}})
+    if err:
+        return bad + [f"the swaps edit was refused: {err}"]
+    try:
+        wait_fn(page, "missing: the line goes", "() => !document.querySelector('#side #missingRefs')", timeout=15000)
+    except RuntimeError:
+        bad.append(f"with every ref held the panel still says {line()!r}")
+    page.evaluate("() => window.__rack.undo()")
+    try:
+        wait_fn(page, "missing: undo brings it back", "() => !!document.querySelector('#side #missingRefs')", timeout=15000)
+    except RuntimeError:
+        bad.append("undoing the swaps edit did not bring the line back")
+    # a rack with no swaps says nothing
+    open_fixture(page, base, KEPT_FIXTURE)
+    page.wait_for_timeout(800)
+    if line() is not None:
+        bad.append(f"a rack with no swaps says {line()!r}")
     return bad
 
 
