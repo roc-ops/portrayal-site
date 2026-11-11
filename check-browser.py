@@ -4699,6 +4699,111 @@ def check_schematic_first_device(page, base):
     return bad
 
 
+# SELECT, THEN APPLY (portrayal-site#17). A C100G has 33 slots; the schematic page
+# sets a range of them to one module at once, offers only what every selected slot
+# accepts (read here from the device's own index, not from a list in this file),
+# says when they share nothing, and takes the last step back.
+@extra("schematic.html: select slots by tick, shift-range, group or empty, set them all to one module they all accept, undo; the summary and the download follow")
+def check_schematic_select_apply(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"schematic select: uncaught {e}"))
+    ready = "() => /\\d+ ports, /.test(document.querySelector('#out').textContent)"
+    page.goto(f"{base}/schematic.html?device=c100g", wait_until="load")
+    wait_fn(page, "schematic select: the summary", ready)
+    cfg = page.evaluate("async () => (await fetch('assets/dist/c100g.configs.json')).json()")
+    key = lambda ref: ref.split("@")[0]
+    plain = lambda ref: not re.search(r"blank|filler", key(ref).split("/")[-1])
+    front = cfg["bays"]["front"]
+    want = [key(a) for a in front[0]["accepts"] if plain(a)
+            and all(key(a) in {key(x) for x in f["accepts"]} for f in front[:6])]
+    holds = lambda: page.eval_on_selector_all("select[data-bay]", "ss => ss.map(s => s.value)")
+    count = lambda: page.inner_text("#count")
+    first = lambda: page.inner_text("#out").splitlines()[0]
+    ticks = page.locator("input[data-pick]").count()
+    if ticks != len(cfg["bays"]["front"]) + len(cfg["bays"]["rear"]):
+        bad.append(f"schematic select: {ticks} tick boxes for {len(front) + len(cfg['bays']['rear'])} slots")
+    if not (page.locator("#apply").is_disabled() and page.locator("#undo").is_disabled()):
+        bad.append("schematic select: apply and undo are on with nothing selected or done")
+    start, summary = holds(), first()
+
+    page.locator('input[data-pick="0"]').click()
+    page.locator('input[data-pick="5"]').click(modifiers=["Shift"])
+    if count() != "6 selected":
+        bad.append(f"schematic select: a shift-click range of front-0..front-5 reads {count()!r}")
+    offered = page.eval_on_selector_all("#chosen option", "os => os.map(o => o.value)")
+    if len(want) < 2 or offered != want + [""]:
+        bad.append(f"schematic select: offered {offered}, the six slots share {want} (and empty)")
+
+    # a module with ports on the symbol, so the summary has something to follow
+    picked = None
+    for ref in want:
+        page.select_option("#chosen", ref)
+        page.click("#apply")
+        page.wait_for_timeout(300)
+        if page.inner_text("#np-0").strip() not in ("", "0"):
+            picked = ref
+            break
+        page.click("#undo")
+    if picked is None:
+        return bad + ["schematic select: no module the six slots share has a port on the symbol"]
+    now = holds()
+    if now[:6] != [picked] * 6 or now[6:] != start[6:]:
+        bad.append(f"schematic select: applying {picked} left the slots {now[:8]}, were {start[:8]}")
+    if first() == summary:
+        bad.append("schematic select: the summary did not follow the apply")
+    with page.expect_download() as dl:
+        page.click("#one")
+    if "front-5" not in open(dl.value.path(), encoding="utf-8").read():
+        bad.append("schematic select: the download does not carry the applied slots")
+    page.click("#undo")
+    if holds() != start or first() != summary or not page.locator("#undo").is_disabled():
+        bad.append("schematic select: undo did not put every slot, the summary and the button back")
+
+    # the row's own menu is a step of undo too
+    page.select_option('select[data-bay="3"]', picked)
+    page.click("#undo")
+    if holds() != start:
+        bad.append("schematic select: a change in a row's own menu was not undone")
+
+    # a front slot and a fan share nothing: only empty is offered, and it says so
+    page.click("#clear")
+    fan = next(len(front) + i for i, b in enumerate(cfg["bays"]["rear"]) if b["group"] == "fans")
+    page.locator('input[data-pick="0"]').click()
+    page.locator(f'input[data-pick="{fan}"]').click()
+    if page.eval_on_selector_all("#chosen option", "os => os.map(o => o.value)") != [""]:
+        bad.append("schematic select: a front slot and a fan were offered a module")
+    if "no module in common" not in page.inner_text("#bar-msg"):
+        bad.append("schematic select: a selection with nothing in common does not say so")
+
+    # a group, and every empty slot
+    page.click("#clear")
+    page.select_option("#grp", index=1)
+    if count() != f"{len(front)} selected":
+        bad.append(f"schematic select: the first group selected {count()!r}, not {len(front)}")
+    page.click("#clear")
+    page.select_option("#grp", value="empty")
+    if count() != f"{sum(1 for v in start if v == '')} selected":
+        bad.append(f"schematic select: every empty slot selected {count()!r}")
+
+    # a device with no slots has no bar left over from this one
+    bare = page.evaluate("""async () => {
+      for (const d of (await (await fetch('assets/dist/devices.json')).json()).devices) {
+        const meta = await (await fetch(`assets/dist/${d.name}.configs.json`)).json().catch(() => null);
+        if (meta && !Object.values(meta.bays || {}).some(b => b.length)) return {name: d.name, maker: d.manufacturer};
+      }
+      return null; }""")
+    if not bare:
+        return bad + ["schematic select: no device without slots to open, so the leftover bar was not checked"]
+    page.select_option("#vendor", value=bare["maker"])
+    page.select_option("#device", value=bare["name"])
+    try:
+        page.wait_for_function("() => !document.querySelector('#count') && !document.querySelector('input[data-pick]')",
+                               timeout=READY_MS)
+    except Exception:
+        bad.append(f"schematic select: {bare['name']} has no slots and still shows the last device's selection bar")
+    return bad
+
+
 # The 3D harness loads what its menu says, so the menu is read once the load
 # has reported: the configuration it built is the one held to "not a base".
 @extra("viewer3d-harness.html with no ?device= builds the featured device in a populated configuration; a named device still opens on it")
