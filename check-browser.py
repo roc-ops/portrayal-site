@@ -4500,6 +4500,70 @@ def check_showcase_first_device(page, base):
     return bad
 
 
+# A lit lamp over an empty cage is a contradiction: nothing is plugged in, so
+# nothing can be up. Read off the drawing the lens shows: which ports carry a
+# state-* class on any of their four lamps, and which hold a seated optic
+# (swap.js names it `<cage>-occupant`).
+STATE_OPTICS_JS = """() => {
+  const svg = document.querySelector('#stage2d svg');
+  const lit = [], seated = [];
+  for (let n = 1; n <= 32; n++) {
+    const on = [1, 2, 3, 4].some(i => [...(svg.querySelector(`[data-path="port-${n}/led-${i}"]`)?.classList || [])]
+      .some(c => c.startsWith('state-')));
+    if (on) lit.push(n);
+    if (svg.querySelector(`[data-path="port-${n}-occupant"]`)) seated.push(n);
+  }
+  const all = [...svg.querySelectorAll('[data-path$="-occupant"]')].map(e => e.getAttribute('data-path'));
+  return {lit, seated, other: all.filter(p => !/^port-([1-9]|[12]\\d|3[0-2])-occupant$/.test(p)).length,
+          total: all.length};
+}"""
+
+
+@extra("the showcase's Live state lens seats an optic in every cage with a lit lamp, and none in a dark one")
+def check_showcase_state_optics(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    page.click('.stage-rail button[data-stage="populate"]')
+    page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    page.click('#lookStrip [data-spoke-device="as7726-32x"][data-spoke-lens="state"]')
+    page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
+
+    def settled(label, want):
+        # the optics are seated after the lamps are lit: wait for them to agree
+        try:
+            wait_fn(page, label, f"() => {{ const r = ({STATE_OPTICS_JS})(); "
+                    "return r.lit.length === " + str(want) + " && r.seated.length === r.lit.length; }")
+        except RuntimeError:
+            pass
+        got = page.evaluate(STATE_OPTICS_JS)
+        if got["lit"] != got["seated"] or got["other"] or len(got["lit"]) != want:
+            bad.append(f"state optics {label}: lit {got['lit']}, seated {got['seated']}, "
+                       f"{got['other']} other occupant(s); expected {want} of each")
+
+    settled("on entry (mixed speeds)", 32)
+    for name, want in (("Healthy", 32), ("Fault", 32), ("All off", 0), ("Mixed speeds", 32)):
+        page.click(f'#sidePanel .ctl button:text-is("{name}")')
+        settled(name.lower(), want)
+
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click('#stageExport button')
+    text = pathlib.Path(dl.value.path()).read_text()
+    held = text.count('data-path="port-1-occupant"')
+    if held != 1:
+        bad.append(f"state optics download: {held} port-1 optic(s) in the saved SVG, expected 1")
+
+    # the optics leave with the lens
+    page.click('.spoke-crumb button')
+    page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    page.click('#lookStrip [data-spoke-device="as7726-32x"][data-spoke-lens="callouts"]')
+    page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
+    left = page.evaluate("() => document.querySelectorAll('#stage2d svg [data-path$=\"-occupant\"]').length")
+    if left:
+        bad.append(f"state optics: {left} optic(s) stayed in the drawing after leaving the lens")
+    return bad
+
+
 # THE PAGES THAT READ THE DEVICE INDEX THEMSELVES (roc-ops/portrayal-site#19):
 # the three export pages, and the three that are not deployed. Each fell back
 # to the first entry of the index, or named a device or a vendor of its own.

@@ -56,7 +56,7 @@
 // panel says so.
 
 import {stage3d, stageRack, el, title, lead, kv, panZoom} from '../artifact.js';
-import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
+import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef, lcRef,
         enqueueRebuild, byRef, loadSkin, build2dElevation} from '../rack.js';
 import {boxIn, highlight, clearHighlights} from '../svg2d.js';
 import {wireDevices} from '../spoke-host.js';
@@ -66,14 +66,6 @@ import {dropBelow} from '../plan.js';
 const DEV = 'as7726-32x';
 const GROUP = 'qsfp28';
 const DEFAULT_CAGE = 'port-1';
-// The LC optic among whatever a cage accepts (cables and DACs joined the
-// list alongside it - see the header comment). Falls back to the first
-// entry if a future library drop ever drops the LC generic from `accepts`,
-// so this stage still seats something rather than seating nothing.
-function lcRef(cage) {
-  const accepts = cage?.accepts || [];
-  return accepts.find(r => r.startsWith('generic/qsfp-lc@')) || accepts[0] || null;
-}
 // THE HIGHLIGHT IS THE PORT, with the TX bore ringed inside it. A box round
 // the bore alone (7 mm, haloed) sat on one corner of a QSFP port and read as a
 // stray square; the port is what the visitor chose, the bore is what the seat
