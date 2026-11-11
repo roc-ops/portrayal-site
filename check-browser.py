@@ -2492,6 +2492,72 @@ def check_facts_page(page, base):
     return bad
 
 
+@extra("the facts page keeps a long row label off the figures, scrolls its tables inside their own boxes, and styles its empty-state line like the site's paragraphs and links")
+def check_facts_page_layout(page, base):
+    # Three faults found on the live page: a long label ran under the first
+    # figure, the narrow-window table was not reachable by keyboard or kept its
+    # labels in view, and the empty-state line and link were the browser's own.
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    url = f"{base}/facts.html?devices=as7726-32x,hlx-tgv,ap7821b"
+
+    for w in (1280, 375):
+        page.set_viewport_size({"width": w, "height": 800})
+        page.goto(url, wait_until="load")
+        page.wait_for_selector("html[data-ready='1']", state="attached", timeout=READY_MS)
+        page.wait_for_selector("#t1 tbody tr", timeout=READY_MS)
+        # (1) no label's text reaches into its row's first figure cell.
+        over = page.evaluate("""() => [...document.querySelectorAll('table tbody tr')].flatMap(tr => {
+            const r = document.createRange(); r.selectNodeContents(tr.querySelector('th'));
+            const right = r.getBoundingClientRect().right, left = tr.querySelector('td').getBoundingClientRect().left;
+            return right > left + 0.5 ? [`${tr.querySelector('th').textContent} (text right ${right.toFixed(1)}px, first figure left ${left.toFixed(1)}px)`] : [];
+          })""")
+        if over:
+            bad.append(f"facts at {w}px: {len(over)} row labels run into the first figure: {over[:3]}")
+
+    # (3) at 375 px the page does not scroll sideways; each table scrolls in its own box.
+    page.set_viewport_size({"width": 375, "height": 800})
+    page.wait_for_timeout(200)
+    sw = page.evaluate("document.documentElement.scrollWidth")
+    if sw > 375:
+        bad.append(f"facts at 375px scrolls the page sideways to {sw}px")
+    boxes = page.evaluate("""() => [...document.querySelectorAll('table')].map(t => {
+        const box = t.closest('[data-scroll]');
+        if (!box) return null;
+        box.scrollLeft = box.scrollWidth;
+        const last = [...t.querySelectorAll('thead th')].pop().getBoundingClientRect().right;
+        return {sw: box.scrollWidth, cw: box.clientWidth, last, boxRight: box.getBoundingClientRect().right,
+                label: t.querySelector('tbody th').getBoundingClientRect().left, boxLeft: box.getBoundingClientRect().left,
+                keyboard: box.tabIndex === 0 && box.getAttribute('role') === 'region' && !!box.getAttribute('aria-label')};
+      })""")
+    if not boxes:
+        bad.append("facts at 375px: no table on the page")
+    for i, b in enumerate(boxes):
+        if b is None:
+            bad.append(f"facts at 375px: table {i} is not in a scrolling box")
+        elif b["sw"] <= b["cw"]:
+            bad.append(f"facts at 375px: table {i}'s box does not scroll inside itself (scrollWidth {b['sw']}px, clientWidth {b['cw']}px)")
+        elif b["last"] > b["boxRight"] + 1:
+            bad.append(f"facts at 375px: table {i}'s last device column ends at {b['last']:.0f}px, past its box's right edge {b['boxRight']:.0f}px at full scroll")
+        elif b["label"] < b["boxLeft"] - 1:
+            bad.append(f"facts at 375px: table {i}'s row labels scroll out of view (label left {b['label']:.0f}px, box left {b['boxLeft']:.0f}px at full scroll)")
+        elif not b["keyboard"]:
+            bad.append(f"facts at 375px: table {i}'s box is not a focusable, labelled region")
+
+    # (2) no device: the line and its link are the site's, not the browser's.
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto(f"{base}/facts.html", wait_until="load")
+    page.wait_for_selector("html[data-ready='1']", state="attached", timeout=READY_MS)
+    st = page.evaluate("""() => { const s = el => { const c = getComputedStyle(el); return {size: c.fontSize, color: c.color}; };
+        return {link: s(document.querySelector('#empty a')), para: s(document.querySelector('p.intro'))}; }""")
+    if st["link"]["color"] == "rgb(0, 0, 238)":
+        bad.append(f"facts: the empty-state link is the browser's default colour {st['link']['color']}")
+    if st["link"]["size"] != st["para"]["size"]:
+        bad.append(f"facts: the empty-state link is {st['link']['size']}, the page's paragraphs are {st['para']['size']}")
+    page.set_viewport_size({"width": 1280, "height": 900})
+    return bad
+
+
 @extra("the Explorer lens opens a device with its swaps and fields, and hands them back")
 def check_rack_lens(page, base):
     bad = []

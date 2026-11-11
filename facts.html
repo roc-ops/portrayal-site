@@ -40,14 +40,18 @@
   .chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.4rem 0; padding: 0; list-style: none; }
   .chips li { border: 1px solid var(--pt-rule, #c9cfd3); border-radius: 0.8rem; padding: 0.1rem 0.2rem 0.1rem 0.6rem; font-size: 0.85rem; }
   .chips button { font: inherit; border: 0; background: none; cursor: pointer; padding: 0 0.4rem; }
-  [data-scroll] { overflow-x: auto; }
+  /* a wide table scrolls inside its own box, never the page; the box takes the
+     keyboard (tabindex) and the row labels stay in view beside the figures */
+  [data-scroll] { overflow-x: auto; max-width: 100%; }
   /* fixed layout: every table's columns line up under the same device */
   table { border-collapse: collapse; width: 100%; min-width: 40rem; table-layout: fixed; font-size: 0.84rem; overflow-wrap: anywhere; }
-  thead th:first-child { width: 14rem; }
+  thead th:first-child { width: min(14rem, 38vw); }
+  tbody th, thead th:first-child { position: sticky; left: 0; background: var(--pt-ground); }
   th, td { text-align: left; vertical-align: top; padding: 0.25rem 0.8rem 0.25rem 0; border-bottom: 1px solid var(--pt-rule, #e3e6e8); }
   th { font-weight: 500; color: var(--pt-ink-dim, #565d64); }
   thead th { white-space: nowrap; }
-  tbody th { white-space: nowrap; font-weight: 400; color: var(--pt-ink); }
+  /* a long label wraps inside its column instead of running under the figures */
+  tbody th { font-weight: 400; color: var(--pt-ink); overflow-wrap: anywhere; }
   td .tag { display: block; color: var(--pt-ink-dim, #565d64); font-size: 0.72rem; }
   /* A STATE IS A WORD, NOT A COLOUR: these print and screenshot in greyscale.
      The unknown cell is also dashed and italic so it cannot be read as a value. */
@@ -57,7 +61,11 @@
   td[data-state="derived"] .tag::before { content: "\25C6  "; }
   td[data-state="stated"] .tag::before { content: "\25C7  "; }
   td[data-state="absent"] .tag::before { content: "\2013  "; }
-  .empty { max-width: 40rem; margin: 1.5rem 0; font-size: 0.95rem; }
+  /* the empty-state line is a paragraph like the others; its link is the
+     site's own (site.css: brass, offset underline) */
+  .empty { max-width: 40rem; margin: 1.5rem 0; color: var(--pt-ink-dim, #565d64); font-size: 0.9rem; line-height: 1.5; }
+  .empty a { color: var(--pt-brass); text-underline-offset: 3px; }
+  .empty a:hover { color: var(--pt-brass-light); }
   [hidden] { display: none; }
 </style>
 </head>
@@ -117,7 +125,7 @@ the chassis, <b>stated</b> is read from the model. A figure nobody has put in th
   <h2>Counted and measured</h2>
   <p class="intro">Read off each device's chassis and its default front and rear drawings.
   Ports are counted per drawn port element, by media and speed.</p>
-  <div data-scroll><table id="t1"></table></div>
+  <div data-scroll tabindex="0" role="region" aria-label="Counted and measured facts, one column per device"><table id="t1"></table></div>
 
   <h2>Authored attributes</h2>
   <p class="intro">The model's own sections, keys sorted within each. Values are the vendor's
@@ -179,7 +187,7 @@ async function render() {
   $('t1').innerHTML = `${head(devs)}<tbody>${rows.map(r =>
     `<tr data-fact="${esc(r.key)}"><th scope="row">${esc(r.label)}</th>${r.cells.map(cell).join('')}</tr>`).join('')}</tbody>`;
   $('t2').innerHTML = authoredSections(devs).map(s => `<h3 data-section="${esc(s.section)}">${esc(s.section)}${s.missingIn.length ? ` <span class="tag">(none recorded for ${esc(s.missingIn.join(', '))})</span>` : ''}</h3>
-    <div data-scroll><table>${head(devs)}<tbody>${s.rows.map(r =>
+    <div data-scroll tabindex="0" role="region" aria-label="${esc(s.section)} attributes, one column per device"><table>${head(devs)}<tbody>${s.rows.map(r =>
       `<tr data-attr="${esc(s.section)}.${esc(r.key)}"><th scope="row">${esc(r.key)}</th>${r.cells.map(c =>
         `<td data-state="${c.state}"><span class="v">${esc(c.text)}</span><span class="tag">${esc(STATE_TAG[c.state])}</span></td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('');
 }
