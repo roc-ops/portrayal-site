@@ -201,7 +201,10 @@ class Cleanup(unittest.TestCase):
                 # Every page was read: this kit's objects sat on each of them.
                 lists = [p for m, p, _ in self.st.requests if m == 'GET' and 'offset=' in p]
                 self.assertGreaterEqual(len(lists), len(V.CLEAN[target]) * 3, 'paged')
-                self.assertTrue(all(h.get('Authorization', '').endswith(TOKEN) for _, _, h in self.st.requests))
+                # A failure names the request (method, path, header names; never a value).
+                bare = ['%s %s headers=%s' % (m, p, sorted(h)) for m, p, h in self.st.requests
+                        if not h.get('Authorization', '').endswith(TOKEN)]
+                self.assertEqual(bare, [], '%s, the filter %s: requests without the token' % (target, mode))
 
     def test_a_dry_run_deletes_nothing_and_names_what_it_would(self):
         for target in ('netbox', 'nautobot'):
