@@ -9,6 +9,7 @@ import {joinNames, componentNames, entityListings, componentsDump} from './entit
 
 const LISTINGS = 'assets/dist/listings.json';
 const DUMPS = 'assets/dumps/';
+const DEFAULT_LISTING = 'arrcus/as7726-32x';
 const $ = id => document.getElementById(id);
 
 const el = (tag, attrs = {}, kids = []) => {
@@ -106,7 +107,9 @@ async function main() {
   }
   $('enCount').textContent = `${withMap.length} of ${withMap.length + without.length} listings`;
   const want = decodeURIComponent(location.hash.slice(1));
-  sel.value = listings[want] ? want : (withMap[0] ?? sel.value);
+  // With no listing chosen the page opens on the AS7726-32X, the device the page's text names.
+  const start = withMap.includes(DEFAULT_LISTING) ? DEFAULT_LISTING : withMap[0];
+  sel.value = listings[want] ? want : (start ?? sel.value);
   // The menu and the address bar say the same thing: a change in either shows that listing.
   const open = async key => { await show(key, listings); document.body.dataset.entitiesShown = key; };
   sel.addEventListener('change', () => { history.replaceState(null, '', `#${sel.value}`); open(sel.value); });

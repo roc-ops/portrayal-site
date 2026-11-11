@@ -2890,6 +2890,13 @@ def check_entities_page(page, base):
     page.wait_for_selector(ready, timeout=READY_MS)
     page.wait_for_selector("#en-body [data-en=parts]", timeout=READY_MS)
 
+    # with no hash the page opens on the AS7726-32X, and the table shown is its own
+    first = "arrcus/as7726-32x"
+    picked = page.eval_on_selector("#enDevice", "s => s.value")
+    shown = page.evaluate("() => document.body.dataset.entitiesShown")
+    if picked != first or shown != first:
+        bad.append(f"entities: with no hash the menu selects {picked!r} and the table shown is {shown!r}, not {first!r}")
+
     # the menu offers every listing; the ones without a map say so
     opts = page.eval_on_selector_all("#enDevice option", "os => os.map(o => [o.value, o.textContent])")
     if sorted(v for v, _ in opts) != sorted(listings):
