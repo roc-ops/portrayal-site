@@ -251,6 +251,27 @@ cp "$SRC"/dist/lint-rules.json "$HERE/assets/dist/"
 for f in vendors.json overlays.json listings.json gaps.json; do
   [ -f "$SRC/dist/$f" ] && cp "$SRC/dist/$f" "$HERE/assets/dist/"
 done
+# The component dumps the entity-map is joined against (portrayal-site#12). A
+# listing names its dumps by path under the library, and the page (entities.html)
+# fetches the same path under assets/dumps/, so no name is rewritten. Only the
+# OpenConfig components tree is copied, because that is the one the join reads;
+# a dump a listing names that is not in the library stops the refresh.
+rm -rf "$HERE/assets/dumps"
+if [ -f "$SRC/dist/listings.json" ]; then
+  python3 - "$SRC" "$HERE" <<'PY'
+import json, os, shutil, sys
+src, here = sys.argv[1:3]
+listings = json.load(open(os.path.join(src, "dist", "listings.json")))["listings"]
+for key in sorted(listings):
+    if not listings[key].get("entity-map"):
+        continue
+    for rel in listings[key].get("dumps", []):
+        if rel.endswith("-openconfig-components.json"):
+            to = os.path.join(here, "assets", "dumps", rel)
+            os.makedirs(os.path.dirname(to), exist_ok=True)
+            shutil.copyfile(os.path.join(src, rel), to)
+PY
+fi
 # <device>.source.json is the source manifest, published once per device since
 # Portrayal #669; a face names it by digest (source-sha256) instead of embedding it.
 #

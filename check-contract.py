@@ -1177,7 +1177,7 @@ _kit_prose = _kit_html + _kps + "".join((_exdir / f"{s}.js").read_text() for s i
 # ...and the Lint rules page's own words (portrayal-site#159): the page, its
 # script and the severity labels. Not the rules: they are Portrayal's text,
 # rendered as written.
-for _lp in ("lint.html", "site/lint-page.js", "site/lintcodes.js"):
+for _lp in ("lint.html", "site/lint-page.js", "site/lintcodes.js", "entities.html", "site/entities-page.js"):
     _kit_prose += (HERE / _lp).read_text() if (HERE / _lp).exists() else ""
 _brit = sorted(set(re.findall(r"\b(\w*(?:utilis|behaviour|colour|centre|favourite|recognis|organis)\w*)\b", _kit_prose, re.I)))
 check(not _brit, "the kit page, its runner, its recipes and the Lint rules page are in American English", f"{_brit}")
@@ -2656,6 +2656,53 @@ check('src="site/lint-page.js"' in _lint_html and "assets/dist/lint-rules.json" 
       ((HERE / "site" / "lint-page.js").read_text() if (HERE / "site" / "lint-page.js").exists() else ""),
       "lint.html renders the vendored lint-rules.json through site/lint-page.js")
 
+# THE ENTITY MAP PAGE (roc-ops/portrayal-site#12) joins each listing's entity-map
+# onto the component names of the dump that listing names. refresh-assets.sh
+# copies the OpenConfig components dump of every listing with an entity-map to
+# assets/dumps/<the path the listing gives>, and entities.html fetches that same
+# path. So: every such listing names one, the copy is there and is JSON with
+# components in it, every rule can be read, and the rules claim at least one
+# name in it (a listing whose dump no rule touches would show a page of nothing).
+_el_listings = {}
+try:
+    _el_listings = jload("listings.json").get("listings", {})
+except Exception as _e:
+    check(False, "assets/dist/listings.json is readable", f"{_e} - run ./refresh-assets.sh")
+_el_maps = {k: l for k, l in _el_listings.items() if l.get("entity-map")}
+check(len(_el_maps) >= 2, f"listings.json holds entity-maps for at least two devices ({len(_el_maps)})", f"{sorted(_el_maps)}")
+_el_bad = []
+for _k, _l in sorted(_el_maps.items()):
+    _rel = next((p for p in _l.get("dumps", []) if p.endswith("-openconfig-components.json")), None)
+    _f = HERE / "assets" / "dumps" / _rel if _rel else None
+    if not _f or not _f.is_file():
+        _el_bad.append(f"{_k}: no OpenConfig components dump at assets/dumps/{_rel}"); continue
+    try:
+        _c = json.loads(_f.read_text())["data"]["openconfig-platform:components"]
+        _names = [x["name"] for x in _c["component"]] + \
+                 [x["name"] for x in _c.get("arcos-platform-transceiver:transceivers", {}).get("state", {}).get("transceiver", [])]
+    except Exception as _e:
+        _el_bad.append(f"{_k}: {_rel} is not a components document ({_e})"); continue
+    _hit = 0
+    for _r in _l["entity-map"]:
+        if not (isinstance(_r.get("match"), str) and isinstance(_r.get("to"), str)):
+            _el_bad.append(f"{_k}: a rule lacks match or to: {_r}"); continue
+        _pat = re.escape(_r["match"]).replace(r"\{n\}", r"(\d+)")
+        _rg = re.fullmatch(r"\s*(-?\d+)\s*-\s*(-?\d+)\s*", _r["range"]) if _r.get("range") else None
+        if _r.get("range") and not _rg:
+            _el_bad.append(f"{_k}: range {_r['range']!r} is not lo-hi")
+        for _n in _names:
+            _m = re.fullmatch(_pat, _n)
+            if _m and (not _rg or not _m.groups() or int(_rg[1]) <= int(_m.group(1)) <= int(_rg[2])):
+                _hit += 1
+    if not _hit:
+        _el_bad.append(f"{_k}: no entity-map rule claims any of the {len(_names)} names in {_rel}")
+check(not _el_bad, f"every listing with an entity-map has its components dump under assets/dumps/ and its rules read it ({len(_el_maps)} listings)",
+      f"{_el_bad}")
+_ent_html = (HERE / "entities.html").read_text() if (HERE / "entities.html").exists() else ""
+check('src="site/entities-page.js"' in _ent_html and "assets/dumps/" in
+      ((HERE / "site" / "entities-page.js").read_text() if (HERE / "site" / "entities-page.js").exists() else ""),
+      "entities.html joins the vendored listings and dumps through site/entities-page.js")
+
 # THE FIRST DEVICE (roc-ops/portrayal-site#19): a visit with no ?device= opens
 # on FEATURED_DEVICE, named once in site/featured.js, so it has to stay in the
 # library and keep a populated default. If it leaves, the shell falls back to
@@ -2784,7 +2831,7 @@ _first_faults = [m for bad, m in [
                      "add the page to PAGES, or name it in _FIRST_NOT_SWEPT with the reason"),
     (_first_gone, f"{_first_gone} named in PAGES or _FIRST_NOT_SWEPT but not on disk: remove the name"),
     (_first_unread, f"{_first_unread} read as empty"),
-    (len(_first_read) != 18, f"{len(_first_read)} pages read, 18 expected: a page was added or removed - bump the count here"),
+    (len(_first_read) != 19, f"{len(_first_read)} pages read, 19 expected: a page was added or removed - bump the count here"),
     (_first_found != sorted(_FIRST_PAGES) or len(_first_found) != 9,
      f"the pages that open on a device are not the 9 named: new {sorted(set(_first_found) - set(_FIRST_PAGES))}, "
      f"gone {sorted(set(_FIRST_PAGES) - set(_first_found))}. A new page: have it ask site/featured.js, add it to "

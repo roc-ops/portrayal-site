@@ -58,7 +58,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 # list rather than quietly stop being checked.
 PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
-         "schema.html", "lint.html", "kit.html", "schematic.html", "marks-harness.html",
+         "schema.html", "lint.html", "entities.html", "kit.html", "schematic.html", "marks-harness.html",
          "viewer3d-harness.html", "rack.html", "contribute.html",
          "components/catalog.html"]
 
@@ -2867,6 +2867,105 @@ def check_docs_menu(page, base):
             sw = page.evaluate("document.documentElement.scrollWidth")
             if sw > w: bad.append(f"{name} at {w}px scrolls sideways to {sw}px")
     return bad
+
+# THE ENTITY MAP PAGE (portrayal-site#12) joins a listing's entity-map onto the
+# component names of the dump the listing names. Expected values are read from
+# those two files, so the check follows a refresh: the rows on the page are
+# exactly the names a rule claims, each with the id the rule gives it; the
+# names no rule claims are listed as unmapped; region targets are named as
+# regions; the device menu offers every listing and says so for one with no
+# entity-map; a dump that is not served is said plainly instead of an error;
+# and #<listing> opens on that listing.
+@extra("entities.html joins each entity-map onto its dump's component names, and says so for a device with none")
+def check_entities_page(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"entities: uncaught {e}"))
+    listings = json.loads((HERE / "assets" / "dist" / "listings.json").read_text())["listings"]
+    maps = sorted(k for k, l in listings.items() if l.get("entity-map"))
+    if len(maps) < 2:
+        return [f"entities: listings.json has an entity-map for only {maps}"]
+    ready = "body[data-entities-ready]"
+    page.set_viewport_size({"width": 1280, "height": 900})
+    page.goto(f"{base}/entities.html", wait_until="load")
+    page.wait_for_selector(ready, timeout=READY_MS)
+    page.wait_for_selector("#en-body [data-en=parts]", timeout=READY_MS)
+
+    # the menu offers every listing; the ones without a map say so
+    opts = page.eval_on_selector_all("#enDevice option", "os => os.map(o => [o.value, o.textContent])")
+    if sorted(v for v, _ in opts) != sorted(listings):
+        bad.append(f"entities: the menu offers {len(opts)} listings, listings.json has {len(listings)}")
+    for v, t in opts:
+        if (v in maps) == ("no entity-map" in t):
+            bad.append(f"entities: the menu label for {v} is {t!r}")
+
+    # each listing with a map: expected rows computed here, from the files, in Python
+    for key in maps:
+        page.goto(f"{base}/entities.html#{key}", wait_until="load")   # a hash change only: the page follows it
+        page.wait_for_selector(f'body[data-entities-shown="{key}"]', timeout=READY_MS)
+        page.wait_for_selector("#en-body [data-en=parts]", timeout=READY_MS)
+        l = listings[key]
+        rel = next(p for p in l["dumps"] if p.endswith("-openconfig-components.json"))
+        c = json.loads((HERE / "assets" / "dumps" / rel).read_text())["data"]["openconfig-platform:components"]
+        names = [x["name"] for x in c["component"]] + [x["name"] for x in c["arcos-platform-transceiver:transceivers"]["state"]["transceiver"]]
+        want, unmapped = {}, []
+        for n in names:
+            tos = set()
+            for r in l["entity-map"]:
+                pat = re.escape(r["match"]).replace(r"\{n\}", r"(\d+)")
+                m = re.fullmatch(pat, n)
+                if not m:
+                    continue
+                if r.get("range") and m.groups():
+                    lo, hi = map(int, r["range"].split("-"))
+                    if not lo <= int(m.group(1)) <= hi:
+                        continue
+                k = int(m.group(1)) if m.groups() else 0
+                tos.add(re.sub(r"\{n(?:([+-])(\d+))?\}", lambda g: str(k + (int(g.group(2)) * (1 if g.group(1) == "+" else -1) if g.group(1) else 0)), r["to"]))
+            if len(tos) == 1:
+                want[n] = tos.pop()
+            elif not tos:
+                unmapped.append(n)
+        got = page.evaluate("""() => Object.fromEntries([...document.querySelectorAll('#en-body tr[data-name][data-to]')]
+            .map(tr => [tr.dataset.name, tr.dataset.to]))""")
+        if got != want:
+            diff = sorted(set(got.items()) ^ set(want.items()))[:4]
+            bad.append(f"entities: {key} shows {len(got)} joined names, the files give {len(want)}; first difference {diff}")
+        shown_unmapped = page.eval_on_selector_all("#en-body [data-en=unmapped] code.sc-code", "ns => ns.map(n => n.textContent)")
+        shown_unmapped = [u for u in shown_unmapped if u != "unmapped NOS nodes are legal"]
+        if shown_unmapped != unmapped:
+            bad.append(f"entities: {key} lists {len(shown_unmapped)} unmapped names, the files give {len(unmapped)}")
+        regions = sorted(n for n, t in want.items() if t.startswith("region:"))
+        shown_regions = page.eval_on_selector_all("#en-body [data-en=regions] tr[data-name]", "ns => ns.map(n => n.dataset.name).sort()")
+        if shown_regions != regions:
+            bad.append(f"entities: {key} names regions for {shown_regions}, the files give {regions}")
+        if (page.text_content("#enIdentity") or "").strip() != f"{l.get('manufacturer', '')} {l.get('nos', '')}, on {l.get('hardware')}".strip():
+            bad.append(f"entities: {key} identity line is {page.text_content('#enIdentity')!r}")
+    # the part the join exists for: ports and the PSU offset, spelled out
+    page.goto(f"{base}/entities.html#arrcus/as7726-32x", wait_until="load")
+    page.wait_for_selector("#en-body [data-en=parts]", timeout=READY_MS)
+    for n, t in (("sfp1", "port-1"), ("sfp32", "port-32"), ("psu0", "psu-1"), ("psu1", "psu-2"), ("thermal0", "region:internal")):
+        if page.get_attribute(f"#en-body tr[data-name='{n}']", "data-to") != t:
+            bad.append(f"entities: as7726-32x {n} is not joined to {t}")
+
+    # a device with no entity-map is said plainly, not an error
+    none = [k for k in listings if k not in maps]
+    if none:
+        page.goto(f"{base}/entities.html#{none[0]}", wait_until="load")
+        page.wait_for_selector(f'body[data-entities-shown="{none[0]}"]', timeout=READY_MS)
+        say = page.text_content("#en-body [data-en-say]") or ""
+        if "no entity-map" not in say:
+            bad.append(f"entities: {none[0]} has no entity-map, the page says {say!r}")
+
+    # a dump that is not served is said, not thrown
+    page.route("**/assets/dumps/**", lambda r: r.fulfill(status=404, body="no"))
+    page.goto(f"{base}/entities.html#{maps[0]}", wait_until="load")
+    page.wait_for_selector(f'body[data-entities-shown="{maps[0]}"]', timeout=READY_MS)
+    say = page.text_content("#en-body [data-en-say]") or ""
+    if "not published" not in say:
+        bad.append(f"entities: with the dump missing the page says {say!r}")
+    page.unroute("**/assets/dumps/**")
+    return bad
+
 
 # THE LINT RULES PAGE (portrayal-site#159) renders assets/dist/lint-rules.json.
 # Everything expected here is read from that file, so the check follows a
