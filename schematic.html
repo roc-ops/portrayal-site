@@ -28,6 +28,13 @@
   .face-col h3 { font-size: .78rem; text-transform: uppercase;
                  letter-spacing: .06em; color: var(--pt-ink-faint);
                  margin: 1rem 0 .2rem; font-weight: 600; }
+  #bar { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap;
+         margin: 1rem 0 .2rem; padding: .75rem 0; border-top: 1px solid var(--pt-line-soft); }
+  #bar .count { font-size: .8rem; color: var(--pt-ink-muted); align-self: center;
+                min-width: 9ch; }
+  #bar-msg { min-height: 1.2em; margin: 0 0 .5rem; font-size: .8rem;
+             color: var(--pt-ink-muted); }
+  td.pick { padding-right: .4rem; }
 </style>
 </head>
 <body>
@@ -49,6 +56,8 @@
     <button id="one">download this device</button>
     <button id="all">download every device of this vendor</button>
   </div>
+  <div id="bar"></div>
+  <p id="bar-msg" role="status" aria-live="polite"></p>
   <div id="slots"></div>
   <pre id="out">loading…</pre>
 
@@ -57,6 +66,7 @@ import { loadFace, portsOf } from './vendor/zones.js';
 import { faceFile } from './site/faces.js';
 import { schematicPage, bandsOf } from './site/schematic.js';
 import { firstListed } from './site/featured.js';
+import { commonAccepts, rangeOf, groupsOf, emptyOf, applyChoice, makeHistory } from './site/slot-select.js';
 
 const DIST = 'assets/dist/';
 const $ = s => document.querySelector(s);
@@ -120,6 +130,16 @@ async function modulePorts(ref) {
 // know where the card physically goes.
 const FACES = ['front', 'rear'];
 
+// SELECT, THEN APPLY. The slots ticked here (indices into CTX.bays) take one
+// module together; what is offered is what every one of them accepts
+// (site/slot-select.js). Each apply, and each change made in a row's own menu,
+// is one step of Undo.
+const SEL = new Set();
+const HISTORY = makeHistory();
+let lastPick = null;          // the last slot ticked, where a shift-click's range starts
+const modelLabel = k => (byRef.get(k)?.attrs || {}).model || shortRef(k);
+const barMsg = t => { $('#bar-msg').textContent = t; };
+
 async function loadDevice() {
   const dev = DEVICES.find(d => d.name === $('#device').value);
   const cfg = await fetch(`${DIST}${dev.name}.configs.json`)
@@ -149,6 +169,8 @@ async function loadDevice() {
     }
   }
   CTX = {dev, bays, chassisPorts};
+  // A selection and its undo belong to one device's slots.
+  SEL.clear(); HISTORY.clear(); lastPick = null;
   return CTX;
 }
 
@@ -175,7 +197,7 @@ async function resolved() {
 
 function renderSlots() {
   const host = $('#slots');
-  if (!CTX || !CTX.bays.length) { host.innerHTML = ''; return; }
+  if (!CTX || !CTX.bays.length) { host.innerHTML = ''; renderBar(); return; }
   // A COLUMN PER FACE. Thirty-three slots in one list is a long way to scroll
   // to reach the rear of a chassis, and the two sides are read together anyway -
   // a front card and the rear module it pairs with are one decision.
@@ -190,27 +212,110 @@ function renderSlots() {
         const opts = ['<option value="">— empty —</option>'].concat(
           (b.accepts || []).filter(a => !isBlank(a)).map(a => {
             const k = refKey(a);
-            const c = byRef.get(k);
-            const label = (c?.attrs || {}).model || shortRef(a);
             return `<option value="${k}"${k === b.chosen ? ' selected' : ''}>` +
-                   `${label}</option>`;
+                   `${modelLabel(k)}</option>`;
           }));
-        return `<tr><td>${b.id}</td>` +
+        return `<tr><td class="pick"><input type="checkbox" data-pick="${i}" ` +
+               `aria-label="select ${b.id}"${SEL.has(i) ? ' checked' : ''}></td>` +
+               `<td>${b.id}</td>` +
                `<td><select data-bay="${i}">${opts.join('')}</select></td>` +
                `<td class="ports" id="np-${i}"></td></tr>`;
       });
     if (!rows.length) return '';
     return `<div class="face-col"><h3>${face}</h3><table><thead><tr>` +
-      `<th>slot</th><th>module</th><th>ports</th></tr></thead>` +
+      `<th></th><th>slot</th><th>module</th><th>ports</th></tr></thead>` +
       `<tbody>${rows.join('')}</tbody></table></div>`;
   };
   host.innerHTML = `<div class="faces">${faces.map(table).join('')}</div>`;
   host.querySelectorAll('select[data-bay]').forEach(sel => {
     sel.onchange = () => {
-      CTX.bays[Number(sel.dataset.bay)].chosen = sel.value;
-      describe();
+      const i = Number(sel.dataset.bay);
+      HISTORY.push(applyChoice(CTX.bays, [i], sel.value).changes);
+      CTX.bays[i].chosen = sel.value;
+      barMsg('');
+      describe(); renderBar();
     };
   });
+  // A click ticks a slot; a shift-click ticks (or clears) every slot between it
+  // and the last one ticked, on the same face, in the order the page lists them.
+  host.querySelectorAll('input[data-pick]').forEach(box => {
+    box.onclick = e => {
+      const i = Number(box.dataset.pick);
+      const face = CTX.bays[i].face;
+      const order = CTX.bays.flatMap((b, k) => b.face === face ? [k] : []);
+      const run = e.shiftKey && lastPick !== null && CTX.bays[lastPick]?.face === face
+        ? rangeOf(order, lastPick, i) : [i];
+      for (const k of run) box.checked ? SEL.add(k) : SEL.delete(k);
+      lastPick = i;
+      barMsg(''); syncPicks(); renderBar();
+    };
+  });
+  renderBar();
+}
+
+const syncPicks = () => $('#slots').querySelectorAll('input[data-pick]')
+  .forEach(box => { box.checked = SEL.has(Number(box.dataset.pick)); });
+
+/** Write a change set's `now` (apply, redo) or `was` (undo) into the slots and
+ *  the rows' menus, then redraw the summary. */
+function writeSlots(changes, key) {
+  for (const c of changes) {
+    CTX.bays[c.i].chosen = c[key];
+    const menu = $(`#slots select[data-bay="${c.i}"]`);
+    if (menu) menu.value = c[key];
+  }
+  describe(); renderBar();
+}
+
+function renderBar() {
+  const host = $('#bar');
+  if (!CTX || !CTX.bays.length) { host.innerHTML = ''; return; }
+  const picked = [...SEL].sort((a, b) => a - b);
+  const common = commonAccepts(picked.map(i => CTX.bays[i]));
+  const keep = $('#chosen')?.value;
+  const groups = groupsOf(CTX.bays);
+  const empties = emptyOf(CTX.bays);
+  const offer = common.map(k => `<option value="${k}"${k === keep ? ' selected' : ''}>` +
+                                `${modelLabel(k)}</option>`);
+  // WHAT THE SELECTION SHARES, OR THAT IT SHARES NOTHING. Empty is always one of
+  // them, so a selection with no module in common can still be cleared.
+  const none = picked.length > 1 && !common.length;
+  host.innerHTML =
+    `<label>select slots<select id="grp"><option value="">add a group…</option>` +
+    groups.map((g, n) => `<option value="g${n}">${g.face} · ${g.group || 'slots'} (${g.indices.length})</option>`).join('') +
+    `<option value="empty"${empties.length ? '' : ' disabled'}>every empty slot (${empties.length})</option>` +
+    `</select></label>` +
+    `<button id="clear"${picked.length ? '' : ' disabled'}>clear selection</button>` +
+    `<span class="count" id="count">${picked.length} selected</span>` +
+    `<label>set them to<select id="chosen"${picked.length ? '' : ' disabled'}>` +
+    (picked.length ? offer.join('') + '<option value="">— empty —</option>' : '<option>select slots first</option>') +
+    `</select></label>` +
+    `<button id="apply"${picked.length ? '' : ' disabled'}>apply</button>` +
+    `<button id="undo"${HISTORY.size ? '' : ' disabled'}>undo${HISTORY.size ? ` (${HISTORY.size})` : ''}</button>`;
+  if (none) barMsg('These slots have no module in common; they can only be set to empty.');
+  $('#grp').onchange = e => {
+    const v = e.target.value;
+    const add = v === 'empty' ? empties : groups[Number(v.slice(1))]?.indices || [];
+    add.forEach(k => SEL.add(k));
+    barMsg(''); syncPicks(); renderBar();
+  };
+  $('#clear').onclick = () => { SEL.clear(); lastPick = null; barMsg(''); syncPicks(); renderBar(); };
+  $('#apply').onclick = () => {
+    const ref = $('#chosen').value;
+    const {changes, skipped} = applyChoice(CTX.bays, picked, ref);
+    HISTORY.push(changes);
+    writeSlots(changes, 'now');
+    const what = ref ? modelLabel(ref) : 'empty';
+    barMsg(!changes.length ? `Nothing to change: those slots already hold ${what}.`
+      : `Set ${changes.length} slot${changes.length === 1 ? '' : 's'} to ${what}`
+        + (skipped.length ? `; ${skipped.length} could not take it.` : '.'));
+  };
+  $('#undo').onclick = () => {
+    const changes = HISTORY.undo();
+    if (!changes) return;
+    writeSlots(changes, 'was');
+    barMsg(`Undid ${changes.length} slot${changes.length === 1 ? '' : 's'}.`);
+  };
 }
 
 async function describe() {
@@ -239,6 +344,7 @@ async function describe() {
 async function refresh() {
   say('reading…');
   await loadDevice();
+  barMsg('');
   renderSlots();
   await describe();
 }
