@@ -68,6 +68,7 @@ import {solidsOf} from '../vendor/rack/solids.js';
 import {bundleOfCable} from '../vendor/rack/bundles.js';
 import {loadTree, saveTree, isOpen, markHover, LOOSE} from './rack/cable-tree.js';
 import {mountCovers, loadCovers, paintCovers2d, paintCovers3d, layCovers2d} from './rack/covers.js';
+import {mountLayers, loadLayers, paintLayers2d, tagLayers2d} from './rack/layers.js';
 import {sizeStraps} from './rack/strap-size.js';
 
 const $ = id => document.getElementById(id);
@@ -107,6 +108,7 @@ function saveView(v) { try { localStorage.setItem(VIEW_KEY, v); } catch { /* for
 const S = {sel: null, lib: null, save: null, devices: {}, frames: {}, picker: {text: '', form: ''}, draws: 0, notice: null, entries: [],
   dcimDraft: null, zoom: loadZoom(), svgs: [], focusNext: null, mode: loadMode(), view: loadView(), stage: loadStage(), scene3d: null, scene3dRack: null, camera3d: null,
   covers: loadCovers(),   // the covers of the parts beside the rack: 'on', 'see' or 'off' (covers.js); the reader's, never the rack's
+  layers: loadLayers(),   // the layers the 2D panes draw (layers.js): the reader's, never the rack's
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   hover: null,       // {kind: 'cable'|'bundle', id, from: 'stage'|'list'}: what the pointer is over (#169)
@@ -357,6 +359,13 @@ function setCovers(state) {
   paintCovers2d($('panes'), state);
   paintCovers3d(S.scene3d, state);
 }
+// THE LAYERS THE 2D PANES DRAW (#197, layers.js): the reader's, remembered in
+// this browser. One attribute on the panes and rack.css; nothing is redrawn.
+// The 3D scene and the downloads do not read it yet.
+function setLayers(on) {
+  S.layers = on;
+  paintLayers2d($('panes'), on);
+}
 // Which container is shown. Both the `hidden` property AND an explicit
 // inline `display` are set on the one being hidden: `.rk-panes` sets its own
 // `display: grid`, an author rule, which always beats the UA's `[hidden] {
@@ -376,6 +385,9 @@ function showMode() {
   // the same way, so the 2D/3D switch beside it does not move either.
   $('view2d').style.visibility = is3d ? 'hidden' : '';
   $('view2d').inert = is3d;
+  // The Show menu is 2D's too, and keeps its place the same way.
+  $('layersMenu').style.visibility = is3d ? 'hidden' : '';
+  $('layersMenu').inert = is3d;
   // Cable mode needs the panes (Phase 2 ruling 7): in 3D the button is off, and says why.
   // And it needs the faces: the side pair is for looking, so there it is off too (#187).
   const sides = !is3d && S.view === 'sides';
@@ -1594,6 +1606,8 @@ async function redraw(keepRoutes = false) {
       sizeStraps(S.svgs);
       layCovers2d(S.svgs);
     }
+    // what each layer holds is told after every draw, cabled or not
+    tagLayers2d(S.svgs, r, chassisOf);
     if (S.routePick && !sides) drawRoutePicking();
     // The picked A end, and both ends while a new cable's form is open.
     for (const e of [...pendingEnds(), ...(S.cable.a ? [S.cable.a] : [])]) {
@@ -2303,6 +2317,7 @@ async function bootInner() {
   document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
   setStage(mountStage($('stagebg'), setStage).get());
   setCovers(mountCovers($('covers'), setCovers).get());
+  setLayers(mountLayers($('layers'), setLayers).get());
   $('mode').addEventListener('click', ev => {
     const b = ev.target.closest('[data-mode]');
     if (b) setMode(b.dataset.mode);
@@ -2515,6 +2530,8 @@ if (PROBE) {
     view: () => S.view,
     // Probe only: the covers setting ('on', 'see' or 'off').
     covers: () => S.covers,
+    // Probe only: the layers the 2D panes draw, in order.
+    layers: () => [...S.layers],
     // Probe only: the 3D scene being built, from before its first device (scene() answers only once it is hung).
     loadingScene: () => S.probeLoading ?? null,
     redraw: () => render(),

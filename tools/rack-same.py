@@ -599,14 +599,15 @@ def one_rack(t, browser, bases, name, doc, args):
 
 
 def fixtures():
-    """The rack documents check-browser.py's checks open, and the fixture files under tests/rack/fixtures."""
+    """The rack documents check-browser.py's checks open, and the fixture files under tests/rack/fixtures and tests/rack/angled."""
     spec = importlib.util.spec_from_file_location("check_browser", HERE / "check-browser.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     out = {k: v for k, v in vars(mod).items() if k.endswith("_FIXTURE") and isinstance(v, dict) and v.get("racks")}
-    for p in sorted((HERE / "tests" / "rack" / "fixtures").glob("*.json")):
-        d = json.loads(p.read_text())
-        out[p.name] = d if d.get("racks") else {"format": "portrayal-rack", "version": 4, "id": f"doc-{p.stem}", "racks": [d]}
+    for folder in ("fixtures", "angled"):
+        for p in sorted((HERE / "tests" / "rack" / folder).glob("*.json")):
+            d = json.loads(p.read_text())
+            out[p.name] = d if d.get("racks") else {"format": "portrayal-rack", "version": 4, "id": f"doc-{p.stem}", "racks": [d]}
     make = getattr(mod, "speed_fixture", None)
     if make:
         out["speed_fixture(6)"] = make(6)

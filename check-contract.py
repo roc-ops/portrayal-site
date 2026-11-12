@@ -30,6 +30,13 @@ UPLOAD_LIMIT = 20000
 # takes 25 MiB a file.
 PACK_WARN = 8 * 1000 * 1000
 PACK_FAIL = 20 * 1024 * 1024
+# assets/dist/ as served: one file may not pass the host's per-file limit with the
+# same margin as a pack; the total fails at 600 MB and warns at 450 MB (it was
+# 408 MB when this was written): the files are fetchable by predictable URLs, so
+# the bytes are egress, and the cap keeps the growth from going unseen.
+DIST_FILE_FAIL = 20 * 1024 * 1024
+DIST_TOTAL_WARN = 450 * 1000 * 1000
+DIST_TOTAL_FAIL = 600 * 1000 * 1000
 
 problems = []
 notes = []
@@ -1582,6 +1589,26 @@ check(_up.returncode == 0 and 0 < _upn <= UPLOAD_FAIL,
       f"{_upn} files" if _up.returncode == 0 else (_up.stderr or _up.stdout)[-300:])
 _upload_say = f"upload: {_upn} files (Workers Free allows {UPLOAD_LIMIT:,} per version)"
 
+# THE SIZE OF assets/dist/ AS SERVED (roc-ops/portrayal-site#6). Its files sit at
+# predictable URLs anyone can fetch, so its bytes are egress. The total is a
+# tripwire for the owner to read, not a limit of the host; one file is held to the
+# same margin under the host's per-file limit as a pack. Only what the build would
+# serve counts: the sizes come from the source path of each assets/dist/ line.
+_dist = sorted(((HERE / l.split("\t")[1]).stat().st_size, l.split("\t")[0])
+               for l in _up.stdout.splitlines()
+               if "\t" in l and l.split("\t")[0].startswith("assets/dist/")
+               and (HERE / l.split("\t")[1]).is_file())
+_dist_total = sum(s for s, _ in _dist)
+check(_up.returncode == 0 and bool(_dist) and _dist[-1][0] <= DIST_FILE_FAIL,
+      f"no file under assets/dist/ is over {DIST_FILE_FAIL // 1024 // 1024} MiB (the host takes 25 MiB a file)",
+      f"{_dist[-1:]}" if _dist else "no assets/dist/ file in the build's list")
+check(_up.returncode == 0 and bool(_dist) and _dist_total <= DIST_TOTAL_FAIL,
+      f"assets/dist/ as served is at most {DIST_TOTAL_FAIL // 1000000} MB",
+      f"{_dist_total / 1e6:.0f} MB served, over the {DIST_TOTAL_FAIL // 1000000} MB limit (roc-ops/portrayal-site#6)"
+      if _dist else "no assets/dist/ file in the build's list")
+_dist_say = (f"assets/dist: {len(_dist)} files, {_dist_total / 1e6:.0f} MB served; "
+             f"largest {_dist[-1][1]} at {_dist[-1][0] / 1e6:.1f} MB" if _dist else "assets/dist: nothing in the build's list")
+
 # WHICH NOS A SOFTWARE VENDOR'S EXPORTS RUN, before and after Portrayal #677.
 # #677 replaces per-hardware NOS overlays (overlays.json, exporter --nos) with
 # NOS vendor listings (listings.json; --nos removed - passing it is an error).
@@ -2859,6 +2886,9 @@ for s in skips:
 print(_upload_say)
 if _upn > UPLOAD_WARN:
     print(f"::warning::{_upload_say}; the deploy fails above {UPLOAD_LIMIT:,}")
+print(_dist_say)
+if _dist_total > DIST_TOTAL_WARN:
+    print(f"::warning::{_dist_say}; past the {DIST_TOTAL_WARN // 1000000} MB tripwire (roc-ops/portrayal-site#6)")
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
     for p in problems:

@@ -22589,6 +22589,193 @@ def check_rack_covers(page, base):
     return bad
 
 
+# What the panes named by `sel` (a selector for svgs) show of each layer: the cables, bundle envelopes and straps, and
+# the top-level part groups, each counted when neither it nor an ancestor is display: none; and how the parts and cables
+# are tagged (data-layer), what the menu's buttons say, and what is stored.
+LAYERS_SHOWN_JS = """sel => {
+  const svgs = [...document.querySelectorAll(sel)];
+  // (checkVisibility() does not see display: none on an svg node)
+  const drawn = n => { for (let e = n; e && e !== document.body; e = e.parentNode) if (getComputedStyle(e).display === 'none') return false; return true; };
+  const shown = css => [...new Set(svgs.flatMap(s => [...s.querySelectorAll(css)].filter(drawn).map(n => n.dataset.cableId ?? n.dataset.bundleId ?? n.dataset.strap ?? n.dataset.itemId ?? n.dataset.zerouId)))].sort();
+  const tag = css => Object.fromEntries(svgs.flatMap(s => [...s.querySelectorAll(css)].map(n => [n.dataset.cableId ?? n.dataset.itemId ?? n.dataset.zerouId, n.dataset.layer ?? null])));
+  const pressed = (a, key) => [...document.querySelectorAll(`#layers [${a}]`)].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset[key]);
+  const panes = document.getElementById('panes');
+  return {
+    cables: shown('[data-cables] [data-cable][data-cable-id]'),
+    bundles: shown('[data-cables] [data-bundle-id]'),
+    straps: shown('[data-strap]'),
+    parts: shown(':scope > [data-item-id], :scope > [data-zerou-id]'),
+    tagParts: tag(':scope > [data-item-id], :scope > [data-zerou-id]'),
+    tagCables: tag('[data-cables] [data-cable][data-cable-id]'),
+    hide: panes.dataset.hide ?? null,
+    presets: pressed('data-layers-preset', 'layersPreset'), layers: pressed('data-layers-set', 'layersSet'),
+    stored: localStorage.getItem('portrayal.rack.layers'), api: window.__rack.layers(), search: location.search,
+  };
+}"""
+
+
+@extra("rack.html: the Show menu - five presets and five layers (data, power, bundles, managers, PDUs) for the front, rear and left / right panes, everything to begin with and remembered in the browser, never in the rack or the URL; a layer that is off is not drawn, a selected thing or a cable picked from the list stays shown, and the menu is hidden and inert in 3D (#197)")
+def check_rack_layers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    # a router (i4), a PDU (i5), a power cord between them (c5) and a bundle of three of the data cables (b1)
+    res = page.evaluate("() => window.__rack.apply([{op: 'place', ref: 'mx150', face: 'front', ru: 10, label: 'mx'}, {op: 'place', ref: 'pdu12iec', face: 'front', ru: 5, label: 'pdu'}])")
+    if res.get("error") or res.get("created", {}).get("ids") != ["i4", "i5"]:
+        return bad + [f"fixture: the router and the PDU were not placed as i4 and i5: {res}"]
+    res = page.evaluate("() => window.__rack.apply({op: 'cable.add', a: {item: 'i4', path: 'inlet', view: 'rear'}, b: {item: 'i5', path: 'outlet-front-1', view: 'front'}, media: 'power', purpose: 'power'})")
+    if res.get("error") or res.get("created", {}).get("ids") != ["c5"]:
+        return bad + [f"fixture: the power cord was not added as c5: {res}"]
+    res = page.evaluate("() => window.__rack.bundleCommand({op: 'bundle.create', cables: ['c1', 'c2', 'c3'], label: 'pack'})")
+    if res.get("error"):
+        return bad + [f"fixture: the bundle was refused: {res['error']}"]
+    wait_fn(page, "layers: the cord and the bundle are drawn", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"]') && document.querySelector('#paneFront [data-strap=\"b1\"]') && window.__rack.routesCurrent().current")
+    page.click("#zoomFit")
+    page.wait_for_timeout(400)
+    park_mouse(page)
+    FRONT, REAR, SIDES = "#paneFront svg", "#paneRear svg", "#panes svg[data-side]"
+    ALL = ["c1", "c2", "c3", "c4", "c5"]
+    PARTS = ["i1", "i2", "i3", "i4", "i5", "z1"]
+    doc0 = page.evaluate("() => JSON.stringify(window.__rack.doc())")
+    shown = lambda sel=FRONT: page.evaluate(LAYERS_SHOWN_JS, sel)
+    # (i) START: everything, nothing stored, every part and cable tagged
+    st = shown()
+    if st["hide"] is not None or st["presets"] != ["everything"] or sorted(st["layers"]) != sorted(["data", "power", "bundles", "managers", "pdus"]) or st["stored"] is not None:
+        bad.append(f"start: hide {st['hide']!r}, presets {st['presets']}, layers {st['layers']}, stored {st['stored']!r}; expected nothing hidden, Everything, five layers and nothing stored")
+    if st["tagParts"] != {"i1": None, "i2": "managers", "i3": None, "i4": None, "i5": "pdus", "z1": "managers"}:
+        bad.append(f"start: the parts are tagged {st['tagParts']}")
+    if st["tagCables"] != {"c1": "data", "c2": "data", "c3": "data", "c4": "data", "c5": "power"}:
+        bad.append(f"start: the cables are tagged {st['tagCables']}")
+    if st["cables"] != ALL or st["parts"] != PARTS or st["bundles"] != ["b1"] or not st["straps"]:
+        return bad + [f"fixture: at the start the front pane shows cables {st['cables']}, parts {st['parts']}, bundles {st['bundles']}, straps {st['straps']}"]
+    if page.locator("#layersMenu").get_attribute("open") is None:
+        page.click("#layersMenu > summary")
+    # (ii) EACH PRESET
+    want = {"elevation": ([], [], False, ["i1", "i2", "i3", "i4", "z1"]),
+            "equipment": ([], [], False, ["i1", "i3", "i4"]),
+            "data": (["c1", "c2", "c3", "c4"], ["b1"], True, ["i1", "i2", "i3", "i4", "z1"]),
+            "power": (["c5"], [], False, ["i1", "i3", "i4", "i5"]),
+            "everything": (ALL, ["b1"], True, PARTS)}
+    for preset in ("elevation", "equipment", "data", "power", "everything"):
+        page.click(f'#layers [data-layers-preset="{preset}"]')
+        cables, bundles, straps, parts = want[preset]
+        st = shown()
+        if (st["cables"], st["bundles"], bool(st["straps"]), st["parts"]) != (cables, bundles, straps, parts):
+            bad.append(f"{preset}: the front pane shows cables {st['cables']}, bundles {st['bundles']}, straps {st['straps']}, parts {st['parts']}; expected {cables}, {bundles}, straps {straps}, {parts}")
+        if st["presets"] != [preset]:
+            bad.append(f"{preset}: the pressed presets are {st['presets']}")
+        if st["stored"] != json.dumps(st["api"], separators=(",", ":")):
+            bad.append(f"{preset}: stored {st['stored']!r} is not the layers {st['api']}")
+        if page.evaluate("() => JSON.stringify(window.__rack.doc())") != doc0:
+            bad.append(f"{preset}: the choice changed the rack document")
+    # (iii) ONE LAYER AT A TIME
+    page.click('#layers [data-layers-preset="equipment"]')
+    page.click('#layers [data-layers-set="power"]')
+    st = shown()
+    if (st["cables"], st["parts"], st["presets"], st["layers"]) != (["c5"], ["i1", "i3", "i4"], [], ["power"]):
+        bad.append(f"power alone: cables {st['cables']}, parts {st['parts']}, pressed presets {st['presets']}, layers {st['layers']}; expected c5 alone, the three devices and no preset")
+    page.click('#layers [data-layers-preset="equipment"]')
+    page.click('#layers [data-layers-set="data"]')
+    page.click('#layers [data-layers-set="managers"]')
+    st = shown()
+    if (st["cables"], st["parts"], st["bundles"]) != (["c1", "c2", "c3", "c4"], ["i1", "i2", "i3", "i4", "z1"], []):
+        bad.append(f"data and managers: cables {st['cables']}, parts {st['parts']}, bundles {st['bundles']}")
+    # (iv) THE REAR PANE AND BOTH SIDE PANES OBEY THE SAME CONTROL
+    page.click('#layers [data-layers-preset="elevation"]')
+    st = shown(REAR)
+    if st["cables"] or "i5" in st["parts"]:
+        bad.append(f"elevation: the rear pane shows cables {st['cables']} and parts {st['parts']}")
+    page.click('#layers [data-layers-preset="everything"]')
+    to_sides(page, cables=0)
+    wait_fn(page, "layers: the side panes draw cables", "() => [...document.querySelectorAll('#panes svg[data-side]')].every(s => s.querySelector('[data-cables] [data-cable-id]'))")
+    st = shown(SIDES)
+    if not st["cables"] or "c5" not in st["tagCables"]:
+        bad.append(f"sides: with everything the side panes show cables {st['cables']}, tagged {st['tagCables']}")
+    page.click('#layers [data-layers-preset="elevation"]')
+    st = shown(SIDES)
+    if st["cables"] or "i5" in st["parts"]:
+        bad.append(f"sides, elevation: the side panes show cables {st['cables']} and parts {st['parts']}")
+    page.click('#layers [data-layers-preset="everything"]')
+    to_faces(page)
+    wait_fn(page, "layers: the faces are drawn again", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"]') && window.__rack.routesCurrent().current")
+    # (v) SELECTION: a cable picked from the list, and a part that is selected, stay shown
+    page.click('#layers [data-layers-preset="data"]')
+    page.click('#cableList [data-cable-row="c5"]')
+    try:
+        wait_fn(page, "layers: the cord c5 is picked", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"].on')", timeout=8000)
+    except RuntimeError as e:
+        bad.append(str(e))
+    st = shown()
+    if "c5" not in st["cables"]:
+        bad.append(f"selection: the picked cord c5 is not shown with the power layer off: {st['cables']}")
+    page.keyboard.press("Escape")
+    pdu = page.evaluate("""() => { const g = document.querySelector('#paneFront > svg > [data-item-id="i5"], #paneFront svg > [data-item-id="i5"]');
+      const off = getComputedStyle(g).display; g.classList.add('rk-selected'); const on = getComputedStyle(g).display; g.classList.remove('rk-selected'); return [off, on]; }""")
+    if pdu[0] != "none" or pdu[1] == "none":
+        bad.append(f"selection: the PDU's group is display {pdu[0]!r} unselected and {pdu[1]!r} selected; expected none, then shown")
+    # (vi) REMEMBERED IN THE BROWSER, NOT IN THE RACK
+    page.click('#layers [data-layers-preset="power"]')
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    wait_fn(page, "layers: the panes after a reload", "() => document.querySelector('#paneFront [data-cables] [data-cable-id=\"c5\"]') && window.__rack.routesCurrent().current")
+    st = shown()
+    if st["api"] != ["power", "pdus"] or st["cables"] != ["c5"] or st["presets"] != ["power"]:
+        bad.append(f"remembered: after a reload the layers are {st['api']}, the front pane shows {st['cables']}, pressed {st['presets']}")
+    if page.evaluate("() => JSON.stringify(window.__rack.doc())") != doc0 or "layers" in page.evaluate("() => JSON.stringify(window.__rack.doc())"):
+        bad.append("remembered: the rack document changed, or holds the layers")
+    if st["search"] != "?probe=1":
+        bad.append(f"remembered: the setting reached the URL: {st['search']!r}")
+    # (vii) IN 3D THE MENU IS HIDDEN AND INERT
+    menu = "() => { const m = document.getElementById('layersMenu'); return [getComputedStyle(m).visibility, m.inert]; }"
+    if page.evaluate(menu) != ["visible", False]:
+        bad.append(f"2D: the Show menu is {page.evaluate(menu)}")
+    if webgl_trouble(page):
+        print("[check_rack_layers] WebGL unavailable - 3D not exercised")
+    else:
+        page.click('#mode [data-mode="3d"]')
+        wait_fn(page, "layers: 3D is up", "() => document.getElementById('panes').hidden")
+        if page.evaluate(menu) != ["hidden", True]:
+            bad.append(f"3D: the Show menu is {page.evaluate(menu)}, expected hidden and inert")
+        page.click('#mode [data-mode="2d"]')
+        wait_fn(page, "layers: 2D is back", "() => !document.getElementById('panes').hidden")
+        if page.evaluate(menu) != ["visible", False]:
+            bad.append(f"back in 2D: the Show menu is {page.evaluate(menu)}, expected shown")
+    print("[check_rack_layers] five presets, one layer at a time, the rear and side panes, selection, a reload and 3D")
+    return bad
+
+
+MENU_IN_WINDOW_JS = """() => {
+  const panel = document.getElementById('layers'), r = panel.getBoundingClientRect(), w = window.innerWidth;
+  const out = [...panel.querySelectorAll('button')].map(b => [b.textContent, b.getBoundingClientRect()]).filter(([, q]) => q.left < 0 || q.right > w).map(([t]) => t);
+  return {left: r.left, right: r.right, width: w, outside: out, buttons: panel.querySelectorAll('[data-layers-preset]').length + ':' + panel.querySelectorAll('[data-layers-set]').length};
+}"""
+
+
+@extra("rack.html: the open Show menu stays inside the window at 1280 and 1100 px wide - its panel's right edge at or below the window's width, its left edge at or above 0, and each of the five presets and five layers inside it (#197)")
+def check_rack_layers_menu_in_window(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1280, "height": 800})
+    open_front_fixture(page, base, PACK_FIXTURE)
+    park_mouse(page)
+    if page.locator("#layersMenu").get_attribute("open") is None:
+        page.click("#layersMenu > summary")
+    for width in (1280, 1100):
+        page.set_viewport_size({"width": width, "height": 800})
+        page.wait_for_timeout(300)
+        m = page.evaluate(MENU_IN_WINDOW_JS)
+        if m["buttons"] != "5:5":
+            bad.append(f"{width} px: the menu holds {m['buttons']} preset and layer buttons, expected 5:5")
+        if m["right"] > m["width"] or m["left"] < 0:
+            bad.append(f"{width} px: the open Show menu's panel runs from {m['left']:.1f} to {m['right']:.1f}, outside the window's {m['width']} px")
+        if m["outside"]:
+            bad.append(f"{width} px: these Show buttons are outside the window ({m['width']} px wide): {m['outside']}")
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    print("[check_rack_layers_menu_in_window] the open Show menu inside the window at 1280 and 1100 px")
+    return bad
+
 
 # THE DETAIL HELD BACK BY THE CHECK (rack3d.js startDetail): every scene the page starts building has its
 # startDetail wrapped to keep the detail from starting until `window.__goDetail()` is called. The scene is then
@@ -23513,6 +23700,169 @@ def check_rack_3d_large_once(page, base):
     noisy = [t for t in said if "does not belong to this context" in t or "loseContext: context lost" in t or "reading 'trim'" in t]
     if noisy:
         bad.append(f"lost: the console said {len(noisy)} GL errors, the first: {noisy[0]}")
+    return bad
+
+
+ANGLED_FIXTURE = HERE / "tests" / "rack" / "angled" / "angled-setback-rack.json"
+
+# THE ANGLED ENDS OF THE ANGLED FIXTURE, measured off the built scene. Each asks for a cable's first end
+# (the shelf's), the facet its cage stands on, the optic seated in it and how to find the optic's mating point:
+# `head` is the front face of the wide head (an SC receptacle), `stub` the end of the thin stub (an AOC's cable).
+# The cage's axis is the +z of the facet's tilt group (relief.js tiltGroupIn), the plug's the same of the group its
+# own meshes are in; the mating point is read off the optic's meshes in that group's frame and carried back to the room.
+ANGLED_ENDS_JS = """async asked => {
+  const s = window.__rack.scene(), T = s.three.THREE, root = s.three.scene;
+  root.updateMatrixWorld(true);
+  const meshesIn = o => { let n = 0; o.traverse(m => { if (m.isMesh) n++; }); return n; };
+  const facets = new Map();
+  root.traverse(o => { const t = o.userData?.tilt; if (t && (!facets.has(t.on) || meshesIn(o) > meshesIn(facets.get(t.on)))) facets.set(t.on, o); });
+  const axisOf = g => new T.Vector3(0, 0, 1).transformDirection(g.matrixWorld).normalize();
+  const deg = (a, b) => Math.acos(Math.min(1, Math.max(-1, a.dot(b)))) * 180 / Math.PI;
+  const out = {};
+  for (const {cable, on, optic, kind} of asked) {
+    const cage = facets.get(on), tube = s.rackCables.tubes.find(t => t.link.id === cable);
+    if (!cage || !tube?.points?.length) { out[cable] = {missing: !cage ? 'the facet' : 'the tube'}; continue; }
+    const meshes = [];
+    root.traverse(m => { const p = m.userData?.portrayalPath; if (m.isMesh && p && (p === optic || p.startsWith(optic + '/'))) meshes.push(m); });
+    if (!meshes.length) { out[cable] = {missing: 'the optic'}; continue; }
+    let g = meshes[0].parent; while (g && !g.userData?.tilt) g = g.parent;
+    if (!g) { out[cable] = {missing: 'the optic\\'s tilt group'}; continue; }
+    const inv = g.matrixWorld.clone().invert();
+    const boxes = meshes.map(m => { const p = m.geometry.attributes.position, b = new T.Box3(); m.updateWorldMatrix(true, false);
+      for (let i = 0; i < p.count; i++) { const v = new T.Vector3().fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv); if (Number.isFinite(v.x + v.y + v.z)) b.expandByPoint(v); }
+      return b; }).filter(b => !b.isEmpty());
+    const wide = b => b.max.x - b.min.x, thin = b => wide(b) <= 8 && b.max.y - b.min.y <= 8;
+    const pool = boxes.filter(kind === 'head' ? (b => wide(b) >= 13 && wide(b) <= 15) : thin);
+    const top = pool.reduce((a, b) => (!a || b.max.z > a.max.z ? b : a), null);
+    const mate = top ? new T.Vector3((top.min.x + top.max.x) / 2, (top.min.y + top.max.y) / 2, top.max.z).applyMatrix4(g.matrixWorld) : null;
+    const end = tube.points[0], leg = tube.points[1].clone().sub(end).normalize();
+    out[cable] = {cage: axisOf(cage).toArray(), plug: axisOf(g).toArray(), leg: leg.toArray(),
+                  legDeg: deg(leg, axisOf(cage)), plugDeg: deg(axisOf(g), axisOf(cage)),
+                  gap: mate ? end.distanceTo(mate) : null, end: end.toArray(), mate: mate && mate.toArray(), pool: pool.length};
+  }
+  return out;
+}"""
+
+ANGLED_ASKED = [{"cable": "c1", "on": "lt-1--module--face-1", "optic": "lt-1/module/port-1-occupant", "kind": "head"},
+                {"cable": "c2", "on": "nt-a--module--face-port-1", "optic": "nt-a/module/port-1-occupant", "kind": "stub"}]
+
+
+def open_angled_fixture(page, base):
+    """The angled fixture opened in 2D with its routes read; the fixture, as a dict."""
+    rack = json.loads(ANGLED_FIXTURE.read_text())
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click('#mode [data-mode="2d"]')
+    page.evaluate("r => window.__rack.replaceRack(r)", rack)
+    page.wait_for_function("n => Object.keys(window.__rack.paths() || {}).length === n && window.__rack.routesCurrent().current",
+                           arg=len(rack["cables"]), timeout=READY_MS)
+    page.wait_for_timeout(400)
+    return rack
+
+
+@extra("rack.html: in 3D a cable to a cage on a tilted facet leaves along the cage's axis and ends at its optic's mating point - an SFP in an SC cage and a QSFP28 AOC in a QSFP28 cage on a Lightspan shelf: the last leg and the plug's axis are parallel to the cage's within a degree and the tube ends within a millimetre of the mating point - and a cable to a straight cage leaves straight out of its face as it did")
+def check_rack_3d_angled_ends(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    open_angled_fixture(page, base)
+    if webgl_trouble(page):
+        print("[check_rack_3d_angled_ends] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        settle_scene(page, "3D: the angled rack", tubes=True)
+    except RuntimeError as e:
+        return bad + [str(e)]
+    got = page.evaluate(ANGLED_ENDS_JS, ANGLED_ASKED)
+    shown = []
+    for cable, what in (("c1", "the SC cage (22 deg)"), ("c2", "the QSFP28 cage (45 deg)")):
+        m = got.get(cable) or {}
+        if m.get("missing"):
+            bad.append(f"{cable} ({what}): no {m['missing']} in the scene")
+            continue
+        if m["pool"] < 1 or m["gap"] is None:
+            bad.append(f"{cable} ({what}): the optic's mating face was not found among its meshes")
+            continue
+        if m["legDeg"] > 1:
+            bad.append(f"{cable} ({what}): the tube's last leg is {m['legDeg']:.2f} deg off the cage's axis {[round(v, 3) for v in m['cage']]}; expected within 1")
+        if m["plugDeg"] > 1:
+            bad.append(f"{cable} ({what}): the plug's axis is {m['plugDeg']:.2f} deg off the cage's; expected within 1")
+        if m["gap"] > 1:
+            bad.append(f"{cable} ({what}): the tube ends {m['gap']:.2f} mm from the optic's mating point; expected within 1 mm")
+        shown.append(f"{cable} leg {m['legDeg']:.2f} deg, plug {m['plugDeg']:.2f} deg, gap {m['gap']:.2f} mm")
+    # the cages are the angles the library states, so a fixture that drifts to straight cannot pass for the rest
+    if got.get("c1", {}).get("cage") and abs(got["c1"]["cage"][0] - 0.3746) > 0.01 or got.get("c2", {}).get("cage") and abs(got["c2"]["cage"][0] - 0.7071) > 0.01:
+        bad.append(f"the cages' axes are {got['c1'].get('cage')} and {got['c2'].get('cage')}; expected 22 and 45 deg off the face's normal")
+    # A STRAIGHT CAGE LEAVES STRAIGHT, no tilt on its end and the face's normal: the switch's ends, the rear switches', the DAC ends
+    anchors = page.evaluate("""async () => { const s = window.__rack.scene(), r = {};
+      for (const [k, item, path] of [['sw-sfp', 'i2', 'port-1'], ['sw-dac', 'i2', 'port-50'], ['flush', 'i5', 'port-49'], ['rear-a', 'i3', 'port-49'], ['rear-b', 'i4', 'port-49']]) {
+        const cable = await s.cableAnchor({id: item}, path, {view: 'front'}), port = await s.portAnchor({id: item}, path, {view: 'front'});
+        r[k] = {cable: cable.map(g => ({n: g.normal.toArray(), tilt: g.tilt ?? null})), port: port && {n: port.normal.toArray()}};
+      }
+      return r; }""")
+    for k, a in anchors.items():
+        want = -1 if k.startswith("rear") else 1
+        ns = [c["n"] for c in a["cable"]] + ([a["port"]["n"]] if not a["cable"] and a["port"] else [])
+        if not ns:
+            bad.append(f"straight cage {k}: no anchor at all")
+        for n in ns:
+            if abs(n[0]) > 1e-9 or abs(n[1]) > 1e-9 or abs(n[2] - want) > 1e-9:
+                bad.append(f"straight cage {k}: its end leaves along {[round(v, 4) for v in n]}; expected straight out of its face, {[0, 0, want]}")
+        if any(c["tilt"] for c in a["cable"]):
+            bad.append(f"straight cage {k}: its end is marked tilted: {a['cable']}")
+    print(f"[check_rack_3d_angled_ends] {'; '.join(shown)}")
+    return bad
+
+
+@extra("rack.html: in Left / Right a device is drawn its setback behind its rail line in both panes - a front device at 30 and at 20 mm, one at 0 where it was, a rear-facing one set back from the rear rail - at the depth the kit's solids stand, and the plugs and the kit's cable ends are at the same faceplate")
+def check_rack_side_setback(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    rack = open_angled_fixture(page, base)
+    to_sides(page, cables=len(rack["cables"]))
+    d = page.evaluate(SIDE_BODIES_JS)
+    rd = d["frame"]["railDepth"]
+    L, R = d["panes"].get("left"), d["panes"].get("right")
+    if not L or not R:
+        return bad + [f"the side panes are {list(d['panes'])}, expected left and right"]
+    eps = 0.05
+    # item: (what, face, setback); the faceplate's depth is the rail plane moved into the rack by the setback
+    items = {"i1": ("the shelf", "front", 30), "i2": ("the switch", "front", 20), "i5": ("the flush switch", "front", 0),
+             "i3": ("the rear switch with a setback", "rear", 25), "i4": ("the rear switch on its rail", "rear", 0)}
+    plate = {}
+    for iid, (what, face, sb) in items.items():
+        z = -sb if face == "front" else -rd + sb
+        plate[iid] = z
+        kit, l, r = d["kit"].get(iid), L["bodies"].get(iid), R["bodies"].get(iid)
+        if not kit or not l or not r:
+            bad.append(f"{iid} ({what}): kit box {bool(kit)}, drawn in the left pane {bool(l)}, in the right pane {bool(r)}")
+            continue
+        # the left pane's x is z and the right pane's is -z; a front device's faceplate is its far end in z, a rear one's its near end
+        lf = l["x1"] if face == "front" else l["x0"]
+        rf = -r["x0"] if face == "front" else -r["x1"]
+        if abs(lf - z) > eps or abs(rf - z) > eps:
+            bad.append(f"{iid} ({what}, setback {sb}, {face}): its faceplate is at depth {lf:.2f} in the left pane and {rf:.2f} in the right; expected {z:.2f}, {sb} mm behind the {face} rail line")
+        if abs(l["x0"] - kit["z0"]) > eps or abs(l["x1"] - kit["z1"]) > eps:
+            bad.append(f"{iid} ({what}): drawn at depth {l['x0']:.2f}..{l['x1']:.2f}, the kit's solid is at {kit['z0']:.2f}..{kit['z1']:.2f}")
+    # the cable ends follow: the kit's points start at the faceplate, and each plug block stands out from it
+    paths = page.evaluate("() => Object.fromEntries(Object.entries(window.__rack.paths() || {}).map(([k, v]) => { const p = v.points || v; return [k, [p[0].z, p.at(-1).z]]; }))")
+    ends = {"c1": ("i1", "i2"), "c2": ("i1", "i2"), "c3": ("i3", "i4"), "c4": ("i5", "i2")}
+    for cid, (a, b) in ends.items():
+        got = paths.get(cid)
+        if not got or abs(got[0] - plate[a]) > eps or abs(got[1] - plate[b]) > eps:
+            bad.append(f"{cid}: the kit's path runs from depth {got and got[0]} to {got and got[1]}; expected {plate[a]} and {plate[b]}, the two faceplates")
+        for name, pane in (("left", L), ("right", R)):
+            span = pane["plugs"].get(cid, {})
+            for end, iid in (("a", a), ("b", b)):
+                s = span.get(end)
+                # a block's span is its two ends across the pane (X = z on the left, -z on the right) and its y
+                z = plate[iid] if name == "left" else -plate[iid]
+                if not s or not any(abs(v - z) < eps for v in s[:2]):
+                    bad.append(f"{cid}'s {end} plug in the {name} pane spans {s and s[:2]}; expected it to start at its device's faceplate, depth {z}")
+    print(f"[check_rack_side_setback] faceplates at {plate}")
     return bad
 
 
