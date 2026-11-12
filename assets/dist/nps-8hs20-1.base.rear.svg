@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="44.45mm" viewBox="0 0 482.6 44.45" data-device="nps-8hs20-1" data-view="rear" data-construction="metal" data-input-plug="iec-60320-c20" data-input-voltage="85 to 125 VAC, 50/60 Hz (specification table)" data-input-current-a="20" data-input-feeds="one inlet for all eight outlets" data-power-distribution="1.3/2 kW (80% derated, specification table)" data-operating-temp="0 to 50 C (specification table)" data-operating-humidity="10 - 90% RH (specification table)" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"WTI NPS-8HS20-1","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/rj45-eth@1":"1.2.0","std/c20-inlet@1":"1.4.0","std/nema-5-15r@1":"1.0.0","std/rj45@2":"2.1.0"},"source-sha256":"983e5ad06a38db77eb500e56b2e7eab06450b11258721347afacc45107a66fe8","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NPS-8HS20-1" data-sku="NPS-8HS20-1" data-part-number="" x="0" y="0" width="482.6" height="44.45" rx="1.2" fill="#414043" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="rear-plate" data-kind="face-plate" x="0" y="0" width="482.6" height="44.45" rx="0.6" fill="#ffffff" />
+    <rect id="alarm-a" data-kind="lamp" x="442.88" y="17.39" width="3.4" height="3.4" rx="1.7" fill="#1a1a1a" />
+    <rect id="alarm-b" data-kind="lamp" x="442.88" y="25.4" width="3.4" height="3.4" rx="1.7" fill="#1a1a1a" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="98.58" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-1">A1</text>
+    <text x="143.74" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-2">A2</text>
+    <text x="188.91" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-3">A3</text>
+    <text x="234.07" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-4">A4</text>
+    <text x="279.22" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-5">A5</text>
+    <text x="324.39" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-6">A6</text>
+    <text x="369.55" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-7">A7</text>
+    <text x="414.71" y="40.71" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-8">A8</text>
+    <text x="437.5" y="15.07" font-family="sans-serif" font-size="2.4" text-anchor="start" fill="#111111" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ALARM</text>
+    <text x="439.5" y="20.75" font-family="sans-serif" font-size="2.4" text-anchor="start" fill="#111111" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">A</text>
+    <text x="439.47" y="28.57" font-family="sans-serif" font-size="2.4" text-anchor="start" fill="#111111" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">B</text>
+    <text x="452.58" y="7.43" font-family="sans-serif" font-size="2.4" text-anchor="start" fill="#111111" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="eth-0">ACT</text>
+    <text x="466.09" y="7.43" font-family="sans-serif" font-size="2.4" text-anchor="start" fill="#111111" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="eth-0">LINK</text>
+  </g>
+  <g id="outlet-1" data-path="outlet-1" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="1" transform="translate(85.08,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-1</title>
+    <rect id="outlet-1--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-1/face" data-class="inlet" />
+    <path id="outlet-1--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-1--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-1--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-2" data-path="outlet-2" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="2" transform="translate(130.24,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-2</title>
+    <rect id="outlet-2--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-2/face" data-class="inlet" />
+    <path id="outlet-2--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-2--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-2--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-3" data-path="outlet-3" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="3" transform="translate(175.41,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-3</title>
+    <rect id="outlet-3--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-3/face" data-class="inlet" />
+    <path id="outlet-3--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-3--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-3--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-4" data-path="outlet-4" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="4" transform="translate(220.57,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-4</title>
+    <rect id="outlet-4--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-4/face" data-class="inlet" />
+    <path id="outlet-4--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-4--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-4--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-5" data-path="outlet-5" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="5" transform="translate(265.72,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-5</title>
+    <rect id="outlet-5--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-5/face" data-class="inlet" />
+    <path id="outlet-5--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-5--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-5--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-6" data-path="outlet-6" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="6" transform="translate(310.89,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-6</title>
+    <rect id="outlet-6--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-6/face" data-class="inlet" />
+    <path id="outlet-6--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-6--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-6--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-7" data-path="outlet-7" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="7" transform="translate(356.05,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-7</title>
+    <rect id="outlet-7--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-7/face" data-class="inlet" />
+    <path id="outlet-7--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-7--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-7--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="outlet-8" data-path="outlet-8" data-class="inlet" data-ref="std/nema-5-15r@1:1.0.0" data-wall="#1a1b1d" data-accepts="5-15P" data-media="ac" data-outlet="nema-5-15r" data-rating-a="15" data-rel-pos="8" transform="translate(401.21,4.68) rotate(180 13.5 13.5)" data-group="outlets" data-group-role="traffic" data-description="the eight switched NEMA 5-15R outlets, A1 to A8, all from the one inlet">
+    <title>outlet-8</title>
+    <rect id="outlet-8--face" x="0" y="0" width="27" height="27" rx="0.5" fill="#2a2c2f" stroke="#4a4d51" stroke-width="0.25" data-path="outlet-8/face" data-class="inlet" />
+    <path id="outlet-8--hole-earth" d="M 10.86 4.47 H 16.14 V 7.14 A 2.64 2.64 0 0 1 10.86 7.14 Z" fill="#050505" data-depth="21.4" data-wall="#1a1b1d" />
+    <rect id="outlet-8--slot-line" x="6.03" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <rect id="outlet-8--slot-neutral" x="18.75" y="15.49" width="2.22" height="6.99" fill="#050505" data-depth="15.88" data-wall="#1a1b1d" />
+    <g data-cp="mate" data-cp-at="13.5 19" data-cp-dir="front" />
+  </g>
+  <g id="inlet-1" data-path="inlet-1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="1" transform="translate(22.66,6.7) rotate(180 16.2 12.2)" data-group="inlets" data-group-role="service" data-description="the one IEC C20 inlet, at the left of the rear as seen from behind">
+    <title>inlet-1</title>
+    <rect id="inlet-1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="inlet-1/opening" data-class="cutout" />
+    <rect id="inlet-1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+    <rect id="inlet-1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+  </g>
+  <g id="eth-0" data-path="eth-0" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="1" transform="translate(455.87,16.28)" data-group="eth" data-group-role="management" data-description="the 10/100/1000 Ethernet network port on the rear">
+    <title>eth-0</title>
+    <g id="eth-0--jack" data-path="eth-0/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>eth-0--jack</title>
+      <path id="eth-0--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="eth-0--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="eth-0--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="eth-0/jack/opening" data-class="cutout" />
+      <g id="eth-0--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="eth-0--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="eth-0--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="eth-0/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="eth-0--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="eth-0/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+</svg>

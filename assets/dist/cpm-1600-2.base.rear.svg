@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="435.6mm" height="88.9mm" viewBox="0 0 435.6 88.9" data-device="cpm-1600-2" data-view="rear" data-construction="metal" data-input-plug="iec-60320-c20" data-input-voltage="100 to 240 VAC, 50/60 Hz (data sheet)" data-input-current-a="20" data-input-feeds="four inlets, one per bank of four outlets" data-power-distribution="6.4/15.3 kW (80% derated, data sheet)" data-operating-temp="0 to 60 C (data sheet)" data-operating-humidity="10 - 90% RH (data sheet)" data-serial-pinout="standard or straight pinned serial ports, by part number (hardware guide)" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"WTI CPM-1600-2","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"std/c13-outlet@1":"1.1.0","std/c20-inlet@1":"1.4.0"},"source-sha256":"c4fe26fb71dfe37b57f5935ecc4c0c3f449996d7720d5c4006135754221b0699","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="CPM-1600-2" data-sku="CPM-1600-2" data-part-number="" x="0" y="0" width="435.6" height="88.9" rx="1.2" fill="#373b3e" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="rear-plate" data-kind="face-plate" x="0" y="0" width="435.6" height="88.9" rx="0.6" fill="#ebf5fb" />
+    <rect id="bus-divider" data-kind="rule" x="272.37" y="0.6" width="0.5" height="87.7" rx="0.6" fill="#111111" />
+    <rect id="row-rule-138" data-kind="rule" x="4.39" y="39.08" width="18.35" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-183" data-kind="rule" x="53.44" y="39.08" width="25.66" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-233" data-kind="rule" x="109.81" y="39.08" width="30.11" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-272" data-kind="rule" x="152.69" y="39.08" width="23.07" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-305" data-kind="rule" x="188.58" y="39.08" width="23.07" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-337" data-kind="rule" x="224.48" y="39.08" width="23.07" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-369" data-kind="rule" x="260.31" y="39.08" width="23.07" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-402" data-kind="rule" x="296.21" y="39.08" width="23.07" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-434" data-kind="rule" x="332.1" y="39.08" width="23" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-466" data-kind="rule" x="367.93" y="39.08" width="23.07" height="0.5" rx="0.6" fill="#111111" />
+    <rect id="row-rule-499" data-kind="rule" x="403.83" y="39.08" width="27.39" height="0.5" rx="0.6" fill="#111111" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="146.31" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a1">A1</text>
+    <text x="182.2" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a2">A2</text>
+    <text x="218.1" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a3">A3</text>
+    <text x="253.99" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a4">A4</text>
+    <text x="289.89" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a5">A5</text>
+    <text x="325.79" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a6">A6</text>
+    <text x="361.68" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a7">A7</text>
+    <text x="397.58" y="39.34" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-a8">A8</text>
+    <text x="38.09" y="39.34" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#111111" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="inlet-a1">A1-A4</text>
+    <text x="94.46" y="39.34" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#111111" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="inlet-a2">A5-A8</text>
+    <text x="16.62" y="20.44" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">A</text>
+    <text x="424.32" y="20.44" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">A</text>
+    <text x="146.31" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b1">B1</text>
+    <text x="182.2" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b2">B2</text>
+    <text x="218.1" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b3">B3</text>
+    <text x="253.99" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b4">B4</text>
+    <text x="289.89" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b5">B5</text>
+    <text x="325.79" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b6">B6</text>
+    <text x="361.68" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b7">B7</text>
+    <text x="397.58" y="77.01" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#111111" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-b8">B8</text>
+    <text x="38.09" y="75.68" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#111111" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="inlet-b1">B1-B4</text>
+    <text x="94.46" y="75.68" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#111111" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="inlet-b2">B5-B8</text>
+    <text x="16.62" y="58.55" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">B</text>
+    <text x="424.32" y="58.55" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#111111" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">B</text>
+  </g>
+  <g id="outlet-a1" data-path="outlet-a1" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="1" transform="translate(131.11,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a1</title>
+    <rect id="outlet-a1--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a1--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a1/recess" data-class="inlet" />
+    <g id="outlet-a1--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a2" data-path="outlet-a2" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="2" transform="translate(167.0,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a2</title>
+    <rect id="outlet-a2--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a2--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a2/recess" data-class="inlet" />
+    <g id="outlet-a2--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a3" data-path="outlet-a3" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="3" transform="translate(202.9,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a3</title>
+    <rect id="outlet-a3--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a3--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a3/recess" data-class="inlet" />
+    <g id="outlet-a3--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a4" data-path="outlet-a4" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="4" transform="translate(238.79,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a4</title>
+    <rect id="outlet-a4--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a4--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a4/recess" data-class="inlet" />
+    <g id="outlet-a4--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a5" data-path="outlet-a5" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="5" transform="translate(274.69,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a5</title>
+    <rect id="outlet-a5--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a5--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a5/recess" data-class="inlet" />
+    <g id="outlet-a5--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a6" data-path="outlet-a6" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="6" transform="translate(310.59,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a6</title>
+    <rect id="outlet-a6--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a6--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a6/recess" data-class="inlet" />
+    <g id="outlet-a6--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a7" data-path="outlet-a7" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="7" transform="translate(346.48,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a7</title>
+    <rect id="outlet-a7--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a7--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a7/recess" data-class="inlet" />
+    <g id="outlet-a7--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-a8" data-path="outlet-a8" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="8" transform="translate(382.38,9.44) rotate(180 15.2 11.0)" data-group="outlets-a" data-group-role="traffic" data-description="the eight IEC C13 outlets of the top row, A1 to A8">
+    <title>outlet-a8</title>
+    <rect id="outlet-a8--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-a8--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-a8/recess" data-class="inlet" />
+    <g id="outlet-a8--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="inlet-a1" data-path="inlet-a1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="1" transform="translate(21.89,8.24) rotate(180 16.2 12.2)" data-group="inlets" data-group-role="service" data-description="the four IEC C20 inlets, two for row A and two for row B">
+    <title>inlet-a1</title>
+    <rect id="inlet-a1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="inlet-a1/opening" data-class="cutout" />
+    <rect id="inlet-a1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+    <rect id="inlet-a1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-a1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-a1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+  </g>
+  <g id="inlet-a2" data-path="inlet-a2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="2" transform="translate(78.26,8.24) rotate(180 16.2 12.2)" data-group="inlets" data-group-role="service" data-description="the four IEC C20 inlets, two for row A and two for row B">
+    <title>inlet-a2</title>
+    <rect id="inlet-a2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="inlet-a2/opening" data-class="cutout" />
+    <rect id="inlet-a2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+    <rect id="inlet-a2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-a2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-a2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b1" data-path="outlet-b1" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="1" transform="translate(131.11,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b1</title>
+    <rect id="outlet-b1--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b1--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b1/recess" data-class="inlet" />
+    <g id="outlet-b1--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b2" data-path="outlet-b2" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="2" transform="translate(167.0,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b2</title>
+    <rect id="outlet-b2--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b2--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b2/recess" data-class="inlet" />
+    <g id="outlet-b2--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b3" data-path="outlet-b3" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="3" transform="translate(202.9,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b3</title>
+    <rect id="outlet-b3--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b3--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b3/recess" data-class="inlet" />
+    <g id="outlet-b3--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b4" data-path="outlet-b4" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="4" transform="translate(238.79,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b4</title>
+    <rect id="outlet-b4--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b4--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b4/recess" data-class="inlet" />
+    <g id="outlet-b4--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b5" data-path="outlet-b5" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="5" transform="translate(274.69,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b5</title>
+    <rect id="outlet-b5--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b5--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b5/recess" data-class="inlet" />
+    <g id="outlet-b5--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b6" data-path="outlet-b6" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="6" transform="translate(310.59,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b6</title>
+    <rect id="outlet-b6--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b6--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b6/recess" data-class="inlet" />
+    <g id="outlet-b6--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b7" data-path="outlet-b7" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="7" transform="translate(346.48,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b7</title>
+    <rect id="outlet-b7--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b7--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b7/recess" data-class="inlet" />
+    <g id="outlet-b7--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="outlet-b8" data-path="outlet-b8" data-class="inlet" data-ref="std/c13-outlet@1:1.1.0" data-depth="18" data-wall="#1a1b1d" data-cavity="recess" data-media="ac" data-outlet="iec-60320-c13" data-rating-a="10" data-rel-pos="8" transform="translate(382.38,47.55) rotate(180 15.2 11.0)" data-group="outlets-b" data-group-role="traffic" data-description="the eight IEC C13 outlets of the bottom row, B1 to B8">
+    <title>outlet-b8</title>
+    <rect id="outlet-b8--well" x="0" y="0" width="30.4" height="22" fill="#1e1f21" />
+    <path id="outlet-b8--recess" fill-rule="evenodd" d="M 0 5.4 L 5.4 0 L 25 0 L 30.4 5.4 L 30.4 16.5 L 30.29 17.57 L 29.98 18.6 L 29.47 19.56 L 28.79 20.39 L 27.96 21.07 L 27 21.58 L 25.97 21.89 L 24.9 22 L 5.5 22 L 4.43 21.89 L 3.4 21.58 L 2.44 21.07 L 1.61 20.39 L 0.93 19.56 L 0.42 18.6 L 0.11 17.57 L 0 16.5 Z M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#0b0c0d" stroke="#3a3c3f" stroke-width="0.25" data-path="outlet-b8/recess" data-class="inlet" />
+    <g id="outlet-b8--nose">
+      <path d="M 3.7 7.44 L 8.2 2.94 L 22.1 2.94 L 26.6 7.44 L 26.6 15.14 L 26.53 15.82 L 26.33 16.48 L 26.01 17.08 L 25.57 17.61 L 25.04 18.05 L 24.44 18.37 L 23.78 18.57 L 23.1 18.64 L 7.2 18.64 L 6.52 18.57 L 5.86 18.37 L 5.26 18.05 L 4.73 17.61 L 4.29 17.08 L 3.97 16.48 L 3.77 15.82 L 3.7 15.14 Z" fill="#26282a" stroke="#45484c" stroke-width="0.2" />
+      <rect x="6.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="20.4" y="9.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+      <rect x="13.4" y="5.74" width="3.6" height="6.2" rx="0.3" fill="#030303" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.2 11" data-cp-dir="front" />
+  </g>
+  <g id="inlet-b1" data-path="inlet-b1" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="3" transform="translate(21.89,46.35) rotate(180 16.2 12.2)" data-group="inlets" data-group-role="service" data-description="the four IEC C20 inlets, two for row A and two for row B">
+    <title>inlet-b1</title>
+    <rect id="inlet-b1--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="inlet-b1/opening" data-class="cutout" />
+    <rect id="inlet-b1--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+    <rect id="inlet-b1--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-b1--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-b1--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+  </g>
+  <g id="inlet-b2" data-path="inlet-b2" data-class="inlet" data-ref="std/c20-inlet@1:1.4.0" data-depth="19.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" data-rel-pos="4" transform="translate(78.26,46.35) rotate(180 16.2 12.2)" data-group="inlets" data-group-role="service" data-description="the four IEC C20 inlets, two for row A and two for row B">
+    <title>inlet-b2</title>
+    <rect id="inlet-b2--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="inlet-b2/opening" data-class="cutout" />
+    <rect id="inlet-b2--inlet-face" x="1.7" y="1.7" width="29.0" height="21.0" rx="2.2" fill="#0d0f11" />
+    <rect id="inlet-b2--pin-earth" x="13.1" y="7.1" width="6.2" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-b2--pin-line" x="7.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <rect id="inlet-b2--pin-neutral" x="20.05" y="15.1" width="5.3" height="2.2" rx="0.3" fill="#7a8087" data-z-top="17.0" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="16.2 12.2" data-cp-dir="front" />
+  </g>
+</svg>
