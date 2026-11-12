@@ -284,21 +284,31 @@ fi
 # tree without a DOM. No page here and no vendored module fetches one - the
 # Explorer builds the same tree from the SVG with swap.js faceTree - so copying
 # them would add 3222 files and 49 MB (at Portrayal dd5fc85a) that nobody
-# downloads. The glob below names *.svg, *.configs.json and *.source.json, so
-# it cannot pick them up by accident; copy them here the day a page reads one.
-for f in "$SRC"/dist/*.svg "$SRC"/dist/*.configs.json "$SRC"/dist/*.source.json; do
+# downloads. The glob below names *.configs.json and *.source.json, so it
+# cannot pick them up by accident; copy them here the day a page reads one.
+for f in "$SRC"/dist/*.configs.json "$SRC"/dist/*.source.json; do
   cp "$f" "$HERE/assets/dist/"
 done
 
-# Swapped-in module skins, resolved through components.json.
-mkdir -p "$HERE/assets/dist/components"
-cp "$SRC"/dist/components/*.svg "$HERE/assets/dist/components/"
+# THE DRAWINGS, AS PACKS. One file per face and per skin was most of what the
+# host's per-version file limit counted, so the faces and the module skins are
+# shipped as Portrayal's own packs (spec/tools/dev/dist_packs.py): a device's
+# default faces in one pack and its other faces in a second, a namespace's
+# skins in chunks of about 1 MB. The kit reads them through packedDist and
+# fetchDist; site/dist.js is where the pages ask. The tool refuses a folder that
+# already exists, and assets/dist was cleared above, so assets/dist/packs is a
+# fresh one: the packs are written there whole, never merged into old ones.
+# (dist_packs.py is Portrayal's, so its path can only be built from SRC.)
+python3 "$SRC/../spec/tools/dev/dist_packs.py" --dist "$SRC/dist" --out "$HERE/assets/dist/packs"
+# The few drawings pages and recipes read by their plain names stay loose; the
+# copy is tools/pack-assets.py's (PLAIN_FILES), at the end, and stops the refresh
+# if the build lacks one.
 for d in asr-9001 as7946-30xb as5912-54x s9510-28dc dcp-sc-28p; do
   cp "$SRC/dist/$d.configs.json" "$HERE/assets/dist/"
 done
 
 # assets/dist/sizes.json, the size index for the drawings, is written by
-# tools/pack-assets.py at the end, after the plain faces are left out.
+# tools/pack-assets.py at the end, from the pack entries and the loose files.
 
 # The DCIM exports, GENERATED rather than copied.
 #
@@ -601,8 +611,8 @@ du -sh "$HERE/assets/dist" "$HERE/vendor"
 # slightly wrong, or a download comes out empty. This is the only thing that
 # turns that into a noise. Non-zero exit fails the refresh.
 
-# Leave out the plain-face copies, pack the DCIM exports, and write sizes.json
-# and default-faces.json, so what is uploaded stays under the host's file limit.
-python3 "$HERE/tools/pack-assets.py" "$HERE"
+# Copy the few loose drawings, pack the DCIM exports, and write sizes.json and
+# default-faces.json, so what is uploaded stays under the host's file limit.
+python3 "$HERE/tools/pack-assets.py" "$HERE" "$SRC/dist"
 
 python3 "$HERE/check-contract.py"
