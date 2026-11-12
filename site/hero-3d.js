@@ -24,6 +24,7 @@ import {PORTS, DEFAULT_PORT, captionOf, lampStates, cableScale, plugPathsOf,
         shadeHex, LATCH_SHADE} from './hero-reveal.js';
 import {hangPoints3d, LEAD, WIDTH, clearOf, colorOfJacket, plugColorOf} from './showcase/cables.js';
 import {guard3d} from './webgl.js';
+import {siteDist} from './dist.js';
 
 const REF = 's9600-72xc';
 // by its plain name, one of the few faces the site keeps under it (tools/pack-assets.py KEEP_PLAIN)
@@ -126,7 +127,7 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
       // Every row's seat, merged: the device's overrides, applied once.
       const overrides = Object.assign({}, ...Object.values(PORTS).map(r => r.seat));
       const s = createRackScene(stage, {
-        dist: 'assets/dist/',
+        dist: await siteDist(),
         stack: [{ref: REF, cfg: 'base', ru: 1, label: 'S9600-72XC', overrides}],
         heightRU: 2, rails: false, recess: 0, background: STUDIO,
         states: lampStates(),                 // the 2D panel's lamps and display

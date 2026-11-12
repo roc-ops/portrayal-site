@@ -146,7 +146,8 @@ export function createMode3d(shell, opts = {}) {
       const {createViewer} = await import('../vendor/viewer3d.js');
       // THE BACKGROUND IS THE READER'S. The shell owns the swatches and the 2D
       // stage; the scene is told the colour it starts with and every change after.
-      const v = createViewer(host3d, {dist: 'assets/dist/', background: shell.stage(), ears: !!ears()});
+      const {siteDist} = await import('./dist.js');
+      const v = createViewer(host3d, {dist: await siteDist(), background: shell.stage(), ears: !!ears()});
       shell.on('stage', c => v.setBackground(c));
       // WHAT IS WRITTEN ON A PART reaches the scene as well as the drawing.
       shell.on('fields', ({all}) => v.setFields(all));

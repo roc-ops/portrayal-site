@@ -23,7 +23,8 @@
 // same key: one caller mutating a zone or pushing onto `ports` would corrupt
 // what every other caller sees. Treat all of it as read-only.
 
-import {faceUrl} from '../faces.js';
+import {faceName} from '../faces.js';
+import {DIST, siteDist, fetchDist} from '../dist.js';
 import {jdist} from '../../vendor/dist.js';
 import {seatFace} from '../../vendor/swap.js';
 import {paintFields} from '../../vendor/fields.js';
@@ -31,7 +32,9 @@ import {readSvg, portsOf} from '../../vendor/zones.js';
 import {loadSlots} from '../../vendor/rack/catalog.js';
 import {cableEndPaths, zeroUEnds} from '../../vendor/rack/ports.js';
 
-export const DIST = 'assets/dist/';
+export {DIST};
+// a drawing's URL, in the packs site/dist.js reads (fetchDist reads it)
+const drawingUrl = async path => (await siteDist())(path);
 const OPPOSITE = {front: 'rear', rear: 'front'};
 
 let COMPONENTS = null;
@@ -74,7 +77,7 @@ function skinText(url) {
   let hit = SKINS.get(url);
   if (!hit) {
     const drop = () => { if (SKINS.get(url) === hit) SKINS.delete(url); };
-    hit = fetch(url).then(r => { if (r.ok) return r.text(); drop(); return null; })
+    hit = fetchDist(url).then(r => { if (r.ok) return r.text(); drop(); return null; })
       .catch(err => { drop(); throw err; });
     SKINS.set(url, hit);
   }
@@ -85,7 +88,7 @@ export async function loadSkin(ref) {
   const c = findComp(await components(), ref);
   if (!c) return null;
   const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
-  const text = await skinText(`${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
+  const text = await skinText(await drawingUrl(`components/${c.ns}--${c.name}--${c.major}--${skin}.svg`));
   return text == null ? null : {comp: c, text};
 }
 
@@ -152,7 +155,7 @@ function faceText(url) {
   if (hit) TEXTS.delete(url);   // re-insert: Map order is recency
   else {
     // a failure drops its own entry only: by then the URL may hold a later ask's
-    hit = fetch(url).then(r => (r.ok ? r.text() : null))
+    hit = fetchDist(url).then(r => (r.ok ? r.text() : null))
       .catch(err => { if (TEXTS.get(url) === hit) TEXTS.delete(url); throw err; });
   }
   TEXTS.set(url, hit);
@@ -173,7 +176,7 @@ export async function zeroUModuleEnds(z, view) {
 
 async function build({ref, cfg, view, swaps, fields, turned, ends}) {
   const shown = turned ? (OPPOSITE[view] || view) : view;
-  let text = await faceText(await faceUrl(DIST, ref, cfg, shown));   // #670: may be another config's file
+  let text = await faceText(await drawingUrl(await faceName(DIST, ref, cfg, shown)));   // #670: may be another config's file
   if (text == null) return null;
   const seat = {applied: 0, refused: [], failed: []};
   const hasSwaps = Object.keys(swaps).length > 0;
@@ -249,7 +252,7 @@ export function earPlanFor(ref, cfg) {
       const {earPlan, frontWidthOfText} = await import('../../vendor/ears2d.js');
       const idx = await jdist(`${DIST}${ref}.configs.json`).catch(() => null);
       if (!idx) return null;
-      const w = await faceUrl(DIST, ref, cfg || idx.default, 'front')
+      const w = await faceName(DIST, ref, cfg || idx.default, 'front').then(drawingUrl)
         .then(faceText).then(t => frontWidthOfText(t ?? '')).catch(() => null);
       return earPlan(idx, w);
     })());

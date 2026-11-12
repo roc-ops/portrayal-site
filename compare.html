@@ -34,6 +34,7 @@
 // device, because the page lays one drawing over one photograph of it
 import { firstDevice } from './site/featured.js';
 import { defaultFace } from './site/faces.js';
+import { siteDist, fetchDist } from './site/dist.js';
 const DEV = firstDevice();
 const CAL = {};
 const $ = id => document.getElementById(id);
@@ -42,7 +43,7 @@ async function load() {
   const v = $('view').value;
   if (!v) return;
   CAL[v] = CAL[v] || {sc: 100, dx: 0, dy: 0};
-  const r = await fetch(await defaultFace('assets/dist/', DEV, v), {cache: 'no-store'});
+  const r = await fetchDist(await defaultFace(await siteDist(), DEV, v), {cache: 'no-store'});
   $('svgbox').innerHTML = await r.text();
   $('photo').src = `reference/${DEV}/${v}.png`;
   $('sc').value = CAL[v].sc; $('dx').value = CAL[v].dx; $('dy').value = CAL[v].dy;

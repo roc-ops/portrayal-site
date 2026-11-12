@@ -1,4 +1,6 @@
-import {faceUrl} from '../faces.js';
+import {faceName} from '../faces.js';
+import {DIST, siteDist, fetchDist} from '../dist.js';
+export {DIST};
 // The compiled artifact and everything that operates on it: load, frame,
 // pan/zoom, overlay, states, exports, panel builders. A stage or a spoke
 // imports from here instead of relying on a module global that happens to be
@@ -21,7 +23,6 @@ export {save, standalone, saveSvg};
 // boot in; check-contract.py holds it to one the device has that is not a base.
 export const DEV = FEATURED_DEVICE;
 export const CFG = 'ac-f2b';          // the default configuration
-export const DIST = 'assets/dist/';
 
 // Which device, face and configuration is on the stage. Assigned only here,
 // by loadDrawing, and only once the file has actually arrived - so these always
@@ -85,13 +86,13 @@ export async function loadDrawing(dev = DEVICE, view = VIEW, config = CONFIG, is
 }
 
 async function load(dev, view, config, isStale, mine) {
-  const url = await faceUrl(DIST, dev, config, view);
-  const text = await fetch(url).then(r => {
-    if (!r.ok) throw new Error(`${url} — ${r.status}`);
+  const file = await faceName(DIST, dev, config, view);
+  const text = await fetchDist((await siteDist())(file)).then(r => {
+    if (!r.ok) throw new Error(`${DIST}${file} — ${r.status}`);
     return r.text();
   });
   if (mine !== gen || isStale?.()) return false;
-  DEVICE = dev; VIEW = view; CONFIG = config; SRC = url.slice(DIST.length);
+  DEVICE = dev; VIEW = view; CONFIG = config; SRC = file;
   stage2d.innerHTML = text;
   svg = stage2d.querySelector('svg');
   // The file is authored at true size (438.4mm x 43.5mm). Drop the physical

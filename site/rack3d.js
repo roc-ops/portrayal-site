@@ -22,6 +22,7 @@ import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 import { faceFile } from './faces.js';
+import { DIST, siteDist } from './dist.js';
 import { applyFields, findComp } from './rack/face.js';
 import { earPlan, frontWidthOfText } from '../vendor/ears2d.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from '../vendor/rack/rails.js';
@@ -144,7 +145,11 @@ const VISIBLE_FACES = {
 };
 
 export function createRackScene(container, opts = {}) {
-  const DIST = opts.dist || 'assets/dist/';
+  // Where the library is: a path -> URL function, or a base whose drawings are
+  // in packs (site/dist.js). Settled before the first build reads a face.
+  const distReady = typeof opts.dist === 'function' ? Promise.resolve(opts.dist) : siteDist(opts.dist || DIST);
+  distReady.catch(() => {});   // reported by the build that awaits it
+  let distAt = null;
   const STACK = opts.stack || [];
   // `heightRU: 'fit'` sizes the rack to what is actually in it, which cannot be
   // known until the configs are loaded - so UNITS is settled in build(), not
@@ -836,7 +841,7 @@ export function createRackScene(container, opts = {}) {
   // asks whether this mount has one before handing it out.
   const SYNTH = new Set();
   // A face's file is looked up, never built: see site/faces.js (Portrayal #670).
-  const faceUrl = (entry, view) => DIST + faceFile(entry.index || {device: entry.ref}, entry.cfg, view);
+  const faceUrl = (entry, view) => distAt(faceFile(entry.index || {device: entry.ref}, entry.cfg, view));
   const faceKey = (entry, view) => `${faceUrl(entry, view)}#mount-${entry.slot}`;
   const faceSrc = (entry, view) =>
     SYNTH.has(faceKey(entry, view)) ? faceKey(entry, view) : faceUrl(entry, view);
@@ -899,7 +904,7 @@ export function createRackScene(container, opts = {}) {
       if (!c) return null;
       const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
       return {comp: c, text: await svgSource(
-        `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`, relief)};
+        distAt(`components/${c.ns}--${c.name}--${c.major}--${skin}.svg`), relief)};
     };
     // Parsed roots by view. A face that will not fetch or will not parse is
     // left out rather than failing the device: the rack draws what it has.
@@ -1555,10 +1560,10 @@ export function createRackScene(container, opts = {}) {
       // bays but not cages still needs the index, or its optics go nowhere.
       // And always since Portrayal #670: it says which file draws each face.
       if (configs.has(e.ref)) continue;
-      configs.set(e.ref, jdist(`${DIST}${e.ref}.configs.json`).catch(() => null));
+      configs.set(e.ref, jdist(distAt(`${e.ref}.configs.json`)).catch(() => null));
     }
     if (STACK.some(e => !e.componentIndex) && !COMPONENTS) {
-      COMPONENTS = await jdist(`${DIST}components.json`)
+      COMPONENTS = await jdist(distAt('components.json'))
         .then(d => d.components).catch(() => []);
     }
     RESOLVED = [];
@@ -1615,6 +1620,8 @@ export function createRackScene(container, opts = {}) {
     // nobody will see, holding canvases and textures the next one needs.
     const mine = epoch;
     if (!alive) return;       // (disposed before it was asked to build)
+    distAt ??= await distReady;
+    if (mine !== epoch) return;
     await hydrate();
     if (mine !== epoch) return;
     if (FIT) {

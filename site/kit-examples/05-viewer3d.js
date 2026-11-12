@@ -3,6 +3,7 @@
 // same paths and lamp states as the drawing. three.js is a peer dependency:
 // the page's import map says where it lives.
 import {createViewer} from '@portrayal/kit/viewer3d';
+import {packedDist} from '@portrayal/kit/dist';
 
 const DIST = 'assets/dist/';  // wherever you host the compiled files
 
@@ -11,7 +12,9 @@ export async function run(host) {
   stage.style.cssText = 'height: 380px; position: relative;';
   host.append(stage);
 
-  const viewer = createViewer(stage, {dist: DIST});
+  // This site serves the drawings as packs, so it hands the viewer packedDist's
+  // path -> URL function. A build served as one file per drawing is {dist: DIST}.
+  const viewer = createViewer(stage, {dist: await packedDist(DIST)});
   host.viewer = viewer;                                  // so a rerun can dispose it
   await viewer.load({device: 's9600-72xc', config: 'base'});
 

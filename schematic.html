@@ -67,8 +67,10 @@ import { faceFile } from './site/faces.js';
 import { schematicPage, bandsOf } from './site/schematic.js';
 import { firstListed } from './site/featured.js';
 import { commonAccepts, rangeOf, groupsOf, emptyOf, applyChoice, makeHistory } from './site/slot-select.js';
+import { DIST, siteDist } from './site/dist.js';
 
-const DIST = 'assets/dist/';
+// a drawing's URL in the packs, which loadFace reads with fetchDist
+const distAt = await siteDist();
 const $ = s => document.querySelector(s);
 const out = $('#out');
 const say = t => { out.textContent = t; };
@@ -114,7 +116,7 @@ async function modulePorts(ref) {
     const skin = (c.skins || ['default'])[0];
     try {
       const f = await loadFace(
-        `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
+        distAt(`components/${c.ns}--${c.name}--${c.major}--${skin}.svg`));
       ports = portsOf(f.zones);
     } catch { /* a module with no compiled skin draws no ports */ }
   }
@@ -158,7 +160,7 @@ async function loadDevice() {
     }));
     here.forEach(b => seen.add(b.id));
     bays.push(...here);
-    for (const url of [DIST + faceFile(cfg || {device: dev.name}, cfg?.default, face)]) {
+    for (const url of [distAt(faceFile(cfg || {device: dev.name}, cfg?.default, face))]) {
       try {
         const f = await loadFace(url);
         chassisPorts.push(...portsOf(f.zones)

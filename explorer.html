@@ -174,13 +174,14 @@ import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
 import { firstDevice } from './site/featured.js';
 import { positionControl } from './vendor/positions.js';
+import { siteDist } from './site/dist.js';
 
 // A first visit opens on a populated device, not on the first in the index
 // (roc-ops/portrayal-site#19): site/featured.js is the one rule, shared with
 // Annotate and the showcase.
 const shell = createShell({
   title: 'Explorer',
-  dist: 'assets/dist',
+  dist: await siteDist(),
   mount: document.getElementById('shell'),
   device: firstDevice(),
 });
