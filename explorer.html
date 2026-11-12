@@ -182,9 +182,10 @@ import { siteDist } from './site/dist.js';
 // here, before that wait. Until the shell's own (EMBED MODE, below) stands
 // behind it, it answers as that one does before a device has loaded: the URL's
 // device, configuration and view, in 2D, with no swaps, fields or pulled parts.
+const EMBED = new URLSearchParams(location.search).get('embed') === '1';
 let embedImpl = null, embedArrived;
 const embedLater = new Promise(res => { embedArrived = res; });
-if (new URLSearchParams(location.search).get('embed') === '1') {
+if (EMBED) {
   const q = new URLSearchParams(location.search);
   window.portrayalEmbed = Object.freeze({
     ready: embedLater.then(e => e.ready),
@@ -212,7 +213,7 @@ const state = shell.state;
 // is the showcase's - so all three step aside, and the outer page talks to
 // this one only through window.portrayalEmbed. Without ?embed=1 nothing here
 // changes. (The shell already hides its own device picker inside a frame.)
-const EMBED = new URLSearchParams(location.search).get('embed') === '1';
+// (EMBED is read at the top, where window.portrayalEmbed is put in place.)
 document.body.classList.toggle('embed', EMBED);
 
 // ---------------------------------------------------------------- state chips
