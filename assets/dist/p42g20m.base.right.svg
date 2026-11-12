@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="75mm" height="1780mm" viewBox="0 0 75 1780" data-device="p42g20m" data-view="right" data-length-mm="1780" data-weight-kg="6.8" data-input-ac="three-phase delta, 200-240 V, 60 A (48 A derated), 17.3 kVA (drawing note 1)" data-input-plug="other" data-input-cord="fixed" data-input-phase="three" data-input-wiring="delta" data-input-current-a="48" data-plug-rating-a="60" data-breakers="six 20 A double-pole electromechanical switches and breakers" data-metering-scope="outlet" data-outlet-switching="true" data-network-module="G5 controller" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Panduit P42G20M","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"031d4554303810b7c3bd8d204aaec89277c9284a231382aaa376b20d923fc75e","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="P42G20M" data-sku="P42G20M" data-part-number="" x="0" y="0" width="75" height="1780" rx="1.2" fill="#0e0e10" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-motif-ed8d7af3b5" width="5.05" height="5" patternUnits="userSpaceOnUse">
+      <path d="M 4.53 3.33 L 3.35 4.5 L 1.7 4.5 L 0.53 3.33 L 0.53 1.67 L 1.7 0.5 L 3.35 0.5 L 4.53 1.67 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="side-dots-1" data-kind="motif-field" x="4.98" y="787.1" width="5.05" height="150.2" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-2" data-kind="motif-field" x="10.03" y="126.2" width="20.2" height="25" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-3" data-kind="motif-field" x="10.03" y="261.4" width="20.2" height="25.1" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-4" data-kind="motif-field" x="10.03" y="787.1" width="20.2" height="150.2" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-5" data-kind="motif-field" x="10.03" y="1102.5" width="20.2" height="25.1" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-6" data-kind="motif-field" x="10.03" y="1267.8" width="20.2" height="25" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-7" data-kind="motif-field" x="30.23" y="126.2" width="5.05" height="25" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-8" data-kind="motif-field" x="30.23" y="261.4" width="5.05" height="25.1" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-9" data-kind="motif-field" x="30.23" y="787.1" width="5.05" height="25.1" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-10" data-kind="motif-field" x="30.23" y="912.3" width="5.05" height="25" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-11" data-kind="motif-field" x="30.23" y="1102.5" width="5.05" height="25.1" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-12" data-kind="motif-field" x="30.23" y="1267.8" width="5.05" height="25" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-13" data-kind="motif-field" x="35.28" y="6.2" width="5.05" height="625.7" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-14" data-kind="motif-field" x="35.28" y="787.1" width="5.05" height="25.1" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-15" data-kind="motif-field" x="35.28" y="817.1" width="5.05" height="85.1" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-16" data-kind="motif-field" x="35.28" y="907.1" width="5.05" height="30.2" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-17" data-kind="motif-field" x="35.28" y="947.2" width="5.05" height="550.7" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-18" data-kind="motif-field" x="35.28" y="1658.2" width="5.05" height="30" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-19" data-kind="motif-field" x="40.33" y="6.2" width="10.1" height="150" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-20" data-kind="motif-field" x="40.33" y="166.2" width="10.1" height="10" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-21" data-kind="motif-field" x="40.33" y="191.2" width="10.1" height="440.7" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-22" data-kind="motif-field" x="40.33" y="787.1" width="10.1" height="150.2" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-23" data-kind="motif-field" x="40.33" y="947.2" width="10.1" height="550.7" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-24" data-kind="motif-field" x="40.33" y="1658.2" width="10.1" height="30" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-25" data-kind="motif-field" x="50.43" y="6.2" width="5.05" height="150" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-26" data-kind="motif-field" x="50.43" y="166.2" width="5.05" height="10" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-27" data-kind="motif-field" x="50.43" y="191.2" width="5.05" height="440.7" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-28" data-kind="motif-field" x="50.43" y="787.1" width="5.05" height="150.2" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-29" data-kind="motif-field" x="50.43" y="947.2" width="5.05" height="741" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-30" data-kind="motif-field" x="55.48" y="6.2" width="5.05" height="625.7" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-31" data-kind="motif-field" x="55.48" y="787.1" width="5.05" height="150.2" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-dots-32" data-kind="motif-field" x="55.48" y="947.2" width="5.05" height="741" rx="0.6" fill="url(#portrayal-motif-ed8d7af3b5)" />
+    <rect id="side-mark-1" data-kind="side-mark" x="21.02" y="93.88" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-2" data-kind="side-mark" x="21.02" y="101.32" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-3" data-kind="side-mark" x="21.02" y="228.97" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-4" data-kind="side-mark" x="21.02" y="236.6" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-5" data-kind="side-mark" x="21.02" y="364.25" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-6" data-kind="side-mark" x="21.02" y="371.69" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-7" data-kind="side-mark" x="21.02" y="1071.57" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-8" data-kind="side-mark" x="21.02" y="1079.01" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-9" data-kind="side-mark" x="21.02" y="1237.76" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-10" data-kind="side-mark" x="21.02" y="1245.2" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-11" data-kind="side-mark" x="21.02" y="1403.95" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-12" data-kind="side-mark" x="21.02" y="1411.39" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-13" data-kind="side-mark" x="23.31" y="649.13" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-14" data-kind="side-mark" x="23.31" y="765.32" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-15" data-kind="side-mark" x="28.84" y="810.54" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-16" data-kind="side-mark" x="28.84" y="900.8" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-17" data-kind="side-mark" x="58.23" y="2.49" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-18" data-kind="side-mark" x="58.23" y="332.96" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-19" data-kind="side-mark" x="58.23" y="573.18" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-20" data-kind="side-mark" x="58.23" y="813.6" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-21" data-kind="side-mark" x="58.23" y="1013.76" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-22" data-kind="side-mark" x="58.23" y="1290.04" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-23" data-kind="side-mark" x="58.23" y="1530.46" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-mark-24" data-kind="side-mark" x="58.23" y="1745.88" width="9.3" height="9.3" rx="4.65" fill="#26292d" />
+    <rect id="side-ring-1" data-kind="outline" x="44.47" y="154.92" width="7.05" height="7.05" rx="3.53" fill="none" stroke="#3c4046" stroke-width="0.75" />
+    <rect id="side-ring-2" data-kind="outline" x="44.47" y="178.96" width="7.05" height="7.05" rx="3.53" fill="none" stroke="#3c4046" stroke-width="0.75" />
+    <rect id="side-ring-3" data-kind="outline" x="44.47" y="1711.89" width="7.05" height="7.05" rx="3.53" fill="none" stroke="#3c4046" stroke-width="0.75" />
+    <rect id="side-ring-4" data-kind="outline" x="44.47" y="1735.94" width="7.05" height="7.05" rx="3.53" fill="none" stroke="#3c4046" stroke-width="0.75" />
+    <rect id="side-bar-1" data-kind="side-mark" x="14.1" y="1648.9" width="0.8" height="11.5" rx="0.2" fill="#3c4046" />
+    <rect id="side-bar-2" data-kind="side-mark" x="14.5" y="1660" width="11.6" height="0.8" rx="0.2" fill="#3c4046" />
+    <rect id="side-bar-3" data-kind="side-mark" x="39.3" y="1498.55" width="11.65" height="0.8" rx="0.2" fill="#3c4046" />
+    <rect id="side-bar-4" data-kind="side-mark" x="50.55" y="1498.95" width="0.8" height="11.44" rx="0.2" fill="#3c4046" />
+  </g>
+</svg>

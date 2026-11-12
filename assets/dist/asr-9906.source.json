@@ -51,6 +51,10 @@
   "airflow": "front-to-back",
   "color": "#c8cacc",
   "depth": 730.8,
+  "ears": {
+   "h": 533.7,
+   "y": 72.5
+  },
   "height": 619.51,
   "ru": 14,
   "silk": "#231f20",
@@ -69,6 +73,11 @@
   },
   "base": {
    "bays": {
+    "fc-0": "cisco/a99-sfc3-t@2",
+    "fc-1": "cisco/a99-sfc3-t@2",
+    "fc-2": "cisco/a99-sfc3-t@2",
+    "fc-3": "cisco/a99-sfc3-t@2",
+    "fc-4": "cisco/a99-sfc3-t@2",
     "ps0-pm-0": "cisco/pwr-6kw-ac-v3@1",
     "ps0-pm-1": "cisco/pwr-6kw-ac-v3@1",
     "ps0-pm-2": "cisco/pwr-6kw-ac-v3@1",
@@ -80,7 +89,7 @@
     "slot-5": "cisco/a9k-slot-cover@1"
    },
    "default": true,
-   "description": "Chassis only - what you spec before deciding what goes in it. The 6 slot bays are EMPTY; the three AC power modules are fitted. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with.",
+   "description": "Chassis only - what you spec before deciding what goes in it. The 6 slot bays are EMPTY; the five fabric cards and the three AC power modules are fitted. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with.",
    "kind": "base",
    "source": "derived - built from the group roles rather than from a vendor bundle: every bay whose group is `service` or `management` keeps its seat, every `traffic` bay takes a blank. This vendor publishes no base configuration for this chassis, so the library defines one. Where a vendor DOES publish one, follow it instead and say so here."
   },
@@ -127,13 +136,40 @@
    "what": "power-module-openings"
   },
   {
-   "note": "The ASR 9906's rear carries the fabric card cage and we know a great deal ABOUT it and almost nothing about its geometry. Cisco's stencil does list an \"ASR-9906 Rear\" master (image104.emf, 24.50 in tall), which has not been used to draw this face, and Figure 21 shows only the front. The count is sourced but indirectly: Table 13 quotes the configured weight for a chassis \"Configured with two fan trays, two RSPs, five fabric cards, and one PEM\", so five, and the sibling ASR 9910's Figure 22 shows fabric slots numbered from 0. Nothing states their width, their height, or where the PEM sits. The rear is therefore sized and carries regions naming what is there. ONE CUTOUT NOW EXISTS ON THIS FACE and it is not an exception to that: the NEBS grounding receptacle, which Table 12 states and Figure 61 shows, on an offset borrowed from the sibling chassis rather than measured - see provenance/grounding. The fabric card cage is still not drawn and is no better sourced than it was.",
+   "note": "The ASR 9906's rear carries the fabric card cage and we know a great deal ABOUT it and almost nothing about its geometry. Cisco's stencil does list an \"ASR-9906 Rear\" master (image104.emf, 24.50 in tall), which draws the five fabric bays and nothing else on this face (provenance fabric-bays), and Figure 21 shows only the front. The count is sourced but indirectly: Table 13 quotes the configured weight for a chassis \"Configured with two fan trays, two RSPs, five fabric cards, and one PEM\", so five, and the sibling ASR 9910's Figure 22 shows fabric slots numbered from 0. Nothing states their width, their height, or where the PEM sits. The rear is therefore sized and carries regions naming what is there. ONE CUTOUT NOW EXISTS ON THIS FACE and it is not an exception to that: the NEBS grounding receptacle, which Table 12 states and Figure 61 shows, on an offset borrowed from the sibling chassis rather than measured - see provenance/grounding. The five fabric bays are drawn (provenance fabric-bays); the rest of the rear is drawn from the same master (provenance rear-face, rear-power-inlets and rear-ground-pad-position). STILL OPEN: the master is a stencil drawing and no figure dimensions any rear feature; the six power receptacles (gap rear-power-receptacles), the I2C connector (gap rear-i2c-connector), the DC input slot (gap rear-dc-input), the DC housing's holes and the fabric cage's own metal are not drawn. The ground pad stays 52 mm from where the master draws it (provenance rear-ground-pad-position).",
    "reason": "needs-drawing",
    "scope": [
     "rear"
    ],
-   "wanted": "an ASR 9906 rear elevation, or a rear photograph",
+   "wanted": "a dimensioned ASR 9906 rear elevation, or a rear photograph",
    "what": "rear-face"
+  },
+  {
+   "note": "The power tray's rear plate carries six IEC input receptacles, A and B for each of M0 to M2 (Overview and Reference Guide, Figure 66, \"Version 3 Rear Panel\"; the stencil master \"ASR-9906 Rear\" draws the same six). No held document names the receptacle type or gives its dimensions, so no inlet part can be modelled, and a connector is not drawn as paint in its place: the plate is drawn and the six receptacles are not (provenance rear-power-inlets).",
+   "reason": "vendor-silent",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "Cisco's power tray specification naming the AC inlet",
+   "what": "rear-power-receptacles"
+  },
+  {
+   "note": "The power tray's rear plate carries an I2C cable connector at the end opposite the DC blades (Overview and Reference Guide, Figure 66, \"Version 3 Rear Panel\"; the stencil master \"ASR-9906 Rear\" draws a strip of five pins and a screw there). No held document states its connector type, so no connector part can be modelled and it is not drawn as paint in its place (provenance rear-power-inlets).",
+   "reason": "vendor-silent",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "Cisco's power tray specification naming the I2C connector type",
+   "what": "rear-i2c-connector"
+  },
+  {
+   "note": "The housing below the power tray plate is where the DC feed connects (Overview and Reference Guide, Figure 66, \"Version 3 Rear Panel\", the DC power blades; the stencil master \"ASR-9906 Rear\" draws a slot and two screws in it). No held document names the connector or gives its dimensions, so no terminal can be modelled and the slot is not drawn as paint in its place; the housing's outline and its screws are drawn (provenance rear-face).",
+   "reason": "vendor-silent",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "Cisco's power tray specification naming the DC input connector",
+   "what": "rear-dc-input"
   },
   {
    "note": "THE BOTTOM IS THE ONLY FACE OF THIS CHASSIS WITH NO SOURCE, and it is not a gap in this file's research. There is no bottom view of ANY ASR 9000 chassis anywhere in the 78-document intake: every figure caption in all 65 PDFs was searched for \"Bottom View\", \"underside\" and \"bottom of the chassis\", and the result is zero hits. That is a fact about how Cisco documents a rack chassis rather than about this model - a face that sits on rack rails and is never serviced gets no figure. The face is SIZED correctly from Table 13, so a rack elevation and the 3D box are the right shape; what it lacks is any statement of what is on it. Nothing is invented to fill it, and no region is added naming the absence, because a check passed by annotating that you have nothing is worse than a check failed honestly. THIS NO LONGER HOLDS THE CHASSIS BACK, and the reason is worth recording rather than deleting. The face now carries what IS sourced about it - the two rack mounting surfaces, at 5.00 in and 9.45 in from the front - so it is no longer content-free and the chassis reads at capability 4. That is not the gap closing. The bottom still has no elevation and nothing is drawn of what sits between those rails; what changed is that the little which is published got written down. The sibling ASR 9910, which has no bottom view at all, is the one still held at capability 2.",
@@ -155,6 +191,16 @@
   }
  ],
  "groups": {
+  "fabric": {
+   "attrs": {
+    "redundancy": "6+1",
+    "redundancy-note": "6+1 - b-asr9k-overview-reference-guide.pdf p96, \"Fabric Controller Card\", for \"Cisco ASR 9906 and 9910\": \"five FC cards are installed in the chassis, the switch fabric is 6+1 redundant\" (with two RSP cards; three FC cards make it 4+1). This cage has five FC bays, so 6+1 is the fully populated figure"
+   },
+   "index-origin": 0,
+   "physical-context": "NetworkingDevice",
+   "role": "service",
+   "term": "Slot"
+  },
   "grounding": {
    "index-origin": 1,
    "role": "furniture",
@@ -239,6 +285,10 @@
    "confidence": "datasheet",
    "note": "datasheet - Table 14, p131. The 9906 shares the 9006's and 9904's wider short-term range, 23 to 131 degF (-5 to 55 degC)"
   },
+  "fabric-bays": {
+   "confidence": "drawing",
+   "note": "drawing - the stencil master \"ASR-9906 Rear\" (the Cisco ASR 9000 Visio stencil, 1.90 by 2.45 in at 1:10) draws the fabric cage as five slots between two retainer strips, a captive screw at the top and bottom of each, and prints FC0 to FC4 under it from left to right. The count is the Overview and Reference Guide's, Table 13: a chassis \"Configured with two fan trays, two RSPs, five fabric cards, and one PEM\". The card is the IOS XR data sheet c78-737841's System requirements row for the ASR 9906, A99-SFC3-T. Read by eye off a 1554 px render of the master, x calibrated on the 482.6 mm rack face and shifted in by 17.8 mm to the body edge and y on the 619.51 mm body height, as the front face is. The chassis drawing's figures are the first slot's left edge, 148.45 mm, and the 38.36 mm pitch between slots; the cage's right edge, 340.16 mm (148.45 + 4 x 38.36 + 38.27), is DERIVED from them (read directly off the render it was 340.0 mm, 0.16 mm short, inside the reading error). The card sits between the strips from y 74.5. THE READING IS GOOD TO ABOUT 1.5 MM and nothing here is dimensioned by Cisco. The FC0 to FC4 legends are an ESTIMATE too: their x (167.9, 204.3, 240.9, 277.3, 313.6 mm), y (589.0 mm) and 6 pt size were placed by eye on the same render, at the legends the master prints, and are not read from any dimension. They are about 36.4 mm apart against the slots' 38.36 mm pitch, so the right-hand ones sit left of their slot's centre (FC4 by 7.4 mm), and no error bound is claimed for them. The bays take the card's own 38.27 x 492.1 faceplate, so there are 0.09 mm between neighbours; the first major of the card, 43.7 wide, did not fit five slots and is replaced (see the card's provenance envelope). WHAT WOULD SETTLE IT: a dimensioned rear elevation of the chassis."
+  },
   "fabric-cards": {
    "confidence": "datasheet",
    "note": "datasheet - the rear carries fabric cards in their own cage with numbering that restarts at Slot 0, as Figure 22 shows for the sibling 9910. The COUNT is not readable from any figure we hold, but Table 13 supplies it independently: the 9906's configured weight is quoted for a chassis \"Configured with two fan trays, two RSPs, five fabric cards, and one PEM\". Five. The rear is not otherwise modelled - no master or figure here shows it"
@@ -279,6 +329,18 @@
   },
   "prose-lagged-the-geometry-by-three-revisions": {
    "note": "RECORDED AS A PROCESS FAILURE, not just a typo. When the datum misread was found and the geometry corrected from the rear to the front, THREE PROVENANCE SENTENCES AND TWO REGION LABELS kept saying \"from the rear\". The drawing was right and the words were wrong for several commits, and the words are what a reader trusts most. casa-cards' new L31 caught the two LABELS - it compares a label's stated position against what is drawn at that depth - but it reads labels and not provenance, so the three prose sentences were invisible to it and had to be found by a human reading the file. The lesson is narrow and worth keeping: A CORRECTION IS NOT DONE WHEN THE GEOMETRY MOVES. Grep the whole file for the wrong claim, because the number appears in the coordinates, in the region label and in two or three sentences of prose, and only the first of those is what you were editing"
+  },
+  "rear-face": {
+   "confidence": "drawing",
+   "note": "drawing - the stencil master \"ASR-9906 Rear\" (the Cisco ASR 9000 Visio stencil, 1.90 by 2.45 in at 1:10), read by eye off a 1554 px render with the calibration the fabric bays use: x on the 482.6 mm rack face shifted in by 17.8 mm to the body edge, y on the 619.51 mm body height. Edges of the vent fields, the tray plate and the DC housing were read as the extent of their black pixels on a 3047 px render, so they are good to about 0.3 mm; the screws and the screw and plus marks were placed by eye and are good to about 1.5 mm. Nothing here is dimensioned by Cisco. WHAT THE MASTER DRAWS AND THIS FACE NOW DRAWS: two hexagon vent fields (lower left 94.3 x 337.7 mm, upper right 54.4 x 92.0 mm, flat-topped hexagons on a 17.8 mm and a 7.8 mm column pitch, the first row cut by the field edge as drawn); the power tray's rear plate (43.8 x 296.4 mm, in its frame), where the master shows six IEC receptacles, and the DC output blade housing below it (65.6 x 55.1 mm, its outline and two screws); the ESD jack at the bottom right; eight round screw heads and twenty-three plus marks, the latter drawn as dots. The five fabric bays are in provenance fabric-bays. NOT DRAWN, AND SAID SO: the six IEC receptacles on the tray plate (30.6 x 23.4 mm bodies on a 48.3 mm pitch in the master; a named gap, because no held document names their type), the hexagon holes of the DC housing (an irregular pattern of 50 or so holes), the M0 to M2 and A and B legends and the rating legend printed on the tray, the ESD symbol (the legend ESD is drawn), the I2C connector and the slot of the DC blades (both named gaps, as are the six receptacles), the fabric cage's own rails, latch strips and dark backplane, and the 3 mm side rails of the tray. The master paints the rear grey (#a5a5a5) where the chassis colour of this file is #c8cacc; the chassis colour is not changed here."
+  },
+  "rear-ground-pad-position": {
+   "confidence": "drawing",
+   "note": "drawing - the master draws a pad plate of 64.6 x 15.8 mm with two holes 20.2 mm apart at (392.2, 523.6) and (412.4, 523.6) mm, and the earth symbol below it. THE PAD IS NOT MOVED: it stays at (375.0, 566.01), where the sibling chassis put theirs, because a placed id moving is a major bump of the chassis. The part's hole pitch is 15.875 mm and the master's 20.2 mm, so with the screws centred on the holes' midpoint, (402.3, 523.6), each would sit 2.2 mm from its drawn hole. Provenance grounding said the borrowed position \"could be a centimetre out\"; against this master it is 52 mm out in y."
+  },
+  "rear-power-inlets": {
+   "confidence": "datasheet",
+   "note": "datasheet + drawing - the receptacles are the version 3 AC power tray's, not the module's. Overview and Reference Guide Figure 66, \"Version 3 Rear Panel\" (b-asr9k-overview-reference-guide.pdf, PDF p102, printed p90), shows six receptacles in a row, the callout reading \"IEC input receptacles with retention brackets\", DC output power blades at one end and the I2C cable connector at the other; the text says the version 2 and 3 receptacles have \"a clamp mechanism with a screw\" and are \"20-A UL/CSA-rated, 16-IEC-rated\". No document held names the receptacle type (C19 or C20) or gives its dimensions, so no inlet part is placed, and they are not drawn at all: the tray plate is drawn where they sit (gap rear-power-receptacles). They are not part of the power modules (cisco/pwr-6kw-ac-v3@1 states that its cord lands on the tray). NOTE the pitch: the master draws M0, M1 and M2 at 96.7 mm on this face (two receptacles of 48.3 mm), where the front master puts the modules on a 139.0 mm pitch. The two are not reconciled and neither is changed. The master's top to bottom order is M2, M1, M0 with A above B in each, read from the legends."
   },
   "rsp-chassis-support": {
    "confidence": "datasheet",
@@ -348,7 +410,7 @@
    "title": "Cisco ASR 9000 Series Aggregation Services Router Hardware Installation Guide (2021-03-30)"
   }
  ],
- "version": "2.0.6",
+ "version": "2.2.2",
  "views": {
   "bottom": {
    "panel": {
@@ -1001,16 +1063,114 @@
   },
   "rear": {
    "components": {
+    "bays": [
+     {
+      "accepts": [
+       "cisco/a99-sfc3-t@2"
+      ],
+      "at": [
+       148.45,
+       74.5
+      ],
+      "default": "cisco/a99-sfc3-t@2",
+      "group": "fabric",
+      "id": "fc-0",
+      "rel-pos": 0,
+      "size": {
+       "h": 492.1,
+       "w": 38.27
+      }
+     },
+     {
+      "accepts": [
+       "cisco/a99-sfc3-t@2"
+      ],
+      "at": [
+       186.81,
+       74.5
+      ],
+      "default": "cisco/a99-sfc3-t@2",
+      "group": "fabric",
+      "id": "fc-1",
+      "rel-pos": 1,
+      "size": {
+       "h": 492.1,
+       "w": 38.27
+      }
+     },
+     {
+      "accepts": [
+       "cisco/a99-sfc3-t@2"
+      ],
+      "at": [
+       225.17,
+       74.5
+      ],
+      "default": "cisco/a99-sfc3-t@2",
+      "group": "fabric",
+      "id": "fc-2",
+      "rel-pos": 2,
+      "size": {
+       "h": 492.1,
+       "w": 38.27
+      }
+     },
+     {
+      "accepts": [
+       "cisco/a99-sfc3-t@2"
+      ],
+      "at": [
+       263.53,
+       74.5
+      ],
+      "default": "cisco/a99-sfc3-t@2",
+      "group": "fabric",
+      "id": "fc-3",
+      "rel-pos": 3,
+      "size": {
+       "h": 492.1,
+       "w": 38.27
+      }
+     },
+     {
+      "accepts": [
+       "cisco/a99-sfc3-t@2"
+      ],
+      "at": [
+       301.89,
+       74.5
+      ],
+      "default": "cisco/a99-sfc3-t@2",
+      "group": "fabric",
+      "id": "fc-4",
+      "rel-pos": 4,
+      "size": {
+       "h": 492.1,
+       "w": 38.27
+      }
+     }
+    ],
     "placements": [
      {
       "at": [
-       375.0,
+       375,
        566.01
       ],
       "group": "grounding",
       "id": "ground-pad-rear",
       "ref": "cisco/a9k-ground-pad@1",
       "rel-pos": 1
+     },
+     {
+      "at": [
+       337.3,
+       598.3
+      ],
+      "for": "chassis",
+      "group": "grounding",
+      "id": "esd-jack-rear",
+      "ref": "common/esd-jack@1",
+      "rel-pos": 3
      }
     ]
    },
@@ -1018,7 +1178,7 @@
     "cutouts": [
      {
       "at": [
-       375.0,
+       375,
        566.01
       ],
       "id": "ground-pad-rear",
@@ -1026,6 +1186,845 @@
       "size": [
        46.0,
        20.0
+      ]
+     },
+     {
+      "at": [
+       337.8,
+       598.8
+      ],
+      "id": "esd-rear",
+      "shape": "circle",
+      "size": [
+       5.0,
+       5.0
+      ]
+     }
+    ],
+    "decor": [
+     {
+      "at": [
+       16.7,
+       269.8
+      ],
+      "confidence": "drawing",
+      "fill": "#a5a5a5",
+      "id": "rear-vent-lower-left",
+      "pattern": "motif",
+      "pattern-cells": [
+       [
+        [
+         10.95,
+         0
+        ],
+        [
+         5.47,
+         9.48
+        ],
+        [
+         0,
+         9.48
+        ],
+        [
+         0,
+         0
+        ]
+       ],
+       [
+        [
+         10.95,
+         20.56
+        ],
+        [
+         0,
+         20.56
+        ],
+        [
+         0,
+         11.08
+        ],
+        [
+         5.47,
+         11.08
+        ]
+       ],
+       [
+        [
+         35.61,
+         9.48
+        ],
+        [
+         30.14,
+         9.48
+        ],
+        [
+         24.66,
+         0
+        ],
+        [
+         35.61,
+         0
+        ]
+       ],
+       [
+        [
+         24.66,
+         20.56
+        ],
+        [
+         30.14,
+         11.08
+        ],
+        [
+         35.61,
+         11.08
+        ],
+        [
+         35.61,
+         20.56
+        ]
+       ],
+       [
+        [
+         28.75,
+         10.28
+        ],
+        [
+         23.28,
+         19.76
+        ],
+        [
+         12.33,
+         19.76
+        ],
+        [
+         6.86,
+         10.28
+        ],
+        [
+         12.33,
+         0.8
+        ],
+        [
+         23.28,
+         0.8
+        ]
+       ]
+      ],
+      "pattern-offset": [
+       11.6,
+       -0.55
+      ],
+      "pattern-pitch": [
+       35.61,
+       20.56
+      ],
+      "size": [
+       94.3,
+       337.7
+      ],
+      "source": "stencil master ASR-9906 Rear, hexagon field at the lower left",
+      "vent": 60
+     },
+     {
+      "at": [
+       378.3,
+       13.6
+      ],
+      "confidence": "drawing",
+      "fill": "#a5a5a5",
+      "id": "rear-vent-upper-right",
+      "pattern": "motif",
+      "pattern-cells": [
+       [
+        [
+         4.33,
+         0
+        ],
+        [
+         2.17,
+         3.75
+        ],
+        [
+         0,
+         3.75
+        ],
+        [
+         0,
+         0
+        ]
+       ],
+       [
+        [
+         4.33,
+         9.01
+        ],
+        [
+         0,
+         9.01
+        ],
+        [
+         0,
+         5.25
+        ],
+        [
+         2.17,
+         5.25
+        ]
+       ],
+       [
+        [
+         15.6,
+         3.75
+        ],
+        [
+         13.43,
+         3.75
+        ],
+        [
+         11.27,
+         0
+        ],
+        [
+         15.6,
+         0
+        ]
+       ],
+       [
+        [
+         11.27,
+         9.01
+        ],
+        [
+         13.43,
+         5.25
+        ],
+        [
+         15.6,
+         5.25
+        ],
+        [
+         15.6,
+         9.01
+        ]
+       ],
+       [
+        [
+         12.13,
+         4.5
+        ],
+        [
+         9.97,
+         8.26
+        ],
+        [
+         5.63,
+         8.26
+        ],
+        [
+         3.47,
+         4.5
+        ],
+        [
+         5.63,
+         0.75
+        ],
+        [
+         9.97,
+         0.75
+        ]
+       ]
+      ],
+      "pattern-offset": [
+       4.33,
+       3.75
+      ],
+      "pattern-pitch": [
+       15.6,
+       9.01
+      ],
+      "size": [
+       54.4,
+       92.0
+      ],
+      "source": "stencil master ASR-9906 Rear, hexagon field at the upper right",
+      "vent": 60
+     },
+     {
+      "at": [
+       378.7,
+       120.8
+      ],
+      "id": "rear-power-tray-frame",
+      "size": [
+       66.2,
+       298.1
+      ],
+      "stroke": "#4d4d4d",
+      "stroke-width": 0.5
+     },
+     {
+      "at": [
+       390.3,
+       120.8
+      ],
+      "fill": "#aaafb7",
+      "id": "rear-power-tray-plate",
+      "size": [
+       43.8,
+       296.4
+      ]
+     },
+     {
+      "at": [
+       378.7,
+       417.9
+      ],
+      "fill": "#a6a6a6",
+      "id": "rear-dc-output-housing",
+      "rx": 1.5,
+      "size": [
+       65.6,
+       55.1
+      ]
+     },
+     {
+      "at": [
+       378.7,
+       417.9
+      ],
+      "rx": 1.5,
+      "size": [
+       65.6,
+       55.1
+      ],
+      "stroke": "#222222",
+      "stroke-width": 0.5
+     },
+     {
+      "at": [
+       397.45,
+       443.75
+      ],
+      "rx": 2.85,
+      "size": [
+       5.7,
+       5.7
+      ],
+      "stroke": "#777777",
+      "stroke-width": 0.5
+     },
+     {
+      "at": [
+       398.8,
+       445.1
+      ],
+      "fill": "#000000",
+      "rx": 1.5,
+      "size": [
+       3,
+       3
+      ]
+     },
+     {
+      "at": [
+       423.75,
+       443.75
+      ],
+      "rx": 2.85,
+      "size": [
+       5.7,
+       5.7
+      ],
+      "stroke": "#777777",
+      "stroke-width": 0.5
+     },
+     {
+      "at": [
+       425.1,
+       445.1
+      ],
+      "fill": "#000000",
+      "rx": 1.5,
+      "size": [
+       3,
+       3
+      ]
+     },
+     {
+      "at": [
+       134.1,
+       45.56
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       135.9,
+       47.36
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       203.66,
+       45.56
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       205.46,
+       47.36
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       273.54,
+       45.56
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       275.34,
+       47.36
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       343.1,
+       45.56
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       344.9,
+       47.36
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       114.84,
+       279.74
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       116.64,
+       281.54
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       114.84,
+       381.95
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       116.64,
+       383.75
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       114.84,
+       483.86
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       116.64,
+       485.66
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       114.84,
+       586.08
+      ],
+      "rx": 4,
+      "size": [
+       8,
+       8
+      ],
+      "stroke": "#8a8a8a",
+      "stroke-width": 0.6
+     },
+     {
+      "at": [
+       116.64,
+       587.88
+      ],
+      "fill": "#000000",
+      "rx": 2.2,
+      "size": [
+       4.4,
+       4.4
+      ]
+     },
+     {
+      "at": [
+       13.44,
+       5.75
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       116.85,
+       5.75
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       325.55,
+       5.75
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       429.58,
+       5.75
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       370.58,
+       24.03
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       435.48,
+       26.2
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       7.23,
+       47.26
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       435.48,
+       90.32
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       7.23,
+       149.17
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       370.58,
+       138.33
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       7.23,
+       250.77
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       370.58,
+       253.87
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       7.23,
+       352.37
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       370.58,
+       380.56
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       7.23,
+       454.28
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       370.58,
+       458.93
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       411.57,
+       478.75
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       435.48,
+       501.05
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       7.23,
+       556.19
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       435.48,
+       592.43
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       13.44,
+       610.09
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       116.85,
+       610.09
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
+      ]
+     },
+     {
+      "at": [
+       325.55,
+       610.09
+      ],
+      "fill": "#5f5f5f",
+      "rx": 2.3,
+      "size": [
+       4.6,
+       4.6
       ]
      }
     ]
@@ -1038,6 +2037,80 @@
     {
      "id": "nebs-ground",
      "label": "NEBS bonding and grounding - bottom rear and left side"
+    },
+    {
+     "id": "rear-vents",
+     "label": "Hexagon vent fields - lower left and upper right of the rear"
+    },
+    {
+     "id": "rear-power-tray",
+     "label": "Power tray rear - six IEC input receptacles, A and B for each of M0 to M2, with the DC output blades below"
+    },
+    {
+     "id": "rear-esd",
+     "label": "ESD grounding jack - bottom right of the rear"
+    }
+   ],
+   "silkscreen": [
+    {
+     "anchor": "middle",
+     "at": [
+      167.9,
+      589.0
+     ],
+     "font-size": 6,
+     "for": "fc-0",
+     "text": "FC0"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      204.3,
+      589.0
+     ],
+     "font-size": 6,
+     "for": "fc-1",
+     "text": "FC1"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      240.9,
+      589.0
+     ],
+     "font-size": 6,
+     "for": "fc-2",
+     "text": "FC2"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      277.3,
+      589.0
+     ],
+     "font-size": 6,
+     "for": "fc-3",
+     "text": "FC3"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      313.6,
+      589.0
+     ],
+     "font-size": 6,
+     "for": "fc-4",
+     "text": "FC4"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      350.5,
+      603.16
+     ],
+     "font-size": 6,
+     "for": "esd-jack-rear",
+     "text": "ESD"
     }
    ],
    "size": {

@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="91mm" height="2311mm" viewBox="0 0 91 2311" data-device="13911-715" data-view="front" data-shell="sheet" data-weight-kg="12.2" data-material="Steel mid panels and splice plates, plastic sides, plastic door" data-finish="Black epoxy-polyester hybrid powder coat paint on steel parts; black plastic" data-color="Black" data-environment="Indoor use only, in environmentally controlled areas">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Chatsworth Products 13911-715","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"chatsworth/velocity-13902-715-wall@1":"1.0.0","chatsworth/velocity-13911-715-front-base@1":"1.0.0","chatsworth/velocity-13911-715-front-door@1":"1.0.0","chatsworth/velocity-vcm-finger@1":"1.0.0"},"source-sha256":"ba82c3cf319327b14ad5a5d8302344f61139530337f04b41e841b1fd93d8a635","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="13911-715" x="0" y="0" width="91" height="2311" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor" />
+  <rect id="guide--duct" data-class="guide" data-guide="duct" data-guide-run="y" data-guide-finger-pitch="44.45" data-guide-finger-gap="30.45" x="16.5" y="0" width="58" height="2311" fill="none" stroke="none" pointer-events="none" />
+  <g id="front-base" data-path="front-base" data-class="mechanical" data-ref="chatsworth/velocity-13911-715-front-base@1:1.0.0" data-depth="196.5" data-wall="#232527" data-material="Steel" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the back plates and the finger walls, the front channel first, left wall first">
+    <title>front-base</title>
+    <rect id="front-base--floor" x="0" y="0" width="91" height="2311" fill="#232527" data-path="front-base/floor" data-class="bezel" />
+    <rect id="front-base--seam" x="0" y="1155.2" width="91" height="0.6" fill="#101112" />
+  </g>
+  <g id="front-wall-left" data-path="front-wall-left" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-13902-715-wall@1:1.0.0" data-material="Plastic" data-rel-pos="2" transform="translate(0.0,0.0)" data-group="body" data-group-role="furniture" data-description="the back plates and the finger walls, the front channel first, left wall first" data-z-lift="-196.5" data-in="front-base" data-under="front-finger-left-1 front-finger-left-2 front-finger-left-3 front-finger-left-4 front-finger-left-5 front-finger-left-6 front-finger-left-7 front-finger-left-8 front-finger-left-9 front-finger-left-10 front-finger-left-11 front-finger-left-12 front-finger-left-13 front-finger-left-14 front-finger-left-15 front-finger-left-16 front-finger-left-17 front-finger-left-18 front-finger-left-19 front-finger-left-20 front-finger-left-21 front-finger-left-22 front-finger-left-23 front-finger-left-24 front-finger-left-25 front-finger-left-26 front-finger-left-27 front-finger-left-28 front-finger-left-29 front-finger-left-30 front-finger-left-31 front-finger-left-32 front-finger-left-33 front-finger-left-34 front-finger-left-35 front-finger-left-36 front-finger-left-37 front-finger-left-38 front-finger-left-39 front-finger-left-40 front-finger-left-41 front-finger-left-42 front-finger-left-43 front-finger-left-44 front-finger-left-45 front-finger-left-46 front-finger-left-47 front-finger-left-48 front-finger-left-49 front-finger-left-50 front-finger-left-51 front-finger-right-1 front-finger-right-2 front-finger-right-3 front-finger-right-4 front-finger-right-5 front-finger-right-6 front-finger-right-7 front-finger-right-8 front-finger-right-9 front-finger-right-10 front-finger-right-11 front-finger-right-12 front-finger-right-13 front-finger-right-14 front-finger-right-15 front-finger-right-16 front-finger-right-17 front-finger-right-18 front-finger-right-19 front-finger-right-20 front-finger-right-21 front-finger-right-22 front-finger-right-23 front-finger-right-24 front-finger-right-25 front-finger-right-26 front-finger-right-27 front-finger-right-28 front-finger-right-29 front-finger-right-30 front-finger-right-31 front-finger-right-32 front-finger-right-33 front-finger-right-34 front-finger-right-35 front-finger-right-36 front-finger-right-37 front-finger-right-38 front-finger-right-39 front-finger-right-40 front-finger-right-41 front-finger-right-42 front-finger-right-43 front-finger-right-44 front-finger-right-45 front-finger-right-46 front-finger-right-47 front-finger-right-48 front-finger-right-49 front-finger-right-50 front-finger-right-51 front-door-1 front-door-2">
+    <title>front-wall-left</title>
+    <rect id="front-wall-left--root" x="0" y="0" width="16.5" height="2311" fill="#202224" data-path="front-wall-left/root" data-class="bezel" data-z-out="-186.5" data-z-color="#202224" />
+  </g>
+  <g id="front-wall-right" data-path="front-wall-right" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-13902-715-wall@1:1.0.0" data-material="Plastic" data-rel-pos="3" transform="translate(74.5,0.0)" data-group="body" data-group-role="furniture" data-description="the back plates and the finger walls, the front channel first, left wall first" data-z-lift="-196.5" data-in="front-base" data-under="front-finger-left-1 front-finger-left-2 front-finger-left-3 front-finger-left-4 front-finger-left-5 front-finger-left-6 front-finger-left-7 front-finger-left-8 front-finger-left-9 front-finger-left-10 front-finger-left-11 front-finger-left-12 front-finger-left-13 front-finger-left-14 front-finger-left-15 front-finger-left-16 front-finger-left-17 front-finger-left-18 front-finger-left-19 front-finger-left-20 front-finger-left-21 front-finger-left-22 front-finger-left-23 front-finger-left-24 front-finger-left-25 front-finger-left-26 front-finger-left-27 front-finger-left-28 front-finger-left-29 front-finger-left-30 front-finger-left-31 front-finger-left-32 front-finger-left-33 front-finger-left-34 front-finger-left-35 front-finger-left-36 front-finger-left-37 front-finger-left-38 front-finger-left-39 front-finger-left-40 front-finger-left-41 front-finger-left-42 front-finger-left-43 front-finger-left-44 front-finger-left-45 front-finger-left-46 front-finger-left-47 front-finger-left-48 front-finger-left-49 front-finger-left-50 front-finger-left-51 front-finger-right-1 front-finger-right-2 front-finger-right-3 front-finger-right-4 front-finger-right-5 front-finger-right-6 front-finger-right-7 front-finger-right-8 front-finger-right-9 front-finger-right-10 front-finger-right-11 front-finger-right-12 front-finger-right-13 front-finger-right-14 front-finger-right-15 front-finger-right-16 front-finger-right-17 front-finger-right-18 front-finger-right-19 front-finger-right-20 front-finger-right-21 front-finger-right-22 front-finger-right-23 front-finger-right-24 front-finger-right-25 front-finger-right-26 front-finger-right-27 front-finger-right-28 front-finger-right-29 front-finger-right-30 front-finger-right-31 front-finger-right-32 front-finger-right-33 front-finger-right-34 front-finger-right-35 front-finger-right-36 front-finger-right-37 front-finger-right-38 front-finger-right-39 front-finger-right-40 front-finger-right-41 front-finger-right-42 front-finger-right-43 front-finger-right-44 front-finger-right-45 front-finger-right-46 front-finger-right-47 front-finger-right-48 front-finger-right-49 front-finger-right-50 front-finger-right-51 front-door-1 front-door-2">
+    <title>front-wall-right</title>
+    <rect id="front-wall-right--root" x="0" y="0" width="16.5" height="2311" fill="#202224" data-path="front-wall-right/root" data-class="bezel" data-z-out="-186.5" data-z-color="#202224" />
+  </g>
+  <g id="front-finger-left-1" data-path="front-finger-left-1" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="1" transform="translate(0,22.02)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-1</title>
+    <rect id="front-finger-left-1--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-1/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-1--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-1/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-2" data-path="front-finger-left-2" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="2" transform="translate(0,66.47)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-2</title>
+    <rect id="front-finger-left-2--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-2/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-2--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-2/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-3" data-path="front-finger-left-3" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="3" transform="translate(0,110.92)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-3</title>
+    <rect id="front-finger-left-3--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-3/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-3--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-3/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-4" data-path="front-finger-left-4" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="4" transform="translate(0,155.37)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-4</title>
+    <rect id="front-finger-left-4--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-4/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-4--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-4/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-5" data-path="front-finger-left-5" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="5" transform="translate(0,199.82)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-5</title>
+    <rect id="front-finger-left-5--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-5/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-5--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-5/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-6" data-path="front-finger-left-6" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="6" transform="translate(0,244.27)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-6</title>
+    <rect id="front-finger-left-6--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-6/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-6--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-6/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-7" data-path="front-finger-left-7" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="7" transform="translate(0,288.72)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-7</title>
+    <rect id="front-finger-left-7--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-7/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-7--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-7/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-8" data-path="front-finger-left-8" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="8" transform="translate(0,333.17)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-8</title>
+    <rect id="front-finger-left-8--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-8/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-8--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-8/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-9" data-path="front-finger-left-9" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="9" transform="translate(0,377.62)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-9</title>
+    <rect id="front-finger-left-9--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-9/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-9--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-9/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-10" data-path="front-finger-left-10" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="10" transform="translate(0,422.07)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-10</title>
+    <rect id="front-finger-left-10--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-10/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-10--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-10/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-11" data-path="front-finger-left-11" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="11" transform="translate(0,466.52)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-11</title>
+    <rect id="front-finger-left-11--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-11/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-11--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-11/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-12" data-path="front-finger-left-12" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="12" transform="translate(0,510.97)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-12</title>
+    <rect id="front-finger-left-12--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-12/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-12--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-12/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-13" data-path="front-finger-left-13" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="13" transform="translate(0,555.42)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-13</title>
+    <rect id="front-finger-left-13--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-13/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-13--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-13/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-14" data-path="front-finger-left-14" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="14" transform="translate(0,599.87)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-14</title>
+    <rect id="front-finger-left-14--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-14/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-14--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-14/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-15" data-path="front-finger-left-15" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="15" transform="translate(0,644.32)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-15</title>
+    <rect id="front-finger-left-15--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-15/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-15--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-15/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-16" data-path="front-finger-left-16" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="16" transform="translate(0,688.77)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-16</title>
+    <rect id="front-finger-left-16--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-16/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-16--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-16/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-17" data-path="front-finger-left-17" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="17" transform="translate(0,733.22)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-17</title>
+    <rect id="front-finger-left-17--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-17/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-17--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-17/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-18" data-path="front-finger-left-18" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="18" transform="translate(0,777.67)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-18</title>
+    <rect id="front-finger-left-18--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-18/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-18--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-18/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-19" data-path="front-finger-left-19" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="19" transform="translate(0,822.12)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-19</title>
+    <rect id="front-finger-left-19--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-19/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-19--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-19/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-20" data-path="front-finger-left-20" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="20" transform="translate(0,866.57)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-20</title>
+    <rect id="front-finger-left-20--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-20/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-20--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-20/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-21" data-path="front-finger-left-21" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="21" transform="translate(0,911.02)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-21</title>
+    <rect id="front-finger-left-21--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-21/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-21--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-21/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-22" data-path="front-finger-left-22" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="22" transform="translate(0,955.47)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-22</title>
+    <rect id="front-finger-left-22--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-22/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-22--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-22/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-23" data-path="front-finger-left-23" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="23" transform="translate(0,999.92)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-23</title>
+    <rect id="front-finger-left-23--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-23/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-23--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-23/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-24" data-path="front-finger-left-24" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="24" transform="translate(0,1044.37)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-24</title>
+    <rect id="front-finger-left-24--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-24/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-24--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-24/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-25" data-path="front-finger-left-25" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="25" transform="translate(0,1088.82)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-left-25</title>
+    <rect id="front-finger-left-25--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-25/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-25--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-25/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-26" data-path="front-finger-left-26" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="26" transform="translate(0,1133.27)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1 front-door-2">
+    <title>front-finger-left-26</title>
+    <rect id="front-finger-left-26--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-26/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-26--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-26/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-27" data-path="front-finger-left-27" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="27" transform="translate(0,1177.72)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-27</title>
+    <rect id="front-finger-left-27--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-27/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-27--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-27/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-28" data-path="front-finger-left-28" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="28" transform="translate(0,1222.17)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-28</title>
+    <rect id="front-finger-left-28--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-28/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-28--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-28/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-29" data-path="front-finger-left-29" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="29" transform="translate(0,1266.62)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-29</title>
+    <rect id="front-finger-left-29--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-29/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-29--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-29/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-30" data-path="front-finger-left-30" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="30" transform="translate(0,1311.07)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-30</title>
+    <rect id="front-finger-left-30--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-30/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-30--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-30/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-31" data-path="front-finger-left-31" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="31" transform="translate(0,1355.52)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-31</title>
+    <rect id="front-finger-left-31--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-31/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-31--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-31/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-32" data-path="front-finger-left-32" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="32" transform="translate(0,1399.97)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-32</title>
+    <rect id="front-finger-left-32--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-32/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-32--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-32/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-33" data-path="front-finger-left-33" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="33" transform="translate(0,1444.42)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-33</title>
+    <rect id="front-finger-left-33--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-33/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-33--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-33/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-34" data-path="front-finger-left-34" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="34" transform="translate(0,1488.87)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-34</title>
+    <rect id="front-finger-left-34--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-34/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-34--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-34/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-35" data-path="front-finger-left-35" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="35" transform="translate(0,1533.32)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-35</title>
+    <rect id="front-finger-left-35--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-35/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-35--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-35/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-36" data-path="front-finger-left-36" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="36" transform="translate(0,1577.77)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-36</title>
+    <rect id="front-finger-left-36--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-36/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-36--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-36/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-37" data-path="front-finger-left-37" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="37" transform="translate(0,1622.22)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-37</title>
+    <rect id="front-finger-left-37--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-37/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-37--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-37/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-38" data-path="front-finger-left-38" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="38" transform="translate(0,1666.67)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-38</title>
+    <rect id="front-finger-left-38--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-38/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-38--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-38/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-39" data-path="front-finger-left-39" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="39" transform="translate(0,1711.12)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-39</title>
+    <rect id="front-finger-left-39--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-39/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-39--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-39/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-40" data-path="front-finger-left-40" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="40" transform="translate(0,1755.57)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-40</title>
+    <rect id="front-finger-left-40--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-40/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-40--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-40/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-41" data-path="front-finger-left-41" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="41" transform="translate(0,1800.02)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-41</title>
+    <rect id="front-finger-left-41--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-41/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-41--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-41/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-42" data-path="front-finger-left-42" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="42" transform="translate(0,1844.47)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-42</title>
+    <rect id="front-finger-left-42--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-42/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-42--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-42/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-43" data-path="front-finger-left-43" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="43" transform="translate(0,1888.92)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-43</title>
+    <rect id="front-finger-left-43--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-43/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-43--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-43/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-44" data-path="front-finger-left-44" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="44" transform="translate(0,1933.37)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-44</title>
+    <rect id="front-finger-left-44--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-44/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-44--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-44/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-45" data-path="front-finger-left-45" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="45" transform="translate(0,1977.82)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-45</title>
+    <rect id="front-finger-left-45--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-45/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-45--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-45/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-46" data-path="front-finger-left-46" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="46" transform="translate(0,2022.27)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-46</title>
+    <rect id="front-finger-left-46--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-46/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-46--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-46/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-47" data-path="front-finger-left-47" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="47" transform="translate(0,2066.72)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-47</title>
+    <rect id="front-finger-left-47--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-47/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-47--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-47/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-48" data-path="front-finger-left-48" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="48" transform="translate(0,2111.17)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-48</title>
+    <rect id="front-finger-left-48--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-48/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-48--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-48/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-49" data-path="front-finger-left-49" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="49" transform="translate(0,2155.62)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-49</title>
+    <rect id="front-finger-left-49--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-49/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-49--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-49/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-50" data-path="front-finger-left-50" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="50" transform="translate(0,2200.07)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-50</title>
+    <rect id="front-finger-left-50--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-50/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-50--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-50/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-left-51" data-path="front-finger-left-51" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="51" transform="translate(0,2244.52)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-left-51</title>
+    <rect id="front-finger-left-51--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-left-51/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-left-51--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-left-51/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-1" data-path="front-finger-right-1" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="52" transform="translate(74.5,22.02)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-1</title>
+    <rect id="front-finger-right-1--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-1/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-1--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-1/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-2" data-path="front-finger-right-2" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="53" transform="translate(74.5,66.47)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-2</title>
+    <rect id="front-finger-right-2--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-2/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-2--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-2/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-3" data-path="front-finger-right-3" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="54" transform="translate(74.5,110.92)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-3</title>
+    <rect id="front-finger-right-3--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-3/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-3--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-3/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-4" data-path="front-finger-right-4" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="55" transform="translate(74.5,155.37)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-4</title>
+    <rect id="front-finger-right-4--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-4/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-4--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-4/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-5" data-path="front-finger-right-5" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="56" transform="translate(74.5,199.82)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-5</title>
+    <rect id="front-finger-right-5--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-5/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-5--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-5/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-6" data-path="front-finger-right-6" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="57" transform="translate(74.5,244.27)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-6</title>
+    <rect id="front-finger-right-6--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-6/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-6--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-6/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-7" data-path="front-finger-right-7" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="58" transform="translate(74.5,288.72)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-7</title>
+    <rect id="front-finger-right-7--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-7/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-7--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-7/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-8" data-path="front-finger-right-8" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="59" transform="translate(74.5,333.17)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-8</title>
+    <rect id="front-finger-right-8--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-8/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-8--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-8/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-9" data-path="front-finger-right-9" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="60" transform="translate(74.5,377.62)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-9</title>
+    <rect id="front-finger-right-9--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-9/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-9--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-9/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-10" data-path="front-finger-right-10" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="61" transform="translate(74.5,422.07)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-10</title>
+    <rect id="front-finger-right-10--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-10/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-10--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-10/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-11" data-path="front-finger-right-11" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="62" transform="translate(74.5,466.52)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-11</title>
+    <rect id="front-finger-right-11--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-11/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-11--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-11/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-12" data-path="front-finger-right-12" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="63" transform="translate(74.5,510.97)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-12</title>
+    <rect id="front-finger-right-12--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-12/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-12--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-12/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-13" data-path="front-finger-right-13" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="64" transform="translate(74.5,555.42)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-13</title>
+    <rect id="front-finger-right-13--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-13/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-13--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-13/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-14" data-path="front-finger-right-14" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="65" transform="translate(74.5,599.87)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-14</title>
+    <rect id="front-finger-right-14--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-14/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-14--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-14/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-15" data-path="front-finger-right-15" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="66" transform="translate(74.5,644.32)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-15</title>
+    <rect id="front-finger-right-15--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-15/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-15--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-15/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-16" data-path="front-finger-right-16" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="67" transform="translate(74.5,688.77)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-16</title>
+    <rect id="front-finger-right-16--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-16/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-16--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-16/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-17" data-path="front-finger-right-17" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="68" transform="translate(74.5,733.22)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-17</title>
+    <rect id="front-finger-right-17--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-17/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-17--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-17/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-18" data-path="front-finger-right-18" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="69" transform="translate(74.5,777.67)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-18</title>
+    <rect id="front-finger-right-18--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-18/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-18--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-18/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-19" data-path="front-finger-right-19" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="70" transform="translate(74.5,822.12)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-19</title>
+    <rect id="front-finger-right-19--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-19/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-19--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-19/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-20" data-path="front-finger-right-20" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="71" transform="translate(74.5,866.57)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-20</title>
+    <rect id="front-finger-right-20--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-20/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-20--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-20/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-21" data-path="front-finger-right-21" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="72" transform="translate(74.5,911.02)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-21</title>
+    <rect id="front-finger-right-21--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-21/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-21--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-21/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-22" data-path="front-finger-right-22" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="73" transform="translate(74.5,955.47)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-22</title>
+    <rect id="front-finger-right-22--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-22/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-22--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-22/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-23" data-path="front-finger-right-23" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="74" transform="translate(74.5,999.92)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-23</title>
+    <rect id="front-finger-right-23--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-23/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-23--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-23/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-24" data-path="front-finger-right-24" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="75" transform="translate(74.5,1044.37)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-24</title>
+    <rect id="front-finger-right-24--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-24/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-24--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-24/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-25" data-path="front-finger-right-25" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="76" transform="translate(74.5,1088.82)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1">
+    <title>front-finger-right-25</title>
+    <rect id="front-finger-right-25--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-25/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-25--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-25/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-26" data-path="front-finger-right-26" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="77" transform="translate(74.5,1133.27)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-1 front-door-2">
+    <title>front-finger-right-26</title>
+    <rect id="front-finger-right-26--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-26/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-26--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-26/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-27" data-path="front-finger-right-27" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="78" transform="translate(74.5,1177.72)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-27</title>
+    <rect id="front-finger-right-27--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-27/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-27--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-27/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-28" data-path="front-finger-right-28" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="79" transform="translate(74.5,1222.17)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-28</title>
+    <rect id="front-finger-right-28--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-28/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-28--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-28/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-29" data-path="front-finger-right-29" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="80" transform="translate(74.5,1266.62)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-29</title>
+    <rect id="front-finger-right-29--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-29/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-29--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-29/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-30" data-path="front-finger-right-30" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="81" transform="translate(74.5,1311.07)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-30</title>
+    <rect id="front-finger-right-30--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-30/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-30--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-30/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-31" data-path="front-finger-right-31" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="82" transform="translate(74.5,1355.52)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-31</title>
+    <rect id="front-finger-right-31--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-31/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-31--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-31/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-32" data-path="front-finger-right-32" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="83" transform="translate(74.5,1399.97)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-32</title>
+    <rect id="front-finger-right-32--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-32/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-32--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-32/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-33" data-path="front-finger-right-33" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="84" transform="translate(74.5,1444.42)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-33</title>
+    <rect id="front-finger-right-33--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-33/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-33--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-33/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-34" data-path="front-finger-right-34" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="85" transform="translate(74.5,1488.87)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-34</title>
+    <rect id="front-finger-right-34--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-34/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-34--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-34/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-35" data-path="front-finger-right-35" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="86" transform="translate(74.5,1533.32)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-35</title>
+    <rect id="front-finger-right-35--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-35/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-35--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-35/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-36" data-path="front-finger-right-36" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="87" transform="translate(74.5,1577.77)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-36</title>
+    <rect id="front-finger-right-36--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-36/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-36--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-36/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-37" data-path="front-finger-right-37" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="88" transform="translate(74.5,1622.22)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-37</title>
+    <rect id="front-finger-right-37--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-37/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-37--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-37/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-38" data-path="front-finger-right-38" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="89" transform="translate(74.5,1666.67)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-38</title>
+    <rect id="front-finger-right-38--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-38/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-38--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-38/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-39" data-path="front-finger-right-39" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="90" transform="translate(74.5,1711.12)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-39</title>
+    <rect id="front-finger-right-39--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-39/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-39--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-39/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-40" data-path="front-finger-right-40" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="91" transform="translate(74.5,1755.57)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-40</title>
+    <rect id="front-finger-right-40--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-40/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-40--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-40/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-41" data-path="front-finger-right-41" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="92" transform="translate(74.5,1800.02)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-41</title>
+    <rect id="front-finger-right-41--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-41/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-41--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-41/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-42" data-path="front-finger-right-42" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="93" transform="translate(74.5,1844.47)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-42</title>
+    <rect id="front-finger-right-42--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-42/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-42--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-42/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-43" data-path="front-finger-right-43" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="94" transform="translate(74.5,1888.92)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-43</title>
+    <rect id="front-finger-right-43--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-43/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-43--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-43/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-44" data-path="front-finger-right-44" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="95" transform="translate(74.5,1933.37)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-44</title>
+    <rect id="front-finger-right-44--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-44/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-44--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-44/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-45" data-path="front-finger-right-45" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="96" transform="translate(74.5,1977.82)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-45</title>
+    <rect id="front-finger-right-45--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-45/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-45--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-45/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-46" data-path="front-finger-right-46" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="97" transform="translate(74.5,2022.27)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-46</title>
+    <rect id="front-finger-right-46--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-46/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-46--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-46/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-47" data-path="front-finger-right-47" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="98" transform="translate(74.5,2066.72)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-47</title>
+    <rect id="front-finger-right-47--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-47/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-47--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-47/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-48" data-path="front-finger-right-48" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="99" transform="translate(74.5,2111.17)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-48</title>
+    <rect id="front-finger-right-48--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-48/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-48--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-48/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-49" data-path="front-finger-right-49" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="100" transform="translate(74.5,2155.62)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-49</title>
+    <rect id="front-finger-right-49--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-49/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-49--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-49/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-50" data-path="front-finger-right-50" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="101" transform="translate(74.5,2200.07)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-50</title>
+    <rect id="front-finger-right-50--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-50/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-50--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-50/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-finger-right-51" data-path="front-finger-right-51" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-vcm-finger@1:1.0.0" data-material="Plastic" data-rel-pos="102" transform="translate(74.5,2244.52)" data-group="fingers" data-group-role="furniture" data-description="the T-shaped fingers, 51 a side of each channel; the front channel's left wall top to bottom and then its right, then the rear channel" data-z-lift="-196.5" data-in="front-base" data-under="front-door-2">
+    <title>front-finger-right-51</title>
+    <rect id="front-finger-right-51--arm" x="0" y="15.23" width="16.5" height="14" fill="#26282a" data-path="front-finger-right-51/arm" data-class="bezel" data-z-out="-14.5" data-z-color="#26282a" />
+    <rect id="front-finger-right-51--head" x="0" y="6.23" width="16.5" height="32" rx="2" fill="#2a2c2e" data-path="front-finger-right-51/head" data-class="bezel" data-z-out="-5.5" data-z-lift="182" data-z-color="#2a2c2e" />
+  </g>
+  <g id="front-door-1" data-path="front-door-1" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-13911-715-front-door@1:1.0.0" data-material="Plastic" data-rel-pos="1" transform="translate(0.0,0.0)" data-group="door" data-group-role="furniture" data-description="the four half-height doors, the front upper first, then the rear" data-z-lift="-196.5" data-in="front-base">
+    <title>front-door-1</title>
+    <rect id="front-door-1--rail-left" x="0" y="0" width="16.5" height="1155.5" fill="#2a2c2e" data-path="front-door-1/rail-left" data-class="bezel" data-z-out="-3" data-z-lift="191" data-z-color="#2a2c2e" />
+    <rect id="front-door-1--rail-right" x="74.5" y="0" width="16.5" height="1155.5" fill="#2a2c2e" data-path="front-door-1/rail-right" data-class="bezel" data-z-out="-3" data-z-lift="191" data-z-color="#2a2c2e" />
+    <rect id="front-door-1--plate" x="0" y="0" width="91" height="1155.5" fill="#2f3134" data-path="front-door-1/plate" data-class="bezel" data-z-out="0" data-z-lift="193.5" data-z-color="#2f3134" />
+    <rect id="front-door-1--edge-top" x="0" y="0" width="91" height="0.6" fill="#1a1b1d" />
+    <rect id="front-door-1--edge-bottom" x="0" y="1154.9" width="91" height="0.6" fill="#1a1b1d" />
+  </g>
+  <g id="front-door-2" data-path="front-door-2" data-class="mechanical" data-behaviour="mounts" data-ref="chatsworth/velocity-13911-715-front-door@1:1.0.0" data-material="Plastic" data-rel-pos="2" transform="translate(0.0,1155.5)" data-group="door" data-group-role="furniture" data-description="the four half-height doors, the front upper first, then the rear" data-z-lift="-196.5" data-in="front-base">
+    <title>front-door-2</title>
+    <rect id="front-door-2--rail-left" x="0" y="0" width="16.5" height="1155.5" fill="#2a2c2e" data-path="front-door-2/rail-left" data-class="bezel" data-z-out="-3" data-z-lift="191" data-z-color="#2a2c2e" />
+    <rect id="front-door-2--rail-right" x="74.5" y="0" width="16.5" height="1155.5" fill="#2a2c2e" data-path="front-door-2/rail-right" data-class="bezel" data-z-out="-3" data-z-lift="191" data-z-color="#2a2c2e" />
+    <rect id="front-door-2--plate" x="0" y="0" width="91" height="1155.5" fill="#2f3134" data-path="front-door-2/plate" data-class="bezel" data-z-out="0" data-z-lift="193.5" data-z-color="#2f3134" />
+    <rect id="front-door-2--edge-top" x="0" y="0" width="91" height="0.6" fill="#1a1b1d" />
+    <rect id="front-door-2--edge-bottom" x="0" y="1154.9" width="91" height="0.6" fill="#1a1b1d" />
+  </g>
+</svg>

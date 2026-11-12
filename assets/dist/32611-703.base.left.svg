@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="392mm" height="2133.6mm" viewBox="0 0 392 2133.6" data-device="32611-703" data-view="left" data-shell="sheet" data-material="Steel and aluminum with plastic T-shaped cable guides and plastic accessories" data-finish="Black powder coat paint" data-color="Black" data-environment="Indoor use only, in environmentally controlled areas">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Chatsworth Products 32611-703","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"e58a8334e63d582929fac674ba203209f878eebc865754b55f362093a72ce5ef","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="32611-703" x="0" y="0" width="392" height="2133.6" rx="1.2" fill="none" />
+  <g id="--decor" data-class="decor">
+    <rect id="arm-1" data-kind="finger" x="0" y="16.23" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-1" data-kind="finger" x="375" y="7.23" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-2" data-kind="finger" x="0" y="60.68" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-2" data-kind="finger" x="375" y="51.68" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-3" data-kind="finger" x="0" y="105.12" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-3" data-kind="finger" x="375" y="96.12" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-4" data-kind="finger" x="0" y="149.58" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-4" data-kind="finger" x="375" y="140.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-5" data-kind="finger" x="0" y="194.03" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-5" data-kind="finger" x="375" y="185.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-6" data-kind="finger" x="0" y="238.47" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-6" data-kind="finger" x="375" y="229.47" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-7" data-kind="finger" x="0" y="282.93" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-7" data-kind="finger" x="375" y="273.93" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-8" data-kind="finger" x="0" y="327.38" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-8" data-kind="finger" x="375" y="318.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-9" data-kind="finger" x="0" y="371.83" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-9" data-kind="finger" x="375" y="362.83" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-10" data-kind="finger" x="0" y="416.28" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-10" data-kind="finger" x="375" y="407.28" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-11" data-kind="finger" x="0" y="460.73" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-11" data-kind="finger" x="375" y="451.73" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-12" data-kind="finger" x="0" y="505.18" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-12" data-kind="finger" x="375" y="496.18" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-13" data-kind="finger" x="0" y="549.63" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-13" data-kind="finger" x="375" y="540.63" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-14" data-kind="finger" x="0" y="594.08" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-14" data-kind="finger" x="375" y="585.08" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-15" data-kind="finger" x="0" y="638.53" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-15" data-kind="finger" x="375" y="629.53" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-16" data-kind="finger" x="0" y="682.98" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-16" data-kind="finger" x="375" y="673.98" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-17" data-kind="finger" x="0" y="727.43" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-17" data-kind="finger" x="375" y="718.43" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-18" data-kind="finger" x="0" y="771.88" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-18" data-kind="finger" x="375" y="762.88" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-19" data-kind="finger" x="0" y="816.33" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-19" data-kind="finger" x="375" y="807.33" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-20" data-kind="finger" x="0" y="860.78" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-20" data-kind="finger" x="375" y="851.78" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-21" data-kind="finger" x="0" y="905.23" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-21" data-kind="finger" x="375" y="896.23" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-22" data-kind="finger" x="0" y="949.68" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-22" data-kind="finger" x="375" y="940.68" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-23" data-kind="finger" x="0" y="994.13" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-23" data-kind="finger" x="375" y="985.13" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-24" data-kind="finger" x="0" y="1038.58" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-24" data-kind="finger" x="375" y="1029.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-25" data-kind="finger" x="0" y="1083.03" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-25" data-kind="finger" x="375" y="1074.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-26" data-kind="finger" x="0" y="1127.47" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-26" data-kind="finger" x="375" y="1118.47" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-27" data-kind="finger" x="0" y="1171.92" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-27" data-kind="finger" x="375" y="1162.92" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-28" data-kind="finger" x="0" y="1216.38" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-28" data-kind="finger" x="375" y="1207.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-29" data-kind="finger" x="0" y="1260.83" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-29" data-kind="finger" x="375" y="1251.83" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-30" data-kind="finger" x="0" y="1305.28" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-30" data-kind="finger" x="375" y="1296.28" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-31" data-kind="finger" x="0" y="1349.72" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-31" data-kind="finger" x="375" y="1340.72" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-32" data-kind="finger" x="0" y="1394.17" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-32" data-kind="finger" x="375" y="1385.17" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-33" data-kind="finger" x="0" y="1438.62" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-33" data-kind="finger" x="375" y="1429.62" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-34" data-kind="finger" x="0" y="1483.08" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-34" data-kind="finger" x="375" y="1474.08" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-35" data-kind="finger" x="0" y="1527.53" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-35" data-kind="finger" x="375" y="1518.53" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-36" data-kind="finger" x="0" y="1571.97" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-36" data-kind="finger" x="375" y="1562.97" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-37" data-kind="finger" x="0" y="1616.42" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-37" data-kind="finger" x="375" y="1607.42" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-38" data-kind="finger" x="0" y="1660.88" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-38" data-kind="finger" x="375" y="1651.88" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-39" data-kind="finger" x="0" y="1705.33" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-39" data-kind="finger" x="375" y="1696.33" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-40" data-kind="finger" x="0" y="1749.78" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-40" data-kind="finger" x="375" y="1740.78" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-41" data-kind="finger" x="0" y="1794.22" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-41" data-kind="finger" x="375" y="1785.22" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-42" data-kind="finger" x="0" y="1838.67" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-42" data-kind="finger" x="375" y="1829.67" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-43" data-kind="finger" x="0" y="1883.12" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-43" data-kind="finger" x="375" y="1874.12" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-44" data-kind="finger" x="0" y="1927.58" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-44" data-kind="finger" x="375" y="1918.58" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-45" data-kind="finger" x="0" y="1972.03" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-45" data-kind="finger" x="375" y="1963.03" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-46" data-kind="finger" x="0" y="2016.48" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-46" data-kind="finger" x="375" y="2007.48" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-47" data-kind="finger" x="0" y="2060.93" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-47" data-kind="finger" x="375" y="2051.93" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="arm-48" data-kind="finger" x="0" y="2105.38" width="375" height="12" rx="0.6" fill="#26282a" />
+    <rect id="head-48" data-kind="finger" x="375" y="2096.38" width="14" height="30" rx="0.6" fill="#2a2c2e" />
+    <rect id="door" data-kind="cover" x="389" y="0" width="3" height="2133.6" rx="0.6" fill="#2f3134" />
+  </g>
+</svg>

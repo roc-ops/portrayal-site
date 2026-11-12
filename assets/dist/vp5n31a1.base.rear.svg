@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="431.8mm" height="43.7mm" viewBox="0 0 431.8 43.7" data-device="vp5n31a1" data-view="rear" data-construction="black powder-coat finish" data-input-ac="200-240 V, 50/60 Hz, a fixed cord with an L6-30P plug" data-input-plug="other" data-input-cord="fixed" data-input-phase="single" data-input-voltage-v="240" data-input-current-a="30" data-capacity-kw="4.9" data-capacity-scope="the load the PDU can hand on, from the SKU page; it is not what the PDU draws itself" data-frequency="50/60 Hz" data-operating-temp="60 C" data-metering-scope="input" data-outlet-switching="true" data-network-module="IMD-5M, dual Ethernet, RJ-12 sensor port, RS-232 serial on an RJ-45, USB, touchscreen" data-eol="none-announced" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Vertiv VP5N31A1","device-version":"0.1.1","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"vertiv/combo-outlet@1":"1.0.0","vertiv/rpdu-cord-l6-30p@1":"1.0.0"},"source-sha256":"6c938f130f205442df9e9c66f5dbc507498620cbd67f8a965aab561be28309de","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="VP5N31A1" data-sku="VP5N31A1" data-part-number="" x="0" y="0" width="431.8" height="43.7" rx="1.2" fill="#383836" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="tray-a" data-kind="outlet-tray" x="60.5" y="0" width="166.7" height="43.7" rx="1.5" fill="#6f6b69" />
+    <rect id="tray-b" data-kind="outlet-tray" x="252.7" y="0" width="163.9" height="43.7" rx="1.5" fill="#6f6b69" />
+    <rect id="tab-a-top" data-kind="tab" x="62.5" y="1.2" width="162.7" height="3.2" rx="0.6" fill="#fb5311" />
+    <rect id="tab-a-bottom" data-kind="tab" x="62.5" y="39.9" width="162.7" height="3.2" rx="0.6" fill="#fb5311" />
+    <rect id="tab-b-top" data-kind="tab" x="254.7" y="1.2" width="159.9" height="3.2" rx="0.6" fill="#177734" />
+    <rect id="tab-b-bottom" data-kind="tab" x="254.7" y="39.9" width="159.9" height="3.2" rx="0.6" fill="#177734" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="54.8" y="8.2" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-1">1</text>
+    <text x="233.5" y="39" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-6">6</text>
+    <text x="244.2" y="9" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-7">7</text>
+    <text x="421.1" y="39" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="outlet-12">12</text>
+  </g>
+  <g id="input" data-path="input" data-class="inlet" data-ref="vertiv/rpdu-cord-l6-30p@1:1.0.0" data-plug="nema-l6-30p" data-rel-pos="1" transform="translate(6.3,9.3)" data-group="power-input" data-group-role="service" data-description="the fixed input cord, ending in a NEMA L6-30P plug">
+    <title>input</title>
+    <path id="input--gland" d="M 16.7 0.4 L 31.0 8.5 V 24.9 L 16.7 33.0 L 2.4 24.9 V 8.5 Z" fill="#3a3a3a" stroke="#555555" stroke-width="0.3" data-path="input/gland" data-class="inlet" />
+    <circle cx="16.7" cy="16.7" r="12.2" fill="#656565" stroke="#7a7a7a" stroke-width="0.3" />
+    <circle id="input--cord" cx="16.7" cy="16.7" r="8.0" fill="#050505" stroke="#2a2a2a" stroke-width="0.3" />
+  </g>
+  <g id="outlet-1" data-path="outlet-1" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="1" transform="translate(66.3,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-1</title>
+    <path id="outlet-1--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-1/recess" data-class="inlet" />
+    <g id="outlet-1--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-2" data-path="outlet-2" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="2" transform="translate(93.3,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-2</title>
+    <path id="outlet-2--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-2/recess" data-class="inlet" />
+    <g id="outlet-2--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-3" data-path="outlet-3" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="3" transform="translate(120.3,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-3</title>
+    <path id="outlet-3--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-3/recess" data-class="inlet" />
+    <g id="outlet-3--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-4" data-path="outlet-4" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="4" transform="translate(147.3,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-4</title>
+    <path id="outlet-4--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-4/recess" data-class="inlet" />
+    <g id="outlet-4--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-5" data-path="outlet-5" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="5" transform="translate(174.3,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-5</title>
+    <path id="outlet-5--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-5/recess" data-class="inlet" />
+    <g id="outlet-5--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-6" data-path="outlet-6" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="6" transform="translate(201.3,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-6</title>
+    <path id="outlet-6--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-6/recess" data-class="inlet" />
+    <g id="outlet-6--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-7" data-path="outlet-7" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="7" transform="translate(255.1,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-7</title>
+    <path id="outlet-7--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-7/recess" data-class="inlet" />
+    <g id="outlet-7--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-8" data-path="outlet-8" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="8" transform="translate(282.1,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-8</title>
+    <path id="outlet-8--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-8/recess" data-class="inlet" />
+    <g id="outlet-8--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-9" data-path="outlet-9" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="9" transform="translate(309.1,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-9</title>
+    <path id="outlet-9--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-9/recess" data-class="inlet" />
+    <g id="outlet-9--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-10" data-path="outlet-10" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="10" transform="translate(336.1,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-10</title>
+    <path id="outlet-10--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-10/recess" data-class="inlet" />
+    <g id="outlet-10--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-11" data-path="outlet-11" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="11" transform="translate(363.1,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-11</title>
+    <path id="outlet-11--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-11/recess" data-class="inlet" />
+    <g id="outlet-11--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+  <g id="outlet-12" data-path="outlet-12" data-class="inlet" data-ref="vertiv/combo-outlet@1:1.0.0" data-depth="20" data-wall="#1a1b1d" data-cavity="recess" data-accepts="C14, C20" data-media="ac" data-outlet="vertiv-combo" data-rating-a="16" data-retention="P-Lock" data-rel-pos="12" transform="translate(390.1,7.5)" data-group="outlets" data-group-role="traffic" data-description="the PDU's 12 combination C13/C19 outlets, 1 to 6 and 7 to 12, numbered as printed; each switchable" data-states="on off">
+    <title>outlet-12</title>
+    <path id="outlet-12--recess" d="M 3 0 H 17 A 3 3 0 0 1 20 3 V 24 A 3 3 0 0 1 17 27 H 3 A 3 3 0 0 1 0 24 V 3 A 3 3 0 0 1 3 0 Z" fill="#0a0a0a" stroke="#2c2c2c" stroke-width="0.25" data-path="outlet-12/recess" data-class="inlet" />
+    <g id="outlet-12--nose">
+      <path d="M 5.5 2.2 H 16 A 1.6 1.6 0 0 1 17.6 3.8 V 23.2 A 1.6 1.6 0 0 1 16 24.8 H 5.5 L 2.2 21.6 V 5.4 Z" fill="#777674" stroke="#4a4a49" stroke-width="0.2" />
+      <path d="M 4.2 6.2 H 8.2 V 7.6 H 6.9 V 9.8 H 5.6 V 7.6 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 4.2 20.8 H 8.2 V 19.4 H 6.9 V 17.2 H 5.6 V 19.4 H 4.2 Z" fill="#0b0b0b" />
+      <path d="M 11.4 12.3 H 13.0 V 10.8 H 14.4 V 12.3 H 16.2 V 14.7 H 14.4 V 16.2 H 13.0 V 14.7 H 11.4 Z" fill="#0b0b0b" />
+    </g>
+    <g data-cp="mate" data-cp-at="9.5 13.5" data-cp-dir="front" />
+  </g>
+</svg>

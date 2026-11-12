@@ -68,7 +68,9 @@ const TOUCHED = ['cmh-bs-dfdabs2u', 'cmh-bs-sfds1u', 'cmh-dfd1u', 'cmh-dfds1u', 
   // added with the cable managers and ducts from Leviton, Belden, StarTech, Hubbell, Panduit and Eaton Tripp Lite
   '491ru-hfr', '49253-2cm', '49253-6mr', '49253-6pm', '49253-bcm', '49253-lpm', '492ru-hfo', '492ru-hfr', '9512-1901', 'bhh191ur', 'bhh192ur', 'bhh193ur',
   'bhh194ur', 'cmduct1ux', 'cmduct2u', 'hm144c', 'hm14c', 'hm24c', 'hm34c', 'hs23c', 'hsd13', 'ncmh2', 'ncmhf2', 'nm1', 'nm2', 'nmf1', 'nmf2', 'nmf3', 'nmf4',
-  'pr2hf3wh', 'pr2hf4wh', 'srcableduct1u', 'srcableduct1ufc', 'srcableduct1uhd', 'wmpvhc45e'];
+  'pr2hf3wh', 'pr2hf4wh', 'srcableduct1u', 'srcableduct1ufc', 'srcableduct1uhd', 'wmpvhc45e',
+  // the NavePoint cable managers the library added with kit 0.51.0
+  '00404167', '00404169', '00404170', '00407295', '00407296', '00407297'];
 // What a `cover` group holds that is NOT a cover, and is left alone: the Amphenol power panels' thumbscrews.
 const LEFT = ['300cb08', '300cb08-c', '300cb08-sc', 'nrg300cb08-ctrl', 'nrg300cb08-ctrl-c', 'nrg300cb08-ctrl-sc', 'nrg300cb08-sens', 'nrg300cb08-sens-c',
   'nrg300cb08-sens-sc', 'nrgils300cb08', 'nrgils300cb08-sc'];
@@ -95,7 +97,12 @@ test('over the whole catalogue the control takes the cover plates of cable manag
 
 // These cabinets mark their door on the left and right views by kind and have no cover group on the front,
 // so the control reaches their side views only.
-const SIDE_ONLY = ['13902-701', '13902-703', '13902-715'];
+// The library's newer Chatsworth cabinets (139xx) and Motive vertical managers (326xx) do the same: a door on the side views, no cover group on the front.
+const SIDE_ONLY = ['13902-701', '13902-703', '13902-715',
+  '13901-701', '13901-703', '13901-715', '13904-701', '13904-703', '13904-715', '13905-701', '13905-703', '13905-715', '13911-701', '13911-703', '13911-715',
+  '13912-701', '13912-703', '13912-715', '13914-701', '13914-703', '13914-715', '13915-701', '13915-703', '13915-715',
+  '32610-703', '32610-e03', '32611-703', '32611-e03', '32612-703', '32612-e03', '32613-703', '32613-e03', '32614-703', '32614-e03',
+  '32620-703', '32620-e03', '32621-703', '32621-e03', '32622-703', '32622-e03', '32623-703', '32623-e03', '32624-703', '32624-e03'];
 
 test('the kind a side view marks a cover by is only ever on a device whose cover plate is taken, or on a side-only cabinet', () => {
   // data-kind="cover" is what the side panes hide (rack.css): on the left and right views it must not reach another part

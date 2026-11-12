@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440mm" height="45.5mm" viewBox="0 0 440 45.5" data-device="nport-5650-16-t" data-view="front" data-weight-kg="2.51" data-weight-note="2,510 g; the data sheet does not say whether the package is included" data-serial-standards="RS-232, RS-422, RS-485" data-serial-connector="8-pin RJ45" data-serial-rate-max="921.6 kbps" data-power-input-ac="100 to 240 VAC, 47 to 63 Hz" data-power-input-current="158 mA @ 100 VAC" data-operating-temp-c="-40 to 75" data-storage-temp-c="-40 to 75" data-humidity="5 to 95% non-condensing" data-safety="UL 62368-1" data-emc="EN 55032/35" data-emi="CISPR 32, FCC Part 15B Class A" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Moxa NPort 5650-16-T","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0"},"source-sha256":"6a8c3a023346abb16fcef8e99e56b2bbd9a1d64898403dfe624fc41adb3053b4","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="NPort 5650-16-T" data-sku="NPort 5650-16-T" data-part-number="" x="0" y="0" width="440" height="45.5" rx="1.2" fill="#3a3e47" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="faceplate" data-kind="bezel" x="0" y="0" width="440" height="45.5" rx="0.6" fill="#3a3e47" />
+    <rect id="end-cap-left" data-kind="end-cap" x="0" y="0" width="20" height="45.5" rx="0.6" fill="#4a4d52" />
+    <rect id="end-cap" data-kind="end-cap" x="0" y="0" width="46.08" height="45.5" rx="18" fill="#4a4d52" />
+  </g>
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="5.35" y="20.96" width="26.46" height="4.16" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="224.44" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-1" data-path="silk:silk-port-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-1">1</text>
+    <text x="229.45" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-2" data-path="silk:silk-port-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-2">2</text>
+    <text x="234.46" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-3" data-path="silk:silk-port-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-3">3</text>
+    <text x="239.48" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-4" data-path="silk:silk-port-4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-4">4</text>
+    <text x="244.49" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-5" data-path="silk:silk-port-5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-5">5</text>
+    <text x="249.5" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-6" data-path="silk:silk-port-6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-6">6</text>
+    <text x="254.52" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-7" data-path="silk:silk-port-7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-7">7</text>
+    <text x="259.53" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-8" data-path="silk:silk-port-8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-8">8</text>
+    <text x="264.55" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-9" data-path="silk:silk-port-9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-9">9</text>
+    <text x="269.56" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-10" data-path="silk:silk-port-10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-10">10</text>
+    <text x="274.57" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-11" data-path="silk:silk-port-11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-11">11</text>
+    <text x="279.59" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-12" data-path="silk:silk-port-12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-12">12</text>
+    <text x="284.6" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-13" data-path="silk:silk-port-13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-13">13</text>
+    <text x="289.62" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-14" data-path="silk:silk-port-14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-14">14</text>
+    <text x="294.63" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-15" data-path="silk:silk-port-15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-15">15</text>
+    <text x="299.64" y="26.61" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port-16" data-path="silk:silk-port-16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-16">16</text>
+    <text x="218.19" y="27" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-port" data-path="silk:silk-port" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Port</text>
+    <text x="219.38" y="29.97" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-tx" data-path="silk:silk-tx" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-tx-1">Tx</text>
+    <text x="219.38" y="35.32" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-rx" data-path="silk:silk-rx" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-rx-1">Rx</text>
+    <text x="204.52" y="35.32" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-ready" data-path="silk:silk-ready" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-ready">Ready</text>
+    <text x="313.61" y="35.32" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-lan" data-path="silk:silk-lan" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-lan">LAN</text>
+    <text x="336.8" y="35.32" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-pwr" data-path="silk:silk-pwr" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr">PWR</text>
+    <text x="117.42" y="33.54" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8ecef" id="silk-reset" data-path="silk:silk-reset" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset">Reset</text>
+    <text x="156.06" y="18.48" font-family="sans-serif" font-size="4.2" text-anchor="middle" fill="#f2f5f6" id="silk-model" data-path="silk:silk-model" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">NPort</text>
+    <text x="177.17" y="14.42" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f2f5f6" id="silk-model-number" data-path="silk:silk-model-number" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">5650-16</text>
+    <text x="183.94" y="20.67" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e8ecef" id="silk-series" data-path="silk:silk-series" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Serial Device Server</text>
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-rel-pos="1" transform="translate(122.85,31.15)" data-group="controls" data-group-role="management" data-for="chassis">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="led-tx-1" data-path="led-tx-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(223.44,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-1</title>
+    <circle id="led-tx-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-1" data-path="led-rx-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="17" transform="translate(223.44,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-1</title>
+    <circle id="led-rx-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-2" data-path="led-tx-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(228.45,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-2</title>
+    <circle id="led-tx-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-2" data-path="led-rx-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="18" transform="translate(228.45,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-2</title>
+    <circle id="led-rx-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-3" data-path="led-tx-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(233.46,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-3</title>
+    <circle id="led-tx-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-3" data-path="led-rx-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="19" transform="translate(233.46,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-3</title>
+    <circle id="led-rx-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-4" data-path="led-tx-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(238.48,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-4</title>
+    <circle id="led-tx-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-4" data-path="led-rx-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="20" transform="translate(238.48,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-4</title>
+    <circle id="led-rx-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-5" data-path="led-tx-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(243.49,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-5</title>
+    <circle id="led-tx-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-5/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-5" data-path="led-rx-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="21" transform="translate(243.49,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-5</title>
+    <circle id="led-rx-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-5/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-6" data-path="led-tx-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(248.5,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-6</title>
+    <circle id="led-tx-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-6/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-6" data-path="led-rx-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="22" transform="translate(248.5,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-6</title>
+    <circle id="led-rx-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-6/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-7" data-path="led-tx-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(253.52,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-7</title>
+    <circle id="led-tx-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-7/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-7" data-path="led-rx-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="23" transform="translate(253.52,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-7</title>
+    <circle id="led-rx-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-7/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-8" data-path="led-tx-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="8" transform="translate(258.53,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-8</title>
+    <circle id="led-tx-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-8/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-8" data-path="led-rx-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="24" transform="translate(258.53,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-8</title>
+    <circle id="led-rx-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-8/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-9" data-path="led-tx-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="9" transform="translate(263.55,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-9</title>
+    <circle id="led-tx-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-9/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-9" data-path="led-rx-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="25" transform="translate(263.55,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-9</title>
+    <circle id="led-rx-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-9/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-10" data-path="led-tx-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="10" transform="translate(268.56,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-10</title>
+    <circle id="led-tx-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-10/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-10" data-path="led-rx-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="26" transform="translate(268.56,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-10</title>
+    <circle id="led-rx-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-10/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-11" data-path="led-tx-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="11" transform="translate(273.57,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-11</title>
+    <circle id="led-tx-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-11/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-11" data-path="led-rx-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="27" transform="translate(273.57,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-11</title>
+    <circle id="led-rx-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-11/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-12" data-path="led-tx-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="12" transform="translate(278.59,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-12</title>
+    <circle id="led-tx-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-12/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-12" data-path="led-rx-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="28" transform="translate(278.59,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-12</title>
+    <circle id="led-rx-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-12/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-13" data-path="led-tx-13" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="13" transform="translate(283.6,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-13</title>
+    <circle id="led-tx-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-13/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-13" data-path="led-rx-13" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="29" transform="translate(283.6,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-13</title>
+    <circle id="led-rx-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-13/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-14" data-path="led-tx-14" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="14" transform="translate(288.62,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-14</title>
+    <circle id="led-tx-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-14/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-14" data-path="led-rx-14" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="30" transform="translate(288.62,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-14</title>
+    <circle id="led-rx-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-14/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-15" data-path="led-tx-15" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="15" transform="translate(293.63,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-15</title>
+    <circle id="led-tx-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-15/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-15" data-path="led-rx-15" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="31" transform="translate(293.63,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-15</title>
+    <circle id="led-rx-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-15/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-tx-16" data-path="led-tx-16" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="16" transform="translate(298.64,28.58)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-tx-16</title>
+    <circle id="led-tx-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-tx-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-tx-16/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-rx-16" data-path="led-rx-16" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="32" transform="translate(298.64,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-rx-16</title>
+    <circle id="led-rx-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-rx-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-rx-16/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-ready" data-path="led-ready" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="33" transform="translate(213.03,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-ready</title>
+    <circle id="led-ready--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-ready--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-ready/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-lan" data-path="led-lan" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="34" transform="translate(318.86,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-lan</title>
+    <circle id="led-lan--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-lan--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-lan/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr" data-path="led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="35" transform="translate(328.96,33.93)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-pwr</title>
+    <circle id="led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+</svg>

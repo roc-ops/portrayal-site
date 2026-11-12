@@ -1210,6 +1210,7 @@ KIT_NOT_DOCUMENTED_YET = {
     "zones": "the ports and bays of a face in mm, for the diagram exports; no recipe yet",
     "camera-fit": "the 3D viewer's opening view, fitted to the whole box; viewer3d uses it, and no recipe calls it on its own",
     "drawio": "draw.io export; the draw.io page (drawio.html) is where the site shows it, with no kit recipe yet",
+    "section": "the 3D body of a housing that states chassis.section (kit 0.51.0); viewer3d builds it, and no recipe calls it on its own",
     "omnigraffle": "OmniGraffle export; shown on drawio.html#omnigraffle, with no kit recipe yet",
     "redirects": "a part the library replaced (kit 0.32.0): the Explorer lens hands it on so a saved rack keeps a replaced holder; the page has no recipe for it yet",
     "rack/ports": "the ports of what is seated in a bay, read from the catalogue (kit 0.23.0); the rack modules use it, and no page here calls it yet",
@@ -1818,10 +1819,16 @@ check(len(_hmgr) >= 23 and not _hbad,
 # opening, not by data-group="guides". So no vendored drawing may draw a
 # guides group that does not declare itself, or its ring would drop out of
 # every route.
+# The two parts of the Chatsworth Motive vertical manager's side assemblies are
+# T-shaped fingers and their heads (their contracts: "one T-shaped cable guide
+# (finger)"), drawn as furniture in a group the library names "guides". They
+# carry no data-guide and are not rings, so there is no ring to drop out.
+_NOT_RING_GUIDES = ("chatsworth/motive-vcm-guide", "chatsworth/motive-vcm-tshape-ds")
 _gtag = re.compile(r'<g\b[^>]*\bdata-group="guides"[^>]*>')
 _undeclared = sorted({f"{p.name}: {re.search(r'id=\"([^\"]*)\"', t_).group(1) if 'id=' in t_ else '?'}"
                       for p in DIST.glob("*.svg") for _txt in [p.read_text()] if 'data-group="guides"' in _txt
                       for t_ in _gtag.findall(_txt)
+                      if not any(f'data-ref="{r_}@' in t_ for r_ in _NOT_RING_GUIDES)
                       if 'data-guide="ring"' not in t_ or "data-guide-aperture=" not in t_})
 _ring_files = sum(1 for p in DIST.glob("*.svg") if 'data-guide="ring"' in p.read_text())
 check(_ring_files > 0 and not _undeclared,

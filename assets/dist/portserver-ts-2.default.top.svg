@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="84.6mm" height="133.4mm" viewBox="0 0 84.6 133.4" data-device="portserver-ts-2" data-view="top" data-weight-kg="0.189" data-package-dimensions="not stated" data-power-input="9-30 VDC; supply included 12 VDC / 1.5 A max out, 100-240 VAC 50-60 Hz in" data-power-typical-w="4" data-power-max-w="6" data-operating-temp-c="0 to 60" data-storage-temp-c="-40 to 85" data-humidity="5% to 95% (non-condensing)" data-serial-modes="RS-232, up to 230 kbps" data-safety="UL/CUL 60950, IEC 60950, CB" data-emissions="CE; FCC Part 15 (Class A); EN55024; EN55022 Class A; AS/NZS 3548; CISPR 22; VCCI V-3/99.05" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A SWITCHED OUTLET WITH NO LAMP is dimmed when it is off, as absent is but
+       less (docs/pdu-model-design.md section 3.2): every switched PDU in the
+       library has a lamp per outlet, and this is the fallback so the first one
+       without does not invent a lamp. An outlet a lamp is bound to by `for:`
+       carries data-lamped (mark_lamped) and is never dimmed: its lamp says it. */
+    [data-class='inlet'][data-states~='off'].state-off:not([data-lamped]) { opacity: 0.55; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Digi PortServer TS 2","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.2.0"},"resolved-components":{},"source-sha256":"670ad106982061c70de70146057e0cc2cb1a9d7c99b6e3d946b5e28540185427","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PortServer TS 2" data-sku="70002043" data-part-number="" x="0" y="0" width="84.6" height="133.4" rx="1.2" fill="#101010" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+  <rect id="region--logo-zone" data-path="region:logo-zone" data-class="region" x="6" y="8" width="24" height="10" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="15.7" y="129.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f2f2f2" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ETHERNET</text>
+    <text x="27.2" y="123.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#37855d" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">LINK</text>
+    <text x="27.2" y="129.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#d9d965" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ACT</text>
+    <text x="48.7" y="129.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f2f2f2" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">RESET</text>
+    <text x="61.8" y="123.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#37855d" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">PWR</text>
+    <text x="61.8" y="129.6" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#d9d965" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">READY</text>
+    <text x="76.5" y="126.6" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#f2f2f2" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">9-30V DC</text>
+    <text x="76.5" y="129.6" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#f2f2f2" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">525mA MAX</text>
+    <text x="40" y="116" font-family="sans-serif" font-size="5" text-anchor="middle" fill="#8a8a8a" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">PORTSERVER TS</text>
+  </g>
+</svg>

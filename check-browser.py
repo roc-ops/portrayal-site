@@ -19426,8 +19426,8 @@ def check_rack_frame_picker_kit_values(page, base):
     options = page.evaluate("() => [...document.querySelectorAll('#fProdForm option')].map(o => o.value)")
     if NEW_FORM not in options:
         bad.append(f"kit values: the filter offers {options}, expected the new form {NEW_FORM}")
-    if sorted(o for o in options if o) != sorted({"2-post-frame", "4-post-frame", "4-post-cabinet", NEW_FORM}):
-        bad.append(f"kit values: the filter's forms are {options}, expected the catalogue's four")
+    if sorted(o for o in options if o) != sorted({"2-post-frame", "4-post-frame", "4-post-cabinet", "wall-frame", NEW_FORM}):
+        bad.append(f"kit values: the filter's forms are {options}, expected the catalogue's four and the new form")
     wait_sel(page, "kit values: the new product", '#fProducts [data-product-ref="test/newform@1"]')
     named = page.text_content('#fProducts [data-product-ref="test/newform@1"] .rk-product-name')
     if named != "Zed Z9 Plus":
