@@ -1666,6 +1666,52 @@ _lit_gone = sorted({f"{_f.relative_to(HERE)}: {_m.group(1)}" for _f in _served_c
 check(not _lit_gone, "every face file named literally in served code exists (only KEEP_PLAIN devices can be)",
       f"{len(_lit_gone)}: {_lit_gone[:4]}")
 
+# NO BARE READ OF A DRAWING. The drawings are in packs: a page reads one at the
+# URL site/dist.js siteDist (the kit's packedDist) makes, with the kit's
+# fetchDist. A bare fetch of such a URL gets the whole pack, and a drawing's URL
+# on the plain base names a file that is no longer served. So in served code and
+# the harness pages, none of these:
+#   - fetch( or src = of a URL made by distAt, siteDist or a site/faces.js helper;
+#   - a drawing (.svg) path on the plain base (assets/dist/, ${DIST}, DIST + ...)
+#     handed to fetch, fetchDist, jdist, loadFace, svgSource, svgCanvas or
+#     rasterize, or assigned to a src;
+#   - jdist( of any .svg.
+# The plain base's JSON (devices.json, <device>.configs.json, ...) is a plain
+# file and may be fetched bare. Exempt: the PLAIN_FILES names tools/pack-assets.py
+# keeps loose, named literally; site/faces.js, which only builds URLs; and the
+# readers below, which read only PLAIN_FILES through the plain base on purpose.
+_BARE_EXEMPT = {
+    "site/faces.js": "builds face URLs for a caller to read; reads nothing itself",
+    "site/kit-examples/04-seat.js": "a recipe on the plain base: it seats only the skins PLAIN_SKINS keeps loose",
+}
+_PLAIN_BASE = r"""(?:['"`](?:\.\./)*assets/dist/|`\$\{\s*(?:DIST|dist)\s*\}|\b(?:DIST|dist)\s*\+)"""
+_URL_MAKER = r"(?:\bdistAt|\bsiteDist|\bdefaultFaceIn|\bdefaultFace|\bfaceUrl|\bdistUrl|\bdrawingUrl)\s*\("
+_READ_CALL = r"\b(?:fetch|fetchDist|jdist|loadFace|svgSource|svgCanvas|rasterize)\s*\(\s*(?:await\s+)?"
+_ARG = r"[^;\n]*?"
+_BARE_RES = [
+    re.compile(rf"\bfetch\s*\(\s*(?:await\s+)?{_ARG}{_URL_MAKER}"),
+    re.compile(rf"\bsrc\s*=\s*(?:await\s+)?{_ARG}{_URL_MAKER}"),
+    re.compile(rf"{_READ_CALL}{_PLAIN_BASE}[^;\n)]*?\.svg\b"),
+    re.compile(rf"\bsrc\s*=\s*['\"]?{_PLAIN_BASE}[^;\n>]*?\.svg\b"),
+    re.compile(r"\bjdist\s*\([^;\n)]*\.svg\b"),
+]
+_plain_names = set(_pa.PLAIN_FILES)
+_bare = []
+for _f in _served_code:
+    _rel = _f.relative_to(HERE).as_posix()
+    if _rel in _BARE_EXEMPT: continue
+    _t = _f.read_text()
+    for _re in _BARE_RES:
+        for _mm in _re.finditer(_t):
+            _lit = re.search(r"assets/dist/([\w./-]+\.svg)\b", _mm.group(0))
+            if _lit and _lit.group(1) in _plain_names and "${" not in _mm.group(0):
+                continue
+            _bare.append(f"{_rel}:{_t[:_mm.start()].count(chr(10)) + 1}")
+check(not _bare and all((HERE / _p).is_file() for _p in _BARE_EXEMPT),
+      "no served code or harness page reads a drawing bare: a drawing's URL is made by siteDist (packedDist) "
+      "and read with fetchDist, save the loose PLAIN_FILES",
+      f"{len(_bare)}: " + ", ".join(sorted(set(_bare))[:12]))
+
 _ex = HERE / "assets" / "exports"
 _listed = json.loads((_ex / "files.json").read_text()) if (_ex / "files.json").exists() else {}
 _indexed = json.loads((_ex / "index.json").read_text()) if (_ex / "index.json").exists() else {}
