@@ -7,13 +7,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync, readdirSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {earHoles} from '../../site/rack/ear-holes.js';
 import {RU, HOLE_DY, holesIn} from '../../vendor/rack/rails.js';
 import * as F from '../../vendor/rack/fit.js';
 import {newRack} from '../../vendor/rack/model.js';
 import * as Q from '../../vendor/rack/queries.js';
 
-const devices = JSON.parse(readFileSync(new URL('../../assets/dist/rack.json', import.meta.url), 'utf8')).devices;
+const devices = JSON.parse(readDistFile('rack.json')).devices;
 const chassisOf = ref => devices[ref] ?? null;
 const item = (id, ref, ru, extra = {}) => ({id, ref, cfg: 'base', label: id, ru, face: 'front', turned: false, swaps: {}, fields: {}, ...extra});
 const near = (a, b, what) => assert.ok(Math.abs(a - b) < 1e-9, `${what}: ${a}, expected ${b}`);

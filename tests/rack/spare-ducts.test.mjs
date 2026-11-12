@@ -7,13 +7,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {cableText, inspectText, zeroUText, pathwaysLine} from '../../site/rack/agent-text.js';
 import {spareLoops, loopPane, loopRadii, loopScale, LOOP_LONG, LOOP_SHORT, loopTitle, zeroUTargets} from '../../site/rack/spare-loops.js';
 import {spareMarks} from '../../vendor/rack/slack.js';
 import * as R from '../../vendor/rack/route.js';
 import {RU} from '../../vendor/rack/rails.js';
 
-const devices = JSON.parse(readFileSync(new URL('../../assets/dist/rack.json', import.meta.url), 'utf8')).devices;
+const devices = JSON.parse(readDistFile('rack.json')).devices;
 const SW = {ru: 1, w: 440, h: 44, d: 300};
 const chassisOf = ref => (ref === 'sw' ? SW : devices[ref] ?? null);
 const item = (id, ref, ru, extra = {}) => ({id, ref, cfg: 'base', label: id.toUpperCase(), ru, face: 'front', turned: false, swaps: {}, fields: {}, ...extra});

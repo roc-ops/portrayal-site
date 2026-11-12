@@ -2,7 +2,8 @@
 // three, remembered in the browser, and a cover is told by its data-path.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync, readdirSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
+import {readDistFile, distFaces} from '../dist-files.mjs';
 import {COVERS_KEY, COVER_STATES, COVERS_DEFAULT, COVER_FADE, COVER_PLATE, loadCovers, saveCovers, underCover, coverPathsIn} from '../../site/rack/covers.js';
 
 const store = (v = null) => { const m = new Map(v == null ? [] : [[COVERS_KEY, v]]); return {getItem: k => m.get(k) ?? null, setItem: (k, x) => { m.set(k, String(x)); }, map: m}; };
@@ -33,17 +34,17 @@ test('a mesh is a cover by its path: a cover group, or a node under one, and not
 });
 
 test("the vertical manager's drawing marks its two covers on the front, and no other group is taken for one", () => {
-  const front = readFileSync(new URL('../../assets/dist/cmv-sfd42u9w.base.front.svg', import.meta.url), 'utf8');
+  const front = readDistFile('cmv-sfd42u9w.base.front.svg');
   assert.deepEqual(coverPathsIn(front), ['cover-1', 'cover-2']);
-  const left = readFileSync(new URL('../../assets/dist/cmv-sfd42u9w.base.left.svg', import.meta.url), 'utf8');
+  const left = readDistFile('cmv-sfd42u9w.base.left.svg');
   assert.deepEqual(coverPathsIn(left), [], 'the side view marks the cover by kind, which has no path');
   assert.deepEqual(coverPathsIn('<g data-group="body" data-path="base"/><g data-path="a&amp;b" data-class="mechanical" data-group="cover"/>'), ['a&b']);
   // a part of a cover group that is not a plate is not a cover: a screw that holds one, a part with no class
   assert.deepEqual(coverPathsIn('<g data-path="thumbscrew-left" data-class="screw" data-group="cover"/><g data-path="x" data-group="cover"/>'), []);
   assert.deepEqual(coverPathsIn(null), []);
   // a rack-mounted finger duct marks its covers the same way, and a lacer marks none
-  assert.deepEqual(coverPathsIn(readFileSync(new URL('../../assets/dist/cmh-dfd1u.base.front.svg', import.meta.url), 'utf8')), ['front-cover']);
-  assert.deepEqual(coverPathsIn(readFileSync(new URL('../../assets/dist/fhd-cmp5dr.base.front.svg', import.meta.url), 'utf8')), []);
+  assert.deepEqual(coverPathsIn(readDistFile('cmh-dfd1u.base.front.svg')), ['front-cover']);
+  assert.deepEqual(coverPathsIn(readDistFile('fhd-cmp5dr.base.front.svg')), []);
 });
 
 test('the page paints the three settings, and only inside the panes', () => {
@@ -56,8 +57,8 @@ test('the page paints the three settings, and only inside the panes', () => {
 });
 
 // THE WHOLE CATALOGUE: every compiled drawing, what it puts in a `cover` group, and what the control takes of it.
-const DIST = new URL('../../assets/dist/', import.meta.url);
-const drawings = readdirSync(DIST).filter(f => /\.svg$/.test(f)).map(f => ({f, text: readFileSync(new URL(f, DIST), 'utf8')}));
+// (Every device face the site serves, loose or in its device's packs.)
+const drawings = distFaces();
 const attr = (tag, k) => (new RegExp(`\\s${k}="([^"]*)"`).exec(tag) ?? [])[1] ?? null;
 const deviceOf = text => attr(/<svg\b[^>]*>/.exec(text)?.[0] ?? '', 'data-device');
 const inCover = text => [...text.matchAll(/<[a-zA-Z][^>]*\sdata-group="cover"[^>]*>/g)].map(m => ({cls: attr(m[0], 'data-class'), path: attr(m[0], 'data-path'), ref: (attr(m[0], 'data-ref') ?? '').split('@')[0]}));

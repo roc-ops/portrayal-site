@@ -7,6 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {createRackEditor} from '../../vendor/rack/editor.js';
 import {parseDoc} from '../../vendor/rack/model.js';
 import * as Q from '../../vendor/rack/queries.js';
@@ -14,7 +15,7 @@ import {paints, paintMaps} from '../../site/rack/settable.js';
 import {rackTools} from '../../site/rack/agent-tools.js';
 import {agentContextFor} from '../../site/rack/agent-context.js';
 
-const dist = f => JSON.parse(readFileSync(new URL(`../../assets/dist/${f}`, import.meta.url)));
+const dist = f => JSON.parse(readDistFile(f));
 const fixture = f => JSON.parse(readFileSync(new URL(`./fixtures/${f}`, import.meta.url)));
 const devices = dist('rack.json').devices;
 const comps = new Map(dist('components.json').components.map(c => [`${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`, c]));
