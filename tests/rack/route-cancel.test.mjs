@@ -6,11 +6,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {newDoc} from '../../vendor/rack/model.js';
 import {createRackEditor} from '../../vendor/rack/editor.js';
 import {routeEditSession} from '../../site/rack/route-edit.js';
 
-const devices = JSON.parse(readFileSync(new URL('../../assets/dist/rack.json', import.meta.url), 'utf8')).devices;
+const devices = JSON.parse(readDistFile('rack.json')).devices;
 const SW = {ru: 1, w: 440, h: 44, d: 300};
 const chassisOf = ref => (ref === 'sw' ? SW : devices[ref] ?? null);
 const item = (id, ref, ru) => ({id, ref, cfg: 'base', label: id.toUpperCase(), ru, face: 'front', turned: false, swaps: {}, fields: {}});

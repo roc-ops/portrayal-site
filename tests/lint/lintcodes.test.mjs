@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { readDistFile } from '../dist-files.mjs';
 import { splitCodes, severityOf, severityFacts, scopesOf, ruleMatches, retiredMatches, rankRules, ruleHref, SEVERITY }
   from '../../site/lintcodes.js';
 
@@ -74,7 +75,7 @@ test('search looks through every field, word by word, and the filters narrow it'
 // The vendored file, if this checkout has one, is what the page reads.
 test('every rule in the vendored lint-rules.json is searchable by its code', () => {
   let data;
-  try { data = JSON.parse(readFileSync(new URL('../../assets/dist/lint-rules.json', import.meta.url))); }
+  try { data = JSON.parse(readDistFile('lint-rules.json')); }
   catch { return; }
   assert.ok(data.rules.length > 0);
   for (const r of data.rules) assert.ok(ruleMatches(r, {query: r.code}), r.code);

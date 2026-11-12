@@ -56,6 +56,7 @@ import {createRackEditor} from '../vendor/rack/editor.js';
 import {GONE, NOT_ADDED} from '../vendor/rack/commands.js';
 import * as Q from '../vendor/rack/queries.js';
 import {configuredFace, DIST} from './rack/face.js';
+import {siteDist, fetchDist} from './dist.js';
 import {rackTools} from './rack/agent-tools.js';
 import {registerTools} from './agent/webmcp.js';
 import {writeHint} from './rack/agent-hint.js';
@@ -2479,7 +2480,7 @@ function paintOf(r) {
   if (!paints(r)) return Promise.resolve(new Map());
   if (paintMemo?.rack !== r) {
     const bytesOf = async path => {
-      const res = await fetch(`${DIST}${path}`);
+      const res = await fetchDist((await siteDist())(path));
       if (!res.ok) throw new Error(`${path}: ${res.status}`);
       return new Uint8Array(await res.arrayBuffer());
     };

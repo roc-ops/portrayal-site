@@ -2439,9 +2439,10 @@ def check_facts_page(page, base):
     # The switch's port total is the number of port elements in the default
     # front and rear drawings, counted here from the drawings.
     want = page.evaluate("""async () => {
+        const {packedDist, fetchDist} = await import('/vendor/dist.js'), at = await packedDist('/assets/dist/');
         const f = await (await fetch('/assets/dist/default-faces.json')).json(); let n = 0;
         for (const v of ['front', 'rear']) {
-          const doc = new DOMParser().parseFromString(await (await fetch('/assets/dist/' + f['as7726-32x'][v])).text(), 'image/svg+xml');
+          const doc = new DOMParser().parseFromString(await (await fetchDist(at(f['as7726-32x'][v]))).text(), 'image/svg+xml');
           n += doc.querySelectorAll('[data-class="port"]:not([data-inner])').length;
         }
         return n; }""")
@@ -2917,8 +2918,10 @@ def check_faces_after_670(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"670: uncaught {e}"))
     missed = []
+    # a loose drawing, or a pack the drawings are read from (site/dist.js)
     page.on("response", lambda r: missed.append(r.url.rsplit("/", 1)[-1])
-            if "/assets/dist/" in r.url and r.url.endswith(".svg") and r.status == 404 else None)
+            if "/assets/dist/" in r.url and (r.url.endswith(".svg") or "/assets/dist/packs/" in r.url)
+            and r.status == 404 else None)
     page.goto(f"{base}/kit.html", wait_until="load")
     for name in ("01-drawing", "02-telemetry", "03-metadata", "04-seat", "06-marks"):
         fig = f'figure[data-example="{name}"]'
@@ -4884,10 +4887,13 @@ def check_showcase_state_optics(page, base):
 # read from the page's own picker and held to the device's own files: the
 # default configuration's kind, and the ports on the default front face, which
 # is the drawing each of these pages exports, overlays or reads.
+# The face is read from its pack, as the pages read it (site/dist.js).
 LISTED_OPENED_JS = """async device => {
+  const {packedDist, fetchDist} = await import('/vendor/dist.js');
+  const at = await packedDist('assets/dist/');
   const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
   const named = (await (await fetch('assets/dist/default-faces.json')).json())[device].front;
-  const face = await (await fetch(`assets/dist/${named}`)).text();
+  const face = await (await fetchDist(at(named))).text();
   return {device, cfg: meta.default, kind: meta.configs.find(c => c.name === meta.default)?.kind ?? null,
           ports: (face.match(/data-class="port"/g) || []).length};
 }"""
@@ -7566,8 +7572,10 @@ def check_rack_ears_default(page, base):
     }""")
     # ONE FETCH PER FACE FILE: the pane draws the switch's front and the ear
     # plan reads that same file for its declared width (face.js earPlanFor).
+    # The faces are read from packs (site/dist.js), each device's default pack
+    # once per page: so one request per device, for its default pack.
     fronts = []
-    count = lambda r: fronts.append(r.url) if re.search(r"/assets/dist/[^/]+\.front\.svg$", r.url) else None
+    count = lambda r: fronts.append(r.url) if re.search(r"/assets/dist/packs/devices/[^/]+\.json$", r.url) else None
     page.on("request", count)
     page.evaluate("r => window.__rack.replaceRack(r)", rack)
     page.wait_for_function("() => document.querySelector('#paneFront [data-item-id=\"i2\"][data-panel=\"mounted\"]')"
@@ -7576,8 +7584,8 @@ def check_rack_ears_default(page, base):
     page.wait_for_timeout(300)
     page.remove_listener("request", count)
     names = sorted(u.rsplit("/", 1)[1] for u in fronts)
-    if len(names) != 2 or len(set(names)) != 2 or not any(n.startswith("s9600-72xc.") for n in names):
-        bad.append(f"2D: the two devices' fronts were not each fetched once: {names}")
+    if sorted(names) != ["fhu-bps-2u.json", "s9600-72xc.json"]:
+        bad.append(f"2D: the two devices' default packs were not each fetched once: {names}")
     got = page.evaluate("""() => {
       const p = document.querySelector('#paneFront');
       const e1 = p.querySelector('[data-ears-for="i1"]'), e2 = p.querySelector('[data-ears-for="i2"]');
@@ -8483,11 +8491,12 @@ def check_rack_ears_meet_face(page, base):
       const C = await import('/vendor/rack/catalog.js');
       const cat = (await C.loadCatalog('/assets/dist/')).devices;
       const faces = fetch('/assets/dist/default-faces.json').then(r => r.json());
+      const {packedDist, fetchDist} = await import('/vendor/dist.js'), at = await packedDist('/assets/dist/');
       const pane = document.querySelector('#paneFront');
       const out = [];
       for (const g of pane.querySelectorAll('[data-item-id][data-panel="mounted"]')) {
         const ref = g.dataset.deviceRef, cfg = cat[ref].default;
-        const r = await fetch(`/assets/dist/${(await faces)[ref].front}`);
+        const r = await fetchDist(at((await faces)[ref].front));
         const root = new DOMParser().parseFromString(await r.text(), 'image/svg+xml').documentElement;
         const vb = root.getAttribute('viewBox').trim().split(/[\s,]+/).map(Number);
         const fw = parseFloat(root.getAttribute('data-face-w'));
@@ -17430,7 +17439,10 @@ def check_annotate_api(page, base):
     held = []
     hang = lambda route: held.append(route)
     page.route("**/assets/dist/agr110.configs.json", hang)
-    page.route("**/assets/dist/c100g.bdm2m-11plus1.front.svg", hang)
+    # The held face is in c100g's second pack (site/dist.js), with the
+    # docsis-classic faces this check loads first: so that pack is held only for
+    # the configuration that times out, below, and let go before the next load.
+    MORE = "**/assets/dist/packs/devices/c100g.more.json"
     # 6 s, not 3: the bound is on every load while it is set, the two that are
     # not held included, and a real load on a busy machine has taken over 3 s
     page.evaluate("() => { window.__portrayalLoadMs = 6000; }")
@@ -17462,7 +17474,11 @@ def check_annotate_api(page, base):
                 or not r["describe"].startswith("c100g, config docsis-classic, front."):
             bad.append(f"annotate api #146: after a stalled load the next setDoc resolved to {r['target']} "
                        f"with {r['findings']}, describe {r['describe'][:60]!r}")
-        # a configuration that times out is not the one the document names
+        # a configuration that times out is not the one the document names.
+        # The kit fetches a pack once per page, so its memo is cleared for the
+        # held pack to be asked for again.
+        page.evaluate("async () => (await import('/vendor/dist.js')).clearDistCache()")
+        page.route(MORE, hang)
         r = race({"device": "c100g", "config": "bdm2m-11plus1", "view": "front", "marks": []})
         if r.get("hung"):
             bad.append("annotate api #146: setDoc on a configuration whose drawing never loads did not answer in 20 s")
@@ -17476,6 +17492,14 @@ def check_annotate_api(page, base):
             if "did not finish loading" not in (said or "") or (page.text_content("#expmsg") or "") not in (said or ""):
                 bad.append(f"annotate api: a stalled configuration left the stage saying {said!r} "
                            f"(message box: {page.text_content('#expmsg')!r})")
+            # let the pack go: unrouted first, so the kit's one retry of the
+            # aborted fetch reaches it, and the docsis-classic faces it also
+            # holds load
+            page.unroute(MORE)
+            for route in held:
+                with contextlib.suppress(Exception):
+                    route.abort()
+            held.clear()
             r = set_doc({"device": "c100g", "config": "docsis-classic", "view": "front", "marks": []})
             if r["error"] or r["findings"] or page.evaluate(note) \
                     or not page.evaluate("() => !!document.querySelector('#stage-svg svg')"):
@@ -17488,7 +17512,7 @@ def check_annotate_api(page, base):
             with contextlib.suppress(Exception):
                 route.abort()
         page.unroute("**/assets/dist/agr110.configs.json")
-        page.unroute("**/assets/dist/c100g.bdm2m-11plus1.front.svg")
+        page.unroute(MORE)
     return bad
 
 
@@ -22929,11 +22953,14 @@ def check_rack_3d_loading(page, base):
     page.set_viewport_size({"width": 1400, "height": 900})
     # the files of the part built LAST come late, each held for a moment: the vertical manager (z1) is mounted
     # before it, and stands through the whole wait
-    held = []
-    def late(route):
-        held.append(route.request.url.rsplit("/", 1)[-1])
-        time.sleep(0.4)
-        route.continue_()
+    #
+    # The part's faces are one pack (site/dist.js), asked for once, so it is the
+    # pack that comes late. It is held in the page, by the fetch the kit calls,
+    # for as long as the part's files were held when each was a file of its
+    # own: twelve requests of 0.4 s each. Not in a route: a route handler that
+    # waits holds every other request of the page behind it as well, the
+    # manager's own pack among them, and then nothing is built before the part.
+    LATE_MS = 4800
     open_front_fixture(page, base, PACK_FIXTURE)
     # a second part beside the rack, at the other rail, of another kind (a PDU), built after the manager
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
@@ -22950,7 +22977,23 @@ def check_rack_3d_loading(page, base):
     if webgl_trouble(page):
         print("[check_rack_3d_loading] WebGL unavailable - not exercised")
         return bad
-    page.route("**/assets/dist/evmi2130x*", late)
+    # The faces are read from packs (site/dist.js), and the 2D panes have read
+    # this part's already: the kit fetches a pack once per page, so its memo is
+    # cleared for the 3D scene to ask for the part's pack again, and that is held.
+    # The scene reads every part's faces through site/rack/face.js before it
+    # builds the first (its cable anchors), and on main that read came from the
+    # same files the part's own build then asked for again - the second read was
+    # the late one. A pack is read once, so that first read is made now, here:
+    # the late part's six faces are in face.js's own cache, and what comes late
+    # is what the part's build asks the kit for.
+    page.evaluate("""async () => { const F = await import('/site/rack/face.js');
+      for (const view of ['front', 'rear', 'left', 'right', 'top', 'bottom'])
+        await F.configuredFace({ref: 'evmi2130x', cfg: 'base', view}); }""")
+    page.evaluate("async () => (await import('/vendor/dist.js')).clearDistCache()")
+    page.evaluate("""ms => { const f = window.fetch; window.__held = []; window.__unheld = f;
+      window.fetch = (u, init) => /\\/assets\\/dist\\/packs\\/devices\\/evmi2130x\\./.test(String(u))
+        ? (window.__held.push(String(u).split('/').pop()), new Promise(ok => setTimeout(ok, ms)).then(() => f.call(window, u, init)))
+        : f.call(window, u, init); }""", LATE_MS)
     page.evaluate(LOADING_SAMPLER_JS)
     t0 = time.time()
     page.click('#mode [data-mode="3d"]')
@@ -22960,7 +23003,7 @@ def check_rack_3d_loading(page, base):
         return bad + [str(e)]
     page.wait_for_timeout(300)
     frames = page.evaluate("() => { window.__sampling = false; return window.__frames; }")
-    page.unroute("**/assets/dist/evmi2130x*")
+    held = page.evaluate("() => { window.fetch = window.__unheld; return window.__held; }")
     if not held:
         bad.append("loading: none of the last part's files was asked for while the scene loaded, so nothing was held back")
     with_cables = [f for f in frames if f["tubes"] or f["straps"]]
@@ -23005,7 +23048,10 @@ def check_rack_3d_loading(page, base):
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     wait_fn(page, "failed: the panes again", "() => document.querySelector('#paneFront svg [data-cables] [data-cable-id]') && window.__rack.routesCurrent().current")
-    page.route("**/assets/dist/cmv-sfd42u9w*", lambda route: route.abort())
+    # the part's faces are in its pack, which the 2D panes have read: the kit's
+    # memo is cleared so that the 3D scene asks for it, and that is refused
+    page.evaluate("async () => (await import('/vendor/dist.js')).clearDistCache()")
+    page.route("**/assets/dist/packs/devices/cmv-sfd42u9w*", lambda route: route.abort())
     said = "() => (document.getElementById('side').textContent.match(/duct-1 could not be drawn in detail\\./g) || []).length"
     failed = """() => { const g = window.__rack.scene()?.three.scene.getObjectByName('device-z1'), b = g?.children[0];
       return !!b && b.userData.standIn === 'failed' && [].concat(b.material).some(m => m.visible); }"""
@@ -23037,7 +23083,7 @@ def check_rack_3d_loading(page, base):
     except RuntimeError as e:
         bad.append(str(e))
     finally:
-        page.unroute("**/assets/dist/cmv-sfd42u9w*")
+        page.unroute("**/assets/dist/packs/devices/cmv-sfd42u9w*")
     return bad
 
 
@@ -26227,9 +26273,20 @@ def _click_entry(page, ident):
     page.mouse.click(box[0], box[1])
 
 
+# The side panel is the entry's: its heading is the entry's label (a device's and a part beside the rack's alike).
+SIDE_SHOWS_JS = """id => { const r = window.__rack.doc().racks[0], e = [...r.items, ...r.zeroU].find(x => x.id === id);
+  return !!e && document.querySelector('#side h3')?.textContent === e.label; }"""
+
+
 def _ui_set(page, ident, kind, path, value):
-    """The page's own control: select the entry, pick the part, say what it is, press the button."""
+    """The page's own control: select the entry, pick the part, say what it is, press the button.
+    The click waits for the redraw the last edit started: a press before that redraw replaces the panes and a release
+    after it fall on two drawings, the click is lost, and the side panel stays on the entry before, whose parts are
+    not this one's (CI run 43252367602: select_option waited 30 s for an option the stale panel never had). And
+    nothing is picked until the side panel is the clicked entry's."""
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
     _click_entry(page, ident)
+    page.wait_for_function(SIDE_SHOWS_JS, arg=ident, timeout=READY_MS)
     if kind == "state":
         page.wait_for_selector("#stPath", timeout=READY_MS)
         page.select_option("#stPath", path)

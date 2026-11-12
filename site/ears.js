@@ -22,6 +22,7 @@
 
 import { drawEars, clearEars, earPlan, faceSize, frontWidthOfText } from '../vendor/ears2d.js';
 import { faceFile } from '../vendor/dist.js';
+import { siteDist, fetchDist } from './dist.js';
 
 export const EARS_KEY = 'portrayal.ears';
 
@@ -66,8 +67,9 @@ export function installEars(shell, {viewer = () => null, dist = 'assets/dist/', 
     if (state.view === 'front' && state.svg) return faceSize(state.svg)?.[0];
     if (state.faces?.front && state.facesFor === key) return faceSize(state.faces.front)?.[0];
     if (!(key in frontW)) {
-      frontW[key] = fetch(dist + faceFile(state.meta, state.cfg, 'front'))
-        .then(r => (r.ok ? r.text() : '')).then(frontWidthOfText).catch(() => null);
+      const file = faceFile(state.meta, state.cfg, 'front');
+      frontW[key] = (typeof dist === 'function' ? Promise.resolve(dist) : siteDist(dist))
+        .then(at => fetchDist(at(file))).then(r => (r.ok ? r.text() : '')).then(frontWidthOfText).catch(() => null);
     }
     return frontW[key];
   }

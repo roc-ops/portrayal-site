@@ -3,11 +3,11 @@ import {faceFile} from './faces.js';
 import { createDevicePicker } from '../vendor/devsel.js';
 import { firstListed } from './featured.js';
 import { jdist } from '../vendor/dist.js';
+import { DIST, siteDist, fetchDist } from './dist.js';
 import { makeZip } from './bundle.js';
 import { bindScopes } from './scope.js';
 
 const $ = id => document.getElementById(id);
-const DIST = 'assets/dist/';
 const FACES = ['front', 'rear', 'left', 'right', 'top', 'bottom'];
 
 let DEVICES = [], COMPONENTS = [], DEV = null, SCOPE = null;
@@ -144,9 +144,12 @@ async function build(btn) {
     const missing = [];
     const enc = new TextEncoder();
     let got = 0;
+    // `url` is the drawing's dist path under DIST, as index.json has always
+    // said; the bytes come from the pack that holds it (site/dist.js).
+    const distAt = await siteDist();
     for (const w of wanted) {
       stat.textContent = `fetching ${++got}/${wanted.length}…`;
-      const res = await fetch(w.url);
+      const res = await fetchDist(distAt(w.url.slice(DIST.length)));
       // A face a device does not have is not an error - not everything is
       // drawn on six sides - so it is left out and counted, not thrown.
       if (!res.ok) { missing.push(w.path); continue; }

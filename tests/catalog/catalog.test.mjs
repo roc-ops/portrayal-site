@@ -105,8 +105,8 @@ test('search matches any printed column, case-insensitively; the namespace filte
 // file cannot be a fixture here - it is not vendored, and it is being deleted -
 // so this is the record of what the two agreed on when the page was written.
 test('every vendored major appears once, and a known row reads as the generator wrote it', async () => {
-  const {readFileSync} = await import('node:fs');
-  const {components} = JSON.parse(readFileSync(new URL('../../assets/dist/components.json', import.meta.url)));
+  const {readDistFile} = await import('../dist-files.mjs');
+  const {components} = JSON.parse(readDistFile('components.json'));
   const groups = catalogGroups(components);
   const rows = groups.flatMap(g => g.rows);
   assert.equal(rows.length, components.length, 'no major is dropped or duplicated by the grouping');

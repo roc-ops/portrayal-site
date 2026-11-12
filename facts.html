@@ -136,15 +136,15 @@ the chassis, <b>stated</b> is read from the model. A figure nobody has put in th
 
 <script type="module">
 import { jdist } from './vendor/dist.js';
-import { defaultFaces } from './site/faces.js';
+import { defaultFaces, defaultFaceIn } from './site/faces.js';
+import { DIST, siteDist, fetchDist } from './site/dist.js';
 import { deviceFacts, alignFacts, authoredSections, factText, devicesFromSearch, STATE_TAG } from './site/facts.js';
 
-const DIST = 'assets/dist/';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
 
-const [{devices: INDEX}, RACK, FACES] = await Promise.all([
-  jdist(`${DIST}devices.json`), jdist(`${DIST}rack.json`).then(r => r.devices), defaultFaces(DIST)]);
+const [{devices: INDEX}, RACK, FACES, distAt] = await Promise.all([
+  jdist(`${DIST}devices.json`), jdist(`${DIST}rack.json`).then(r => r.devices), defaultFaces(DIST), siteDist()]);
 const NAMES = INDEX.map(d => d.name);
 $('devices').innerHTML = INDEX.map(d => `<option value="${esc(d.name)}">${esc(`${d.manufacturer} ${d.model}`)}</option>`).join('');
 document.querySelector('[data-counts]').textContent = `${INDEX.length} devices in the library.`;
@@ -152,7 +152,7 @@ document.querySelector('[data-counts]').textContent = `${INDEX.length} devices i
 // One fetch of a device's own files, kept for the life of the page. A face that
 // cannot be read is null, which the model prints as not modelled, rather than
 // an error that hides the other devices.
-const text = url => fetch(url).then(r => r.ok ? r.text() : null).catch(() => null);
+const text = url => fetchDist(url).then(r => r.ok ? r.text() : null).catch(() => null);
 const LOADED = new Map();
 async function load(name) {
   if (!LOADED.has(name)) {
@@ -160,8 +160,8 @@ async function load(name) {
       const [source, configs, front, rear] = await Promise.all([
         jdist(`${DIST}${name}.source.json`).catch(() => null),
         jdist(`${DIST}${name}.configs.json`).catch(() => null),
-        FACES[name]?.front ? text(DIST + FACES[name].front) : null,
-        FACES[name]?.rear ? text(DIST + FACES[name].rear) : null]);
+        FACES[name]?.front ? text(defaultFaceIn(FACES, distAt, name, 'front')) : null,
+        FACES[name]?.rear ? text(defaultFaceIn(FACES, distAt, name, 'rear')) : null]);
       return {name, rack: RACK[name] ?? null, source, configs, faces: {front, rear}, attrs: source?.attrs ?? null};
     })());
   }

@@ -8,6 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {newDoc, serialize, withFrame, zeroUOf, zeroUBottom, zeroUBottomMm, VERSION} from '../../vendor/rack/model.js';
 import {RU} from '../../vendor/rack/rails.js';
 import {zeroUDrawn, elevationBox} from '../../site/rack/elevation.js';
@@ -19,7 +20,7 @@ import {zeroUNotes, zeroUImportItems, deviceImportRows, managerNotes, rackNotes,
 import {readDoc, docNotes} from '../../site/rack/library.js';
 import {ductAperture, guidesFromRects} from '../../site/rack/route-context.js';
 
-const devices = JSON.parse(readFileSync(new URL('../../assets/dist/rack.json', import.meta.url))).devices;
+const devices = JSON.parse(readDistFile('rack.json')).devices;
 const chassisOf = ref => devices[ref] ?? null;
 const DUCT = 'cmv-sfd45u5w', BRACKET = 'cmv-5u3w';
 const rackOf = (kind = 'two-post', heightRU = 45) => withFrame(newDoc({kind}).racks[0], {heightRU});

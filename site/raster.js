@@ -11,6 +11,10 @@
 // lamps. Both resolve `var(--led-color, #3a3f44)` to the fallback, which is the
 // unlit faceplate - the right picture for a type, which has no live state.
 
+// A URL is read with the kit's fetchDist, so a drawing's URL in the packs
+// (site/dist.js) reads as its own file does; any other URL is fetched as it is.
+import {fetchDist} from './dist.js';
+
 /** 2 px/mm at the drawing's own scale, matching what the exporter wrote. */
 const SCALE = 2;
 
@@ -19,7 +23,7 @@ const cache = new Map();
 async function svgImage(url) {
   if (!cache.has(url)) {
     cache.set(url, (async () => {
-      const res = await fetch(url);
+      const res = await fetchDist(url);
       if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
       const text = await res.text();
       const bytes = new TextEncoder().encode(text);

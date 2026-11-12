@@ -58,7 +58,10 @@
 <script type="module">
 import { createViewer } from './vendor/viewer3d.js';
 import { firstListed } from './site/featured.js';
+import { siteDist } from './site/dist.js';
 
+// the library's drawings are in packs (site/dist.js)
+const distAt = await siteDist();
 const P = new URLSearchParams(location.search);
 if (P.get('bare')) document.body.classList.add('bare');
 const $ = id => document.getElementById(id);
@@ -96,7 +99,7 @@ function paintPaths() {
 
 function mount() {
   if (viewer) return;
-  viewer = createViewer($('stage'), {dist: 'assets/dist/'});
+  viewer = createViewer($('stage'), {dist: distAt});
   globalThis.viewer = viewer;
   // the pose-diff harness drives the camera through the same handle the frozen
   // page published, so one script can run against both

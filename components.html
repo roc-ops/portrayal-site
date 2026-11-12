@@ -145,8 +145,22 @@
 
 <script type="module">
 import { jdist } from './vendor/dist.js';
+import { siteDist, distObjectUrl } from './site/dist.js';
 let DATA = [];
 const $ = id => document.getElementById(id);
+// A skin is in a pack, which an <img> cannot read: each is shown from an
+// object URL of its bytes, made once per page and kept, since a render
+// rebuilds every card.
+const SKIN_URLS = new Map();
+function showSkin(img, file) {
+  if (!SKIN_URLS.has(file)) {
+    const made = siteDist().then(at => distObjectUrl(at(file)));
+    SKIN_URLS.set(file, made);
+    made.catch(() => SKIN_URLS.delete(file));
+  }
+  img.dataset.skin = file;
+  SKIN_URLS.get(file).then(url => { if (img.dataset.skin === file) img.src = url; }, () => {});
+}
 function render() {
   const q = $('q').value.toLowerCase();
   const ns = $('ns').value;
@@ -168,7 +182,7 @@ function render() {
       const img = document.createElement('img');
       img.width = c.size.w * z; img.height = c.size.h * z;
       const skins = Object.keys(c.files);
-      img.src = 'assets/dist/' + c.files[skins[0]];
+      showSkin(img, c.files[skins[0]]);
       stage.appendChild(img);
       card.appendChild(stage);
       if (skins.length > 1) {
@@ -177,7 +191,7 @@ function render() {
         row.textContent = 'skin: ';
         const sel = document.createElement('select');
         skins.forEach(sk => { const o = document.createElement('option'); o.value = sk; o.textContent = sk; sel.appendChild(o); });
-        sel.onchange = () => { img.src = 'assets/dist/' + c.files[sel.value]; };
+        sel.onchange = () => showSkin(img, c.files[sel.value]);
         row.appendChild(sel);
         card.appendChild(row);
       }
@@ -225,7 +239,7 @@ async function open3d(ref, skin) {
   try {
     if (!viewer) {
       const {createViewer} = await import('./vendor/viewer3d.js');
-      viewer = createViewer(ovStage, {dist: 'assets/dist/', background: 0x101214});
+      viewer = createViewer(ovStage, {dist: await siteDist(), background: 0x101214});
     }
     await viewer.load({component: ref, skin});
     ovNote.textContent = skin ? `skin: ${skin}` : '';

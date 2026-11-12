@@ -5,6 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import * as THREE from '../../vendor/three/three.module.js';
 import * as M from '../../vendor/rack/model.js';
 import * as Q from '../../vendor/rack/queries.js';
@@ -17,7 +18,7 @@ import {SIZES, chassisOf, slotsOf, compByRef} from './fixtures/kit-slots.mjs';
 
 // The cable types as the page loads them (cable-types.js loadCableTypes),
 // read from the vendored dist instead of fetched.
-const TABLE = JSON.parse(readFileSync(new URL('../../assets/dist/cable-types.json', import.meta.url)));
+const TABLE = JSON.parse(readDistFile('cable-types.json'));
 const TYPES = {types: TABLE.types, bendOf: bendLookup(TABLE.types), diameterOf: diameterLookup(TABLE.types)};
 const text = r => r.content[0].text;
 

@@ -8,13 +8,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {createRackEditor} from '../../vendor/rack/editor.js';
 import {newDoc} from '../../vendor/rack/model.js';
 import {settleEnd, cableEndPaths} from '../../vendor/rack/ports.js';
 import {plugSeats, mismatch, MEDIA, MEDIA_LABELS, mergeSeats, looseReason, endKey} from '../../vendor/rack/cable-rules.js';
 import {agentContextFor} from '../../site/rack/agent-context.js';
 
-const dist = f => JSON.parse(readFileSync(new URL(`../../assets/dist/${f}`, import.meta.url)));
+const dist = f => JSON.parse(readDistFile(f));
 const devices = dist('rack.json').devices;
 const comps = new Map(dist('components.json').components.map(c => [`${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`, c]));
 const slots = new Map();

@@ -3,13 +3,15 @@ import { createDevicePicker } from '../vendor/devsel.js';
 import { firstListed } from './featured.js';
 import { jdist } from '../vendor/dist.js';
 import { defaultFaces, defaultFaceIn } from './faces.js';
+import { DIST, siteDist } from './dist.js';
 import { entry, library, rackDiagram, connectable, RACK, SCALE } from '../vendor/drawio.js';
 import { loadFace, portsOf } from '../vendor/zones.js';
 import { buildStencil, rasterize } from '../vendor/omnigraffle.js';
 
 const $ = id => document.getElementById(id);
-const DIST = 'assets/dist/';
 let DEVICES = [], DEV = null, COMPONENTS = [], SIZES = {}, FACES = {};
+// A drawing's URL in the packs (site/dist.js); loadFace reads it with fetchDist.
+let distAt = null;
 
 // A component's namespace is its vendor's first word, lowercased - casa for
 // Casa Systems, ufispace for UfiSpace. Checked against every namespace in the
@@ -27,7 +29,7 @@ const nsOfDevice = d => d.ns || nsOf(d.manufacturer);
 /** The default face for a device: the NOS-neutral front if there is one, else
  *  the first configuration's. The picture is the same either way; the
  *  configurations differ in what is seated, which a device type does not carry. */
-const faceUrl = (d, face) => defaultFaceIn(FACES, DIST, d.name, face);
+const faceUrl = (d, face) => defaultFaceIn(FACES, distAt, d.name, face);
 
 /** The vendor's line cards, supervisors, supplies - the things that go IN the
  *  chassis. For a modular vendor these outnumber the chassis many times over:
@@ -219,7 +221,7 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false, opti
     for (const c of mods) {
       statusEl.textContent = `reading card ${++k}/${mods.length}…`;
       try {
-        const f = await loadFace(`${DIST}${c.files.default}`);
+        const f = await loadFace(distAt(c.files.default));
         out.push({label: (c.attrs || {}).model || c.name, ru: 1, face: 'front',
                   kind: 'module', cls: c.class,
                   ref: `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`,
@@ -236,7 +238,7 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false, opti
     for (const c of parts) {
       statusEl.textContent = `reading optic ${++k}/${parts.length}…`;
       try {
-        const f = await loadFace(`${DIST}${c.files.default}`);
+        const f = await loadFace(distAt(c.files.default));
         out.push({label: opticLabel(c), ru: 1, face: 'front', kind: 'optic', cls: c.class,
                   ref: `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`,
                   version: c.version ?? null, ...f,
@@ -560,6 +562,7 @@ function describe() {
     COMPONENTS = (await jdist(`${DIST}components.json`).catch(() => ({}))).components || [];
     SIZES = await jdist(`${DIST}sizes.json`).catch(() => ({}));
     FACES = await defaultFaces(DIST);
+    distAt = await siteDist();
   } catch (err) {
     $('note').textContent = `could not load the device index: ${err.message}`;
     return;

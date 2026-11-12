@@ -10,10 +10,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync, readdirSync} from 'node:fs';
 import {validate} from '../../vendor/rack/validate.js';
+import {readDistFile} from '../dist-files.mjs';
 
 const read = rel => JSON.parse(readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8'));
 const device = read('publish/schemas/v1/device.schema.json');
-const source = name => read(`assets/dist/${name}.source.json`);
+const source = name => JSON.parse(readDistFile(`${name}.source.json`));
 
 test('the published device schema validates a device that declares an adjustment, and one that does not', () => {
   for (const name of ['dinrail2u', 'dinrail4u']) {

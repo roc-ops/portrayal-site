@@ -128,9 +128,9 @@
 <script type="module">
 import * as marks from './vendor/marks.js';
 import { faceFile } from './site/faces.js';
+import { siteDist, fetchDist } from './site/dist.js';
 
 const $ = s => document.querySelector(s);
-const DIST = 'assets/dist';
 const state = {svg: null, meta: null, doc: null};
 
 const SAMPLE = {
@@ -148,8 +148,9 @@ const SAMPLE = {
 // A 404 comes back as an HTML error page, and .json() on that throws a parse
 // error about an unexpected '<' - which reads as a bug in this page rather than
 // as "library/dist has not been built". Say which file, and say the status.
+// A drawing is read from its pack (site/dist.js), the JSON as a plain file.
 async function get(path) {
-  const r = await fetch(`${DIST}/${path}`, {cache: 'no-store'});
+  const r = await fetchDist((await siteDist())(path), {cache: 'no-store'});
   if (!r.ok) throw new Error(`${path}: HTTP ${r.status} - is library/dist built?`);
   return r;
 }

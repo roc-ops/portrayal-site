@@ -12,9 +12,12 @@
 // is not one - no hostname from anybody's network appears on this page.
 import {applyFaceOverrides} from '../vendor/swap.js';
 import {jdist} from '../vendor/dist.js';
+import {siteDist, fetchDist} from './dist.js';
 import {cablePoints} from '../vendor/relief.js';
 import {WIDTH, sag2d, plugAt, colorOfJacket, plugColorOf} from './showcase/cables.js';
 
+// A face the site keeps as a loose file (tools/pack-assets.py KEEP_PLAIN), so
+// read by its plain URL; the skins below are in packs (site/dist.js).
 const SVG = 'assets/dist/s9600-72xc.front.svg';
 const PNG = 'assets/exports/netbox/elevation-images/UfiSpace/'
           + 'ufispace-s9600-72xc.front.png';
@@ -293,12 +296,13 @@ const el = (t, cls, html) => {
 export async function seatHero(svg) {
   const idx = await jdist('assets/dist/s9600-72xc.configs.json');
   const comps = (await jdist('assets/dist/components.json')).components;
+  const distAt = await siteDist();
   const byRef = ref => comps.find(c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
   const loadSkin = async ref => {
     const c = byRef(ref);
     if (!c) return null;
     const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
-    const r = await fetch(`assets/dist/components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
+    const r = await fetchDist(distAt(`components/${c.ns}--${c.name}--${c.major}--${skin}.svg`));
     return r.ok ? {comp: c, text: await r.text()} : null;
   };
   const overrides = Object.assign({}, ...Object.values(PORTS).map(p => p.seat || {}));

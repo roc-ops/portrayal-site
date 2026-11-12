@@ -128,6 +128,7 @@ import { firstListed, namesDevice } from './site/featured.js';
 import { makeZip } from './site/bundle.js';
 import { rasterize } from './site/raster.js';
 import { defaultFace } from './site/faces.js';
+import { siteDist } from './site/dist.js';
 import { exportText } from './site/exports-pack.js';
 
 const $ = id => document.getElementById(id);
@@ -351,7 +352,7 @@ async function buildBundle(btn) {
         for (const face of ['front', 'rear']) {
           if (!new RegExp(`^${face}_image:\\s*true`, 'm').test(yaml)) continue;
           $('bnote').textContent = `rendering ${++made} images…`;
-          const svg = await defaultFace('assets/dist/', dev, face);
+          const svg = await defaultFace(await siteDist(), dev, face);
           const png = svg && await rasterize(svg);
           if (png) entries.push({name: `elevation-images/${parts[2]}/${slug}.${face}.png`,
                                  bytes: png});
@@ -362,7 +363,7 @@ async function buildBundle(btn) {
           .find(([k]) => k.replace(/\//g, '-') === model)?.[1];
         if (!c) continue;
         $('bnote').textContent = `rendering ${++made} images…`;
-        const png = await rasterize(`assets/dist/${c.files.default}`, 1);
+        const png = await rasterize((await siteDist())(c.files.default), 1);
         if (png) entries.push({name: `module-images/${parts[2]}/${model}.front.png`,
                                bytes: png});
       }

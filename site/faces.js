@@ -20,14 +20,20 @@ export {faceFile} from '../vendor/dist.js';
 // leaves them out and writes `default-faces.json`, `{device: {view: file}}`, which
 // says which file draws each device's default face. Anything that wants "the"
 // face of a device, with no configuration in hand, asks here.
+//
+// `dist` is where the library is: the path -> URL function site/dist.js
+// siteDist makes, whose face URLs are read with fetchDist, or a plain base.
+
+/** `path`'s URL under `dist`. */
+export const distUrl = (dist, path) => (typeof dist === 'function' ? dist(path) : dist + path);
 
 /** default-faces.json, read once per page. */
-export const defaultFaces = dist => jdist(`${dist}default-faces.json`);
+export const defaultFaces = dist => jdist(distUrl(dist, 'default-faces.json'));
 
 /** The URL of ref's default face for `view` in a map `defaultFaces` returned, or null. */
 export function defaultFaceIn(map, dist, ref, view) {
   const f = map?.[ref]?.[view];
-  return f ? dist + f : null;
+  return f ? distUrl(dist, f) : null;
 }
 
 /** The URL of `ref`'s default face for `view`, or null if it has none. */
@@ -35,8 +41,13 @@ export async function defaultFace(dist, ref, view) {
   return defaultFaceIn(await defaultFaces(dist), dist, ref, view);
 }
 
-/** The URL of `view` of `ref` in configuration `config`, reading ref's configs.json. */
+/** The file that draws `view` of `ref` in configuration `config`, reading ref's configs.json. */
+export async function faceName(dist, ref, config, view) {
+  const index = await jdist(distUrl(dist, `${ref}.configs.json`)).catch(() => null);
+  return faceFile(index || {device: ref}, config, view);
+}
+
+/** The URL of `view` of `ref` in configuration `config`. */
 export async function faceUrl(dist, ref, config, view) {
-  const index = await jdist(`${dist}${ref}.configs.json`).catch(() => null);
-  return dist + faceFile(index || {device: ref}, config, view);
+  return distUrl(dist, await faceName(dist, ref, config, view));
 }

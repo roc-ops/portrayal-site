@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { readDistFile } from '../dist-files.mjs';
 import { parseRange, matchName, targetOf, joinNames, componentNames, entityListings, componentsDump }
   from '../../site/entity-join.js';
 
-const listings = JSON.parse(readFileSync(new URL('../../assets/dist/listings.json', import.meta.url))).listings;
+const listings = JSON.parse(readDistFile('listings.json')).listings;
 const rules = key => listings[key]['entity-map'];
 
 test('a range bounds {n}, and a pattern with no {n} matches only itself', () => {

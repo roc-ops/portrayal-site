@@ -8,11 +8,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {cableText} from '../../site/rack/agent-text.js';
 import {capacityText} from '../../site/rack/capacity-text.js';
 import {WARNING_KINDS, capacityKindTitle} from '../../site/rack/cable-panel.js';
 
-const devices = JSON.parse(readFileSync(new URL('../../assets/dist/rack.json', import.meta.url), 'utf8')).devices;
+const devices = JSON.parse(readDistFile('rack.json')).devices;
 
 test('the catalogue marks the estimate, and only the estimate', () => {
   const sfds = devices['cmh-sfds1u'].capacity;

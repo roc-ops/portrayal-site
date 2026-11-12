@@ -174,13 +174,35 @@ import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 import { installEars, earsPreference, EARS_CSS } from './site/ears.js';
 import { firstDevice } from './site/featured.js';
 import { positionControl } from './vendor/positions.js';
+import { siteDist } from './site/dist.js';
+
+// THE EMBED OBJECT IS THERE AT LOAD. The shell is made once the library's
+// packs can be read (site/dist.js), and a module's top-level await does not
+// hold the page's `load` event back - so window.portrayalEmbed is put in place
+// here, before that wait. Until the shell's own (EMBED MODE, below) stands
+// behind it, it answers as that one does before a device has loaded: the URL's
+// device, configuration and view, in 2D, with no swaps, fields or pulled parts.
+const EMBED = new URLSearchParams(location.search).get('embed') === '1';
+let embedImpl = null, embedArrived;
+const embedLater = new Promise(res => { embedArrived = res; });
+if (EMBED) {
+  const q = new URLSearchParams(location.search);
+  window.portrayalEmbed = Object.freeze({
+    ready: embedLater.then(e => e.ready),
+    get settled() { return !!embedImpl?.settled; },
+    setMode: m => (embedImpl ? embedImpl.setMode(m) : embedLater.then(e => e.setMode(m))),
+    current: () => (embedImpl ? embedImpl.current()
+      : {device: q.get('device') ?? null, config: q.get('config') ?? null, view: q.get('view') ?? null,
+         mode: '2d', swaps: {}, fields: {}, pulled: []}),
+  });
+}
 
 // A first visit opens on a populated device, not on the first in the index
 // (roc-ops/portrayal-site#19): site/featured.js is the one rule, shared with
 // Annotate and the showcase.
 const shell = createShell({
   title: 'Explorer',
-  dist: 'assets/dist',
+  dist: await siteDist(),
   mount: document.getElementById('shell'),
   device: firstDevice(),
 });
@@ -191,7 +213,7 @@ const state = shell.state;
 // is the showcase's - so all three step aside, and the outer page talks to
 // this one only through window.portrayalEmbed. Without ?embed=1 nothing here
 // changes. (The shell already hides its own device picker inside a frame.)
-const EMBED = new URLSearchParams(location.search).get('embed') === '1';
+// (EMBED is read at the top, where window.portrayalEmbed is put in place.)
 document.body.classList.toggle('embed', EMBED);
 
 // ---------------------------------------------------------------- state chips
@@ -575,7 +597,8 @@ if (EMBED) {
   // handler whether current() is the device's real state cannot await a promise.
   let settled = false;
   ready.then(() => { settled = true; }, () => {});
-  window.portrayalEmbed = Object.freeze({
+  // stands behind the window.portrayalEmbed put in place before the shell was made
+  embedImpl = Object.freeze({
     ready: ready,
     get settled() { return settled; },
     setMode: m => setMode(m),
@@ -589,6 +612,7 @@ if (EMBED) {
       pulled: state.device ? shell.pulledPaths() : [],
     }),
   });
+  embedArrived(embedImpl);
 }
 
 // AN OVERRIDE IS A DEVIATION FROM WHAT WAS BUILT, not a restatement of it.

@@ -5,6 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {readDistFile} from '../dist-files.mjs';
 import {itemDepth, zeroUDepth, shownSide, sideBox, drawingX, sideX, sideY, project, projectedPath, paintOrder, onNearSide,
         nearness, postsOf, depthExtent, paneSpanX, packedPoints, strapBar, labelSize, plugSpans, POST_D, FRONT_ROOM, SIDE_PAD} from '../../site/rack/side-geometry.js';
 import {solidsOf} from '../../vendor/rack/solids.js';
@@ -12,7 +13,7 @@ import {isZeroUPart, isNarrow} from '../../vendor/rack/fit.js';
 import {normalizeFrame} from '../../vendor/rack/model.js';
 import {RU} from '../../vendor/rack/rails.js';
 
-const devices = JSON.parse(readFileSync(new URL('../../assets/dist/rack.json', import.meta.url), 'utf8')).devices;
+const devices = JSON.parse(readDistFile('rack.json')).devices;
 const chassisOf = ref => devices[ref] ?? null;
 const four = normalizeFrame({kind: 'four-post', heightRU: 42}), two = normalizeFrame({kind: 'two-post', heightRU: 42});
 const rackOf = (frame, items = [], zeroU = []) => ({frame, items, zeroU, cables: []});

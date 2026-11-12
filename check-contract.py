@@ -12,6 +12,8 @@ either the site has to change or the drift was unintentional over there.
 
 Run by ./refresh-assets.sh straight after vendoring. Exits non-zero on a break.
 """
+import bisect
+import functools
 import json
 import re
 import sys
@@ -89,6 +91,90 @@ def jload(rel):
         return None
 
 
+# ── THE DRAWINGS, AS A PAGE READS THEM ───────────────────────────────────
+# The faces and skins are served as packs (assets/dist/packs/, written by
+# Portrayal's spec/tools/dev/dist_packs.py), not one file per drawing; only the
+# tools/pack-assets.py PLAIN_FILES stay loose. A check that reads a drawing reads
+# the entry vendor/dist.js fetchDist would answer a packedDist URL with: a face
+# from its device's default pack or second pack, routed by configs[].files as
+# the kit routes it; a skin from its namespace's chunk, found through
+# components/index.json. None when no pack holds it.
+PACKS = DIST / "packs"
+
+
+@functools.lru_cache(maxsize=4)
+def _pack(rel):
+    """A pack under assets/dist/packs, parsed, or None. A few are held at once:
+    together they are hundreds of megabytes."""
+    p = PACKS / rel
+    return json.loads(p.read_bytes()) if p.is_file() else None
+
+
+@functools.lru_cache(maxsize=1)
+def _skin_index():
+    p = PACKS / "components" / "index.json"
+    return json.loads(p.read_bytes()) if p.is_file() else {}
+
+
+def skin_pack(rel):
+    """The chunk `components/<skin>` is in: `components/<ns>.<k>.json`, by the
+    binary search packedDist makes over the chunks' first names."""
+    skin = rel[len("components/"):]
+    ns = skin.split("--")[0]
+    return f"components/{ns}.{bisect.bisect_right(_skin_index().get(ns, []), skin) + 1}.json"
+
+
+def _held(pack, rel):
+    files = (pack or {}).get("files")
+    return files.get(rel) if isinstance(files, dict) else None
+
+
+@functools.lru_cache(maxsize=64)
+def _configs_of(dev):
+    try:
+        return json.loads((DIST / f"{dev}.configs.json").read_text())
+    except Exception:
+        return None
+
+
+def packed_text(rel):
+    """The text of drawing `rel` read through the packs, or None."""
+    if rel.startswith("components/"):
+        return _held(_pack(skin_pack(rel)), rel)
+    dev = rel.split(".")[0]
+    dflt_pack, more_pack = f"devices/{dev}.json", f"devices/{dev}.more.json"
+    configs = (_configs_of(dev) or {}).get("configs")
+    if (isinstance(configs, list) and configs
+            and all(isinstance(c, dict) and isinstance(c.get("files"), dict) for c in configs)):
+        dflt = next((c for c in configs if c.get("name") == _configs_of(dev).get("default")), None)
+        if dflt:
+            if rel in dflt["files"].values():
+                return _held(_pack(dflt_pack), rel)
+            if not any(rel in c["files"].values() for c in configs):
+                return None
+            return _held(_pack(more_pack), rel)
+    first = _pack(dflt_pack)
+    text = _held(first, rel)
+    return text if text is not None or not (first or {}).get("more") else _held(_pack(more_pack), rel)
+
+
+def pack_files():
+    """(pack, {path: text}) for every pack of drawings, one held at a time."""
+    for p in sorted(PACKS.rglob("*.json")) if PACKS.is_dir() else []:
+        rel = p.relative_to(PACKS).as_posix()
+        if rel != "components/index.json":
+            yield rel, (json.loads(p.read_bytes()).get("files") or {})
+
+
+def faces():
+    """(path, text) for every device face the site serves, loose or packed."""
+    for p in sorted(DIST.glob("*.svg")):
+        yield p.name, p.read_text()
+    for rel, files in pack_files():
+        if rel.startswith("devices/"):
+            yield from sorted(files.items())
+
+
 # ── the indexes, and their SHAPE ─────────────────────────────────────────
 # Shape matters as much as presence. `configs` is a LIST of objects each with a
 # `name`; reading it as a map keyed by name yielded "0", "1", "2" and built a
@@ -150,9 +236,9 @@ _dfp = DIST / "default-faces.json"
 _dff = json.loads(_dfp.read_text()) if _dfp.exists() else {}
 if devices is not None and devices.get("devices"):
     for dev in devices["devices"]:
-        p = DIST / _dff.get(dev["name"], {}).get("front", "")
-        if p.is_file():
-            face = p.read_text()
+        _fr = _dff.get(dev["name"], {}).get("front")
+        face = packed_text(_fr) if _fr else None
+        if face is not None:
             break
 if face is None:
     problems.append("FAIL  no compiled front face found to check")
@@ -165,10 +251,15 @@ else:
     # ports and no lamps - which is a change we asked for, not drift. The
     # classes still have to EXIST, or the exports find nothing; they just do not
     # have to exist on whichever device sorts first.
-    faces = sorted(DIST.glob("*.front.svg"))
-    for cls in ("port", "led", "region", "chassis"):
-        n = sum(1 for f in faces if f'data-class="{cls}"' in f.read_text())
-        check(n > 0, f'data-class="{cls}" on {n} of {len(faces)} front faces',
+    _cls_n, _fronts = dict.fromkeys(("port", "led", "region", "chassis"), 0), 0
+    for _fname, _ftext in faces():
+        if not _fname.endswith(".front.svg"):
+            continue
+        _fronts += 1
+        for cls in _cls_n:
+            _cls_n[cls] += f'data-class="{cls}"' in _ftext
+    for cls, n in _cls_n.items():
+        check(n > 0, f'data-class="{cls}" on {n} of {_fronts} front faces',
               "the draw.io export finds ports by it")
     check(re.search(r'\.state-[a-z]+', face) is not None,
           "the .state-* stylesheet is compiled in",
@@ -421,7 +512,7 @@ else:
                 missing.append(f"{idx_path.name} unreadable ({e})")
                 continue
         _ff = face_file(json.loads(idx_path.read_text()), cfg, "front") if cfg else None
-        if not cfg or not (DIST / _ff).is_file():
+        if not cfg or packed_text(_ff) is None:
             missing.append(_ff or f"{ref}.{cfg}.front.svg")
 
     # THE CAST IS FIVE, BOTTOM-UP, AND THE COPPER SWITCH SITS BETWEEN THE SERVER
@@ -698,16 +789,22 @@ comps = {f"{c['ns']}/{c['name']}@{c['major'][1:]}": c
 def face_text(dev, view):
     idx = json.loads((DIST / f"{dev}.configs.json").read_text())
     cfg = dict(cast).get(dev) or idx.get("default")
-    for name in (face_file(idx, cfg, view), f"{dev}.{view}.svg"):
-        if (DIST / name).is_file():
-            return (DIST / name).read_text()
-    return ""
+    # the configuration's face from its pack, else a plain copy kept loose
+    text = packed_text(face_file(idx, cfg, view))
+    if text is not None:
+        return text
+    plain = DIST / f"{dev}.{view}.svg"
+    return plain.read_text() if plain.is_file() else ""
 
 def skin_text(ref):
+    # the first of the component's skins by name, across its namespace's chunks
     ns, rest = ref.split("/")
     name, major = rest.split("@")
-    hits = sorted((DIST / "components").glob(f"{ns}--{name}--v{major}--*.svg"))
-    return hits[0].read_text() if hits else ""
+    want = f"components/{ns}--{name}--v{major}--"
+    hits = sorted((rel, text) for k in range(1, len(_skin_index().get(ns, [])) + 2)
+                  for rel, text in ((_pack(f"components/{ns}.{k}.json") or {}).get("files") or {}).items()
+                  if rel.startswith(want) and rel.endswith(".svg"))
+    return hits[0][1] if hits else ""
 
 def port_tag(text, path):
     """The opening tag of a port element with that data-path, carrying a
@@ -1054,9 +1151,18 @@ check(bool(_kit_html), "kit.html exists", "no kit.html")
 _im = re.search(r'<script type="importmap">\s*(\{.*?\})\s*</script>', _kit_html, re.S)
 _imap = json.loads(_im.group(1))["imports"] if _im else {}
 _kitmods = {k.split("/", 2)[2]: v for k, v in _imap.items() if k.startswith("@portrayal/kit/")}
-check(bool(_kitmods) and all(v == f"./vendor/{m}.js" and (VENDOR / f"{m}.js").exists()
+# The viewer and the shell take a `dist`, and a recipe's is the plain string a build of one file per drawing takes;
+# this site's drawings are in packs. So those two are mapped to site/kit-site/<module>.js, which re-exports the
+# vendored module whole and reads this site's DIST through its packs - nothing else (site/kit-site/packs.js).
+_KIT_SITE = {"viewer3d", "shell"}
+def _kit_site_ok(m, v):
+    p = HERE / "site" / "kit-site" / f"{m}.js"
+    return (m in _KIT_SITE and v == f"./site/kit-site/{m}.js" and p.is_file() and (VENDOR / f"{m}.js").exists()
+            and f"export * from '../../vendor/{m}.js';" in p.read_text())
+check(bool(_kitmods) and all((v == f"./vendor/{m}.js" and (VENDOR / f"{m}.js").exists()) or _kit_site_ok(m, v)
                              for m, v in _kitmods.items()),
-      "kit.html's import map sends every @portrayal/kit/<module> to an existing ./vendor/<module>.js",
+      "kit.html's import map sends every @portrayal/kit/<module> to an existing ./vendor/<module>.js, or the viewer "
+      "and the shell to site/kit-site/<module>.js, which re-exports it",
       f"{_kitmods}")
 check(_imap.get("three") == "./vendor/three/three.module.js"
       and _imap.get("three/addons/") == "./vendor/three/addons/",
@@ -1084,6 +1190,10 @@ for _stem in _exfiles:
           "a ./vendor or ./site path import")
     check("const DIST = 'assets/dist/';" in _src or "DIST" not in _src,
           f"kit example {_stem} names where the compiled files live as const DIST", "no const DIST = 'assets/dist/';")
+    # what a reader copies runs on the published kit and a build of one file per drawing: the packs are this site's
+    check("packedDist" not in _src,
+          f"kit example {_stem} hands the kit a plain DIST, never packedDist (kit.html's runner maps the packs: site/kit-site/)",
+          "names packedDist")
     for _names, _mod in re.findall(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w/-]+)'", _src):
         _want = js_names(_names, 0)
         _have = _exports(_mod) if _mod in _kitmods else set()
@@ -1477,17 +1587,53 @@ check(not _hand, "no site code builds a face file name or URL by hand (site/face
 # EVERY CONFIGURATION NAMES ITS FACES (Portrayal #670). configs[].files maps each
 # configuration's views to the one file that draws them, and site/faces.js
 # resolves through it; a name there with no file behind it is a face the site
-# would ask for and 404.
-_nofiles, _dangling = [], []
+# would ask for and 404. The files are read through the packs, as a page does.
+#
+# AND EACH FACE IS IN EXACTLY ONE OF ITS DEVICE'S PACKS (dist_packs.py): the
+# faces the default configuration names in devices/<device>.json, every other
+# face a configuration names in devices/<device>.more.json, nothing else in
+# either, and the default pack's `more` true exactly when the second exists.
+# vendor/dist.js fetchDist routes a face by configs[].files, so a face in the
+# other pack, or in both, is one a page asks the wrong pack for.
+_nofiles, _dangling, _packbad = [], [], []
 for _cf in sorted(DIST.glob("*.configs.json")):
-    for _c in json.loads(_cf.read_text()).get("configs", []):
+    _idx = json.loads(_cf.read_text())
+    _dev = _idx.get("device") or _cf.name[:-len(".configs.json")]
+    _dp = PACKS / "devices" / f"{_dev}.json"
+    _mp = PACKS / "devices" / f"{_dev}.more.json"
+    _dpk = json.loads(_dp.read_bytes()) if _dp.is_file() else None
+    _mpk = json.loads(_mp.read_bytes()) if _mp.is_file() else None
+    _held_d = set(((_dpk or {}).get("files") or {}))
+    _held_m = set(((_mpk or {}).get("files") or {}))
+    _named = set()
+    for _c in _idx.get("configs", []):
         if not isinstance(_c, dict): continue
         _fl = _c.get("files")
         if not _fl: _nofiles.append(f"{_cf.name[:-13]}.{_c.get('name')}"); continue
-        _dangling += [f for f in _fl.values() if not (DIST / f).is_file()]
+        _named |= set(_fl.values())
+        _dangling += [f for f in _fl.values() if f not in _held_d and f not in _held_m]
+    _dflt = next((c for c in _idx.get("configs", []) if isinstance(c, dict) and c.get("name") == _idx.get("default")), None)
+    _want_d = set(((_dflt or {}).get("files") or {}).values())
+    _want_m = _named - _want_d
+    if _dpk is None:
+        _packbad.append(f"{_dev}: no default pack")
+    elif _held_d != _want_d or _held_m != _want_m or bool(_dpk.get("more")) != bool(_want_m) or (_mpk is None) == bool(_want_m):
+        _packbad.append(f"{_dev}: default {sorted(_held_d ^ _want_d)[:2]}, second {sorted(_held_m ^ _want_m)[:2]}, "
+                        f"more {_dpk.get('more')!r}, second pack {'present' if _mpk is not None else 'absent'}")
 check(not _nofiles and not _dangling,
-      "every configuration names its faces in configs[].files, and every file named exists",
+      "every configuration names its faces in configs[].files, and every file named exists in a pack",
       f"{len(_nofiles)} without files (e.g. {_nofiles[:3]}), {len(_dangling)} dangling (e.g. {_dangling[:3]})")
+check(cfg_files and not _packbad,
+      f"every face a configs.json names is in exactly one of its device's packs, and `more` is right ({len(cfg_files)} devices)",
+      f"{len(_packbad)}, e.g. {_packbad[:3]}")
+# EVERY SKIN components.json NAMES IS FOUND THROUGH packs/components/index.json:
+# the chunk packedDist's binary search picks for it holds it.
+_skins = sorted({f for c in (jload("components.json") or {}).get("components", [])
+                 for f in (c.get("files") or {}).values()})
+_noskin = [f for f in _skins if packed_text(f) is None]
+check(_skins and _skin_index() and not _noskin,
+      f"every skin in components.json is found through packs/components/index.json ({len(_skins)} skins)",
+      f"{len(_noskin)} not in the chunk the index picks, e.g. {_noskin[:3]}")
 # and the site resolves them with the kit's own faceFile once the kit carries it
 _vd = (VENDOR / "dist.js").read_text()
 _fj = (HERE / "site" / "faces.js").read_text()
@@ -1508,7 +1654,7 @@ _dfs = _dff or None
 _names = [d["name"] for d in (devices or {}).get("devices", [])]
 check(_dfs is not None, "assets/dist/default-faces.json is written", "tools/pack-assets.py writes it")
 _nodf = [n for n in _names if not (_dfs or {}).get(n)]
-_dfmiss = [f for n in _names for f in (_dfs or {}).get(n, {}).values() if not (DIST / f).is_file()]
+_dfmiss = [f for n in _names for f in (_dfs or {}).get(n, {}).values() if packed_text(f) is None]
 check(not _nodf and not _dfmiss,
       "every device has an entry in default-faces.json, and every file it names exists",
       f"{len(_nodf)} without an entry (e.g. {_nodf[:3]}), {len(_dfmiss)} dangling (e.g. {_dfmiss[:3]})")
@@ -1520,8 +1666,8 @@ for _n in _names:
     for _v in sorted(set(_pa.VIEWS) | set((_dfs or {}).get(_n, {}))):
         _pl = DIST / f"{_n}.{_v}.svg"
         _nm = (_dfs or {}).get(_n, {}).get(_v)
-        if (_pl.is_file() and _nm and _nm != _pl.name and (DIST / _nm).is_file()
-                and (DIST / _nm).read_bytes() == _pl.read_bytes()):
+        if (_pl.is_file() and _nm and _nm != _pl.name and packed_text(_nm) is not None
+                and packed_text(_nm).encode("utf-8") == _pl.read_bytes()):
             _stray.append(_pl.name)
 check(not _stray, "no plain <device>.<view>.svg is left for a device outside KEEP_PLAIN, unless it differs from the default face",
       f"{len(_stray)}, e.g. {_stray[:3]}: run tools/pack-assets.py")
@@ -1532,6 +1678,54 @@ _lit_gone = sorted({f"{_f.relative_to(HERE)}: {_m.group(1)}" for _f in _served_c
                     for _m in _lit_re.finditer(_f.read_text()) if not (DIST / _m.group(1)).is_file()})
 check(not _lit_gone, "every face file named literally in served code exists (only KEEP_PLAIN devices can be)",
       f"{len(_lit_gone)}: {_lit_gone[:4]}")
+
+# NO BARE READ OF A DRAWING. The drawings are in packs: a page reads one at the
+# URL site/dist.js siteDist (the kit's packedDist) makes, with the kit's
+# fetchDist. A bare fetch of such a URL gets the whole pack, and a drawing's URL
+# on the plain base names a file that is no longer served. So in served code and
+# the harness pages, none of these:
+#   - fetch( or src = of a URL made by distAt, siteDist or a site/faces.js helper;
+#   - a drawing (.svg) path on the plain base (assets/dist/, ${DIST}, DIST + ...)
+#     handed to fetch, fetchDist, jdist, loadFace, svgSource, svgCanvas or
+#     rasterize, or assigned to a src;
+#   - jdist( of any .svg.
+# The plain base's JSON (devices.json, <device>.configs.json, ...) is a plain
+# file and may be fetched bare. Exempt: the PLAIN_FILES names tools/pack-assets.py
+# keeps loose, named literally; site/faces.js, which only builds URLs; and the
+# readers below, which read only PLAIN_FILES through the plain base on purpose.
+_BARE_EXEMPT = {
+    "site/faces.js": "builds face URLs for a caller to read; reads nothing itself",
+    "site/kit-examples/04-seat.js": "a recipe on the plain base: it seats only the skins PLAIN_SKINS keeps loose",
+}
+_PLAIN_BASE = r"""(?:['"`](?:\.\./)*assets/dist/|`\$\{\s*(?:DIST|dist)\s*\}|\b(?:DIST|dist)\s*\+)"""
+_URL_MAKER = r"(?:\bdistAt|\bsiteDist|\bdefaultFaceIn|\bdefaultFace|\bfaceUrl|\bdistUrl|\bdrawingUrl)\s*\("
+_READ_CALL = r"\b(?:fetch|fetchDist|jdist|loadFace|svgSource|svgCanvas|rasterize)\s*\(\s*(?:await\s+)?"
+_ARG = r"[^;\n]*?"
+_BARE_RES = [
+    re.compile(rf"\bfetch\s*\(\s*(?:await\s+)?{_ARG}{_URL_MAKER}"),
+    re.compile(rf"\bsrc\s*=\s*(?:await\s+)?{_ARG}{_URL_MAKER}"),
+    re.compile(rf"{_READ_CALL}{_PLAIN_BASE}[^;\n)]*?\.svg\b"),
+    re.compile(rf"\bsrc\s*=\s*['\"]?{_PLAIN_BASE}[^;\n>]*?\.svg\b"),
+    re.compile(r"\bjdist\s*\([^;\n)]*\.svg\b"),
+]
+_plain_names = set(_pa.PLAIN_FILES)
+_bare = []
+for _f in _served_code:
+    _rel = _f.relative_to(HERE).as_posix()
+    if _rel in _BARE_EXEMPT: continue
+    _t = _f.read_text()
+    for _re in _BARE_RES:
+        for _mm in _re.finditer(_t):
+            # a PLAIN_FILES name written out after the plain base, as 'assets/dist/<name>'
+            # or `${DIST}<name>`, with nothing else interpolated into the path
+            _lit = re.search(r"(?:assets/dist/|\$\{\s*(?:DIST|dist)\s*\})([\w./-]+\.svg)\b", _mm.group(0))
+            if _lit and _lit.group(1) in _plain_names and "${" not in _mm.group(0)[_lit.end(0) - len(_lit.group(1)):]:
+                continue
+            _bare.append(f"{_rel}:{_t[:_mm.start()].count(chr(10)) + 1}")
+check(not _bare and all((HERE / _p).is_file() for _p in _BARE_EXEMPT),
+      "no served code or harness page reads a drawing bare: a drawing's URL is made by siteDist (packedDist) "
+      "and read with fetchDist, save the loose PLAIN_FILES",
+      f"{len(_bare)}: " + ", ".join(sorted(set(_bare))[:12]))
 
 _ex = HERE / "assets" / "exports"
 _listed = json.loads((_ex / "files.json").read_text()) if (_ex / "files.json").exists() else {}
@@ -1825,12 +2019,17 @@ check(len(_hmgr) >= 23 and not _hbad,
 # carry no data-guide and are not rings, so there is no ring to drop out.
 _NOT_RING_GUIDES = ("chatsworth/motive-vcm-guide", "chatsworth/motive-vcm-tshape-ds")
 _gtag = re.compile(r'<g\b[^>]*\bdata-group="guides"[^>]*>')
-_undeclared = sorted({f"{p.name}: {re.search(r'id=\"([^\"]*)\"', t_).group(1) if 'id=' in t_ else '?'}"
-                      for p in DIST.glob("*.svg") for _txt in [p.read_text()] if 'data-group="guides"' in _txt
-                      for t_ in _gtag.findall(_txt)
-                      if not any(f'data-ref="{r_}@' in t_ for r_ in _NOT_RING_GUIDES)
-                      if 'data-guide="ring"' not in t_ or "data-guide-aperture=" not in t_})
-_ring_files = sum(1 for p in DIST.glob("*.svg") if 'data-guide="ring"' in p.read_text())
+# Every device face, loose or in a pack (one pass: the packs are large).
+_undeclared, _ring_files = set(), 0
+for _gname, _txt in faces():
+    _ring_files += 'data-guide="ring"' in _txt
+    if 'data-group="guides"' not in _txt:
+        continue
+    _undeclared |= {f"{_gname}: {re.search(r'id=\"([^\"]*)\"', t_).group(1) if 'id=' in t_ else '?'}"
+                    for t_ in _gtag.findall(_txt)
+                    if not any(f'data-ref="{r_}@' in t_ for r_ in _NOT_RING_GUIDES)
+                    if 'data-guide="ring"' not in t_ or "data-guide-aperture=" not in t_}
+_undeclared = sorted(_undeclared)
 check(_ring_files > 0 and not _undeclared,
       f"every data-group=\"guides\" group in assets/dist declares data-guide=\"ring\" and its aperture ({_ring_files} drawings with rings)",
       f"undeclared: {_undeclared[:8]} - restore the data-group fallback in route-context.js ringGroupsOf, or fix upstream")
