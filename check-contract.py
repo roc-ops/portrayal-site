@@ -1703,8 +1703,10 @@ for _f in _served_code:
     _t = _f.read_text()
     for _re in _BARE_RES:
         for _mm in _re.finditer(_t):
-            _lit = re.search(r"assets/dist/([\w./-]+\.svg)\b", _mm.group(0))
-            if _lit and _lit.group(1) in _plain_names and "${" not in _mm.group(0):
+            # a PLAIN_FILES name written out after the plain base, as 'assets/dist/<name>'
+            # or `${DIST}<name>`, with nothing else interpolated into the path
+            _lit = re.search(r"(?:assets/dist/|\$\{\s*(?:DIST|dist)\s*\})([\w./-]+\.svg)\b", _mm.group(0))
+            if _lit and _lit.group(1) in _plain_names and "${" not in _mm.group(0)[_lit.end(0) - len(_lit.group(1)):]:
                 continue
             _bare.append(f"{_rel}:{_t[:_mm.start()].count(chr(10)) + 1}")
 check(not _bare and all((HERE / _p).is_file() for _p in _BARE_EXEMPT),
