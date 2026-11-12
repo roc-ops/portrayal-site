@@ -22953,11 +22953,14 @@ def check_rack_3d_loading(page, base):
     page.set_viewport_size({"width": 1400, "height": 900})
     # the files of the part built LAST come late, each held for a moment: the vertical manager (z1) is mounted
     # before it, and stands through the whole wait
-    held = []
-    def late(route):
-        held.append(route.request.url.rsplit("/", 1)[-1])
-        time.sleep(0.4)
-        route.continue_()
+    #
+    # The part's faces are one pack (site/dist.js), asked for once, so it is the
+    # pack that comes late. It is held in the page, by the fetch the kit calls,
+    # for as long as the part's files were held when each was a file of its
+    # own: twelve requests of 0.4 s each. Not in a route: a route handler that
+    # waits holds every other request of the page behind it as well, the
+    # manager's own pack among them, and then nothing is built before the part.
+    LATE_MS = 4800
     open_front_fixture(page, base, PACK_FIXTURE)
     # a second part beside the rack, at the other rail, of another kind (a PDU), built after the manager
     page.evaluate("""() => { const r = window.__rack.doc().racks[0];
@@ -22977,8 +22980,20 @@ def check_rack_3d_loading(page, base):
     # The faces are read from packs (site/dist.js), and the 2D panes have read
     # this part's already: the kit fetches a pack once per page, so its memo is
     # cleared for the 3D scene to ask for the part's pack again, and that is held.
+    # The scene reads every part's faces through site/rack/face.js before it
+    # builds the first (its cable anchors), and on main that read came from the
+    # same files the part's own build then asked for again - the second read was
+    # the late one. A pack is read once, so that first read is made now, here:
+    # the late part's six faces are in face.js's own cache, and what comes late
+    # is what the part's build asks the kit for.
+    page.evaluate("""async () => { const F = await import('/site/rack/face.js');
+      for (const view of ['front', 'rear', 'left', 'right', 'top', 'bottom'])
+        await F.configuredFace({ref: 'evmi2130x', cfg: 'base', view}); }""")
     page.evaluate("async () => (await import('/vendor/dist.js')).clearDistCache()")
-    page.route("**/assets/dist/packs/devices/evmi2130x*", late)
+    page.evaluate("""ms => { const f = window.fetch; window.__held = []; window.__unheld = f;
+      window.fetch = (u, init) => /\\/assets\\/dist\\/packs\\/devices\\/evmi2130x\\./.test(String(u))
+        ? (window.__held.push(String(u).split('/').pop()), new Promise(ok => setTimeout(ok, ms)).then(() => f.call(window, u, init)))
+        : f.call(window, u, init); }""", LATE_MS)
     page.evaluate(LOADING_SAMPLER_JS)
     t0 = time.time()
     page.click('#mode [data-mode="3d"]')
@@ -22988,7 +23003,7 @@ def check_rack_3d_loading(page, base):
         return bad + [str(e)]
     page.wait_for_timeout(300)
     frames = page.evaluate("() => { window.__sampling = false; return window.__frames; }")
-    page.unroute("**/assets/dist/packs/devices/evmi2130x*")
+    held = page.evaluate("() => { window.fetch = window.__unheld; return window.__held; }")
     if not held:
         bad.append("loading: none of the last part's files was asked for while the scene loaded, so nothing was held back")
     with_cables = [f for f in frames if f["tubes"] or f["straps"]]
