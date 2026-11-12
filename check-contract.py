@@ -1151,9 +1151,18 @@ check(bool(_kit_html), "kit.html exists", "no kit.html")
 _im = re.search(r'<script type="importmap">\s*(\{.*?\})\s*</script>', _kit_html, re.S)
 _imap = json.loads(_im.group(1))["imports"] if _im else {}
 _kitmods = {k.split("/", 2)[2]: v for k, v in _imap.items() if k.startswith("@portrayal/kit/")}
-check(bool(_kitmods) and all(v == f"./vendor/{m}.js" and (VENDOR / f"{m}.js").exists()
+# The viewer and the shell take a `dist`, and a recipe's is the plain string a build of one file per drawing takes;
+# this site's drawings are in packs. So those two are mapped to site/kit-site/<module>.js, which re-exports the
+# vendored module whole and reads this site's DIST through its packs - nothing else (site/kit-site/packs.js).
+_KIT_SITE = {"viewer3d", "shell"}
+def _kit_site_ok(m, v):
+    p = HERE / "site" / "kit-site" / f"{m}.js"
+    return (m in _KIT_SITE and v == f"./site/kit-site/{m}.js" and p.is_file() and (VENDOR / f"{m}.js").exists()
+            and f"export * from '../../vendor/{m}.js';" in p.read_text())
+check(bool(_kitmods) and all((v == f"./vendor/{m}.js" and (VENDOR / f"{m}.js").exists()) or _kit_site_ok(m, v)
                              for m, v in _kitmods.items()),
-      "kit.html's import map sends every @portrayal/kit/<module> to an existing ./vendor/<module>.js",
+      "kit.html's import map sends every @portrayal/kit/<module> to an existing ./vendor/<module>.js, or the viewer "
+      "and the shell to site/kit-site/<module>.js, which re-exports it",
       f"{_kitmods}")
 check(_imap.get("three") == "./vendor/three/three.module.js"
       and _imap.get("three/addons/") == "./vendor/three/addons/",
@@ -1181,6 +1190,10 @@ for _stem in _exfiles:
           "a ./vendor or ./site path import")
     check("const DIST = 'assets/dist/';" in _src or "DIST" not in _src,
           f"kit example {_stem} names where the compiled files live as const DIST", "no const DIST = 'assets/dist/';")
+    # what a reader copies runs on the published kit and a build of one file per drawing: the packs are this site's
+    check("packedDist" not in _src,
+          f"kit example {_stem} hands the kit a plain DIST, never packedDist (kit.html's runner maps the packs: site/kit-site/)",
+          "names packedDist")
     for _names, _mod in re.findall(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w/-]+)'", _src):
         _want = js_names(_names, 0)
         _have = _exports(_mod) if _mod in _kitmods else set()

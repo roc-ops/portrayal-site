@@ -3,17 +3,13 @@
 // styles the page it lands in, so give it a page (or a frame) of its own.
 // explorer.html on this site is the full example, with 3D wired to it.
 import {createShell} from '@portrayal/kit/shell';
-import {packedDist} from '@portrayal/kit/dist';
 
 const DIST = 'assets/dist/';  // wherever you host the compiled files
 
 export async function run(host) {
   const shell = createShell({
     title: 'Explorer',
-    // This site serves the drawings as packs, so it hands the shell packedDist's
-    // path -> URL function. A build served as one file per drawing is the folder
-    // without a trailing slash: DIST.replace(/\/$/, '').
-    dist: await packedDist(DIST),
+    dist: DIST.replace(/\/$/, ''),     // the shell takes the folder without a trailing slash
     mount: host,
     device: 's9600-72xc',
   });
