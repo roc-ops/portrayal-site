@@ -26273,9 +26273,20 @@ def _click_entry(page, ident):
     page.mouse.click(box[0], box[1])
 
 
+# The side panel is the entry's: its heading is the entry's label (a device's and a part beside the rack's alike).
+SIDE_SHOWS_JS = """id => { const r = window.__rack.doc().racks[0], e = [...r.items, ...r.zeroU].find(x => x.id === id);
+  return !!e && document.querySelector('#side h3')?.textContent === e.label; }"""
+
+
 def _ui_set(page, ident, kind, path, value):
-    """The page's own control: select the entry, pick the part, say what it is, press the button."""
+    """The page's own control: select the entry, pick the part, say what it is, press the button.
+    The click waits for the redraw the last edit started: a press before that redraw replaces the panes and a release
+    after it fall on two drawings, the click is lost, and the side panel stays on the entry before, whose parts are
+    not this one's (CI run 43252367602: select_option waited 30 s for an option the stale panel never had). And
+    nothing is picked until the side panel is the clicked entry's."""
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
     _click_entry(page, ident)
+    page.wait_for_function(SIDE_SHOWS_JS, arg=ident, timeout=READY_MS)
     if kind == "state":
         page.wait_for_selector("#stPath", timeout=READY_MS)
         page.select_option("#stPath", path)
