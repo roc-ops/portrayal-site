@@ -2452,7 +2452,7 @@ def check_facts_page(page, base):
     # AUTHORED ATTRIBUTES: the switch's sections, sorted; the box lacks management and says so.
     secs = page.eval_on_selector_all("#t2 h3[data-section]", "hs => hs.map(h => h.dataset.section)")
     attrs = page.evaluate("""async () => Object.keys((await (await fetch('/assets/dist/as7726-32x.source.json')).json()).attrs)""")
-    if secs != sorted(set(attrs) | {"features", "platform"}):
+    if secs != sorted(set(attrs) | {"environmental", "features", "performance", "physical", "platform", "power"}):
         bad.append(f"facts: the attribute sections are {secs}")
     lacking = page.eval_on_selector_all(
         "#t2 tr[data-attr^='management.'] td:nth-child(3) .v", "ts => [...new Set(ts.map(t => t.textContent))]")
@@ -14665,8 +14665,11 @@ def check_rack_frame_picker_lists(page, base):
         bad.append(f"picker: a search for the part number AR203A finds {product_refs(page)}")
     page.fill("#fProdSearch", "")
     page.select_option("#fProdForm", "4-post-cabinet")
-    wait_fn(page, "picker: the cabinet form", "() => document.querySelectorAll('#fProducts [data-product-ref]').length === 1")
-    if product_refs(page) != ["generic/4-post-cabinet@1"]:
+    # The list is the page's order: manufacturer, then model (APC, then Generic).
+    cabinet = ["apc/ar3100b2@1", "generic/4-post-cabinet@1"]
+    wait_fn(page, "picker: the cabinet form",
+            f"() => [...document.querySelectorAll('#fProducts [data-product-ref]')].map(b => b.dataset.productRef).join(',') === {json.dumps(','.join(cabinet))}")
+    if product_refs(page) != cabinet:
         bad.append(f"picker: the form cabinet lists {product_refs(page)}")
     two = sorted(r for r, p in FRAME_ROWS.items() if p.get("form") == "2-post-frame")
     page.select_option("#fProdForm", "2-post-frame")
@@ -19450,8 +19453,8 @@ def check_rack_frame_picker_kit_values(page, base):
     options = page.evaluate("() => [...document.querySelectorAll('#fProdForm option')].map(o => o.value)")
     if NEW_FORM not in options:
         bad.append(f"kit values: the filter offers {options}, expected the new form {NEW_FORM}")
-    if sorted(o for o in options if o) != sorted({"2-post-frame", "4-post-frame", "4-post-cabinet", "wall-frame", NEW_FORM}):
-        bad.append(f"kit values: the filter's forms are {options}, expected the catalogue's four and the new form")
+    if sorted(o for o in options if o) != sorted({"2-post-frame", "4-post-frame", "4-post-cabinet", "wall-frame", "desktop-frame", "wall-cabinet", NEW_FORM}):
+        bad.append(f"kit values: the filter's forms are {options}, expected the catalogue's six and the new form")
     wait_sel(page, "kit values: the new product", '#fProducts [data-product-ref="test/newform@1"]')
     named = page.text_content('#fProducts [data-product-ref="test/newform@1"] .rk-product-name')
     if named != "Zed Z9 Plus":
