@@ -3012,7 +3012,8 @@ def check_docs_menu(page, base):
             return Math.abs(r(s) - r(link)); }""")
         if off is not None and off > 0.6:
             bad.append(f"{name}: the Docs label is {off:.1f}px off its neighbors' baseline")
-        page.click(f"{d} > summary")
+        # The components page loads its whole catalogue first, so its menu can take about a minute to become clickable.
+        page.click(f"{d} > summary", timeout=120000)
         links = page.eval_on_selector_all(f"{d}[open] .navmenu-items a", "as => as.map(a => a.getAttribute('href'))")
         if links != ["schema.html", "lint.html", "kit.html", "contribute.html"]:
             bad.append(f"{name}: the open Docs menu offers {links}")
