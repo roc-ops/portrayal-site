@@ -3012,8 +3012,7 @@ def check_docs_menu(page, base):
             return Math.abs(r(s) - r(link)); }""")
         if off is not None and off > 0.6:
             bad.append(f"{name}: the Docs label is {off:.1f}px off its neighbors' baseline")
-        # The components page loads its whole catalogue first, so its menu can take about a minute to become clickable.
-        page.click(f"{d} > summary", timeout=120000)
+        page.click(f"{d} > summary")
         links = page.eval_on_selector_all(f"{d}[open] .navmenu-items a", "as => as.map(a => a.getAttribute('href'))")
         if links != ["schema.html", "lint.html", "kit.html", "contribute.html"]:
             bad.append(f"{name}: the open Docs menu offers {links}")
@@ -3029,6 +3028,84 @@ def check_docs_menu(page, base):
             sw = page.evaluate("document.documentElement.scrollWidth")
             if sw > w: bad.append(f"{name} at {w}px scrolls sideways to {sw}px")
     return bad
+
+# THE COMPONENTS PAGE MAKES EVERY CARD BUT DRAWS ONLY THE ONES NEAR THE SCREEN.
+# It once started the drawing of all of them at once, and the page held a click
+# for about a minute (#280). A card is still made for every major, so a search
+# finds one whether or not its drawing has loaded.
+@extra("the components page makes every card, loads drawings only for cards near the screen, and keeps search, skins and 3D working")
+def check_components_lazy_drawings(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"components: uncaught {e}"))
+    blobs = []
+    page.on("request", lambda r: blobs.append(r.url) if r.url.startswith("blob:") else None)
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(f"{base}/components.html", wait_until="domcontentloaded")
+    # the Docs menu is clickable inside the ordinary allowance, as on the other pages
+    try:
+        page.click("details.navmenu[data-docs] > summary")
+        page.keyboard.press("Escape")
+    except Exception:
+        bad.append("components: the Docs menu was not clickable inside the ordinary allowance")
+    want = page.evaluate("async () => (await (await fetch('/assets/dist/components.json')).json()).components.length")
+    page.wait_for_function(f"() => document.querySelectorAll('#grid .card').length === {want}", timeout=READY_MS)
+    page.wait_for_timeout(2500)
+    # The lazy page asks for about 15 at this size, and the eager one for every card, so 60 separates them.
+    near_max = 60
+    if len(blobs) > near_max:
+        bad.append(f"components: {len(blobs)} drawings were requested at load for {want} cards; "
+                   f"only the cards near the screen should be, at most {near_max}")
+    last = "#grid .card:last-child"
+    far = page.evaluate(f"() => document.querySelector('{last}').getBoundingClientRect().top / innerHeight")
+    has = lambda sel: page.evaluate(f"() => (document.querySelector('{sel} img').getAttribute('src') || '').startsWith('blob:')")
+    if far < 5:
+        bad.append(f"components: the last card is only {far:.1f} screens down")
+    if has(last):
+        bad.append("components: the last card has a drawing at load, before the grid is scrolled to it")
+    page.locator(last).scroll_into_view_if_needed()
+    try:
+        page.wait_for_function(f"() => (document.querySelector('{last} img').getAttribute('src') || '').startsWith('blob:')",
+                               timeout=READY_MS)
+    except Exception:
+        bad.append("components: the last card has no drawing after the grid is scrolled to it")
+    name = page.evaluate(f"() => document.querySelector('{last} h3').textContent.split('@')[0]")
+    page.evaluate("window.scrollTo(0, 0)")
+
+    # a search finds a card far down, and its drawing loads
+    page.fill("#q", name)
+    shown = page.evaluate("() => [...document.querySelectorAll('#grid .card h3')].map(h => h.textContent.split('@')[0])")
+    if name not in shown:
+        bad.append(f"components: searching {name} shows {shown[:3]}, not that card")
+    try:
+        page.wait_for_function(
+            f"() => [...document.querySelectorAll('#grid .card')].some(c => c.querySelector('h3').textContent.startsWith('{name}@')"
+            " && (c.querySelector('img').getAttribute('src') || '').startsWith('blob:'))", timeout=READY_MS)
+    except Exception:
+        bad.append(f"components: the card found by searching {name} has no drawing")
+
+    # a skin choice changes the drawing; view in 3D opens the overlay on the first card
+    page.fill("#q", "")
+    page.wait_for_function(f"() => document.querySelectorAll('#grid .card').length === {want}", timeout=READY_MS)
+    card = page.locator("#grid .card:has(.skinrow select)").first
+    card.scroll_into_view_if_needed()
+    img = card.locator("img")
+    page.wait_for_function("(el) => (el.getAttribute('src') || '').startsWith('blob:')", arg=img.element_handle(), timeout=READY_MS)
+    before = img.get_attribute("src")
+    sel = card.locator("select")
+    opts = sel.locator("option").all_text_contents()
+    sel.select_option(opts[-1])
+    try:
+        page.wait_for_function("([el, was]) => (el.getAttribute('src') || '').startsWith('blob:') && el.getAttribute('src') !== was",
+                               arg=[img.element_handle(), before], timeout=READY_MS)
+    except Exception:
+        bad.append(f"components: choosing skin {opts[-1]} left the drawing as it was")
+    ref = page.evaluate("() => document.querySelector('#grid .card h3').textContent.split(' ')[0]")
+    page.evaluate("window.scrollTo(0, 0)")
+    page.click("#grid .card .v3d")
+    if page.evaluate("document.getElementById('ov').hidden") or page.inner_text("#ov-title") != ref:
+        bad.append(f"components: view in 3D did not open the overlay on {ref}")
+    return bad
+
 
 # THE ENTITY MAP PAGE (portrayal-site#12) joins a listing's entity-map onto the
 # component names of the dump the listing names. Expected values are read from

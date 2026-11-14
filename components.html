@@ -161,12 +161,23 @@ function showSkin(img, file) {
   img.dataset.skin = file;
   SKIN_URLS.get(file).then(url => { if (img.dataset.skin === file) img.src = url; }, () => {});
 }
+// Every card is made, so search and the count read the whole list.
+// A card's drawing loads when it comes within two screens of the window.
+// Loading all of them at once held the page for about a minute.
+const NEAR = new IntersectionObserver(entries => {
+  for (const e of entries) {
+    if (!e.isIntersecting) continue;
+    NEAR.unobserve(e.target);
+    showSkin(e.target, e.target.dataset.want);
+  }
+}, {rootMargin: '200% 0px'});
 function render() {
   const q = $('q').value.toLowerCase();
   const ns = $('ns').value;
   const z = +$('zoom').value;
   $('zl').textContent = `${z} px/mm`;
   const grid = $('grid');
+  NEAR.disconnect();
   grid.innerHTML = '';
   DATA.filter(c => (!ns || c.ns === ns) &&
       (!q || `${c.ns}/${c.name} ${c.class} ${c.conforms || ''} ${c.description}`.toLowerCase().includes(q)))
@@ -182,7 +193,8 @@ function render() {
       const img = document.createElement('img');
       img.width = c.size.w * z; img.height = c.size.h * z;
       const skins = Object.keys(c.files);
-      showSkin(img, c.files[skins[0]]);
+      img.dataset.want = c.files[skins[0]];
+      NEAR.observe(img);
       stage.appendChild(img);
       card.appendChild(stage);
       if (skins.length > 1) {
@@ -191,7 +203,11 @@ function render() {
         row.textContent = 'skin: ';
         const sel = document.createElement('select');
         skins.forEach(sk => { const o = document.createElement('option'); o.value = sk; o.textContent = sk; sel.appendChild(o); });
-        sel.onchange = () => showSkin(img, c.files[sel.value]);
+        sel.onchange = () => {
+          img.dataset.want = c.files[sel.value];
+          NEAR.unobserve(img);
+          showSkin(img, img.dataset.want);
+        };
         row.appendChild(sel);
         card.appendChild(row);
       }
