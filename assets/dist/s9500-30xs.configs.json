@@ -1769,23 +1769,26 @@
   "right": [
    {
     "accepts": [
-     "generic/ring-lug@1"
+     "generic/two-hole-lug-5-8@1"
     ],
     "at": [
-     264.5,
-     14.5
+     188.5125,
+     18.4
     ],
-    "bores": [],
+    "bores": [
+     "1",
+     "2"
+    ],
     "default": null,
     "group": "grounding",
     "group-states": false,
-    "id": "ground-lug",
-    "interface": "terminal-stud",
+    "id": "ground-screws",
+    "interface": "stud-pair-5-8",
     "kind": "connector",
-    "lift": 4.7,
+    "lift": 3.1,
     "mate": [
-     268.0,
-     24.3
+     200.45,
+     22.4
     ],
     "media": null,
     "mirror": false,
@@ -1795,12 +1798,10 @@
      "data-group-role": "furniture"
     },
     "rel-pos": 2,
-    "rotate": null,
+    "rotate": 0,
     "turns": [
      0,
-     90,
-     180,
-     270
+     180
     ]
    }
   ],
@@ -2818,6 +2819,28 @@
    "what": "chassis-sku"
   },
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "HIG section 8 says the designated grounding location 'is located on the side of the router' and never says which side. Figure 22 is an unlabelled flank elevation with the front end at the left and the rear fan handle at the right. Read from outside, that is the router's LEFT flank, but a mirrored figure cannot be ruled out, so the pair stays on the RIGHT view where this device has always drawn it. Its position along the depth is measured from the figure and is the same from the front on either flank; a left view measures from the rear, where it would be 101.55.",
+   "scope": [
+    "ground-screws"
+   ],
+   "wanted": "a photograph of the real unit's flanks, or a figure captioned with the side",
+   "what": "grounding-flank"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "No held document dimensions the grounding holes. The hardware installation guide names the screws (two M4) and the accessory lug (50 x 11.1 x 7.5 mm, #6 AWG) and draws the holes; Figure 22 reads them 15.9 and 15.6 apart at 0.68 mm per pixel, and the landing is drawn at the 5/8 in. (15.875) that reading and the two-hole lug both point at. Of the two designated locations only the rearward one is drawn.",
+   "scope": [
+    "ground-screws"
+   ],
+   "wanted": "a dimensioned drawing of the flank, or the lug's drawing with its hole spacing",
+   "what": "ground-pair-pitch"
+  },
+  {
    "because": "L29",
    "blocks": [],
    "count": 1,
@@ -2870,9 +2893,13 @@
   "fan-numbering": {
    "note": "The rear panel numbers its fans 0-4, printed 'FAN <0' through 'FAN <4' at the top of each fan's right-hand flange in both the figure and the photograph. Those legends are NOT drawn, and the reason is structural rather than an oversight: a fan-position number cannot live on an interchangeable FRU, so it would have to be chassis silkscreen - and there is no chassis metal to carry it, because the 42.2 mm fan face fills all but 1.3 mm of the 43.5 mm rear panel. Drawn as chassis silkscreen it would be painted under the fan modules and invisible. The numbering itself is certain and is what the bay ids and rel-pos carry."
   },
+  "ground-pair": {
+   "confidence": "drawing",
+   "note": "ONE TWO-HOLE LANDING, NOT ONE NOMINAL STUD (#918). The accessory grounding lug (50 x 11.1 x 7.5 mm, #6 AWG) is fixed with two M4 screws at either of two designated locations. The landing is common/ground-stud-pair-5-8-m4@1: two M4 pan heads on 5/8 in. (15.875) centres, unturned because the holes lie along the depth. Read from this chassis's own HIG Figure 22, a flank elevation. Its chassis bar is 445 px for the 302 mm depth and its printed 50 mm lug plate is 74 px, so each pixel is 0.68 mm and every number here is good to about a pixel. The rearward location's holes are at 192.5 and 208.4 mm from the front end (15.9 apart) and the forward location's at 8.4 and 24.0 (15.6 apart): the 5/8 in. pattern within the reading. Only the rearward location is drawn, because one lug ships and the lug placement this replaces, at 264.5 from the front, lay nearer it. The host is centred on its two holes, at 200.45 mm along and 22.4 mm below the top edge (the bar is 64.9 px tall for 43.5 mm; its top edge is at 41.0 px and the holes' centre line at 74.3 px). AXIS: x = 0 is the FRONT on a right view. Formerly one common/ground-lug@1, `ground-lug`, whose stud sat at 268.0, 24.3: its earth symbol, 6.6 above the stud, is now a silkscreen mark over the pair, as the S9501-18SMT draws its own."
+  },
   "ground-stud-size": {
    "confidence": "datasheet",
-   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-lug, which is drawn once for both holes. The accessory lug is one two-hole lug held by both screws."
+   "note": "the hardware installation guide lists, in its package contents, a screw kit for the grounding lug of 2 x M4*L8.0mm screws, and its grounding steps lock the grounding lug to the designated grounding location with 2 M4 screws: the `stud-size` of ground-screws, one pair of holes at the location drawn. The accessory lug is one two-hole lug held by both screws."
   },
   "led-semantics": {
    "note": "HIG section 10 Front Panel LED table, transcribed rather than only cited. Five lamps - GNSS, SYNC, STAT, FAN, PWR - each with its own vocabulary, and three of them draw four distinct meanings out of two colours and two behaviours, which is why a state carries a behavior as well as a colour. The out-of-band jack is declared per element because its left lamp is green for 1G and its right amber for 10M/100M. The PSU FRU and Fan FRU tables belong to the modules and are already transcribed in their contracts. The guide gives NO table for the port lamps; see the port-led-semantics gap."
@@ -2909,7 +2936,7 @@
   },
   "side-faces": {
    "confidence": "estimated",
-   "note": "estimated. No held figure dimensions either side wall. The HIG's rack-mounting section fixes the chassis to the posts through the two 50.4 x 43 mm brackets and says nothing about side features, and the grounding section puts the lug on the RIGHT side wall (HIG Figures 19-22 and the fig-0011 inset, which magnifies a two-hole lug on the chassis's right rear corner). Both side faces therefore carry only the bracket screws and, on the right, the grounding lug - positions estimated, and LEFT has x = 0 at the REAR while RIGHT has x = 0 at the FRONT, stated here because both faces carry only symmetric content and nothing else would expose the convention."
+   "note": "estimated. No held figure dimensions either side wall. The HIG's rack-mounting section fixes the chassis to the posts through the two 50.4 x 43 mm brackets and says nothing about side features, and the grounding section says only that the lug goes 'on the side of the router' (HIG Figures 20-22). Both side faces therefore carry only the bracket screws and, on the right, the grounding pair - which flank it is on is a gap (grounding-flank), its position along the depth is read from Figure 22 (ground-pair) - and LEFT has x = 0 at the REAR while RIGHT has x = 0 at the FRONT, stated here because both faces carry only symmetric content and nothing else would expose the convention."
   },
   "sources": {
    "note": "UfiSpace S9500-30XS datasheet for dimensions, weight, port inventory, platform, timing, power, environment, compliance and the FRU ordering lines; S9500-30XS Hardware Installation Guide (s9500-30xs-hig) for the faceplate and rear figures, the FRU dimension table, the LED tables and grounding; three vendor product renders (photos/s9500-30xs-1-angle, -2-front, -3-rear) for colour, counts and confirmation. Checked for a vendor 3D model before trusting any figure, per the skill: the intake stages GLBs for ReadyLinks only, and the S9500-30XS product page embeds no model-viewer and offers no .glb/.gltf/.usdz or CAD download - so this model rests on figures and the gates below apply in full."
@@ -2929,7 +2956,13 @@
  },
  "seat-turns": {
   "right": {
-   "ground-lug": {
+   "ground-screws": {
+    "generic/two-hole-lug-5-8@1": 0
+   },
+   "ground-screws/1": {
+    "generic/ring-lug@1": 0
+   },
+   "ground-screws/2": {
     "generic/ring-lug@1": 0
    }
   }

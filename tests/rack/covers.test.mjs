@@ -69,7 +69,7 @@ const TOUCHED = ['cmh-bs-dfdabs2u', 'cmh-bs-sfds1u', 'cmh-dfd1u', 'cmh-dfds1u', 
   // added with the cable managers and ducts from Leviton, Belden, StarTech, Hubbell, Panduit and Eaton Tripp Lite
   '491ru-hfr', '49253-2cm', '49253-6mr', '49253-6pm', '49253-bcm', '49253-lpm', '492ru-hfo', '492ru-hfr', '9512-1901', 'bhh191ur', 'bhh192ur', 'bhh193ur',
   'bhh194ur', 'cmduct1ux', 'cmduct2u', 'hm144c', 'hm14c', 'hm24c', 'hm34c', 'hs23c', 'hsd13', 'ncmh2', 'ncmhf2', 'nm1', 'nm2', 'nmf1', 'nmf2', 'nmf3', 'nmf4',
-  'pr2hf3wh', 'pr2hf4wh', 'srcableduct1u', 'srcableduct1ufc', 'srcableduct1uhd', 'wmpvhc45e',
+  'pr2hf3wh', 'pr2hf4wh', 'srcableduct1u', 'srcableduct1ufc', 'srcableduct1uhd', 'srcableductvrt', 'wmpvhc45e',
   // the NavePoint cable managers the library added with kit 0.51.0
   '00404167', '00404169', '00404170', '00407295', '00407296', '00407297'];
 // What a `cover` group holds that is NOT a cover, and is left alone: the Amphenol power panels' thumbscrews.

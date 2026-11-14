@@ -1074,11 +1074,11 @@
    "kind": "base",
    "mount-points": [
     {
-     "at": 250.0,
+     "at": 150.0,
      "mates": "pdu-button"
     },
     {
-     "at": 1494.0,
+     "at": 1394.0,
      "mates": "pdu-button"
     }
    ],
@@ -1263,14 +1263,14 @@
    "what": "input-conflict"
   },
   {
-   "because": "needs-drawing",
+   "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
-   "note": "the drawing shows a small circle beside every outlet, and the quick setup guide says the outlets of a PX2 or PX3 have LEDs. No document gives their size, place or colours, so none is drawn and none is a part.",
+   "note": "the drawing shows a small circle beside every outlet, and the quick setup guide says the outlets of a PX2 or PX3 have LEDs. The rings are drawn; no document gives the colours a lamp shows, so they are not filled and are not a part.",
    "scope": [
     "front"
    ],
-   "wanted": "a photograph of the strip, or the drawing dimensioned at the outlets.",
+   "wanted": "a photograph of the strip, or the guide's description of the outlet lamps.",
    "what": "outlet-lamps"
   },
   {
@@ -1288,17 +1288,6 @@
    "because": "needs-drawing",
    "blocks": [],
    "kind": "declared",
-   "note": "the specification says a \"3-digit LED user-selectable display\" and the drawing shows two windows, a two-digit one labelled LINE / CB / UB and a three-digit one, both painted red. Each is drawn as a dark window; no digit is drawn and no part is placed.",
-   "scope": [
-    "front"
-   ],
-   "wanted": "a photograph of the control panel.",
-   "what": "display-windows"
-  },
-  {
-   "because": "needs-drawing",
-   "blocks": [],
-   "kind": "declared",
    "note": "the PX-Series PDU User Guide (4.3.11) says in its comparison of the PX2, PX3 and PXC / PXO that the PX2's SENSOR port is an RJ-12 and the PX3's an RJ-45, and the drawing shows the PX2's sensor jack narrower than its feature jack. It is drawn as the RJ45 serial jack part because no jack part of the library is sized as an RJ-12 housing (`std/rj11@1` is the opening alone), so it is drawn wider than the maker's jack. The feature jack is an RJ-45 by the same guide.",
    "scope": [
     "front"
@@ -1310,26 +1299,36 @@
    "because": "needs-drawing",
    "blocks": [],
    "kind": "declared",
-   "note": "the drawing places the two buttons and does not dimension their heads. They are drawn as the maker's PX3 mounting button, 14.7 mm across.",
+   "note": "the drawing places the two buttons and does not dimension their heads. They are drawn as the maker's PX3 mounting button, 14.7 mm across. Page 7 dimensions a part 250-80-0011-00 with a 14.00 head and a 25.20 flange. It does not say that part is the button. The PX3 part is shared with other devices, so it is not changed here.",
    "scope": [
     "rear"
    ],
-   "wanted": "the drawing's rear view dimensioned or the kit's installation sheet.",
+   "wanted": "the kit's installation sheet, which says which of the four parts is the button.",
    "what": "mounting-button-size"
   },
   {
    "because": "needs-drawing",
    "blocks": [],
    "kind": "declared",
-   "note": "the drawing's side view (page 6) is a plain 65.3 x 1539 outline with two short stubs where the buttons stand and small steps at the outlets and the panel; none is dimensioned, so none is drawn. No end view is shown.",
+   "note": "the side view (page 6) prints a depth dimension of 65.3 mm whose extension lines end on the outermost body line. The outlet bodies stand 3.5 mm proud of that line, and the panel steps and lamp rings stand on it. The two mounting buttons stand behind the rear plane. The specification prints a depth of 65 mm, and the device keeps it. A side face is 65 mm deep and clips its decor there, so these parts are cut and not drawn. The kit has no shape for a part beyond a side view's depth. The schema's `overhang` is \"HOW FAR REAL PARTS REACH BEYOND THE RACK FACE\", only on a `rack` device (`spec/schemas/device.schema.json`, lines 555 to 563). Lint L150 leaves decor out, since decor \"is clipped and never drawn\" outside the face.",
    "scope": [
-    "top",
-    "bottom",
     "left",
     "right"
    ],
-   "wanted": "the drawing's side and end views dimensioned, or photographs of the ends and the sides.",
-   "what": "sides"
+   "wanted": "the maker's statement of the depth with the outlet bodies included.",
+   "what": "side-reach"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "no held picture shows either end of the strip: the drawing has no end view and the specification publishes no feature on an end.",
+   "scope": [
+    "top",
+    "bottom"
+   ],
+   "wanted": "an end view of the strip.",
+   "what": "ends"
   },
   {
    "because": "CAP",
@@ -1373,7 +1372,7 @@
   },
   "controller": {
    "confidence": "drawing",
-   "note": "drawing - the panel is 188 x 43 mm (page 4) and starts about 396.5 mm from the top end, read from the elevation, to about 1 mm. Its contents are read from the page 4 drawing: a reset pinhole, a two-digit window (LINE / CB / UB) with two round buttons under it (UP, BOTH, DOWN), a three-digit window, five lamps labelled SENSOR, UB LOAD (%), POWER (kW), VOLTAGE (V) and CURRENT (A) with one unlabelled lamp beside them, a FEATURE jack over an ETHERNET jack, a USB-B jack, a SENSOR jack, a USB-A jack and a CONSOLE / MODEM D-sub jack. Each jack is turned the way the drawing turns it. The ports' types are read as follows: the D-sub as a DB9, `std/db9@1` (the PX-Series PDU User Guide's comparison of the PX2, PX3 and PXC / PXO gives the PX2 a male DB9 RS-232 CONSOLE / MODEM port, one USB-A port at 12 Mbps, one LAN port at 100 Mbps and an RJ-12 SENSOR port), so the USB-A is the USB 2 skin of `std/usb-a@1`; the FEATURE jack is an RJ-45 by the guide's note and is drawn, with the SENSOR jack, as an RJ45 serial jack like the maker's other PDUs (gaps: sensor-jack-type); the USB-B is the maker's USB-B part."
+   "note": "drawing - the panel is 188 x 43 mm (page 4) and starts about 396.5 mm from the top end, read from the elevation, to about 1 mm. Its contents are read from the page 4 drawing. They are a reset ring and a window (LINE / CB / UB) with two round buttons under it (UP, BOTH, DOWN). They are a second window and five lamps. The lamps are labelled SENSOR, UB LOAD (%), POWER (kW), VOLTAGE (V) and CURRENT (A), with one unlabelled lamp beside them. They are a FEATURE jack over an ETHERNET jack, a USB-B jack, a SENSOR jack, a USB-A jack and a CONSOLE / MODEM D-sub jack. Each jack is turned the way the drawing turns it. The ports' types are read as follows. The D-sub is a DB9, `std/db9@1`. The PX-Series PDU User Guide's comparison of the PX2, PX3 and PXC / PXO gives the PX2 a male DB9 RS-232 CONSOLE / MODEM port. It gives it one USB-A port at 12 Mbps, one LAN port at 100 Mbps and an RJ-12 SENSOR port. So the USB-A is the USB 2 skin of `std/usb-a@1`. The FEATURE jack is an RJ-45 by the guide's note. It is drawn, with the SENSOR jack, as an RJ45 serial jack like the maker's other PDUs (gaps: sensor-jack-type). The USB-B is the maker's USB-B part. The panel's corners are rounded 2.2 mm and each window's 1.5 mm (page 4 raster, 11.8 px per mm). Each window carries seven-segment digit outlines as the page 6 elevation draws them. The LINE / CB / UB window has two rows of two digits. The other has three rows of two. That makes ten digits in all. Each digit is 5.5 mm wide and 8.3 mm high. The rows are 10.6 mm apart. Each row has one point at its upper right. Their top and bottom edges slope as the drawing draws them, 8.4 degrees at a row's left digit and 10.6 at its right one. The angles are estimated from page 6 at 14400 dpi. The sides lean less than 1.5 degrees, so they are drawn upright. The red outlines are read from page 6 at 4800 dpi, 12.36 px per mm. They form two groups, 11.25 by 19.34 mm and 11.17 by 30.19 mm, each two digits wide. A digit's box is read from its group, an estimate good to about 0.2 mm. The specification's text says \"3-digit LED user-selectable display\" (page 1). Its drawing shows five rows of two cells. A hairline edge 0.3 mm outside each window is drawn as the page 4 picture draws it. The console jack's flange is 31.5 by 6.6 mm with two holes 25.0 apart. It is drawn behind its shell. The picture is scaled from the printed 188 mm panel width. A T-shaped line between the two round buttons (a bar 2.8 mm across, a stem 6.3 mm long, from page 6) is drawn. A ring 4.2 mm across round each screw hole is drawn from page 4, which draws the holes. Page 6 does not. One outline, 34.4 by 16.9 mm from page 6, holds the FEATURE and ETHERNET jacks. The reset button is a ring 2.4 mm across, as the drawing shows it, with no pinhole. These four are estimates read from the drawings. The two jacks' own plates lie inside the shared outline. The Raritan logo, the label texts, the two arrowheads and the UP, BOTH, DOWN and RESET labels are not drawn. This change draws shapes only. A later change draws marks, colours and the rest."
   },
   "front": {
    "confidence": "drawing",
@@ -1397,7 +1396,11 @@
   },
   "rear": {
    "confidence": "drawing",
-   "note": "drawing - two mounting buttons 1244.0 apart, the first 45.0 from the top end (PDF page 6, rear view). The button is the maker's PX3 mounting button, its 14.7 head borrowed (gaps: mounting-button-size), centred across, an estimate."
+   "note": "drawing - two mounting buttons 1244.0 apart, the first 145.0 from the top end (PDF page 6, rear view, read at 2400 dpi). The side view puts the stubs at 147 and 1391 mm. The device stood them at 45.0 and 1289.0, a misreading of the pale printed 1. The button is the maker's PX3 mounting button, its 14.7 head borrowed (gaps: mounting-button-size). It is centred across, an estimate. The rear view draws concentric rings and a cross-head screw on each button; the shared part draws a plain disc. A ring 25.2 mm across is drawn round each, the 25.20 that page 7 prints for the button's flange. Hairlines at 1.0, 1.6 and 5.5 mm from each long edge are drawn as the rear view draws them, read at 3.09 px per mm."
+  },
+  "sides": {
+   "confidence": "estimated",
+   "note": "estimated - the left face is the side elevation of page 6, the view below the front elevation, so the strip's left in third angle. It is read at 3.0897 px per mm from the printed 1539.0 mm. Its lines and its depth dimension are read at 4800 dpi, 12.36 px per mm. It shows six lines along the profile, at 2.0, 6.5, 8.7, 59.95, 61.5 and 63.5 mm from the rear. It shows a fixing block of 2.6 by 4.5 mm at each outlet's centre. It shows a cap at the bottom end and an end plate at each end. It shows 12 round marks with a triangle. The front plane is the outermost body line, 65.3 mm from the rear. The printed 65.3 depth dimension's two extension lines end on that line and on the rear line. The 24 outlet bodies stand 3.5 mm proud of that plane. The panel steps and the lamp rings beside the outlets stand on it too. All of them lie beyond the 65 mm depth and are not drawn (gaps: side-reach). The right face turns the same parts round, except the 12 marks. No held picture shows the marks on that side. The front elevation shows the fixing blocks end-on, 2.6 mm long at each outlet's centre on both long edges. It shows an end plate at each end. The rear view shows the end plates."
   }
  },
  "seat-turns": {},
