@@ -732,7 +732,7 @@ export function routeWarnings(rack, facts, nameOf = id => id, opts = {}) {
   kinds.push({kind: 'rings', rows: bySubject(notesOf('rings').map(led))}, {kind: 'bodies', rows: bySubject(notesOf('bodies').map(led))},
              {kind: 'bends', rows: bySubject((opts.bends || []).map(f => (cableIds.has(f.cable) ? {cable: f.cable, texts: [f.text]} : {texts: [f.text]})))},
              // an end no drawing places: the kit's sentence, one a cable (the exports' notes do not carry it)
-             {kind: 'unreached', rows: (facts.unreached || []).filter(f => f.text && cableIds.has(f.cable)).map(f => ({cable: f.cable, texts: [f.text]}))});
+             {kind: 'unreached', rows: (facts?.unreached || []).filter(f => f.text && cableIds.has(f.cable)).map(f => ({cable: f.cable, texts: [f.text]}))});
   return kinds.filter(k => k.rows.length);
 }
 
