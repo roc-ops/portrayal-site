@@ -352,7 +352,7 @@
     "mirror": false,
     "occupant": null,
     "occupant-attrs": {
-     "data-description": "the two jacks at the right end of the outlet face; their use is not stated",
+     "data-description": "the two jacks at the right end of the outlet face: the upper the 10/100 Base-T network port, the lower the RJ-12 serial port",
      "data-group": "jacks",
      "data-group-role": "management"
     },
@@ -384,7 +384,7 @@
     "mirror": false,
     "occupant": null,
     "occupant-attrs": {
-     "data-description": "the two jacks at the right end of the outlet face; their use is not stated",
+     "data-description": "the two jacks at the right end of the outlet face: the upper the 10/100 Base-T network port, the lower the RJ-12 serial port",
      "data-group": "jacks",
      "data-group-role": "management"
     },
@@ -482,17 +482,59 @@
      "9",
      "blank"
     ],
+    "lamp-jack-1": [
+     "off",
+     "receiving-10m",
+     "receiving-100m",
+     "no-traffic-green",
+     "no-traffic-orange"
+    ],
     "lamp-jack-1/lamp": [
      "off",
-     "on"
+     "receiving-10m",
+     "receiving-100m",
+     "no-traffic-green",
+     "no-traffic-orange"
+    ],
+    "lamp-jack-2": [
+     "off",
+     "valid-tcp-ip",
+     "invalid-tcp-ip",
+     "hardware-failure",
+     "bootp-request",
+     "dhcp-request"
     ],
     "lamp-jack-2/lamp": [
      "off",
-     "on"
+     "valid-tcp-ip",
+     "invalid-tcp-ip",
+     "hardware-failure",
+     "bootp-request",
+     "dhcp-request"
     ],
-    "lamp-status/lamp": [
+    "lamp-load-ok": [
      "off",
-     "on"
+     "normal"
+    ],
+    "lamp-load-ok/lamp": [
+     "off",
+     "normal"
+    ],
+    "lamp-load-overload": [
+     "off",
+     "overload"
+    ],
+    "lamp-load-overload/lamp": [
+     "off",
+     "overload"
+    ],
+    "lamp-load-warning": [
+     "off",
+     "near-overload"
+    ],
+    "lamp-load-warning/lamp": [
+     "off",
+     "near-overload"
     ],
     "outlet-1": [
      "on",
@@ -571,34 +613,34 @@
    "because": "needs-photo",
    "blocks": [],
    "kind": "declared",
-   "note": "small lamps stand over the display and beside the jacks, some lit green or amber in the photographs; their count, colours and meanings were not read off the pixels and no document names them, so three are drawn unlit and uncoloured.",
+   "note": "The count and place of the lamps are read off a 369 px photograph and the states come from the guide of an older series. The printed legends are named as shown and not drawn. They are the OK, Warning and Overload rings above the display, Amps, Reset and the logo. The photograph shows a green and an orange dot beside the Status label. It shows a fainter green and orange pair near the Link label, read as a colour key. The guide draws a check and a cross icon beside Status. The dots are read as printed icons, not lamps, and that reading is an estimate. No lamp moved for them. They are not drawn, because the maintainer has left marks to a later touch.",
    "scope": [
     "lamps"
    ],
-   "wanted": "the user manual's description of the status lamps.",
-   "what": "lamp-colours"
+   "wanted": "the guide of the B models (990-5569E) or a straight-on photograph of the display end with a scale.",
+   "what": "lamp-marks"
   },
   {
    "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
-   "note": "the labels under the two jacks are not legible and the datasheet names no port; neither is stated as an Ethernet, console or sensor port.",
+   "note": "The datasheet names no port. The older series' guide names the upper jack the 10/100 Base-T connector and the lower the RJ-12 serial port, so the match is by position.",
    "scope": [
     "jack-1",
     "jack-2"
    ],
-   "wanted": "the user manual, or a close photograph of the jacks.",
+   "wanted": "the guide of the B models (990-5569E).",
    "what": "jack-function"
   },
   {
    "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
-   "note": "no document held names the two rear jacks or prints a speed for them, so none is stated.",
+   "note": "The older series' guide gives the network jack as 10/100 Base-T. It gives the serial port no speed, and none is stated for either jack.",
    "scope": [
     "rear"
    ],
-   "wanted": "the user manual's port specification.",
+   "wanted": "the port specification in the guide of the B models.",
    "what": "jack-speed"
   },
   {
@@ -619,14 +661,13 @@
    "because": "needs-photo",
    "blocks": [],
    "kind": "declared",
-   "note": "no held document shows the top, the bottom or an end.",
+   "note": "no held photograph shows the bottom or the inlet end (the cord plug covers it). The top is a plain lid in the angled photograph. The display end (`left`, seen from behind) draws the six marks the angled photograph shows.",
    "scope": [
     "top",
     "bottom",
-    "left",
     "right"
    ],
-   "wanted": "straight-on photographs of the top, the bottom and an end.",
+   "wanted": "straight-on photographs of the top, the bottom and the inlet end.",
    "what": "sides"
   },
   {
@@ -680,7 +721,7 @@
   },
   "display": {
    "confidence": "estimated",
-   "note": "estimated - apc/ap78-display@1; the datasheet's prose names \"local current monitoring display\" (p.1)."
+   "note": "estimated - apc/ap78-display@1; the datasheet's prose names \"local current monitoring display\" (p.1). The Switched Rack PDU guide's figure calls it the digital display, item 7 (PDF p.11 and p.13)."
   },
   "ears": {
    "confidence": "estimated",
@@ -696,7 +737,11 @@
   },
   "jacks": {
    "confidence": "estimated",
-   "note": "estimated - two jacks shaped like RJ45 jacks at the right end (p.6 photograph); their labels are not legible and the datasheet says only \"Network management capabilities\" (p.1), so what each is for is not stated. Each is std/rj45@2, without a role."
+   "note": "estimated - two jacks shaped like RJ45 jacks at the right end (p.6 photograph). By position they match the Switched Rack PDU guide's figure (PDF p.11). The upper is the 10/100 Base-T network connector, item 3. The lower is the RJ-12 serial port, item 6 (PDF p.13). That guide is for an older series. Each is std/rj45@2, without a role."
+  },
+  "lamps": {
+   "confidence": "estimated",
+   "note": "estimated - five lamps and a Reset hole at the display end, read off the 369 px p.6 photograph. The display window, 22 mm across, is the scale, about 1.65 mm per pixel. Each lamp is drawn in its off state, and its on states carry the colours of the guide and the photograph; the viewer lights it. The Switched Rack PDU guide (AP7900 series, 2008) gives the identities and states. Its front panel is PDF p.11 and its items PDF p.13. Its Link-RX/TX and Status tables are PDF p.14 and its load indicator table PDF p.15. That guide is for an older series and the B models' own guide, 990-5569E, is not held. The count and place of the lamps come from the photograph and are estimated. The panel matches the guide's upper single-phase figure: one group of load lamps above the display, and no B1, B2 or TOTAL lamps. The photograph shows three lit points in one column above the right digit. The third is one pixel. Each sample is a count and a mean over the pixels under a colour mask. The mask for green is G of at least 90 and at least R and B plus 30. The mask for yellow is R and G of at least 150 and B at most R minus 80. The mask for orange is R of at least 150, G from 90 to 149 and B at most 100. Green, count 3, mean #507a3d, is the colour of `lamp-load-ok`, the green load lamp. Yellow, count 1, mean #a7b047, is one pixel. The orange third, count 1, mean #ac8e20, is one pixel. So `lamp-load-warning` and `lamp-load-overload` use the library's yellow #e5d800 and red #e02020. The Link-RX/TX and Status windows at the right edge of the upper jack are pale and unlit in the photograph. They use the library's green #39b54a and orange #f5a623, as nokia/sr-1-ac does. The guide draws both windows as small upright rectangles, so they use the rectangular part common/led-rect-sm@2, turned a quarter. The rectangles measure about 1.8 x 3.2 mm in the guide's figure at 600 dpi, scaled from the jack frame's 15.8 mm. The part is 2.8 x 1.6 mm, within 13 percent of that, and the larger common/led-rect is 44 percent off. The window heights follow the figure. The guide's place falls inside the library's wider jack, and the overlap check refuses it. So each lamp stands just outside the jack's right edge, as the photograph shows. The upper lamp, `lamp-jack-1`, is Link-RX/TX, item 5. The lower, `lamp-jack-2`, is Status, item 4, as in the figure. Status states: off, green valid TCP/IP, flashing green not valid, orange hardware failure, flashing orange BOOTP, alternating orange and green DHCP. Link-RX/TX states: off, flashing green 10 Mbps, flashing orange 100 Mbps, and solid green or orange with no traffic. Load states: green normal, yellow near overload, red overload. The Reset hole is item 8. It is a dark dot of about 2.5 mm at the lower left of the display, good to about 3 mm."
   },
   "method": {
    "confidence": "estimated",
@@ -708,7 +753,7 @@
   },
   "rear": {
    "confidence": "estimated",
-   "note": "estimated - the outlet face, read off the datasheet's p.6 photograph, mm from the face's left and top: the inlet's centre at 17, eight outlets centred from 55 on a 36.1 pitch, numbered 1 to 8 under their mouths as printed, the display's window from 333 to 355 across and 10 to 27 down, the round button centred at 376, two jacks centred at 397 with the logo right of them, and three small lamps. Every figure is an estimate."
+   "note": "estimated - the outlet face, read off the datasheet's p.6 photograph, mm from the face's left and top. The inlet's centre is at 17. Eight outlets are centred from 55 on a 36.1 pitch, numbered 1 to 8 under their mouths as printed. The display's window runs from 333 to 355 across and 10 to 27 down. The round button is centred at 376 and the two jacks at 397, with the logo right of them. It also has five small lamps and a Reset hole (see `lamps`). Every figure is an estimate."
   }
  },
  "seat-turns": {},
