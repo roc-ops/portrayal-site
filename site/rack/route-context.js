@@ -10,7 +10,7 @@ import {loadSlots} from '../../vendor/rack/catalog.js';
 import {bundleFacts, memberPlaces, trunkLay, tieMark} from './bundle-view.js';
 import {WIDTH, widthOf} from '../../vendor/rack/cable-geometry.js';
 import {itemBox} from '../../vendor/rack/fit.js';
-import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindingsOf, orientMarks} from '../../vendor/rack/route.js';
+import {resolveRoute, fill, capacityOver, routePath, pathLength, endPane, ringMarks, ringFindings, bodyFindings, bendFindingsOf, orientMarks, unreachedFindings} from '../../vendor/rack/route.js';
 import {fillNotes, bundleExports} from '../../vendor/rack/export-data.js';
 import {anchorsOf} from '../../vendor/rack/bundles.js';
 import {traysOf} from '../../vendor/rack/solids.js';
@@ -387,6 +387,10 @@ export const reads = {routeFacts: 0, reach: 0, last: null};
 // On, every path the kit reads is laid again from copies and compared with the one it kept, and a difference throws.
 // It lays every cable on every read (so `reads.reach` counts far more than the cables laid): for a page's tests only.
 export const kept = {check: false};
+// PROBE ONLY: `?probe=1&noFibreMap=1` hands the kit parts with no fibre map (rack-page.js).
+// A page test then has an end the catalogue accepts and nothing places.
+export const noMap = {on: false};
+const withoutFibreMap = compByRef => ref => { const c = compByRef(ref); return c?.optical?.ends ? {...c, optical: {...c.optical, ends: {}}} : c; };
 const now = () => (typeof performance === 'object' ? performance.now() : 0);
 
 // THE PARTS LISTS A ROUTE READS (kit 0.36.0, Portrayal #1068): a cord can end
@@ -394,8 +398,19 @@ const now = () => (typeof performance === 'object' ? performance.now() : 0);
 // panel of that part, so the kit places the outlet from the part's own parts
 // list (route.js zeroUEndPoint: ports.js zeroUEnds, from `slotsOf` and
 // `compByRef`). Without them such a cord has no length. A device's ports are
-// still the page's (portX, portY), so only the parts beside the rack are loaded.
+// still the page's (portX, portY), so only the parts beside the rack are loaded here.
 export const slotRefsOf = rack => [...new Set(zeroUOf(rack).map(z => z.ref).filter(r => typeof r === 'string' && r))];
+
+// AND THE PARTS LISTS OF A DEVICE WITH A CABLE ON A PART SEATED IN IT.
+// A port on the back of a part in a bay is drawn by no panel. An example is the far end of a coupler in a drawer.
+// The kit places it where the other end of the same adapter stands, from the part's own fibre map.
+// The kit says when it cannot. It reads both from these lists.
+// A device that no cable reaches through a seated part is not read for it.
+export const seatedRefsOf = rack => {
+  const items = new Map((rack.items || []).map(i => [i.id, i]));
+  return [...new Set((rack.cables || []).flatMap(c => [c.a, c.b]).filter(e => String(e?.path ?? '').includes('/module/'))
+    .map(e => items.get(e.item)?.ref).filter(r => typeof r === 'string' && r))];
+};
 
 export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {}) {
   reads.routeFacts++;
@@ -405,8 +420,9 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   const guides = new Map(), ports = new Map(), failed = {n: 0}, lost = {n: 0};
   const typesReady = cableTypes();
   // (a parts list that cannot be read leaves its cords unmeasured: what is read is then not kept)
-  const refs = slotRefsOf(rack);
-  const partsReady = refs.length ? loadSlots(DIST, refs).then(p => { if (refs.some(r => !p.slotsOf(r))) lost.n++; return p; })
+  // (a device the library has no parts list for is no loss: its cables are as they were)
+  const beside = slotRefsOf(rack), refs = [...new Set([...beside, ...seatedRefsOf(rack)])];
+  const partsReady = refs.length ? loadSlots(DIST, refs).then(p => { if (beside.some(r => !p.slotsOf(r))) lost.n++; return p; })
     .catch(() => { lost.n++; return null; }) : null;
   // The ducts beside the rack, read from their drawings with the faces.
   const ducts = zeroUApertures(rack, chassisOf, lost);
@@ -477,7 +493,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
     // length the page shows is the kit's, measured the way the 3D scene draws it.
     plugReachOf: end => reachOf.get(endKey(end)) ?? null,
     // The parts lists of the parts beside the rack (slotRefsOf, above): where an outlet on one is.
-    ...(parts ? {slotsOf: parts.slotsOf, compByRef: parts.compByRef, redirects: parts.redirects} : {}),
+    ...(parts ? {slotsOf: parts.slotsOf, compByRef: noMap.on ? withoutFibreMap(parts.compByRef) : parts.compByRef, redirects: parts.redirects} : {}),
     ...(kept.check ? {checkKept: true} : {}),
   });
   const routes = new Map((rack.cables || []).map(c => [c.id, resolveRoute(rack, c, ctx)]));
@@ -509,6 +525,11 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   lap('marks');
   const rings = ringFindings(rack, ctx, labelOf);
   const bodies = bodyFindings(rack, ctx, labelOf);
+  // THE ENDS NO DRAWING PLACES: the kit's `end-unreachable`, one finding a cable, with its own sentence.
+  // The panes tag such an end with that sentence, and the list gives it as a warning.
+  // It is read with the parts lists above.
+  let unreached = [];
+  try { unreached = unreachedFindings(rack, ctx, labelOf); } catch (err) { console.warn('[portrayal] the unreachable ends could not be read', err); }
   lap('findings');
   // THE TIGHT BENDS ARE THE KIT'S (kit 0.17.0, #973: route.js bendFindings):
   // each corner of a cable's path with less room than its own installed bend
@@ -568,7 +589,7 @@ export async function routeFacts(rack, chassisOf, {cableFacts: given = null} = {
   // (`whole`: nothing these were read from failed to load, a face, a duct's drawing, a plug's panel or the cables'
   // faces, so they are the rack's and a later reader may be handed them: reading.js. `complete` is the faces alone.)
   return {rack, readRack: rack, ctx, types, bctx, complete: failed.n === 0, whole: failed.n === 0 && lost.n === 0, routes, paths, marks, detours, leads, fill: filled,
-          over, ringFindings: rings, bodyFindings: bodies, bendFindings: bends, lengths,
+          over, ringFindings: rings, bodyFindings: bodies, unreached, bendFindings: bends, lengths,
           endPane: e => endPane(rack, e), bundles, bundleRecords, places, anchors: ties.slots, tieStraps: ties.marks, spareLoops: loops};
 }
 
@@ -709,7 +730,9 @@ export function routeWarnings(rack, facts, nameOf = id => id, opts = {}) {
     } else kinds.push({kind: 'gone', rows: whole.map(t => ({texts: [t]}))});
   }
   kinds.push({kind: 'rings', rows: bySubject(notesOf('rings').map(led))}, {kind: 'bodies', rows: bySubject(notesOf('bodies').map(led))},
-             {kind: 'bends', rows: bySubject((opts.bends || []).map(f => (cableIds.has(f.cable) ? {cable: f.cable, texts: [f.text]} : {texts: [f.text]})))});
+             {kind: 'bends', rows: bySubject((opts.bends || []).map(f => (cableIds.has(f.cable) ? {cable: f.cable, texts: [f.text]} : {texts: [f.text]})))},
+             // an end no drawing places: the kit's sentence, one a cable (the exports' notes do not carry it)
+             {kind: 'unreached', rows: (facts?.unreached || []).filter(f => f.text && cableIds.has(f.cable)).map(f => ({cable: f.cable, texts: [f.text]}))});
   return kinds.filter(k => k.rows.length);
 }
 

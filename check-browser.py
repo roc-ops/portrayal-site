@@ -34,6 +34,7 @@ import argparse
 import contextlib
 import csv
 import difflib
+import hashlib
 import html
 import io
 import json
@@ -5855,8 +5856,8 @@ EXPORT_FIXTURE = {
         "zeroU": [], "cables": []}]}
 
 
-def open_fixture(page, base, fixture=EXPORT_FIXTURE):
-    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+def open_fixture(page, base, fixture=EXPORT_FIXTURE, query=""):
+    page.goto(f"{base}/rack.html?probe=1{query}", wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
     rack = fixture["racks"][0]
@@ -26652,6 +26653,106 @@ def check_rack_fibrain_coupler_ends(page, base):
         bad.append(f"fibrain 3D: the panel's solids are {parts}, expected a floor, two side walls and a cover (open at the back and the front)")
     return bad
 
+
+# A CABLE TO THE BACK OF A PANEL ON THE REAR RAILS, in both views. The rack is the kit's fixture.
+# It has an MF-8 with an optic, an XCU10 on the rear rails, and one cable to the back of an adapter.
+# The kit places the far end where the adapter's
+# other end stands. So both panes draw the cable, no tag says it is not connected, and the routed length is the kit's.
+# An end the kit cannot place is said in the kit's own sentence. A genuinely loose end keeps its tag.
+# A cable to a front-facing port draws as it always did.
+# (kept out of tests/rack/fixtures, whose racks the frame-null check holds to its golden)
+BACK_END_FIXTURE = HERE / "tests" / "rack" / "back-end" / "rear-panel-back-end.rack.json"
+BACK_END_PANES_JS = """() => {
+  const out = {};
+  for (const pane of ['paneFront', 'paneRear']) {
+    const svg = document.querySelector(`#${pane} svg`);
+    out[pane] = {
+      cables: [...svg.querySelectorAll('[data-cables] [data-cable-id]')].map(g => ({id: g.getAttribute('data-cable-id'), loose: g.hasAttribute('data-loose-lead')})),
+      tags: [...svg.querySelectorAll('[data-cable-tags] .cable-tag')].map(t => ({cls: t.getAttribute('class'), unreached: t.hasAttribute('data-unreached'),
+        text: t.querySelector('text')?.textContent, title: t.querySelector('title')?.textContent})),
+      layers: [...svg.querySelectorAll(':scope > [data-cables], :scope > [data-cable-tags]')].map(n => n.outerHTML).join('\\n')};
+  }
+  return out; }"""
+# The SHA-256 of both panes' cable and tag layers, as origin/main drew them. The cable is alone in the rack: the MF-8's
+# first optic to the XCU10's first adapter, on its face. They were read there with the same page and window.
+FRONT_FACING_SHA = {"paneFront": "fc296e29025754f5f00ad4f7b766c025d61c18706c144a336218a4e964f48c80",
+                    "paneRear": "6d994992fbf89b3e620dedbe6d438c8161f59b43db2f321cf94f9609dd9d3493"}
+KIT_UNREACHED = "This end cannot be reached: no drawing places port b01 of XCU10 rear."
+
+
+def _back_end_open(page, base, rack, query=""):
+    open_fixture(page, base, rack, query)
+    page.click('#mode [data-mode="2d"]')
+    wait_fn(page, "agent tools registered", f"() => Object.keys(window.__tools).length === {len(AGENT_TOOLS)}")
+    page.wait_for_function("() => window.__rack.idle()", timeout=READY_MS)
+    # the routes and the cables' facts are read, and the panes drawn from them
+    page.wait_for_function("() => window.__rack.routes() && (window.__rack.routes() || []).length > 0 && window.__rack.routesCurrent().current", timeout=READY_MS)
+    page.wait_for_timeout(1500)
+    return page.evaluate(BACK_END_PANES_JS)
+
+
+@extra("rack.html: a cable to the back of a rear-rail panel is drawn in both views and says what the kit says. A front-facing cable is as it was")
+def check_rack_rear_panel_back_end(page, base):
+    import copy
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script(STAND_IN_MODEL_CONTEXT)
+    page.set_viewport_size({"width": 1600, "height": 1000})
+    fixture = json.loads(BACK_END_FIXTURE.read_text())
+    inspect = lambda cid: agent_call(page, "inspect", {"id": cid})["content"][0]["text"]
+    # 1. THE REPRO: drawn in both panes, joined at the panel, never hung as if loose, and measured
+    panes = _back_end_open(page, base, fixture)
+    for pane in ("paneFront", "paneRear"):
+        if [c["id"] for c in panes[pane]["cables"]] != ["c1"]:
+            bad.append(f"back end: {pane} draws {panes[pane]['cables']}, expected the one cable")
+        if any(c["loose"] for c in panes[pane]["cables"]):
+            bad.append(f"back end: {pane} hangs the cable as a loose lead")
+        if any("not-connected" in (t["cls"] or "") or "not connected" in (t["text"] or "") for t in panes[pane]["tags"]):
+            bad.append(f"back end: {pane} tags the cable not connected: {panes[pane]['tags']}")
+    if [t["title"] for t in panes["paneRear"]["tags"]] != ["→ MF-8 lt-1/module/port-1"]:
+        bad.append(f"back end: the rear view's tag does not say where the cable goes: {panes['paneRear']['tags']}")
+    paths = page.evaluate("() => window.__rack.paths()")
+    if not (paths.get("c1") or {}).get("measured"):
+        bad.append(f"back end: the kit gives no routed length: {paths}")
+    text = inspect("c1")
+    if "routed length not measured" in text or not re.search(r"; routed \d+(\.\d+)? m, stock size", text):
+        bad.append(f"back end: the length text is not the kit's routed length: {text!r}")
+    if "cannot be reached" in text:
+        bad.append(f"back end: a placed end is said to be out of reach: {text!r}")
+    if page.query_selector("[data-loose]"):
+        bad.append("back end: the cable list names a loose end")
+    # 2. A GENUINELY LOOSE END (the optic is not seated) KEEPS ITS TAG, and the end the kit placed is drawn
+    loose = copy.deepcopy(fixture)
+    loose["racks"][0]["items"][0]["swaps"] = {}
+    panes = _back_end_open(page, base, loose)
+    tags = [t for p in ("paneFront", "paneRear") for t in panes[p]["tags"] if "not-connected" in (t["cls"] or "")]
+    if len(tags) != 1 or tags[0]["text"] != "✕ not connected" or "holds no optic" not in tags[0]["title"] or tags[0]["unreached"]:
+        bad.append(f"back end: the loose end's tag is not kept: {tags}")
+    # 3. AN END NO DRAWING PLACES (the part gives the kit no fibre map): the kit's own sentence, never 'not connected'
+    panes = _back_end_open(page, base, fixture, "&noFibreMap=1")
+    shown = [t for p in ("paneFront", "paneRear") for t in panes[p]["tags"]]
+    if any("not connected" in (t["text"] or "") or "not connected" in (t["title"] or "") for t in shown):
+        bad.append(f"back end: an end that cannot be reached is called not connected: {shown}")
+    said = [t for t in shown if t["unreached"]]
+    if len(said) != 1 or said[0]["title"] != KIT_UNREACHED or not KIT_UNREACHED.startswith((said[0]["text"] or "…").rstrip("…")):
+        bad.append(f"back end: the tag does not carry the kit's sentence {KIT_UNREACHED!r}: {said}")
+    text = inspect("c1")
+    if KIT_UNREACHED not in text.split("\n") or "routed length not measured" not in text or "not connected" in text:
+        bad.append(f"back end: the cable's text for an end the kit cannot reach: {text!r}")
+    listed = page.evaluate("() => [...document.querySelectorAll('[data-warning-kind=\"unreached\"] .rk-warn')].map(e => e.textContent)")
+    if listed != [KIT_UNREACHED]:
+        bad.append(f"back end: the cable list's warnings do not give the kit's sentence: {listed}")
+    # 4. A CABLE TO A FRONT-FACING PORT OF THE SAME RACK IS AS ORIGIN/MAIN DREW IT
+    front = copy.deepcopy(fixture)
+    front["racks"][0]["cables"] = [{"id": "c2", "a": {"item": "i1", "path": "lt-1/module/port-1", "view": "front"},
+                                    "b": {"item": "i2", "path": "drawer/module/slot-1/module/sc01", "view": "front"},
+                                    "media": "os2", "purpose": "", "label": "c2", "route": [], "routeEdited": False}]
+    panes = _back_end_open(page, base, front)
+    for pane, want in FRONT_FACING_SHA.items():
+        got = hashlib.sha256(panes[pane]["layers"].encode()).hexdigest()
+        if got != want:
+            bad.append(f"back end: a cable to a front-facing port is drawn differently in {pane} from origin/main: {got}")
+    return bad
 
 
 def main():

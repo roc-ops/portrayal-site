@@ -261,8 +261,10 @@ const ringLines = c => (c.route?.ring_findings ?? []).filter(x => x.text).map(x 
 // What the kit finds of its spare (0.22.0: spare-unplaced, spare-short, spare-over, spare-off-route).
 // (0.35.0: spare-capacity-unstated and spare-over-capacity, a duct's load, named by kind)
 const spareLines = c => (c.spare_findings ?? []).map(f => `Spare${FINDING_KIND[f.kind] ? `, ${FINDING_KIND[f.kind]}` : ''}: ${clip(f.text, 200)}`);
-/** What the kit finds of one cable's lay, as inspect says it: bends, ring findings and spare findings. */
-export const findingLines = c => [...bendLines(c), ...ringLines(c), ...spareLines(c)];
+// An end no drawing places (inspect's route.unreached, `{ends, text}`): the kit's sentence, said as it is.
+const unreachedLines = c => (c.route?.unreached?.text ? [c.route.unreached.text] : []);
+/** What the kit finds of one cable's lay, as inspect says it: bends, ring findings, spare findings and an end it cannot reach. */
+export const findingLines = c => [...bendLines(c), ...ringLines(c), ...spareLines(c), ...unreachedLines(c)];
 export function cableText(c, {spare = null, needs = null} = {}) {
   const stock = len(c.routed?.stock);
   const lines = [
@@ -309,7 +311,7 @@ export function cableText(c, {spare = null, needs = null} = {}) {
   // longer with a long label: the kit's sentence is said whole, and its advice, where it gives one, after it)
   lines.push(...bendLines(c), ...ringLines(c));
   if (c.route?.covers?.text) lines.push(`In front of other ports: ${clip(c.route.covers.text, 300)}`);
-  lines.push(...spareLines(c));
+  lines.push(...spareLines(c), ...unreachedLines(c));
   if (Array.isArray(c.spare_places)) lines.push(placesLine(c.spare_places));
   // How it was pinned by hand in a pathway, as the file has it (cable.lay).
   if (c.lay?.length) lines.push(`Laid by hand: ${cutList(c.lay.map(e => `${e.item} ${e.via}${e.face ? `, ${e.face} face` : ''}${e.position != null ? `, position ${e.position}` : ''}`), 6)}.`);
