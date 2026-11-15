@@ -184,7 +184,7 @@ export const WARNINGS_FOLD = 5;
 export const WARNING_KINDS = {
   fill: 'Pathways over their fill', capacity: 'More cables than a manager states', gone: 'Waypoints that are gone',
   rings: 'Rings entered and left by one face', bodies: 'Cables through a body', bends: 'Tight bends',
-  loose: 'Loose ends', mismatch: 'Media mismatches', short: 'Cords shorter than their route'};
+  unreached: 'Ends that cannot be reached', loose: 'Loose ends', mismatch: 'Media mismatches', short: 'Cords shorter than their route'};
 // The over-capacity list's title (kit 0.40.0): a row whose manager states no count is measured against the library's
 // estimate, and the sentence says so; the title does not call that a stated count.
 export function capacityKindTitle(rows) {

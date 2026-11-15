@@ -45,7 +45,7 @@ import {paintBundles} from './rack/cable-view.js';
 import {zeroUTargets} from './rack/spare-loops.js';
 import {routeEditSession} from './rack/route-edit.js';
 import {litFor, litForFilter, paintFilter3d, paintHover2d, paintHover3d, paintSelected3d, hoverAt2d, hoverAt3d, hoverAtList, hoverAtFocus, sameTarget} from './rack/hover.js';
-import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept} from './rack/route-context.js';
+import {routeWarnings, withCableTypes, bendNotice, landedBends, reads, kept, noMap} from './rack/route-context.js';
 import {agentContextFor} from './rack/agent-context.js';
 import {paints, paintMaps} from './rack/settable.js';
 import {settablePanel} from './rack/settable-panel.js';
@@ -77,6 +77,8 @@ const PROBE = new URLSearchParams(location.search).get('probe') === '1';
 // PROBE ONLY: `?probe=1&checkKept=1` gives the kit's route context `checkKept: true` (route-context.js kept), so every
 // path the kit reads is laid again from nothing and compared with the one it kept; a difference throws. Not for a page in use.
 if (PROBE && new URLSearchParams(location.search).get('checkKept') === '1') kept.check = true;
+// PROBE ONLY: `?probe=1&noFibreMap=1` gives the kit parts with no fibre map (route-context.js noMap).
+if (PROBE && new URLSearchParams(location.search).get('noFibreMap') === '1') noMap.on = true;
 const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";

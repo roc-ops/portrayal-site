@@ -22,7 +22,8 @@ import {radiusOf} from './bend3d.js';
 import {trunkPaths, trunkPoint} from './bend2d.js';
 import {STRAP_PAINT, STRAP_MIN_PX} from './stage.js';
 import {partSel, pathOfEl} from './part-path.js';
-import {LANE_GAP, laneXAt} from '../../vendor/rack/route.js';
+import {LANE_GAP, laneXAt, endPane} from '../../vendor/rack/route.js';
+import {twinEnd} from '../../vendor/rack/ports.js';
 import {throughRings} from '../../vendor/rack/route-path.js';
 import {paneMarks, landedBends, bendPoints, widthLookup} from './route-context.js';
 import {spareText} from './spare.js';
@@ -254,7 +255,39 @@ function drawRackCablesIn(svg, rack, reasons, uOf, routes, spares, tags) {
   const base = svg.dataset.baseBox.split(' ').map(Number);
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
   const cables = rack.cables;
-  const plan = cablePlan(rack);
+  // AN END THE KIT PLACES BY ITS TWIN (ports.js twinEnd).
+  // The far end of an adapter on the back of a part is drawn by no panel.
+  // It stands where the other end of the same adapter does.
+  // The kit counts it on the pane the plan says, the front for a panel on the rear rails.
+  // It puts the end's point in the path, and that pane draws the cable to that point.
+  // The pane that shows the twin draws the cable to the twin's port, joined there by a cross-face tag.
+  // An end with a reason to be loose is not placed.
+  const kitCtx = routes?.ctx;
+  const placed = new Map();   // `${item}|${path}` -> {point} (rack mm) or {twin} (a path), as this pane places that end
+  const twinOf = e => {
+    const it = rack.items.find(i => i.id === e.item);
+    if (!it || typeof kitCtx?.slotsOf !== 'function' || typeof kitCtx.compByRef !== 'function' || kitCtx.portX(e) != null) return null;
+    try { const t = twinEnd(it, e, kitCtx); return t ? {...e, ...t} : null; } catch { return null; }
+  };
+  const plan0 = cablePlan(rack);
+  const plan = {links: plan0.links.map((link, i) => {
+    let out = link;
+    for (const side of ['from', 'to']) {
+      const e = cables[i][side === 'from' ? 'a' : 'b'];
+      if (!kitCtx || reasons.get(endKey(e)) != null) continue;
+      const twin = twinOf(e);
+      if (!twin) continue;
+      if (link[side][2] === pane) {
+        const point = routes.paths?.get(link.id)?.points?.find(q => q.at === (side === 'from' ? 'a' : 'b'));
+        if (point) placed.set(`${e.item}|${e.path}`, {point});
+      } else if (endPane(rack, twin) === pane && reasons.get(endKey(cables[i][side === 'from' ? 'b' : 'a'])) == null) {
+        // (not for a cable whose other end is loose: its one tag is on the pane the kit counts the end on)
+        out = {...out, [side]: [link[side][0], link[side][1], pane]};
+        placed.set(`${e.item}|${e.path}`, {twin: twin.path});
+      }
+    }
+    return out;
+  })};
   // Each link's waypoints in this pane, in order from its a end. Cables
   // sharing a lane here are offset a little apart.
   // One lane slot per bundle and lane, taken in turn with the cables' own.
@@ -416,6 +449,12 @@ function drawRackCablesIn(svg, rack, reasons, uOf, routes, spares, tags) {
                                 headRings: turned ? rings.slice(0, headEnd) : null, tailRings: turned ? rings.slice(tailFrom) : null}};
     }
   }
+  // The kit's sentence for each end it cannot reach (route.js unreachedFindings: endKey -> text).
+  const unreachedText = new Map();
+  for (const f of routes?.unreached ?? []) {
+    const c = cables.find(x => x.id === f.cable);
+    for (const e of f.ends ?? []) if (c?.[e.end]) unreachedText.set(endKey(c[e.end]), f.text);
+  }
   const endAt = (i, side) => cables[i][side === 'from' ? 'a' : 'b'];
   const loose = (i, side) => reasons.get(endKey(endAt(i, side))) != null;
   // Which ends on this pane are loose, by the [item, path] drawCables2d asks with.
@@ -460,7 +499,11 @@ function drawRackCablesIn(svg, rack, reasons, uOf, routes, spares, tags) {
   const recs = drawCables2d(svg, plan, pane, {
     edgeX, outboard: rear ? -1 : 1, stackGutter: false, widthOf: widthLookup(routes?.types?.diameterOf, cables),
     bendOf,
-    ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
+    ends: (s, itemId, path) => {
+      if (looseHere.has(`${itemId}|${path}`)) return null;
+      const at = placed.get(`${itemId}|${path}`);
+      return at?.twin ? endPoints(s, itemId, at.twin) : endPoints(s, itemId, path) ?? (at?.point ? [detourAt(at.point)] : null);
+    },
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
     // Its title carries the full text, which the pill may have had to shorten.
@@ -483,12 +526,15 @@ function drawRackCablesIn(svg, rack, reasons, uOf, routes, spares, tags) {
       return pill(t, at, `↔ by the ${otherFace} face`, leadOf(at));
     },
     // The far end does not land anywhere: the tag says so, and its title says why.
+    // An end the kit says it cannot reach (no drawing places it) is not loose.
+    // Its tag, in the same style, carries the kit's own sentence.
     looseTag: (at, far, link) => {
-      const t = svgEl('g', {class: 'cable-tag not-connected', tabindex: '0', role: 'button'});
+      const kit = unreachedText.get(endKey(farEnd(link, far)));
+      const t = svgEl('g', {class: 'cable-tag not-connected', tabindex: '0', role: 'button', ...(kit ? {'data-unreached': 'true'} : {})});
       const why = svgEl('title', {});
-      why.textContent = `✕ not connected — ${reasons.get(endKey(farEnd(link, far))) || 'not connected'}`;
+      why.textContent = kit ?? `✕ not connected — ${reasons.get(endKey(farEnd(link, far))) || 'not connected'}`;
       t.append(why);
-      return pill(t, at, '✕ not connected');
+      return pill(t, at, kit ?? '✕ not connected');
     },
   });
   // A trunk node's own point on this pane, before any member's offset: a lane
