@@ -62,7 +62,7 @@ const drawings = distFaces();
 const attr = (tag, k) => (new RegExp(`\\s${k}="([^"]*)"`).exec(tag) ?? [])[1] ?? null;
 const deviceOf = text => attr(/<svg\b[^>]*>/.exec(text)?.[0] ?? '', 'data-device');
 const inCover = text => [...text.matchAll(/<[a-zA-Z][^>]*\sdata-group="cover"[^>]*>/g)].map(m => ({cls: attr(m[0], 'data-class'), path: attr(m[0], 'data-path'), ref: (attr(m[0], 'data-ref') ?? '').split('@')[0]}));
-// The devices the control touches, by family: cable managers and ducts, nothing else.
+// The devices the control touches, by family: cable managers and ducts, and seven Rittal PDUs, nothing else.
 const TOUCHED = ['cmh-bs-dfdabs2u', 'cmh-bs-sfds1u', 'cmh-dfd1u', 'cmh-dfds1u', 'cmh-dfds2u', 'cmh-hd-sfdabs3u', 'cmh-hd-sfdabs4u', 'cmh-sfd1u', 'cmh-sfd2u',
   'cmh-sfds1u', 'cmh-sfds2u', 'cmh-uhd-sfdabs1u', 'cmh-uhd-sfdabs2u', 'cmh-uhd-sfdabs3u', 'cmv-dfd45u5w', 'cmv-dfds45u5w', 'cmv-sfd42u9w', 'cmv-sfd45u5w',
   'cmv-sfds45u5w', 'uscmh-5dr1u', 'uscmh-sfdabs1u', 'uscmh-sfdabs2u', 'uscmh-sfdabsb1u', 'uscmh-sfdabsb2u',
@@ -71,12 +71,14 @@ const TOUCHED = ['cmh-bs-dfdabs2u', 'cmh-bs-sfds1u', 'cmh-dfd1u', 'cmh-dfds1u', 
   'bhh194ur', 'cmduct1ux', 'cmduct2u', 'hm144c', 'hm14c', 'hm24c', 'hm34c', 'hs23c', 'hsd13', 'ncmh2', 'ncmhf2', 'nm1', 'nm2', 'nmf1', 'nmf2', 'nmf3', 'nmf4',
   'pr2hf3wh', 'pr2hf4wh', 'srcableduct1u', 'srcableduct1ufc', 'srcableduct1uhd', 'srcableductvrt', 'wmpvhc45e',
   // the NavePoint cable managers the library added with kit 0.51.0
-  '00404167', '00404169', '00404170', '00407295', '00407296', '00407297'];
+  '00404167', '00404169', '00404170', '00407295', '00407296', '00407297',
+  // seven Rittal PDUs whose cover plate, rittal/pdu-cover-plate, sits in a cover group, so the control takes it too
+  'dk-7979-210', 'dk-7979-230', 'dk-7979-235', 'dk-7979-236', 'dk-7979-238', 'dk-7979-240', 'dk-7979-242'];
 // What a `cover` group holds that is NOT a cover, and is left alone: the Amphenol power panels' thumbscrews.
 const LEFT = ['300cb08', '300cb08-c', '300cb08-sc', 'nrg300cb08-ctrl', 'nrg300cb08-ctrl-c', 'nrg300cb08-ctrl-sc', 'nrg300cb08-sens', 'nrg300cb08-sens-c',
   'nrg300cb08-sens-sc', 'nrgils300cb08', 'nrgils300cb08-sc'];
 
-test('over the whole catalogue the control takes the cover plates of cable managers and ducts, and nothing else', () => {
+test('over the whole catalogue the control takes the cover plates of cable managers, ducts and seven Rittal PDUs, and nothing else', () => {
   const taken = new Map(), left = new Map();
   for (const {f, text} of drawings) {
     const dev = deviceOf(text), mine = new Set(coverPathsIn(text));
