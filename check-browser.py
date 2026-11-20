@@ -15350,6 +15350,43 @@ def check_rack_picker(page, base):
     return bad
 
 
+@extra("rack.html: the Enter that confirms an IME composition in the device search places nothing, and a plain Enter still places the chosen device")
+def check_rack_picker_ime_enter(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    open_new_rack(page, "picker ime")
+    tok = render_token(page)
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="10"]')
+    wait_rendered(page, "picker ime: U10 picker opens", tok)
+    page.fill("#catQuery", "AS7726")
+    page.select_option("#catDevice", "as7726-32x")
+    count = lambda: page.evaluate("() => window.__rack.doc().racks[0].items.length")
+    # A keydown of a composition: isComposing on one, keyCode 229 on the other (some browsers send only that).
+    key = """([init]) => { const e = new KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true, ...init});
+      document.querySelector('#catQuery')?.dispatchEvent(e);
+      return {prevented: e.defaultPrevented, composing: e.isComposing, code: e.keyCode}; }"""
+    for what, init, want in (("isComposing", {"isComposing": True}, (True, 0)),
+                             ("keyCode 229", {"keyCode": 229}, (False, 229))):
+        got = page.evaluate(key, [init])
+        if (got["composing"], got["code"]) != want:
+            bad.append(f"picker ime: the {what} event reached the page as {got}, so this check proves nothing")
+        page.wait_for_timeout(200)
+        if count() != 0 or not page.query_selector("#catPlace"):
+            bad.append(f"picker ime: Enter with {what} placed a device ({count()} items)")
+        if got["prevented"]:
+            bad.append(f"picker ime: Enter with {what} was cancelled, so the input method never got its key")
+    if bad:
+        return bad
+    page.press("#catQuery", "Enter")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.some(i => i.ref === 'as7726-32x')", timeout=READY_MS)
+    if count() != 1:
+        bad.append(f"picker ime: a plain Enter left {count()} items, expected the one device")
+    return bad
+
+
 @extra("rack.html: zoom defaults to Fit, reads relative to it, ctrl+wheel is anchored at the pointer without drift, and it survives a reload")
 def check_rack_zoom(page, base):
     bad = []
@@ -17337,6 +17374,32 @@ def check_annotate_mode_in_address(page, base):
     again = page.evaluate(where)
     if again["q"].get("mode") != "3d" or again["q"].get("debug") != "1" or again["hash"] != at3d["hash"]:
         bad.append(f"address: back in 3D the address is {again}, not mode=3d with debug=1 and the document")
+    return bad
+
+
+@extra("annotate.html: the Enter that confirms an IME composition in the selector box adds no mark, and a plain Enter still adds one")
+def check_annotate_ime_enter(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    api = "window.portrayalAnnotate"
+    wait_fn(page, "annotate ime: settled", f"() => {api} && {api}.settled")
+    rows = lambda: page.evaluate("() => document.querySelectorAll('#rows .mark').length")
+    before = rows()
+    page.fill("#sel", "[id^='port-']")
+    # A keydown of a composition: isComposing on one, keyCode 229 on the other (some browsers send only that).
+    key = """([init]) => { const e = new KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true, ...init});
+      document.querySelector('#sel').dispatchEvent(e); return {composing: e.isComposing, code: e.keyCode}; }"""
+    for what, init, want in (("isComposing", {"isComposing": True}, (True, 0)),
+                             ("keyCode 229", {"keyCode": 229}, (False, 229))):
+        got = page.evaluate(key, [init])
+        if (got["composing"], got["code"]) != want:
+            bad.append(f"annotate ime: the {what} event reached the page as {got}, so this check proves nothing")
+        page.wait_for_timeout(200)
+        if rows() != before or page.input_value("#sel") != "[id^='port-']":
+            bad.append(f"annotate ime: Enter with {what} added a mark ({rows()} rows, was {before})")
+    page.press("#sel", "Enter")
+    wait_fn(page, "annotate ime: a plain Enter adds the mark", f"() => document.querySelectorAll('#rows .mark').length === {before + 1}")
     return bad
 
 

@@ -1448,7 +1448,11 @@ selInput.addEventListener('input', () => {
     say('#selmsg', String(e.message || e), 'bad');
   }
 });
-selInput.addEventListener('keydown', e => { if (e.key === 'Enter') $('#seladd').click(); });
+// The Enter that confirms an IME composition belongs to the input method, not to Add.
+selInput.addEventListener('keydown', e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Enter') $('#seladd').click();
+});
 $('#seladd').onclick = () => {
   const v = selInput.value.trim();
   if (!v) return;
