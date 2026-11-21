@@ -194,7 +194,11 @@ export function catalogPanel({entries, rack, face, ru, half: onHalf = null, chas
 
   let chosen = !replacing;
   query.addEventListener('input', () => { chosen = true; setState({query: query.value}); redraw(); });
-  query.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); if (chosen) doPlace(); } });
+  // The Enter that confirms an IME composition belongs to the input method, not to Place.
+  query.addEventListener('keydown', ev => {
+    if (ev.isComposing || ev.keyCode === 229) return;
+    if (ev.key === 'Enter') { ev.preventDefault(); if (chosen) doPlace(); }
+  });
   fitsOnly.addEventListener('change', () => { setState({fitsOnly: fitsOnly.checked}); redraw(); });
   vendor.addEventListener('change', () => { setState({vendor: vendor.value}); redraw(); });
   device.addEventListener('change', () => { chosen = true; setState({device: device.value}); renderCfgAndFit(); });
